@@ -74,6 +74,150 @@ function casDiagram(c) {
   return lines.join("\n");
 }
 
+/* ---------------- mitigation planner ---------------- */
+const MIT_STORE = "aap.mitigations";
+const MIT_FUNCS = [["prevent", "Prevent"], ["detect", "Detect"], ["contain", "Contain"], ["recover", "Recover"]];
+const MIT_VERIFY = {
+  prevent: "unit / eval test that fails if the control is removed",
+  detect: "red-team run where the alert fires before impact",
+  contain: "chaos drill that proves the blast radius is bounded",
+  recover: "restore/reconcile test that returns to a known-good state"
+};
+let casView = "explorer";
+
+function setCasView(v) {
+  casView = v;
+  document.querySelectorAll("#casSeg .seg-btn").forEach(function (b) { b.classList.toggle("active", b.dataset.v === v); });
+  const ex = el("casExplorer"), mi = el("casMitigation");
+  if (ex) ex.classList.toggle("hidden", v !== "explorer");
+  if (mi) mi.classList.toggle("hidden", v !== "mitigation");
+  if (v === "mitigation") renderMitigation();
+}
+function mitLoad() { try { return JSON.parse(localStorage.getItem(MIT_STORE) || "{}"); } catch (e) { return {}; } }
+function mitSave(m) { try { localStorage.setItem(MIT_STORE, JSON.stringify(m)); } catch (e) {} }
+function mitKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 90); }
+
+/* Aggregate every cascade's controls into a de-duplicated, scored backlog. */
+function buildMitigationBacklog() {
+  const map = {};
+  casAll().forEach(function (c) {
+    MIT_FUNCS.forEach(function (f) {
+      (c.mitigations && c.mitigations[f[0]] || []).forEach(function (text) {
+        const k = f[0] + "::" + mitKey(text);
+        if (!map[k]) map[k] = { key: k, func: f[0], text: text, cascades: [], impact: 0, blast: 0, classes: {} };
+        const e = map[k];
+        if (e.cascades.indexOf(c.id) < 0) e.cascades.push(c.id);
+        e.impact = Math.max(e.impact, casImpactRank(c));
+        e.blast = Math.max(e.blast, casBlastRank(c));
+        e.classes[c.cls] = 1;
+        if (text.length > e.text.length) e.text = text;
+      });
+    });
+  });
+  const list = Object.keys(map).map(function (k) {
+    const e = map[k];
+    e.freq = e.cascades.length;
+    e.score = e.freq * 2.0 + e.impact * 1.2 + e.blast * 0.8 + (Object.keys(e.classes).length - 1) * 0.6;
+    return e;
+  });
+  list.sort(function (a, b) { return b.score - a.score; });
+  // Percentile-based priority so the buckets stay meaningful at any scale:
+  // P1 = top 15% (highest leverage), P2 = next 25%, P3 = the long tail.
+  const n = list.length;
+  list.forEach(function (e, i) {
+    e.priority = i < n * 0.15 ? "P1" : i < n * 0.40 ? "P2" : "P3";
+  });
+  return list;
+}
+const mitFilter = { func: null, pri: null, limit: 120 };
+function setMitFilter(k, v) {
+  mitFilter[k] = (k === "limit") ? v : (mitFilter[k] === v ? null : v);
+  renderMitigation();
+}
+function renderMitigation() {
+  const box = el("casMitigation");
+  if (!box) return;
+  const all = buildMitigationBacklog();
+  const saved = mitLoad();
+  const filtered = all.filter(function (e) {
+    if (mitFilter.func && e.func !== mitFilter.func) return false;
+    if (mitFilter.pri && e.priority !== mitFilter.pri) return false;
+    return true;
+  });
+  const shown = filtered.slice(0, mitFilter.limit);
+  const counts = { P1: 0, P2: 0, P3: 0 };
+  all.forEach(function (e) { counts[e.priority]++; });
+  const fbtn = function (label, key, val, extra) {
+    const on = mitFilter[key] === val;
+    return '<button class="seg-btn' + (on ? " active" : "") + '" onclick="setMitFilter(\'' + key + '\',\'' + (val || "") + '\')">' + label + (extra || "") + "</button>";
+  };
+  box.innerHTML =
+    '<div class="panel" style="margin-bottom:12px"><h3>Mitigation planner — ' + all.length + " distinct controls from " + casAll().length + " cascades</h3>" +
+    '<p class="muted small">Every control across all cascades, de-duplicated and ranked by leverage (how many cascades it addresses), the worst impact it prevents and the widest blast radius it bounds. Priority is relative (top 15% / next 25% / tail) — a planning heuristic, not your risk appetite. Assign owners and track status; it persists locally.</p>' +
+    '<div class="seg" style="margin:10px 0 8px">' + fbtn("All functions", "func", null) + MIT_FUNCS.map(function (f) { return fbtn(f[1], "func", f[0]); }).join("") + "</div>" +
+    '<div class="seg" style="margin:0 0 8px">' + fbtn("All priorities", "pri", null) + fbtn("P1", "pri", "P1", " · " + counts.P1) + fbtn("P2", "pri", "P2", " · " + counts.P2) + fbtn("P3", "pri", "P3", " · " + counts.P3) + "</div>" +
+    '<div style="display:flex;gap:8px;align-items:center;margin-top:8px">' +
+    '<span class="muted small">showing ' + shown.length + " of " + filtered.length + "</span>" +
+    (filtered.length > shown.length ? '<button class="btn" onclick="setMitFilter(\'limit\',' + filtered.length + ')">Show all ' + filtered.length + "</button>" : (mitFilter.limit > 120 ? '<button class="btn" onclick="setMitFilter(\'limit\',120)">Show top 120</button>' : "")) +
+    '<div style="flex:1"></div>' +
+    '<button class="btn" onclick="exportMitigations(\'md\')">⬇ Export markdown</button>' +
+    '<button class="btn" onclick="exportMitigations(\'csv\')">⬇ Export CSV</button></div></div>' +
+    '<div class="mit-table">' + shown.map(function (e) { return mitRow(e, saved[e.key] || {}); }).join("") + "</div>";
+}
+function mitRow(e, st) {
+  const fn = MIT_FUNCS.find(function (f) { return f[0] === e.func; });
+  const status = st.status || "proposed";
+  const owner = st.owner || "";
+  const stOpts = ["proposed", "in progress", "done", "accepted risk"].map(function (s) {
+    return '<option value="' + s + '"' + (status === s ? " selected" : "") + ">" + s + "</option>";
+  }).join("");
+  return '<div class="mit-row" data-key="' + escHtml(e.key) + '">' +
+    '<div class="mit-p ' + e.priority + '">' + e.priority + "</div>" +
+    '<div class="mit-main"><div class="mit-t">' + escHtml(e.text) + "</div>" +
+    '<div class="mit-m"><span class="chip" style="font-size:9px">' + fn[1] + "</span>" +
+    '<span class="muted small">' + e.freq + " cascade" + (e.freq > 1 ? "s" : "") + " · worst impact " + ({ 4: "critical", 3: "high", 2: "medium", 1: "low" }[e.impact] || "?") + " · blast " + BLAST_ORDER[e.blast] + "</span></div>" +
+    '<div class="mit-links">' + e.cascades.slice(0, 6).map(function (id) {
+      const c = casById(id); return c ? '<span class="cp-cite c" onclick="openCascade(\'' + id + '\')">' + escHtml(c.name.slice(0, 34)) + "</span>" : "";
+    }).join("") + "</div>" +
+    '<div class="mit-verify">verify: ' + escHtml(MIT_VERIFY[e.func]) + "</div></div>" +
+    '<div class="mit-side"><input class="mit-owner" placeholder="owner" value="' + escHtml(owner) + '" oninput="mitSet(\'' + escHtml(e.key) + '\',\'owner\',this.value)">' +
+    '<select class="mit-status" onchange="mitSet(\'' + escHtml(e.key) + '\',\'status\',this.value)">' + stOpts + "</select></div>" +
+    "</div>";
+}
+function mitSet(key, field, val) {
+  const m = mitLoad();
+  m[key] = m[key] || {};
+  m[key][field] = val;
+  mitSave(m);
+}
+function exportMitigations(kind) {
+  const list = buildMitigationBacklog();
+  const saved = mitLoad();
+  if (kind === "csv") {
+    const rows = [["priority", "function", "control", "cascades", "worst_impact", "blast", "owner", "status", "verification"]];
+    list.forEach(function (e) {
+      const st = saved[e.key] || {};
+      rows.push([e.priority, e.func, e.text, e.cascades.length, ({ 4: "critical", 3: "high", 2: "medium", 1: "low" }[e.impact] || ""), BLAST_ORDER[e.blast], st.owner || "", st.status || "proposed", MIT_VERIFY[e.func]]);
+    });
+    const csv = rows.map(function (r) { return r.map(function (x) { return '"' + String(x).replace(/"/g, '""') + '"'; }).join(","); }).join("\n");
+    cpDownload("mitigation-backlog.csv", csv);
+  } else {
+    let md = "# Mitigation backlog\n\n_Aggregated from " + casAll().length + " cascade records._\n\n";
+    MIT_FUNCS.forEach(function (f) {
+      const sub = list.filter(function (e) { return e.func === f[0]; });
+      if (!sub.length) return;
+      md += "## " + f[1] + " (" + sub.length + ")\n\n";
+      sub.forEach(function (e) {
+        const st = saved[e.key] || {};
+        md += "- **" + e.priority + "** " + e.text + "\n  - addresses " + e.cascades.length + " cascades · worst impact " + ({ 4: "critical", 3: "high", 2: "medium", 1: "low" }[e.impact] || "?") + " · blast " + BLAST_ORDER[e.blast] + "\n";
+        md += "  - owner: " + (st.owner || "—") + " · status: " + (st.status || "proposed") + "\n  - verification: " + MIT_VERIFY[e.func] + "\n";
+      });
+      md += "\n";
+    });
+    cpDownload("mitigation-backlog.md", md);
+  }
+}
+
 /* ---------------- propagation simulator ---------------- */
 function mulberry32(a) {
   return function () {

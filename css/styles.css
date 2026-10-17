@@ -616,3 +616,24 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 .cas-sim-cols h5 { margin: 0 0 7px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); }
 .cas-sim .bar-row { grid-template-columns: 150px 1fr 34px; }
 @media (max-width: 900px) { .cas-sim-verdict { grid-template-columns: 1fr 1fr; } .cas-sim-cols { grid-template-columns: 1fr; } }
+
+/* segmented control */
+.seg { display: inline-flex; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; margin-bottom: 12px; }
+.seg-btn { background: transparent; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; color: var(--text2); cursor: pointer; }
+.seg-btn.active { background: var(--bg3); color: var(--text); }
+.seg-btn:hover { color: var(--text); }
+
+/* mitigation planner */
+.mit-table { display: flex; flex-direction: column; gap: 8px; }
+.mit-row { display: grid; grid-template-columns: 44px 1fr 150px; gap: 12px; border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px; background: var(--bg2); align-items: start; }
+.mit-p { font-weight: 700; font-size: 12px; text-align: center; border-radius: 6px; padding: 4px 0; }
+.mit-p.P1 { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.mit-p.P2 { color: var(--orange); background: color-mix(in srgb, var(--orange) 14%, transparent); }
+.mit-p.P3 { color: var(--green); background: color-mix(in srgb, var(--green) 14%, transparent); }
+.mit-t { font-size: 12.5px; font-weight: 500; }
+.mit-m { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; margin: 5px 0; }
+.mit-links { display: flex; gap: 4px; flex-wrap: wrap; }
+.mit-verify { font-size: 10.5px; color: var(--text3); margin-top: 5px; font-family: var(--mono); }
+.mit-side { display: flex; flex-direction: column; gap: 6px; }
+.mit-side input, .mit-side select { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 4px 7px; font: inherit; font-size: 11.5px; }
+@media (max-width: 900px) { .mit-row { grid-template-columns: 40px 1fr; } .mit-side { grid-column: 2; flex-direction: row; } }
