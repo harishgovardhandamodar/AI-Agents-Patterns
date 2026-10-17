@@ -229,7 +229,7 @@ async function loadAll() {
     el("patBadge").textContent = pats.patterns.length;
     el("scnBadge").textContent = scns.scenarios.length;
     el("traceBadge").textContent = trcs.traces.length;
-    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail();
+    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {

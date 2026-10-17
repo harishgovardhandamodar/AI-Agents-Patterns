@@ -51,6 +51,7 @@ const LLM = (function () {
       const j = await r.json();
       state.models = j.models || [];
       if (j.default_model) state.defaultModel = j.default_model;
+      if (j.online === false && state.probed) { /* health is the source of truth */ }
     } catch (e) {
       state.models = [];
     }
@@ -99,8 +100,14 @@ const LLM = (function () {
     let metaSent = false;
 
     if (ct.indexOf("text/event-stream") === -1) {
-      // Non-streaming JSON fallback.
+      // JSON path: either a real non-streaming completion, or our own
+      // {ok:false,error} when no backend is reachable.
       const j = await res.json();
+      if (j && j.ok === false) {
+        state.ready = false;
+        state.lastError = j.error || "no LLM backend";
+        throw new Error(state.lastError);
+      }
       const msg = j.choices && j.choices[0] && j.choices[0].message;
       full = (msg && msg.content) || "";
       state.lastModel = j.model || null;

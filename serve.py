@@ -84,7 +84,7 @@ def _request(backend, method, path, body=None, headers=None, timeout=None, read=
     return conn, resp
 
 
-def probe(backend, timeout=2.5):
+def probe(backend, timeout=4.0):
     """Fast liveness + model-count probe. Never raises."""
     t0 = time.time()
     out = {"name": backend["name"], "url": backend["url"], "online": False}
@@ -115,13 +115,15 @@ def health():
     results = [None] * len(backends)
 
     def run(i, b):
-        results[i] = probe(b)
+        # Primary gets generous headroom (it may be warm-loading a large model);
+        # secondary backends fail fast so the status chip settles quickly.
+        results[i] = probe(b, timeout=6.0 if i == 0 else 2.5)
 
     threads = [threading.Thread(target=run, args=(i, b), daemon=True) for i, b in enumerate(backends)]
     for t in threads:
         t.start()
     for t in threads:
-        t.join(timeout=3.5)
+        t.join(timeout=6.5)
     results = [r or {"name": backends[i]["name"], "url": backends[i]["url"],
                      "online": False, "error": "timeout"} for i, r in enumerate(results)]
     active = next((r["name"] for r in results if r.get("online")), None)
@@ -195,19 +197,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     # -- llm handlers ------------------------------------------------------
     def _models(self):
+        # Always 200 so an offline backend never shows as a console error in the
+        # browser; callers inspect `online`.
         for b in _backend_list():
             try:
-                conn, resp = _request(b, "GET", "/v1/models", timeout=CONNECT_TIMEOUT)
+                conn, resp = _request(b, "GET", "/v1/models", timeout=8.0)
                 raw = resp.read()
                 conn.close()
                 if resp.status == 200:
                     data = json.loads(raw.decode("utf-8", "replace"))
                     ids = [m.get("id") for m in data.get("data", []) if isinstance(m, dict)]
-                    return self._json({"backend": b["name"], "models": ids,
+                    return self._json({"online": True, "backend": b["name"], "models": ids,
                                        "default_model": DEFAULT_MODEL})
             except Exception:
                 continue
-        return self._json({"backend": None, "models": [], "error": "no backend online"}, 503)
+        return self._json({"online": False, "backend": None, "models": [],
+                           "default_model": DEFAULT_MODEL})
 
     def _chat(self):
         raw = self._read_body()
@@ -242,7 +247,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 continue
             # Relay the upstream response verbatim (works for SSE and JSON).
             return self._relay(conn, resp, b["name"])
-        return self._json({"error": "no LLM backend online", "detail": errors}, 503)
+        # 200 with an error field: a browser-visible 5xx would log a console
+        # error, and "no model" is an expected, handled state, not a failure.
+        return self._json({"ok": False, "error": "no LLM backend online", "detail": errors})
 
     def _relay(self, conn, resp, backend_name):
         """Stream an upstream response to the client using chunked encoding."""

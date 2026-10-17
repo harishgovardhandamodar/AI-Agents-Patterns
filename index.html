@@ -21,6 +21,7 @@
 
 <div class="app-tabs" id="appTabs">
   <div class="app-tab active" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
+  <div class="app-tab" data-tab="copilot" onclick="switchTab('copilot')">🤖 Architect Copilot</div>
   <div class="app-tab" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
   <div class="app-tab" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
   <div class="app-tab" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
@@ -51,6 +52,40 @@
       </div>
     </div>
   </div>
+</section>
+
+<!-- ======================= ARCHITECT COPILOT ======================= -->
+<section class="pane" id="copilotPane">
+  <aside class="cp-rail">
+    <div class="cp-brand">
+      <div class="cp-brand-ico">🤖</div>
+      <div>
+        <div class="cp-brand-t">Architect Copilot</div>
+        <div class="cp-status" id="cpStatus">checking model…</div>
+      </div>
+    </div>
+    <h4>Model</h4>
+    <select class="search" id="cpModel" style="width:100%" onchange="cpSave()"></select>
+    <h4>Ground answers in</h4>
+    <div class="cp-scope" id="cpScope"></div>
+    <h4>Suggested questions</h4>
+    <div class="cp-suggest" id="cpSuggest"></div>
+    <div style="flex:1"></div>
+    <div class="cp-rail-foot">
+      <button class="btn" onclick="copilotNew()">＋ New</button>
+      <button class="btn" onclick="copilotExport()">⬇ Export</button>
+    </div>
+  </aside>
+  <main class="cp-main">
+    <div class="cp-log" id="cpLog"></div>
+    <div class="cp-input">
+      <textarea id="cpInput" placeholder="Describe your agent deployment… e.g. &quot;A refunds agent with Stripe tool access, 3 approvals/day, EU customers. What patterns, cascade risks and mitigations should I plan?&quot;"></textarea>
+      <div class="cp-input-side">
+        <button class="btn primary" id="cpSend" onclick="cpSend()">Send ▸</button>
+        <button class="btn" id="cpStop" onclick="copilotStop()" style="display:none">■ Stop</button>
+      </div>
+    </div>
+  </main>
 </section>
 
 <!-- ======================= PATTERNS ======================= -->
@@ -181,6 +216,8 @@
 
 <script src="js/app.js"></script>
 <script src="js/player.js"></script>
+<script src="js/llm.js"></script>
+<script src="js/copilot.js"></script>
 <script src="js/patterns.js"></script>
 <script src="js/scenarios.js"></script>
 <script src="js/live.js"></script>
