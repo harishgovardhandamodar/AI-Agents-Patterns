@@ -124,7 +124,7 @@
         "circuit-breaker",
         "trading-agent"
       ],
-      "traceId": "trace-runaway-loop"
+      "traceId": "trace-fin-trading-runaway"
     },
     {
       "id": "fin-invoice-fraud",
@@ -171,7 +171,7 @@
         "dual-control",
         "approval-gates"
       ],
-      "traceId": null
+      "traceId": "trace-fin-invoice-fraud"
     },
     {
       "id": "fin-threshold-splitting",
@@ -216,7 +216,7 @@
         "budget-guardrails",
         "quota-rate-limit"
       ],
-      "traceId": null
+      "traceId": "trace-fin-threshold-splitting"
     },
     {
       "id": "code-rm-prod",
@@ -316,7 +316,7 @@
         "egress-control",
         "least-privilege"
       ],
-      "traceId": null
+      "traceId": "trace-code-supply-chain"
     },
     {
       "id": "code-secrets-gist",
@@ -362,7 +362,7 @@
         "egress-control",
         "least-privilege"
       ],
-      "traceId": null
+      "traceId": "trace-code-secrets-gist"
     },
     {
       "id": "support-pii-echo",
@@ -455,7 +455,7 @@
         "budget-guardrails",
         "quota-rate-limit"
       ],
-      "traceId": null
+      "traceId": "trace-support-refund-social-engineering"
     },
     {
       "id": "health-dosage",
@@ -501,7 +501,7 @@
         "uncertainty-abstention",
         "provenance-citation"
       ],
-      "traceId": null
+      "traceId": "trace-health-dosage"
     },
     {
       "id": "web-hidden-injection",
@@ -605,7 +605,7 @@
         "egress-control",
         "tool-retrieval"
       ],
-      "traceId": null
+      "traceId": "trace-mcp-tool-poisoning"
     },
     {
       "id": "rag-poison",
@@ -657,7 +657,7 @@
         "rag-augmented",
         "long-term-vector-memory"
       ],
-      "traceId": null
+      "traceId": "trace-rag-poison"
     },
     {
       "id": "memory-poison",
@@ -702,7 +702,7 @@
         "long-term-vector-memory",
         "memory-consolidation"
       ],
-      "traceId": null
+      "traceId": "trace-memory-poison"
     },
     {
       "id": "infinite-loop-cost",
@@ -794,7 +794,7 @@
         "human-in-the-loop",
         "approval-gates"
       ],
-      "traceId": null
+      "traceId": "trace-approval-fatigue"
     },
     {
       "id": "infra-scale-cost",
@@ -840,7 +840,7 @@
         "budget-guardrails",
         "approval-gates"
       ],
-      "traceId": null
+      "traceId": "trace-infra-scale-cost"
     },
     {
       "id": "collusion-supervisor",
@@ -886,7 +886,7 @@
         "orchestrator-workers",
         "provenance-citation"
       ],
-      "traceId": null
+      "traceId": "trace-collusion-supervisor"
     },
     {
       "id": "procurement-seo-injection",
@@ -932,7 +932,7 @@
         "rag-poison-defense",
         "browser-agent"
       ],
-      "traceId": null
+      "traceId": "trace-procurement-seo-injection"
     },
     {
       "id": "hr-bias",
@@ -978,7 +978,7 @@
         "human-in-the-loop",
         "drift-monitoring"
       ],
-      "traceId": null
+      "traceId": "trace-hr-bias"
     },
     {
       "id": "legal-privilege-leak",
@@ -1024,7 +1024,7 @@
         "approval-gates",
         "rag-augmented"
       ],
-      "traceId": null
+      "traceId": "trace-legal-privilege-leak"
     },
     {
       "id": "research-fabricated-citation",
@@ -1070,7 +1070,7 @@
         "provenance-citation",
         "chain-of-verification"
       ],
-      "traceId": null
+      "traceId": "trace-research-fabricated-citation"
     },
     {
       "id": "marketing-brand",
@@ -1116,7 +1116,7 @@
         "approval-gates",
         "input-sanitization"
       ],
-      "traceId": null
+      "traceId": "trace-marketing-brand"
     },
     {
       "id": "sandbox-escape",
@@ -1162,7 +1162,7 @@
         "egress-control",
         "least-privilege"
       ],
-      "traceId": null
+      "traceId": "trace-sandbox-escape"
     },
     {
       "id": "vendor-spoof-rush",
@@ -1208,7 +1208,7 @@
         "approval-gates",
         "irreversible-action-confirm"
       ],
-      "traceId": null
+      "traceId": "trace-vendor-spoof-rush"
     },
     {
       "id": "iot-lockout",
@@ -1253,7 +1253,7 @@
         "irreversible-action-confirm",
         "uncertainty-abstention"
       ],
-      "traceId": null
+      "traceId": "trace-iot-lockout"
     },
     {
       "id": "voice-deepfake-approval",
@@ -1299,7 +1299,7 @@
         "agent-identity",
         "approval-gates"
       ],
-      "traceId": null
+      "traceId": "trace-voice-deepfake-approval"
     },
     {
       "id": "exfil-via-logs",
@@ -1344,7 +1344,7 @@
         "audit-logging-pattern",
         "dlp"
       ],
-      "traceId": null
+      "traceId": "trace-exfil-via-logs"
     },
     {
       "id": "drift-silent",
@@ -1390,7 +1390,7 @@
         "eval-harness-redteam",
         "shadow-agents"
       ],
-      "traceId": null
+      "traceId": "trace-drift-silent"
     },
     {
       "id": "tenant-leak",
@@ -1436,7 +1436,7 @@
         "confused-deputy-defense",
         "eval-harness-redteam"
       ],
-      "traceId": null
+      "traceId": "trace-tenant-leak"
     },
     {
       "id": "gov-misinfo",
@@ -1482,7 +1482,7 @@
         "agent-identity",
         "audit-trail"
       ],
-      "traceId": null
+      "traceId": "trace-gov-misinfo"
     },
     {
       "id": "supply-counterfeit",
@@ -1527,7 +1527,7 @@
         "procurement-agent",
         "policy-engine"
       ],
-      "traceId": null
+      "traceId": "trace-supply-counterfeit"
     },
     {
       "id": "escalation-bypass",
@@ -1573,7 +1573,7 @@
         "approval-gates",
         "eval-harness-redteam"
       ],
-      "traceId": null
+      "traceId": "trace-escalation-bypass"
     },
     {
       "id": "context-exfil-truncation",
@@ -1619,7 +1619,7 @@
         "context-compression",
         "policy-engine"
       ],
-      "traceId": null
+      "traceId": "trace-context-exfil-truncation"
     },
     {
       "id": "agent-impersonation",
@@ -1665,7 +1665,7 @@
         "least-privilege",
         "confused-deputy-defense"
       ],
-      "traceId": null
+      "traceId": "trace-agent-impersonation"
     },
     {
       "id": "eval-overfit",
@@ -1711,7 +1711,7 @@
         "red-team-pair",
         "drift-monitoring"
       ],
-      "traceId": null
+      "traceId": "trace-eval-overfit"
     },
     {
       "id": "delegation-cascade",
@@ -1757,7 +1757,7 @@
         "budget-bounded-exec",
         "orchestrator-workers"
       ],
-      "traceId": null
+      "traceId": "trace-delegation-cascade"
     },
     {
       "id": "tool-error-instruction",
@@ -1803,7 +1803,7 @@
         "function-calling",
         "approval-gates"
       ],
-      "traceId": null
+      "traceId": "trace-tool-error-instruction"
     }
   ]
 }
