@@ -327,6 +327,16 @@ html.light .btn.primary { color: #fff; }
 .log-line.lvl-ok .msg { color: var(--green); }
 .log-line .msg { color: var(--text2); word-break: break-word; }
 
+/* compact player (Guardrail Lab mock run) */
+.live-main--compact .live-body { grid-template-rows: 1fr 150px; }
+.live-main--compact .live-log .log-box { font-size: 10.5px; }
+.g-play {
+  height: 640px; display: grid; grid-template-rows: auto 1fr;
+  border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-top: 10px;
+}
+.g-play .live-ctrl { background: var(--bg); }
+@media (max-width: 1100px) { .g-play { height: auto; } }
+
 /* Trace-active mermaid node highlight */
 svg .trace-active rect, svg .trace-active polygon, svg .trace-active circle,
 svg .trace-active ellipse, svg .trace-active path {

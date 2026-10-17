@@ -105,44 +105,20 @@
 <!-- ======================= LIVE VIEW ======================= -->
 <section class="pane" id="livePane">
   <aside class="side">
-    <h4>Mock execution traces</h4>
+    <input class="search" id="traceSearch" placeholder="Search traces…  (e.g. injection, spend, prod)" oninput="onLiveSearch(this.value)">
+    <h4>Domain</h4>
+    <div id="traceDomains"></div>
+    <h4>Severity</h4>
+    <div id="traceSevs"></div>
+    <h4>Verdict</h4>
+    <div id="traceVerdicts"></div>
+    <h4>Mock execution traces <span class="chip" id="traceCount">–</span></h4>
     <div id="traceList"></div>
+    <div style="margin-top:10px"><button class="btn" onclick="resetLiveFilters()">Reset filters</button></div>
     <h4>About</h4>
-    <p class="muted small" style="padding:0 6px">Each trace replays a full agent run: control-flow diagram highlights the active node while steps, guardrail decisions, budget burn, and the event log track in sync. All data is synthetic.</p>
+    <p class="muted small" style="padding:0 6px">Every scenario in the catalog has a replayable trace: the control-flow diagram highlights the active node while steps, guardrail decisions, budget burn and the event log track in sync. Use ⤢ to enlarge any diagram with zoom. All data is synthetic.</p>
   </aside>
-  <div class="live-main">
-    <div class="live-ctrl">
-      <button class="btn primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
-      <button class="btn" onclick="stepTrace(1)">⏭ Step</button>
-      <button class="btn" onclick="stepTrace(-1)">⏮ Back</button>
-      <button class="btn" onclick="resetTrace()">↺ Reset</button>
-      <select class="search" style="width:auto" id="traceSpeed" onchange="onSpeedChange()">
-        <option value="1200">slow</option>
-        <option value="700" selected>normal</option>
-        <option value="300">fast</option>
-        <option value="80">turbo</option>
-      </select>
-      <div style="flex:1"></div>
-      <span class="verdict" id="traceVerdict"></span>
-      <span class="muted small mono" id="traceTitle"></span>
-    </div>
-    <div class="live-body">
-      <div class="live-flow panel" id="liveFlow">
-        <div class="diagram-wrap" id="liveFlowWrap"></div>
-      </div>
-      <div class="live-side">
-        <div class="gauges" id="liveGauges"></div>
-        <div class="panel" style="flex:1;display:grid;grid-template-rows:auto 1fr;min-height:0">
-          <h3>Step tracker</h3>
-          <div class="step-list" id="stepList"></div>
-        </div>
-      </div>
-      <div class="live-log">
-        <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin:0 0 6px">Event log</h3>
-        <div class="log-box" id="logBox"></div>
-      </div>
-    </div>
-  </div>
+  <div class="live-main" id="livePlayer"></div>
 </section>
 
 <!-- ======================= DESIGN & ARCHITECTURE ======================= -->
@@ -204,6 +180,7 @@
 </div>
 
 <script src="js/app.js"></script>
+<script src="js/player.js"></script>
 <script src="js/patterns.js"></script>
 <script src="js/scenarios.js"></script>
 <script src="js/live.js"></script>

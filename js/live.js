@@ -1,135 +1,90 @@
-/* live.js — control-flow playback + tracking for mock execution traces */
+/* live.js — Live View: an exhaustive, filterable library of replayable
+   execution traces (one per scenario) driven by the shared LivePlayer. */
 "use strict";
 
-const live = { trace: null, step: -1, playing: false, timer: null, speed: 700 };
+const liveState = { q: "", domains: new Set(), sevs: new Set(), verdicts: new Set(), byScenario: {} };
+let livePlayer = null;
 
 function initLive() {
-  const T = DATA.traces;
-  el("traceList").innerHTML = T.traces.map(t => `
-    <div class="trace-item" id="ti-${t.id}" onclick="loadTrace('${t.id}')">
-      <div class="t">${escHtml(t.name.split(" — ")[1] || t.name)}</div>
-      <div class="m">${t.metrics.steps} steps · ${fmtUsd(t.metrics.costUsd)} tokens · ${escHtml(t.verdict)}</div>
-    </div>`).join("");
-  loadTrace(T.traces[0].id);
+  const all = DATA.traces.traces;
+  liveState.byScenario = {};
+  DATA.scenarios.scenarios.forEach(s => { liveState.byScenario[s.id] = s; });
+
+  const domains = uniq(all.map(t => traceDomain(t))).sort();
+  el("traceDomains").innerHTML = domains.map(d => `
+    <label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" onchange="onLiveFilter(this,'domains')">
+    ${escHtml(d)}<span class="cnt">${all.filter(t => traceDomain(t) === d).length}</span></label>`).join("");
+
+  const sevs = ["critical", "high", "medium"];
+  el("traceSevs").innerHTML = sevs.map(sv => `
+    <label class="filter-item"><input type="checkbox" data-sev="${sv}" onchange="onLiveFilter(this,'sevs')">
+    <span class="sev-dot sev-${sv}"></span>${sv}<span class="cnt">${all.filter(t => traceSeverity(t) === sv).length}</span></label>`).join("");
+
+  el("traceVerdicts").innerHTML = ["blocked", "degraded", "allowed"].map(v => `
+    <label class="filter-item"><input type="checkbox" data-ver="${v}" onchange="onLiveFilter(this,'verdicts')">
+    <span class="verdict ${v}">${v}</span><span class="cnt">${all.filter(t => t.verdict === v).length}</span></label>`).join("");
+
+  livePlayer = LivePlayer(el("livePlayer"), { speed: 700 });
+  renderTraceList();
+  loadTrace(all[0].id);
+}
+
+function traceScenario(t) { return t.scenarioId ? liveState.byScenario[t.scenarioId] : null; }
+function traceDomain(t) {
+  const s = traceScenario(t);
+  if (s) return s.domain;
+  const m = String(t.name).match(/^([A-Za-z0-9-]+) agent/);
+  return m ? m[1].toLowerCase() : "general";
+}
+function traceSeverity(t) { const s = traceScenario(t); return s ? s.severity : "medium"; }
+function traceLabel(t) { return String(t.name).split(" — ").slice(1).join(" — ") || t.name; }
+
+function onLiveFilter(inp, key) {
+  const val = inp.dataset.dom || inp.dataset.sev || inp.dataset.ver;
+  inp.checked ? liveState[key].add(val) : liveState[key].delete(val);
+  renderTraceList();
+}
+function onLiveSearch(v) { liveState.q = v.trim().toLowerCase(); renderTraceList(); }
+function resetLiveFilters() {
+  liveState.domains.clear(); liveState.sevs.clear(); liveState.verdicts.clear(); liveState.q = "";
+  document.querySelectorAll("#livePane .side input[type=checkbox]").forEach(i => i.checked = false);
+  el("traceSearch").value = "";
+  renderTraceList();
+}
+
+function renderTraceList() {
+  const all = DATA.traces.traces;
+  const list = all.filter(t => {
+    if (liveState.domains.size && !liveState.domains.has(traceDomain(t))) return false;
+    if (liveState.sevs.size && !liveState.sevs.has(traceSeverity(t))) return false;
+    if (liveState.verdicts.size && !liveState.verdicts.has(t.verdict)) return false;
+    if (liveState.q) {
+      const s = traceScenario(t);
+      const hay = (t.name + " " + t.id + " " + (t.summary || "") + " " +
+        (s ? s.title + " " + s.vector + " " + s.domain : "")).toLowerCase();
+      if (!hay.includes(liveState.q)) return false;
+    }
+    return true;
+  });
+  el("traceCount").textContent = list.length + " / " + all.length;
+  el("traceList").innerHTML = list.map(t => `
+    <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" data-tid="${escHtml(t.id)}" onclick="loadTrace('${t.id}')">
+      <div class="t">${escHtml(traceLabel(t))}</div>
+      <div class="m"><span class="verdict ${t.verdict}">${t.verdict}</span> ${escHtml(traceDomain(t))} · ${t.metrics.steps} steps · ${escHtml(traceSeverity(t))}</div>
+    </div>`).join("") || `<p class="muted small" style="padding:0 6px">No traces match the current filters.</p>`;
 }
 
 function loadTrace(id) {
-  stopPlay();
   const t = DATA.traces.traces.find(x => x.id === id);
   if (!t) return;
-  live.trace = t;
-  live.step = -1;
-  document.querySelectorAll(".trace-item").forEach(i => i.classList.remove("active"));
-  const ti = el("ti-" + id); if (ti) ti.classList.add("active");
-  el("traceVerdict").className = "verdict " + t.verdict;
-  el("traceVerdict").textContent = t.verdict;
-  el("traceTitle").textContent = t.name;
-  // flow diagram
-  el("liveFlowWrap").innerHTML =
-    `<button class="design-expand" onclick="openZoom(this)">⤢ enlarge</button><pre class="mermaid" data-src="${escHtml(t.flow)}">${escHtml(t.flow)}</pre>`;
-  // re-apply highlight once the flow SVG actually exists (mermaid render is async)
-  Promise.resolve(mmRenderAll(el("liveFlowWrap"))).then(() => paintStep()).catch(() => {});
-  // gauges
-  renderGauges();
-  // step list (all steps, dimmed until reached)
-  el("stepList").innerHTML = t.steps.map((s, i) => `
-    <div class="step-row" id="sr-${i}">
-      <span class="n">${s.n}</span>
-      <span class="tt tt-${s.t}">${s.t}</span>
-      <span class="ti"><b>${escHtml(s.title)}</b><br><span class="muted">${escHtml(s.detail)}</span>
-      <br><span class="small mono muted">${s.latencyMs >= 60000 ? (s.latencyMs / 60000).toFixed(1) + " min" : s.latencyMs + " ms"}${s.tokens ? " · " + s.tokens + " tok" : ""}</span></span>
-    </div>`).join("");
-  el("logBox").innerHTML = `<div class="log-line"><span class="ts">--:--</span><span class="msg muted">press Play or Step to begin replay…</span></div>`;
-  // clear previous highlight classes
-  el("liveFlowWrap").querySelectorAll("svg .node").forEach(n => n.classList.remove("trace-active", "trace-past"));
-}
-
-function renderGauges() {
-  const t = live.trace; if (!t) return;
-  const m = t.metrics;
-  const done = Math.max(0, live.step + 1);
-  const frac = done / t.steps.length;
-  const cost = (m.costUsd * frac);
-  const tok = Math.round((m.tokensIn + m.tokensOut) * frac);
-  const steps = done;
-  const guardrailHits = t.steps.slice(0, done).filter(s => s.t === "guardrail").length;
-
-  const pct = (v, max) => Math.min(100, 100 * v / max);
-  el("liveGauges").innerHTML = `
-    <div class="gauge ${frac >= .8 ? "warn" : ""}"><div class="k">Steps</div><div class="v">${steps} / ${t.steps.length}</div><div class="track"><div class="fill" style="width:${100 * frac}%"></div></div></div>
-    <div class="gauge ${cost / m.budgetUsd >= .8 ? "crit" : cost / m.budgetUsd >= .6 ? "warn" : ""}"><div class="k">Token cost (budget ${fmtUsd(m.budgetUsd)})</div><div class="v">${fmtUsd(cost)}</div><div class="track"><div class="fill" style="width:${pct(cost, m.budgetUsd)}%"></div></div></div>
-    <div class="gauge"><div class="k">Tokens used</div><div class="v">${tok.toLocaleString()}</div><div class="track"><div class="fill" style="width:${100 * frac}%"></div></div></div>
-    <div class="gauge ${m.spendBlockedUsd > 0 && frac >= .7 ? "crit" : ""}"><div class="k">Spend attempted</div><div class="v">${frac >= .5 ? fmtUsd(m.spendAttemptedUsd) : "—"}</div><div class="track"><div class="fill" style="width:${frac >= .5 ? 100 : 0}%"></div></div></div>
-    <div class="gauge"><div class="k">Tool calls</div><div class="v">${t.steps.slice(0, done).filter(s => s.t === "tool").length} / ${m.toolCalls}</div><div class="track"><div class="fill" style="width:${100 * frac}%"></div></div></div>
-    <div class="gauge ${guardrailHits > 0 ? "warn" : ""}"><div class="k">Guardrail events</div><div class="v">${guardrailHits}</div><div class="track"><div class="fill" style="width:${pct(guardrailHits, Math.max(1, m.guardrailHits))}%;background:var(--red)"></div></div></div>`;
-}
-
-function stepTrace(dir) {
-  const t = live.trace; if (!t) return;
-  const next = live.step + dir;
-  if (next < -1 || next >= t.steps.length) { if (dir > 0) stopPlay(); return; }
-  live.step = next;
-  paintStep();
-}
-
-function paintStep() {
-  const t = live.trace; if (!t) return;
-  // step rows
-  t.steps.forEach((s, i) => {
-    const row = el("sr-" + i);
-    if (!row) return;
-    row.classList.toggle("done", i < live.step);
-    row.classList.toggle("current", i === live.step);
+  const s = traceScenario(t);
+  document.querySelectorAll(".trace-item").forEach(i => i.classList.toggle("active", i.dataset.tid === id));
+  livePlayer.load({
+    id: t.id,
+    title: traceLabel(t) + (s ? "  ·  " + s.domain + " · " + s.severity : ""),
+    verdict: t.verdict, verdictClass: t.verdict,
+    flow: t.flow, steps: t.steps, events: t.events, metrics: t.metrics,
   });
-  const cur = el("sr-" + live.step);
-  if (cur) cur.scrollIntoView({ block: "nearest", behavior: "smooth" });
-  // flow highlight
-  const nodes = el("liveFlowWrap").querySelectorAll("svg .node");
-  nodes.forEach(n => { n.classList.remove("trace-active"); n.classList.toggle("trace-past", stepIndexOfNode(n) < live.step); });
-  if (live.step >= 0) {
-    const nodeId = t.steps[live.step].node;
-    nodes.forEach(n => { if (nodeMatches(n, nodeId)) n.classList.add("trace-active"); });
-  }
-  // log: show all events up to this step (map events to steps by order)
-  const evCount = Math.ceil(t.events.length * (live.step + 1) / t.steps.length);
-  el("logBox").innerHTML = t.events.slice(0, Math.max(0, evCount)).map(e =>
-    `<div class="log-line lvl-${e.level}"><span class="ts">${escHtml(e.ts)}</span><span class="msg">${escHtml(e.msg)}</span></div>`).join("") ||
-    `<div class="log-line"><span class="ts">--:--</span><span class="msg muted">replay not started</span></div>`;
-  el("logBox").scrollTop = el("logBox").scrollHeight;
-  renderGauges();
 }
 
-/* mermaid node ids are like "flowchart-N_intake-3"; match by our id as a whole token */
-function nodeMatches(nodeEl, ourId) {
-  const id = nodeEl.id || "";
-  return id.startsWith("flowchart-" + ourId + "-") || id === "flowchart-" + ourId ||
-    id.includes("-" + ourId + "-") || id.endsWith("-" + ourId);
-}
-function stepIndexOfNode(nodeEl) {
-  const t = live.trace; if (!t) return -1;
-  const idx = t.steps.findIndex(s => nodeMatches(nodeEl, s.node));
-  return idx;
-}
-
-function togglePlay() { live.playing ? stopPlay() : startPlay(); }
-function startPlay() {
-  if (!live.trace) return;
-  if (live.step >= live.trace.steps.length - 1) { live.step = -1; paintStep(); }
-  live.playing = true;
-  el("btnPlay").textContent = "⏸ Pause";
-  live.timer = setInterval(() => {
-    if (live.step >= live.trace.steps.length - 1) { stopPlay(); return; }
-    stepTrace(1);
-  }, live.speed);
-}
-function stopPlay() {
-  live.playing = false;
-  clearInterval(live.timer);
-  const b = el("btnPlay"); if (b) b.textContent = "▶ Play";
-}
-function resetTrace() { stopPlay(); live.step = -1; paintStep(); }
-function onSpeedChange() {
-  live.speed = parseInt(el("traceSpeed").value, 10);
-  if (live.playing) { stopPlay(); startPlay(); }
-}
-tabLoaders.live = () => { /* already loaded in init */ };
+tabLoaders.live = () => { /* loaded during init */ };

@@ -56,7 +56,7 @@ A server is needed only because the Design tab fetches `design/*.md`; `file://` 
 | **Overview** | Totals, patterns-per-category, scenarios-by-severity, domain coverage, and a "how defenses stack" view of protection layers. |
 | **Patterns** | The catalog: **107 design patterns** across 9 categories, each with how it works, components, failure modes, protections, related patterns, and a control-flow diagram (32 diagrams; every pattern also gets its category diagram). Filter by category, domain, or "has diagram / has failures". |
 | **Scenarios** | **38 failure scenarios** across 15 domains (12 critical / 18 high / 8 medium). Each opens to the attack chain, protection table, detection signals, incident response, and links to a replayable mock run. |
-| **Live View** | Replays one of **6 mock execution traces**: the control-flow diagram highlights the active node while the step tracker, budget/cost/token gauges, guardrail counters, and event log advance in sync. Play / step / back / reset with adjustable speed. |
+| **Live View** | An exhaustive, filterable library of **39 mock execution traces — one for every scenario** (plus the flagship approved path). The control-flow diagram highlights the active node while the step tracker, budget/cost/token gauges, guardrail counters, and event log advance in sync. Play / step / back / reset with adjustable speed; filter by domain, severity, verdict or free text. |
 | **Design & Architecture** | UML & architecture documents with live Mermaid: system context, component/class UML, control flow & runtime, financial guardrail architecture, data model (ER), and threat model. Rail + scroll-spy outline + source toggle + zoom viewer (wheel zoom, drag pan, ←/→ step). |
 | **Guardrail Lab** | Type any agent idea and it is analyzed into a full design (see below). Every analysis is saved to a collection in `localStorage` and exportable as JSON. |
 
@@ -75,7 +75,7 @@ Paste a request such as:
 3. **Design proposals** — tiered options (baseline gateway → two-key execution → zero-trust context pipeline → capability-scoped sandboxes) with pros/cons and a recommendation matched to the risk level.
 4. **Guardrail architecture** — a Mermaid diagram of the actual enforcement points for this request.
 5. **Reference control set** — a table of concrete controls with their layer, enforcement mode, and rationale.
-6. **Mock run with data** — a synthetic replay of the *attack path* (blocked) and the *legitimate path* (approved), with steps, event log, and outcome metrics.
+6. **Mock run with data — a live replay** — the attack path (blocked) and the legitimate path (approved) played back through the same player as the Live View: control-flow highlighting, step tracker, gauges and streaming event log, driven by a **Play / step / back / reset** control bar. Outcome metrics are shown alongside.
 7. **Rollout plan** — instrument → shadow → ramp → continuous red-teaming, with success criteria.
 
 A **seeded example** (the corporate-card scenario above) ships in the collection so the flow is visible on first load. Five one-click example requests are provided (card spend, prod-access coding agent, auto-emailing support agent, clinical triage, autonomous trading).
@@ -104,14 +104,15 @@ Outcome in the mock run: attempted $50,000 → **denied at the policy gateway, c
 index.html                 single-page shell (tabs + panes + overlays)
 css/styles.css             GitHub-dark palette via CSS custom properties; light theme
 js/app.js                  shell: tabs, theme, data load, Mermaid queue, zoom viewer, drawer
+js/player.js               reusable playback widget (Live View + Guardrail Lab)
 js/patterns.js             Overview tab + Patterns catalog
 js/scenarios.js            Scenarios catalog + detail drawer
-js/live.js                 trace playback engine (play/step/highlight/gauges/log)
+js/live.js                 trace library (filters) driving the player
 js/design.js               markdown renderer + Design & Architecture tab
-js/guardrail.js            Guardrail Lab rule engine + collection
+js/guardrail.js            Guardrail Lab rule engine + collection + replay
 data/patterns.json         107 patterns, categories, category diagrams
 data/scenarios.json        38 scenarios (attack chains, protections, detection, response)
-data/traces.json           6 mock execution traces (flow + steps + events + metrics)
+data/traces.json           39 mock execution traces — one per scenario + the approved path
 design/*.md                6 UML/architecture docs (24 Mermaid diagrams total)
 serve.py                   thin static server
 Dockerfile                 image: python:3.12-slim, non-root, read-only, healthcheck
@@ -121,7 +122,7 @@ tailscale/serve.json       Tailscale Serve config for the sidecar deployment
 .env.example               APP_PORT, TS_AUTHKEY, TS_HOSTNAME
 ```
 
-Load order matters and is fixed in `index.html`: `app.js` defines the shell (`switchTab`, `mmRender`, `openDetail`, `openZoom`, the `tabLoaders` registry), then each tab module registers its `init*` and `tabLoaders` entry.
+Load order matters and is fixed in `index.html`: `app.js` defines the shell (`switchTab`, `mmRender`, `openDetail`, `openZoom`, the `tabLoaders` registry), `player.js` defines the reusable `LivePlayer` widget, then each tab module registers its `init*` and `tabLoaders` entry.
 
 ## Design notes
 
@@ -134,7 +135,7 @@ Load order matters and is fixed in `index.html`: `app.js` defines the shell (`sw
 
 - **Add a pattern:** append to `data/patterns.json` `patterns[]` with a `cat` from `categories[]`; optional `diagram` is Mermaid source (use `"double quotes"` around labels containing parentheses).
 - **Add a scenario:** append to `data/scenarios.json`; set `traceId` to link a mock run.
-- **Add a trace:** append to `data/traces.json`; give each step a `node` matching a node id in `flow`, and keep node ids non-overlapping.
+- **Add a trace:** append to `data/traces.json`; give each step a `node` matching a node id in `flow`, and keep node ids non-overlapping (zero-pad numeric ids, e.g. `N01`, `N02`, so `N1` never matches inside `N10`).
 - **Add a design doc:** add the file under `design/` and register it in `DESIGN_DOCS` at the top of `js/app.js`.
 
 All datasets are plain JSON, versioned, and diffable. There are no hidden defaults — a missing field renders as absent, never as a silently-chosen value.

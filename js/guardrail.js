@@ -58,6 +58,7 @@ function exportCollection() {
 }
 
 function showGuardIntro() {
+  killGuardPlayer();
   el("guardMain").innerHTML = `
     <div class="g-input-box">
       <h3 style="margin:0 0 8px;font-size:13px">Describe the agent you're building (or the risk you're worried about)</h3>
@@ -97,6 +98,7 @@ function fillExample(i) { el("guardInput").value = EXAMPLES[i]; el("guardInput")
 function submitGuard() {
   const txt = el("guardInput").value.trim();
   if (!txt) { showNotif("Describe your agent first"); return; }
+  killGuardPlayer();
   el("guardMain").innerHTML = `<div class="thinking"><div class="spinner"></div>Analyzing request · detecting action classes · matching threat patterns · designing guardrails…</div>`;
   setTimeout(() => {
     const item = analyzeRequest(txt, "user");
@@ -309,7 +311,7 @@ function buildMockRun(text, cls, signals, tier) {
   let n = 0;
   const push = (t, title, detail, status, node) => {
     n++;
-    const id = "N" + n;
+    const id = "N" + String(n).padStart(2, "0");
     steps.push({ n, t, title, detail, status, node: id, latencyMs: Math.round(50 + Math.random() * (t === "human" ? 30000 : 2500)), tokens: t === "agent" ? Math.round(400 + Math.random() * 2000) : 0 });
     events.push({ ts: "T+" + (n * 0.4).toFixed(1) + "s", level: status === "block" ? "block" : status === "warn" ? "warn" : "info", msg: title + " — " + detail.slice(0, 110) });
     return id;
@@ -355,7 +357,19 @@ function buildMockRun(text, cls, signals, tier) {
   link(done);
 
   const flow = ["flowchart TB", ...lines].join("\n");
+  const tokensIn = steps.reduce((s, x) => s + x.tokens, 0);
   return { verdict: "blocked-then-approved", flow, steps, events,
+    metrics: {
+      durationMs: steps.reduce((s, x) => s + x.latencyMs, 0),
+      steps: steps.length,
+      tokensIn, tokensOut: 0,
+      costUsd: +(tokensIn / 1e6 * 6).toFixed(2),
+      budgetUsd: 25,
+      toolCalls: steps.filter(s => s.t === "tool").length,
+      guardrailHits: steps.filter(s => s.t === "guardrail" && s.status !== "ok").length,
+      spendAttemptedUsd: has("effect.value") ? 50000 : 0,
+      spendBlockedUsd: has("effect.value") ? 50000 : 0
+    },
     data: {
       attackAttempted: has("effect.value") ? "$50,000 to unvetted vendor 'AcmeCloud-Urgent'" : "unauthorized flagged action",
       attackOutcome: "DENIED at policy gateway — $0 / no effect",
@@ -379,7 +393,11 @@ function buildRollout(tier, nControls) {
 }
 
 /* ---------------- report rendering ---------------- */
+let guardPlayer = null;
+function killGuardPlayer() { if (guardPlayer) { guardPlayer.destroy(); guardPlayer = null; } }
+
 function renderGuardReport(it) {
+  killGuardPlayer();
   const m = it.meta;
   const sevColor = m.tier === "CRITICAL" ? "var(--red)" : m.tier === "HIGH" ? "var(--orange)" : m.tier === "MEDIUM" ? "var(--accent)" : "var(--green)";
   const badge = it.proposals.some(p => p.recommended) ? "" : "";
@@ -424,7 +442,7 @@ function renderGuardReport(it) {
 
     <div class="g-sec">
       <h3>4 · Guardrail architecture (enforcement points)</h3>
-      ${diagramHtml(it.architecture, "architecture")}
+      <div id="guardArch-${it.id}">${diagramHtml(it.architecture, "architecture")}</div>
     </div>
 
     <div class="g-sec">
@@ -436,8 +454,8 @@ function renderGuardReport(it) {
     </div>
 
     <div class="g-sec">
-      <h3>6 · Mock run with data</h3>
-      <p class="muted small">Synthetic replay of the <b>attack path</b> (blocked by the design above) and the <b>legitimate path</b> (approved and executed). Verdict: <b>${escHtml(it.mockRun.verdict)}</b></p>
+      <h3>6 · Mock run with data — live replay</h3>
+      <p class="muted small">Synthetic replay of the <b>attack path</b> (blocked by the design above) and the <b>legitimate path</b> (approved and executed). Verdict: <b>${escHtml(it.mockRun.verdict)}</b> — press <b>Play</b> to watch the control flow, or step through it one node at a time.</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px">
         <div class="gauge"><div class="k">Attack outcome</div><div class="v st-block" style="font-size:12px">${escHtml(it.mockRun.data.attackOutcome)}</div></div>
         <div class="gauge"><div class="k">Attack target</div><div class="v" style="font-size:12px">${escHtml(it.mockRun.data.attackAttempted)}</div></div>
@@ -446,20 +464,21 @@ function renderGuardReport(it) {
         <div class="gauge"><div class="k">Tokens spent</div><div class="v" style="font-size:12px">${it.mockRun.data.tokensSpent.toLocaleString()}</div></div>
         <div class="gauge"><div class="k">Legit outcome</div><div class="v st-ok" style="font-size:12px">${escHtml(it.mockRun.data.legitimateOutcome)}</div></div>
       </div>
-      ${diagramHtml(it.mockRun.flow, "mock-run")}
-      <table class="tbl">
-        <tr><th>#</th><th>Stage</th><th>Status</th><th>Detail</th></tr>
-        ${it.mockRun.steps.map(s => `<tr><td class="mono">${s.n}</td><td>${escHtml(s.title)}<br><span class="muted small">${s.t}</span></td><td class="st-${s.status}">${s.status}</td><td>${escHtml(s.detail)}</td></tr>`).join("")}
-      </table>
-      <h4 style="margin:14px 0 6px;font-size:11px;color:var(--text3);text-transform:uppercase">Event log</h4>
-      <div class="log-box">${it.mockRun.events.map(e => `<div class="log-line lvl-${e.level}"><span class="ts">${escHtml(e.ts)}</span><span class="msg">${escHtml(e.msg)}</span></div>`).join("")}</div>
+      <div class="g-play" id="guardPlayer-${it.id}"></div>
     </div>
 
     <div class="g-sec">
       <h3>7 · Rollout plan</h3>
       <ul>${it.rollout.map(r => `<li>${r}</li>`).join("")}</ul>
     </div>`;
-  mmRenderAll(el("guardMain"));
+  mmRenderAll(el("guardArch-" + it.id));
+  guardPlayer = LivePlayer(el("guardPlayer-" + it.id), { compact: true, speed: 900 });
+  guardPlayer.load({
+    id: it.id,
+    title: it.meta.domain + " · synthetic replay · " + it.meta.tier,
+    verdict: "blocked", verdictClass: "blocked", verdictText: it.mockRun.verdict,
+    flow: it.mockRun.flow, steps: it.mockRun.steps, events: it.mockRun.events, metrics: it.mockRun.metrics,
+  });
   el("guardMain").scrollTop = 0;
 }
 tabLoaders.guard = () => {};
