@@ -1,0 +1,42 @@
+# AI Agent Patterns & Guardrails — default deployment.
+#
+#   docker compose up -d --build
+#
+# The dashboard is published on 0.0.0.0:5175, so it is reachable from:
+#   * your LAN        ->  http://<host-lan-ip>:5175
+#   * your Tailscale  ->  http://<host-tailscale-ip>:5175
+#                         http://<host-name>.<tailnet>.ts.net:5175
+#
+# (This rides on the host's existing Tailscale connection — no auth key needed.
+#  For a *dedicated* Tailscale node with its own HTTPS URL, use instead:
+#      docker compose -f docker-compose.tailscale.yml up -d --build )
+#
+# Override the published port with APP_PORT in a .env file (see .env.example).
+
+name: ai-agent-patterns
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: ai-agent-patterns:latest
+    container_name: ai-agent-patterns
+    ports:
+      - "0.0.0.0:${APP_PORT:-5175}:8080"
+    environment:
+      PORT: "8080"
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8080/', timeout=3).status == 200 else 1)"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
