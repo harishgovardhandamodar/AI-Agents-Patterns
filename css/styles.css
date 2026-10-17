@@ -123,6 +123,13 @@ button { font: inherit; color: inherit; }
 .bar-row .lbl { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-track { background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden; }
 .bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+.bar-fill.inherent { background: var(--accent); }
+.bar-fill.emergent { background: var(--teal); }
+.bar-fill.derived { background: var(--orange); }
+.bar-fill.cascading { background: var(--purple); }
+.bar-fill.hot { background: var(--red); }
+#casOverview .bar-row { grid-template-columns: 116px 1fr 30px; }
+#casOverview h3 { margin: 0 0 8px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); }
 .bar-row .n { text-align: right; color: var(--text2); font-family: var(--mono); font-size: 11px; }
 .sev-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
 .sev-critical { background: var(--red); } .sev-high { background: var(--orange); }

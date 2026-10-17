@@ -53,8 +53,56 @@ function resetCasFilters() {
   renderCascadeList();
 }
 
+/* ---------------- propagation diagram ---------------- */
+function casLabel(s, n) {
+  s = String(s == null ? "" : s).replace(/\s+/g, " ").replace(/"/g, "'").replace(/[<>]/g, "");
+  return s.length > (n || 64) ? s.slice(0, (n || 64) - 1) + "…" : s;
+}
+function casDiagram(c) {
+  const path = c.path || [];
+  if (!path.length) return "";
+  const lines = ["flowchart TB"];
+  path.forEach(function (s, i) {
+    const tag = i === 0 ? "⚠ " : (i === path.length - 1 ? "◉ " : "");
+    lines.push('  N' + String(i + 1).padStart(2, "0") + '["' + tag + casLabel(s) + '"]');
+  });
+  const amps = (c.amplifiers || []).slice();
+  for (let i = 0; i < path.length - 1; i++) {
+    const a = amps.length ? amps[i % amps.length] : "";
+    lines.push("  N" + String(i + 1).padStart(2, "0") + " -->" + (a ? '|"' + casLabel(a, 40) + '"|' : "") + " N" + String(i + 2).padStart(2, "0"));
+  }
+  return lines.join("\n");
+}
+
+/* ---------------- distribution overview ---------------- */
+function renderCasOverview() {
+  const box = el("casOverview");
+  if (!box) return;
+  const all = casAll();
+  const byCls = {}, byBlast = {}, byDom = {};
+  all.forEach(function (c) {
+    byCls[c.cls] = (byCls[c.cls] || 0) + 1;
+    byBlast[c.blastRadius] = (byBlast[c.blastRadius] || 0) + 1;
+    byDom[casDomain(c)] = (byDom[casDomain(c)] || 0) + 1;
+  });
+  const bar = function (label, n, cls) {
+    const pct = Math.round(100 * n / all.length);
+    return '<div class="bar-row"><span class="lbl">' + escHtml(label) + '</span>' +
+      '<span class="bar-track"><span class="bar-fill ' + (cls || "") + '" style="width:' + pct + '%"></span></span>' +
+      '<span class="n">' + n + "</span></div>";
+  };
+  box.innerHTML =
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">' +
+    "<div><h3 style='margin-bottom:8px'>By class</h3>" +
+    CAS_CLASSES.map(function (c) { return bar(c[1], byCls[c[0]] || 0, c[0]); }).join("") + "</div>" +
+    "<div><h3 style='margin-bottom:8px'>By blast radius</h3>" +
+    BLAST_ORDER.filter(function (b) { return byBlast[b]; }).map(function (b) { return bar(b, byBlast[b], casBlastRank({ blastRadius: b }) >= 4 ? "hot" : ""); }).join("") +
+    "</div></div>";
+}
+
 function initCascades() {
   buildCasFilters();
+  renderCasOverview();
   renderCascadeList();
 }
 function buildCasFilters() {
@@ -154,7 +202,8 @@ function openCascade(id) {
     "<p>" + escHtml(c.summary) + "</p>" +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Trigger</h4>' +
     "<p>" + escHtml(c.trigger) + "</p>" +
-    '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Propagation path</h4>' +
+    '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Propagation</h4>' +
+    (casDiagram(c) ? diagramHtml(casDiagram(c), "propagation") : "") +
     '<ul class="cas-path">' + (c.path || []).map(function (s) { return "<li>" + escHtml(s) + "</li>"; }).join("") + "</ul>" +
     ((c.amplifiers || []).length ? '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">What makes it worse</h4><ul>' +
       c.amplifiers.map(function (a) { return "<li>" + escHtml(a) + "</li>"; }).join("") + "</ul>" : "") +
