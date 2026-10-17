@@ -24,6 +24,7 @@
   <div class="app-tab" data-tab="copilot" onclick="switchTab('copilot')">🤖 Architect Copilot</div>
   <div class="app-tab" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
   <div class="app-tab" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
+  <div class="app-tab" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
   <div class="app-tab" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
   <div class="app-tab" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
   <div class="app-tab" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
@@ -138,6 +139,35 @@
   </div>
 </section>
 
+<!-- ======================= CASCADES ======================= -->
+<section class="pane" id="cascadesPane">
+  <aside class="side">
+    <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" oninput="casState.q=this.value.trim().toLowerCase();renderCascadeList()">
+    <h4>Cascade class</h4>
+    <div id="casClasses" class="cas-legend"></div>
+    <h4>Domain</h4>
+    <div id="casDomains"></div>
+    <h4>Blast radius</h4>
+    <div id="casBlast"></div>
+    <div style="margin-top:10px"><button class="btn" onclick="resetCasFilters()">Reset filters</button></div>
+    <h4>Why four classes?</h4>
+    <p class="muted small" style="padding:0 6px">Inherent failures live in one part; emergent ones only exist when parts interact; derived ones are the necessary consequence chain; cascading ones cross a boundary and amplify. They need different tests and different controls — see <a href="#" onclick="switchTab('design');return false;">Design → Architect Value Map</a>.</p>
+  </aside>
+  <main class="main">
+    <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+      <span class="muted small" id="casCount"></span>
+      <div style="flex:1"></div>
+      <select class="search" style="width:auto" id="casSort" onchange="casState.sort=this.value;renderCascadeList()">
+        <option value="impact">sort: impact</option>
+        <option value="blast">sort: blast radius</option>
+        <option value="class">sort: class</option>
+        <option value="name">sort: name</option>
+      </select>
+    </div>
+    <div class="card-grid" id="casGrid"></div>
+  </main>
+</section>
+
 <!-- ======================= LIVE VIEW ======================= -->
 <section class="pane" id="livePane">
   <aside class="side">
@@ -222,6 +252,7 @@
 <script src="js/copilot.js"></script>
 <script src="js/patterns.js"></script>
 <script src="js/scenarios.js"></script>
+<script src="js/cascades.js"></script>
 <script src="js/live.js"></script>
 <script src="js/design.js"></script>
 <script src="js/guardrail.js"></script>

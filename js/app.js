@@ -5,7 +5,7 @@
 "use strict";
 
 /* ---------------- global data ---------------- */
-let DATA = { patterns: null, scenarios: null, traces: null };
+let DATA = { patterns: null, scenarios: null, traces: null, cascades: null };
 const DESIGN_DOCS = [
   { id: "01-system-context", file: "design/01-system-context.md", title: "System Context", group: "Architecture", answers: "What the system is, its actors and trust boundaries" },
   { id: "02-uml", file: "design/02-uml.md", title: "UML — Components & Classes", group: "Architecture", answers: "Static structure: components, classes, interfaces" },
@@ -223,13 +223,16 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeDetail(
 async function loadAll() {
   const get = async p => (await fetch(p)).json();
   try {
-    const [pats, scns, trcs] = await Promise.all([get("data/patterns.json"), get("data/scenarios.json"), get("data/traces.json")]);
-    DATA = { patterns: pats, scenarios: scns, traces: trcs };
-    el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces`;
+    const [pats, scns, trcs, cass] = await Promise.all([
+      get("data/patterns.json"), get("data/scenarios.json"), get("data/traces.json"), get("data/cascades.json")
+    ]);
+    DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: cass };
+    el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces · ${cass.cascades.length} cascades`;
     el("patBadge").textContent = pats.patterns.length;
     el("scnBadge").textContent = scns.scenarios.length;
     el("traceBadge").textContent = trcs.traces.length;
-    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot();
+    if (el("casBadge")) el("casBadge").textContent = cass.cascades.length;
+    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot(); initCascades();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {
