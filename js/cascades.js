@@ -74,6 +74,102 @@ function casDiagram(c) {
   return lines.join("\n");
 }
 
+/* ---------------- propagation simulator ---------------- */
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+function casHash(s) {
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return h >>> 0;
+}
+/* Monte-Carlo walk of the cascade's real path. Deterministic given the seed.
+   `hardening` (0..1) models how much of the mitigation plan is actually in
+   place: it raises the per-step stop probability. Amplifiers lower it. */
+function casSim(c, seed, trials, hardening) {
+  const path = c.path || [];
+  const n = Math.max(1, path.length);
+  const rng = mulberry32((seed >>> 0) ^ casHash(c.id));
+  const base = { inherent: 0.50, emergent: 0.34, derived: 0.42, cascading: 0.20 }[c.cls] || 0.35;
+  const ampPenalty = Math.min(0.15, (c.amplifiers || []).length * 0.035);
+  const stopP = Math.max(0.03, Math.min(0.95, base + hardening * 0.55 - ampPenalty));
+  const stops = new Array(n).fill(0);
+  let full = 0, depthSum = 0;
+  for (let t = 0; t < trials; t++) {
+    let stopped = false;
+    for (let i = 0; i < n; i++) {
+      if (rng() < stopP) { stops[i]++; depthSum += i; stopped = true; break; }
+    }
+    if (!stopped) { full++; depthSum += n; }
+  }
+  const expectedDepth = depthSum / trials;
+  const frac = expectedDepth / n;
+  const maxBlast = casBlastRank(c) || 2;
+  const reach = Math.max(0, Math.min(BLAST_ORDER.length - 1, Math.round(maxBlast * frac)));
+  return {
+    stopP: stopP, stops: stops, full: full, trials: trials, expectedDepth: expectedDepth,
+    frac: frac, blast: BLAST_ORDER[reach], maxBlast: BLAST_ORDER[maxBlast],
+    containRate: 1 - full / trials
+  };
+}
+function casSimSection(c) {
+  const seed = casHash(c.id) % 100000;
+  return '<div class="cas-sim">' +
+    '<div class="cas-sim-ctl">' +
+    '<label>seed <input type="number" id="simSeed" value="' + seed + '" style="width:88px"></label>' +
+    '<label>trials <select id="simTrials"><option>500</option><option selected>2000</option><option>10000</option></select></label>' +
+    '<label>hardening <input type="range" id="simHard" min="0" max="100" value="40" oninput="document.getElementById(\'simHardV\').textContent=this.value+\'%\'"> <span id="simHardV">40%</span></label>' +
+    '<button class="btn primary" onclick="runCascadeSim(\'' + c.id + '\')">▶ Run simulation</button>' +
+    "</div>" +
+    '<div id="casSimOut" class="cas-sim-out"><span class="muted small">Model the spread of this cascade across its ' +
+    (c.path || []).length + " propagation steps. Deterministic Monte-Carlo — no model tokens.</span></div></div>";
+}
+function runCascadeSim(id) {
+  const c = casById(id);
+  if (!c) return;
+  const seed = parseInt((el("simSeed") || {}).value || "1", 10);
+  const trials = parseInt((el("simTrials") || {}).value || "2000", 10);
+  const h = (parseInt((el("simHard") || {}).value || "40", 10)) / 100;
+  const r = casSim(c, seed, trials, h);
+  const path = c.path || [];
+
+  // hardening curve
+  const curve = [0, 0.25, 0.5, 0.75, 1].map(function (x) { return { h: x, r: casSim(c, seed, Math.max(400, trials / 4), x) }; });
+
+  const stepBars = r.stops.map(function (cnt, i) {
+    const pct = Math.round(100 * cnt / trials);
+    return '<div class="bar-row"><span class="lbl" title="' + escHtml(path[i] || "") + '">step ' + (i + 1) + " · " + escHtml((path[i] || "").slice(0, 26)) + "</span>" +
+      '<span class="bar-track"><span class="bar-fill inherent" style="width:' + Math.max(pct, 1) + '%"></span></span>' +
+      '<span class="n">' + pct + "%</span></div>";
+  }).join("");
+  const fullPct = Math.round(100 * r.full / trials);
+
+  el("casSimOut").innerHTML =
+    '<div class="cas-sim-verdict">' +
+    "<div><span class='muted small'>at " + Math.round(h * 100) + "% hardening</span>" +
+    "<div class='big " + (fullPct > 50 ? "bad" : fullPct > 20 ? "warn" : "ok") + "'>" + fullPct + "%</div>" +
+    "<span class='muted small'>reach full impact</span></div>" +
+    "<div><span class='muted small'>contained before impact</span><div class='big ok'>" + Math.round(100 * r.containRate) + "%</div><span class='muted small'>" + trials + " trials, seed " + seed + "</span></div>" +
+    "<div><span class='muted small'>expected depth reached</span><div class='big'>" + r.expectedDepth.toFixed(2) + " / " + path.length + "</div><span class='muted small'>per-step stop p=" + r.stopP.toFixed(2) + "</span></div>" +
+    "<div><span class='muted small'>expected blast radius</span><div class='big" + (casBlastRank({ blastRadius: r.blast }) >= 4 ? " bad" : "") + "'>" + escHtml(r.blast) + "</div><span class='muted small'>worst case " + escHtml(r.maxBlast) + "</span></div>" +
+    "</div>" +
+    "<div class='cas-sim-cols'><div><h5>Where it gets stopped</h5>" + stepBars +
+    "<p class='muted small'>Higher bars mean the cascade usually dies there — invest in the controls for the earliest strong bar.</p></div>" +
+    "<div><h5>Hardening curve</h5>" +
+    curve.map(function (p) {
+      const fp = Math.round(100 * p.r.full / p.r.trials);
+      return '<div class="bar-row"><span class="lbl">' + Math.round(p.h * 100) + "% hardening</span>" +
+        '<span class="bar-track"><span class="bar-fill ' + (fp > 50 ? "hot" : "inherent") + '" style="width:' + Math.max(fp, 1) + '%"></span></span>' +
+        '<span class="n">' + fp + "%</span></div>";
+    }).join("") +
+    "<p class='muted small'>Read this as: the residual probability of full propagation at each level of mitigation maturity.</p></div></div>";
+}
+
 /* ---------------- distribution overview ---------------- */
 function renderCasOverview() {
   const box = el("casOverview");
@@ -212,6 +308,8 @@ function openCascade(id) {
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Mitigation plan</h4>' +
     '<div class="mit-grid">' + col("prevent", "Prevent · reduce likelihood") + col("detect", "Detect · reduce time-to-know") +
     col("contain", "Contain · limit blast radius") + col("recover", "Recover · restore") + "</div>" +
+    '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 4px">Propagation simulator</h4>' +
+    casSimSection(c) +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 6px">Residual risk</h4>' +
     "<p>" + escHtml(c.residual || "") + "</p>" +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 6px">In the catalog</h4>' +
