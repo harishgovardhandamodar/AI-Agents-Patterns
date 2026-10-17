@@ -59,6 +59,11 @@ services:
       - tailscale
     environment:
       PORT: "8080"
+      FOX_LLM_URL: "${FOX_LLM_URL:-http://host.docker.internal:8210}"
+      AXIOM_LLM_URL: "${AXIOM_LLM_URL:-http://100.101.3.115:8210}"
+      LLM_MODEL: "${LLM_MODEL:-quai-qwen3.8-27b:latest}"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     read_only: true
     tmpfs:
       - /tmp
