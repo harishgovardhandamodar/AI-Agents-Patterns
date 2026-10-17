@@ -1,0 +1,87 @@
+/* scenarios.js — failure-scenario catalog tab */
+"use strict";
+
+const scnState = { domains: new Set(), sevs: new Set(), vectors: new Set() };
+
+function initScenarios() {
+  const S = DATA.scenarios;
+  const doms = uniq(S.scenarios.map(s => s.domain)).sort();
+  el("scnDomains").innerHTML = doms.map(d =>
+    `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" onchange="onScnFilter(this,'domains')"> ${escHtml(d)}<span class="cnt">${S.scenarios.filter(s => s.domain === d).length}</span></label>`).join("");
+  el("scnSev").innerHTML = ["critical", "high", "medium", "low"].map(sv =>
+    `<label class="filter-item"><input type="checkbox" data-sev="${sv}" onchange="onScnFilter(this,'sevs')"> <span class="sev-dot sev-${sv}"></span>${sv}<span class="cnt">${S.scenarios.filter(s => s.severity === sv).length}</span></label>`).join("");
+  const vecs = uniq(S.scenarios.map(s => s.vector)).sort();
+  el("scnVectors").innerHTML = vecs.map(v =>
+    `<label class="filter-item"><input type="checkbox" data-vec="${escHtml(v)}" onchange="onScnFilter(this,'vectors')"> ${escHtml(v)}<span class="cnt">${S.scenarios.filter(s => s.vector === v).length}</span></label>`).join("");
+  renderScenarios();
+}
+function onScnFilter(inp, key) {
+  const val = inp.dataset.dom || inp.dataset.sev || inp.dataset.vec;
+  inp.checked ? scnState[key].add(val) : scnState[key].delete(val);
+  renderScenarios();
+}
+function resetScnFilters() {
+  scnState.domains.clear(); scnState.sevs.clear(); scnState.vectors.clear();
+  document.querySelectorAll("#scenariosPane .side input[type=checkbox]").forEach(i => i.checked = false);
+  el("scnSearch").value = "";
+  renderScenarios();
+}
+
+function renderScenarios() {
+  const S = DATA.scenarios;
+  const q = el("scnSearch").value.trim().toLowerCase();
+  let list = S.scenarios.filter(s => {
+    if (scnState.domains.size && !scnState.domains.has(s.domain)) return false;
+    if (scnState.sevs.size && !scnState.sevs.has(s.severity)) return false;
+    if (scnState.vectors.size && !scnState.vectors.has(s.vector)) return false;
+    if (q) {
+      const hay = (s.title + " " + s.description + " " + s.vector + " " + s.domain + " " + (s.protections || []).map(p => p.name + p.mechanism).join(" ")).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+  const sevRank = { critical: 0, high: 1, medium: 2, low: 3 };
+  list.sort((a, b) => sevRank[a.severity] - sevRank[b.severity] || a.title.localeCompare(b.title));
+
+  el("scnCount").textContent = `${list.length} of ${S.scenarios.length} scenarios — click for attack chain, protections, and mock run`;
+  el("scnGrid").innerHTML = list.map(s => `
+    <div class="pat-card" onclick="openScenario('${s.id}')">
+      <div class="cat" style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${escHtml(s.severity.toUpperCase())} · ${escHtml(s.domain)}</div>
+      <div class="nm">${escHtml(s.title)}</div>
+      <div class="sm">${escHtml(s.description.slice(0, 180))}…</div>
+      <div class="chips">
+        <span class="chip">${escHtml(s.vector)}</span>
+        <span class="chip ok">${(s.protections || []).length} protections</span>
+        ${s.traceId ? `<span class="chip" style="color:var(--teal)">▶ mock run</span>` : ""}
+      </div>
+    </div>`).join("") || `<p class="muted">No scenarios match the current filters.</p>`;
+}
+
+function openScenario(id) {
+  const S = DATA.scenarios, P = DATA.patterns;
+  const s = S.scenarios.find(x => x.id === id);
+  if (!s) return;
+  const patLinks = (s.patternRefs || []).map(pid => {
+    const p = P.patterns.find(x => x.id === pid);
+    return p ? `<a href="#" onclick="closeDetail();switchTab('patterns');setTimeout(()=>openPattern('${pid}'),80);return false;">${escHtml(p.name)}</a>` : escHtml(pid);
+  }).join(" · ");
+
+  const html = `
+    <div class="dsec">
+      <p><span class="sev-dot sev-${s.severity}"></span><b style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${s.severity.toUpperCase()}</b>
+      &nbsp; likelihood: <b>${escHtml(s.likelihood)}</b> &nbsp; vector: <b>${escHtml(s.vector)}</b> &nbsp; domain: <b>${escHtml(s.domain)}</b></p>
+      <p>${escHtml(s.description)}</p>
+    </div>
+    <div class="dsec"><h4>Attack chain (how it unfolds)</h4>
+      <ol style="padding-left:20px;margin:0">${s.attackChain.map(a => `<li style="color:var(--text2);margin-bottom:5px">${escHtml(a)}</li>`).join("")}</ol></div>
+    <div class="dsec"><h4>Protections (how to stop it)</h4>
+      <table class="tbl"><tr><th>Control</th><th>Layer</th><th>Mechanism</th></tr>
+      ${s.protections.map(p => `<tr><td>${escHtml(p.name)}</td><td><span class="chip">${escHtml(p.layer)}</span></td><td>${escHtml(p.mechanism)}</td></tr>`).join("")}
+      </table></div>
+    <div class="dsec"><h4>Detection signals</h4><ul>${s.detection.map(d => `<li>${escHtml(d)}</li>`).join("")}</ul></div>
+    <div class="dsec"><h4>Incident response</h4><ul>${s.response.map(r => `<li>${escHtml(r)}</li>`).join("")}</ul></div>
+    ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}
+    ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
+      <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>loadTrace('${s.traceId}'),100);">▶ Open in Live View</button></div>` : ""}`;
+  openDetail(s.title, `${s.severity} · ${s.domain}`, html);
+}

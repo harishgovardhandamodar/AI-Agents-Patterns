@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Agent Patterns &amp; Guardrails</title>
+<link rel="stylesheet" href="css/styles.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" id="mermaid-lib"></script>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo">A</div>
+  <h1>AI Agent Patterns &amp; Guardrails</h1>
+  <span class="sub">design catalog · threat scenarios · live control-flow traces · UML viewer</span>
+  <div class="spacer"></div>
+  <span class="sub mono" id="dataStatus">loading…</span>
+  <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme">◐ theme</button>
+</div>
+
+<div class="app-tabs" id="appTabs">
+  <div class="app-tab active" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
+  <div class="app-tab" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
+  <div class="app-tab" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
+  <div class="app-tab" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
+  <div class="app-tab" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
+  <div class="app-tab" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
+</div>
+
+<!-- ======================= OVERVIEW ======================= -->
+<section class="pane visible" id="overviewPane">
+  <div class="ov-wrap">
+    <div class="ov-cards" id="ovCards"></div>
+    <div class="ov-grid">
+      <div class="panel">
+        <h3>Patterns by category</h3>
+        <div id="ovCats"></div>
+      </div>
+      <div class="panel">
+        <h3>Scenarios by severity</h3>
+        <div id="ovSev"></div>
+      </div>
+      <div class="panel">
+        <h3>Domain coverage</h3>
+        <div class="ov-domains" id="ovDomains"></div>
+      </div>
+      <div class="panel">
+        <h3>Protection layers (how defenses stack)</h3>
+        <div id="ovLayers"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= PATTERNS ======================= -->
+<section class="pane" id="patternsPane">
+  <div class="split">
+    <aside class="side">
+      <input class="search" id="patSearch" placeholder="Search patterns…  (e.g. budget, injection, memory)" oninput="renderPatterns()">
+      <h4>Category</h4>
+      <div id="patCats"></div>
+      <h4>Domain</h4>
+      <div id="patDomains"></div>
+      <h4>Quick filters</h4>
+      <label class="filter-item"><input type="checkbox" id="patHasDiagram" onchange="renderPatterns()"> Has diagram</label>
+      <label class="filter-item"><input type="checkbox" id="patHasFailures" onchange="renderPatterns()"> Has failure modes</label>
+      <div style="margin-top:10px"><button class="btn" onclick="resetPatFilters()">Reset filters</button></div>
+    </aside>
+    <main class="main">
+      <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+        <span class="muted small" id="patCount"></span>
+        <div style="flex:1"></div>
+        <select class="search" style="width:auto" id="patSort" onchange="renderPatterns()">
+          <option value="cat">sort: category</option>
+          <option value="name">sort: name</option>
+          <option value="risk">sort: riskiest (by failure count)</option>
+        </select>
+      </div>
+      <div class="card-grid" id="patGrid"></div>
+    </main>
+  </div>
+</section>
+
+<!-- ======================= SCENARIOS ======================= -->
+<section class="pane" id="scenariosPane">
+  <div class="split">
+    <aside class="side">
+      <input class="search" id="scnSearch" placeholder="Search scenarios…" oninput="renderScenarios()">
+      <h4>Domain</h4>
+      <div id="scnDomains"></div>
+      <h4>Severity</h4>
+      <div id="scnSev"></div>
+      <h4>Vector</h4>
+      <div id="scnVectors"></div>
+      <div style="margin-top:10px"><button class="btn" onclick="resetScnFilters()">Reset filters</button></div>
+    </aside>
+    <main class="main">
+      <div class="muted small" style="margin-bottom:10px" id="scnCount"></div>
+      <div class="card-grid" id="scnGrid"></div>
+    </main>
+  </div>
+</section>
+
+<!-- ======================= LIVE VIEW ======================= -->
+<section class="pane" id="livePane">
+  <aside class="side">
+    <h4>Mock execution traces</h4>
+    <div id="traceList"></div>
+    <h4>About</h4>
+    <p class="muted small" style="padding:0 6px">Each trace replays a full agent run: control-flow diagram highlights the active node while steps, guardrail decisions, budget burn, and the event log track in sync. All data is synthetic.</p>
+  </aside>
+  <div class="live-main">
+    <div class="live-ctrl">
+      <button class="btn primary" id="btnPlay" onclick="togglePlay()">▶ Play</button>
+      <button class="btn" onclick="stepTrace(1)">⏭ Step</button>
+      <button class="btn" onclick="stepTrace(-1)">⏮ Back</button>
+      <button class="btn" onclick="resetTrace()">↺ Reset</button>
+      <select class="search" style="width:auto" id="traceSpeed" onchange="onSpeedChange()">
+        <option value="1200">slow</option>
+        <option value="700" selected>normal</option>
+        <option value="300">fast</option>
+        <option value="80">turbo</option>
+      </select>
+      <div style="flex:1"></div>
+      <span class="verdict" id="traceVerdict"></span>
+      <span class="muted small mono" id="traceTitle"></span>
+    </div>
+    <div class="live-body">
+      <div class="live-flow panel" id="liveFlow">
+        <div class="diagram-wrap" id="liveFlowWrap"></div>
+      </div>
+      <div class="live-side">
+        <div class="gauges" id="liveGauges"></div>
+        <div class="panel" style="flex:1;display:grid;grid-template-rows:auto 1fr;min-height:0">
+          <h3>Step tracker</h3>
+          <div class="step-list" id="stepList"></div>
+        </div>
+      </div>
+      <div class="live-log">
+        <h3 style="font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--text3);margin:0 0 6px">Event log</h3>
+        <div class="log-box" id="logBox"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= DESIGN & ARCHITECTURE ======================= -->
+<section class="pane" id="designPane">
+  <aside class="design-rail" id="designRail"></aside>
+  <div class="design-main">
+    <div class="design-top">
+      <span class="title" id="designTitle">—</span>
+      <span class="meta" id="designMeta"></span>
+      <div class="spacer"></div>
+      <button class="iconbtn" onclick="toggleDesignSrc()">⟨/⟩ Source</button>
+    </div>
+    <div class="design-body">
+      <nav class="design-outline" id="designOutline"></nav>
+      <article class="design-doc" id="designDoc"></article>
+    </div>
+  </div>
+</section>
+
+<!-- ======================= GUARDRAIL LAB ======================= -->
+<section class="pane" id="guardPane">
+  <aside class="g-collection">
+    <button class="btn primary" style="width:100%;margin-bottom:10px" onclick="newGuardAnalysis()">＋ New analysis</button>
+    <h4 style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:4px 6px 6px">Collection</h4>
+    <div id="guardCollection"></div>
+    <div style="flex:1"></div>
+    <button class="btn" style="margin-top:10px" onclick="exportCollection()">⬇ Export JSON</button>
+  </aside>
+  <main class="g-main" id="guardMain"></main>
+</section>
+
+<!-- ======================= OVERLAYS ======================= -->
+<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+  <div class="drawer">
+    <div class="drawer-head">
+      <h2 id="detailTitle"></h2>
+      <span class="chip" id="detailCat"></span>
+      <div class="spacer"></div>
+      <button class="btn" onclick="closeDetail()">✕ Close</button>
+    </div>
+    <div class="drawer-body" id="detailBody"></div>
+  </div>
+</div>
+
+<div class="zoom-overlay" id="zoomOverlay">
+  <div class="zoom-top">
+    <b id="zoomTitle"></b>
+    <span class="muted small" id="zoomHint">wheel: zoom · drag: pan · ←/→: step · Esc: close</span>
+    <div class="spacer"></div>
+    <button class="btn" onclick="zoomBy(1.2)">＋</button>
+    <button class="btn" onclick="zoomBy(1/1.2)">－</button>
+    <button class="btn" onclick="zoomFit()">Fit</button>
+    <button class="btn" onclick="zoomNatural()">1:1</button>
+    <button class="btn" onclick="zoomStep(-1)">◀</button>
+    <button class="btn" onclick="zoomStep(1)">▶</button>
+    <button class="btn" onclick="zoomClose()">✕</button>
+  </div>
+  <div class="zoom-stage" id="zoomStage"><div class="zoom-inner" id="zoomInner"></div></div>
+</div>
+
+<script src="js/app.js"></script>
+<script src="js/patterns.js"></script>
+<script src="js/scenarios.js"></script>
+<script src="js/live.js"></script>
+<script src="js/design.js"></script>
+<script src="js/guardrail.js"></script>
+</body>
+</html>
