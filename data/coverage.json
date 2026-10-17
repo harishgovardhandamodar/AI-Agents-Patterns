@@ -1,0 +1,1008 @@
+{
+ "domains": [
+  "content",
+  "cybersecurity",
+  "data",
+  "devops",
+  "education",
+  "energy",
+  "engineering",
+  "enterprise",
+  "finance",
+  "general",
+  "governance",
+  "healthcare",
+  "hr",
+  "iot",
+  "legal",
+  "logistics",
+  "marketing",
+  "operations",
+  "procurement",
+  "public-sector",
+  "research",
+  "robotics",
+  "sales",
+  "strategy",
+  "support",
+  "trading"
+ ],
+ "by_domain": {
+  "content": {
+   "patterns": [
+    "evaluator-optimizer",
+    "sequential-pipeline",
+    "llm-judge"
+   ],
+   "scenarios": [],
+   "cascades_all": [
+    "cas-inh-sequential-pipeline"
+   ],
+   "cascades_inherent": [
+    "cas-inh-sequential-pipeline"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "cybersecurity": {
+   "patterns": [
+    "ooda",
+    "red-team-pair"
+   ],
+   "scenarios": [],
+   "cascades_all": [
+    "cas-inh-ooda",
+    "cas-inh-red-team-pair"
+   ],
+   "cascades_inherent": [
+    "cas-inh-ooda",
+    "cas-inh-red-team-pair"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "data": {
+   "patterns": [
+    "dynamic-dag",
+    "batch-agents",
+    "code-as-action"
+   ],
+   "scenarios": [],
+   "cascades_all": [
+    "cas-inh-batch-agents"
+   ],
+   "cascades_inherent": [
+    "cas-inh-batch-agents"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "devops": {
+   "patterns": [
+    "react",
+    "reflexion",
+    "human-in-the-loop",
+    "interrupt-resume",
+    "checkpoint-rollback",
+    "timeboxing",
+    "dynamic-dag",
+    "pipeline-fallback",
+    "scratchpad-external",
+    "hierarchical-teams",
+    "shadow-agents",
+    "code-as-action",
+    "sandbox-execution",
+    "dry-run-tools",
+    "least-privilege",
+    "policy-engine",
+    "approval-gates",
+    "dual-control",
+    "audit-trail",
+    "circuit-breaker",
+    "canary-shadow",
+    "incident-playbook",
+    "egress-control",
+    "irreversible-action-confirm",
+    "idempotency-keys",
+    "retry-backoff",
+    "saga-compensation",
+    "self-healing-replan",
+    "sre-agent",
+    "tool-sandbox",
+    "audit-logging-pattern"
+   ],
+   "scenarios": [
+    "infra-scale-cost"
+   ],
+   "cascades_all": [
+    "cas-inh-checkpoint-rollback",
+    "cas-inh-dry-run-tools",
+    "cas-inh-egress-control",
+    "cas-inh-sre-agent",
+    "cas-inh-self-healing-replan",
+    "cas-inh-shadow-agents",
+    "cas-der-infra-scale-cost"
+   ],
+   "cascades_inherent": [
+    "cas-inh-checkpoint-rollback",
+    "cas-inh-dry-run-tools",
+    "cas-inh-egress-control",
+    "cas-inh-sre-agent",
+    "cas-inh-self-healing-replan",
+    "cas-inh-shadow-agents"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-infra-scale-cost"
+   ],
+   "cascades_cascading": []
+  },
+  "education": {
+   "patterns": [
+    "least-to-most"
+   ],
+   "scenarios": [],
+   "cascades_all": [],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "energy": {
+   "patterns": [
+    "simulation-twin"
+   ],
+   "scenarios": [],
+   "cascades_all": [],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "engineering": {
+   "patterns": [
+    "task-decomposition",
+    "reflexion",
+    "analogical-reasoning",
+    "checkpoint-rollback",
+    "subgoal-gating",
+    "orchestrator-workers",
+    "evaluator-optimizer",
+    "dynamic-dag",
+    "scratchpad-external",
+    "supervisor-workers",
+    "blackboard",
+    "sequential-pipeline",
+    "code-as-action",
+    "sandbox-execution",
+    "skill-library",
+    "egress-control",
+    "validation-loop",
+    "coding-agent-pipeline"
+   ],
+   "scenarios": [
+    "code-rm-prod",
+    "code-supply-chain",
+    "code-secrets-gist",
+    "mcp-tool-poisoning",
+    "sandbox-escape"
+   ],
+   "cascades_all": [
+    "cas-inh-blackboard",
+    "cas-inh-code-as-action",
+    "cas-inh-coding-agent-pipeline",
+    "cas-inh-dynamic-dag",
+    "cas-inh-scratchpad-external",
+    "cas-inh-sandbox-execution",
+    "cas-inh-subgoal-gating",
+    "cas-inh-validation-loop",
+    "cas-der-code-secrets-gist",
+    "cas-der-code-supply-chain",
+    "cas-der-sandbox-escape",
+    "cas-der-code-rm-prod",
+    "cas-der-mcp-tool-poisoning",
+    "cas-cas-domain-engineering"
+   ],
+   "cascades_inherent": [
+    "cas-inh-blackboard",
+    "cas-inh-code-as-action",
+    "cas-inh-coding-agent-pipeline",
+    "cas-inh-dynamic-dag",
+    "cas-inh-scratchpad-external",
+    "cas-inh-sandbox-execution",
+    "cas-inh-subgoal-gating",
+    "cas-inh-validation-loop"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-code-secrets-gist",
+    "cas-der-code-supply-chain",
+    "cas-der-sandbox-escape",
+    "cas-der-code-rm-prod",
+    "cas-der-mcp-tool-poisoning"
+   ],
+   "cascades_cascading": [
+    "cas-cas-domain-engineering"
+   ]
+  },
+  "enterprise": {
+   "patterns": [
+    "semantic-memory-kg",
+    "rag-augmented",
+    "forgetting-decay",
+    "hierarchical-teams",
+    "tool-retrieval",
+    "mcp-registry",
+    "skill-library",
+    "dlp",
+    "agent-identity",
+    "fan-out-caps",
+    "audit-logging-pattern",
+    "rag-poison-defense",
+    "confused-deputy-defense"
+   ],
+   "scenarios": [
+    "rag-poison",
+    "memory-poison",
+    "collusion-supervisor",
+    "exfil-via-logs",
+    "tenant-leak",
+    "agent-impersonation",
+    "delegation-cascade"
+   ],
+   "cascades_all": [
+    "cas-inh-agent-identity",
+    "cas-inh-confused-deputy-defense",
+    "cas-inh-dlp",
+    "cas-inh-forgetting-decay",
+    "cas-inh-hierarchical-teams",
+    "cas-inh-rag-poison-defense",
+    "cas-inh-rag-augmented",
+    "cas-inh-semantic-memory-kg",
+    "cas-inh-skill-library",
+    "cas-inh-audit-logging-pattern",
+    "cas-inh-mcp-registry",
+    "cas-der-memory-poison",
+    "cas-der-agent-impersonation",
+    "cas-der-delegation-cascade",
+    "cas-der-tenant-leak",
+    "cas-der-rag-poison",
+    "cas-der-exfil-via-logs",
+    "cas-der-collusion-supervisor",
+    "cas-cas-domain-enterprise"
+   ],
+   "cascades_inherent": [
+    "cas-inh-agent-identity",
+    "cas-inh-confused-deputy-defense",
+    "cas-inh-dlp",
+    "cas-inh-forgetting-decay",
+    "cas-inh-hierarchical-teams",
+    "cas-inh-rag-poison-defense",
+    "cas-inh-rag-augmented",
+    "cas-inh-semantic-memory-kg",
+    "cas-inh-skill-library",
+    "cas-inh-audit-logging-pattern",
+    "cas-inh-mcp-registry"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-memory-poison",
+    "cas-der-agent-impersonation",
+    "cas-der-delegation-cascade",
+    "cas-der-tenant-leak",
+    "cas-der-rag-poison",
+    "cas-der-exfil-via-logs",
+    "cas-der-collusion-supervisor"
+   ],
+   "cascades_cascading": [
+    "cas-cas-domain-enterprise"
+   ]
+  },
+  "finance": {
+   "patterns": [
+    "chain-of-thought",
+    "self-consistency",
+    "chain-of-verification",
+    "metacognitive-confidence",
+    "skeptic-devils-advocate",
+    "human-in-the-loop",
+    "interrupt-resume",
+    "checkpoint-rollback",
+    "parallelization-voting",
+    "debate-council",
+    "consensus-voting",
+    "shadow-agents",
+    "simulation-twin",
+    "dry-run-tools",
+    "least-privilege",
+    "policy-engine",
+    "budget-guardrails",
+    "quota-rate-limit",
+    "approval-gates",
+    "dual-control",
+    "output-filtering-pii",
+    "provenance-citation",
+    "audit-trail",
+    "circuit-breaker",
+    "drift-monitoring",
+    "dlp",
+    "irreversible-action-confirm",
+    "idempotency-keys",
+    "uncertainty-abstention",
+    "saga-compensation",
+    "ensemble-verify",
+    "trading-agent",
+    "procurement-agent",
+    "confused-deputy-defense"
+   ],
+   "scenarios": [
+    "fin-card-injection",
+    "fin-trading-runaway",
+    "fin-invoice-fraud",
+    "fin-threshold-splitting",
+    "vendor-spoof-rush",
+    "voice-deepfake-approval"
+   ],
+   "cascades_all": [
+    "cas-inh-approval-gates",
+    "cas-inh-trading-agent",
+    "cas-inh-consensus-voting",
+    "cas-inh-dual-control",
+    "cas-inh-ensemble-verify",
+    "cas-inh-budget-guardrails",
+    "cas-inh-human-in-the-loop",
+    "cas-inh-idempotency-keys",
+    "cas-inh-audit-trail",
+    "cas-inh-interrupt-resume",
+    "cas-inh-least-privilege",
+    "cas-inh-debate-council",
+    "cas-inh-parallelization-voting",
+    "cas-inh-policy-engine",
+    "cas-inh-irreversible-action-confirm",
+    "cas-inh-saga-compensation",
+    "cas-inh-skeptic-devils-advocate",
+    "cas-der-vendor-spoof-rush",
+    "cas-der-fin-invoice-fraud",
+    "cas-der-fin-threshold-splitting",
+    "cas-der-voice-deepfake-approval",
+    "cas-der-fin-card-injection",
+    "cas-der-fin-trading-runaway",
+    "cas-cas-domain-finance"
+   ],
+   "cascades_inherent": [
+    "cas-inh-approval-gates",
+    "cas-inh-trading-agent",
+    "cas-inh-consensus-voting",
+    "cas-inh-dual-control",
+    "cas-inh-ensemble-verify",
+    "cas-inh-budget-guardrails",
+    "cas-inh-human-in-the-loop",
+    "cas-inh-idempotency-keys",
+    "cas-inh-audit-trail",
+    "cas-inh-interrupt-resume",
+    "cas-inh-least-privilege",
+    "cas-inh-debate-council",
+    "cas-inh-parallelization-voting",
+    "cas-inh-policy-engine",
+    "cas-inh-irreversible-action-confirm",
+    "cas-inh-saga-compensation",
+    "cas-inh-skeptic-devils-advocate"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-vendor-spoof-rush",
+    "cas-der-fin-invoice-fraud",
+    "cas-der-fin-threshold-splitting",
+    "cas-der-voice-deepfake-approval",
+    "cas-der-fin-card-injection",
+    "cas-der-fin-trading-runaway"
+   ],
+   "cascades_cascading": [
+    "cas-cas-domain-finance"
+   ]
+  },
+  "general": {
+   "patterns": [
+    "chain-of-thought",
+    "self-consistency",
+    "tree-of-thoughts",
+    "react",
+    "plan-and-execute",
+    "task-decomposition",
+    "least-to-most",
+    "reflexion",
+    "self-critique",
+    "metacognitive-confidence",
+    "recursive-criticism",
+    "standard-agent-loop",
+    "tool-use",
+    "budget-bounded-exec",
+    "timeboxing",
+    "prompt-chaining",
+    "routing",
+    "parallelization-sectioning",
+    "orchestrator-workers",
+    "pipeline-fallback",
+    "working-memory-context",
+    "long-term-vector-memory",
+    "episodic-memory",
+    "memory-consolidation",
+    "context-compression",
+    "supervisor-workers",
+    "handoff-swarm",
+    "group-chat-moderator",
+    "red-team-pair",
+    "shadow-agents",
+    "function-calling",
+    "tool-retrieval",
+    "computer-use",
+    "browser-agent",
+    "sandbox-execution",
+    "mcp-registry",
+    "least-privilege",
+    "policy-engine",
+    "quota-rate-limit",
+    "input-sanitization",
+    "content-shielding",
+    "audit-trail",
+    "circuit-breaker",
+    "structured-output",
+    "eval-harness-redteam",
+    "canary-shadow",
+    "drift-monitoring",
+    "incident-playbook",
+    "irreversible-action-confirm",
+    "retry-backoff",
+    "fallback-chain",
+    "validation-loop",
+    "llm-judge",
+    "graceful-degradation",
+    "loop-detector",
+    "tool-sandbox",
+    "fan-out-caps"
+   ],
+   "scenarios": [
+    "web-hidden-injection",
+    "infinite-loop-cost",
+    "approval-fatigue",
+    "drift-silent",
+    "escalation-bypass",
+    "context-exfil-truncation",
+    "eval-overfit",
+    "tool-error-instruction"
+   ],
+   "cascades_all": [
+    "cas-inh-incident-playbook",
+    "cas-inh-drift-monitoring",
+    "cas-inh-budget-bounded-exec",
+    "cas-inh-canary-shadow",
+    "cas-inh-chain-of-thought",
+    "cas-inh-circuit-breaker",
+    "cas-inh-context-compression",
+    "cas-inh-tool-retrieval",
+    "cas-inh-eval-harness-redteam",
+    "cas-inh-fallback-chain",
+    "cas-inh-fan-out-caps",
+    "cas-inh-graceful-degradation",
+    "cas-inh-group-chat-moderator",
+    "cas-inh-input-sanitization",
+    "cas-inh-llm-judge",
+    "cas-inh-least-to-most",
+    "cas-inh-loop-detector",
+    "cas-inh-memory-consolidation",
+    "cas-inh-orchestrator-workers",
+    "cas-inh-pipeline-fallback",
+    "cas-inh-plan-and-execute",
+    "cas-inh-prompt-chaining",
+    "cas-inh-quota-rate-limit",
+    "cas-inh-react",
+    "cas-inh-recursive-criticism",
+    "cas-inh-reflexion",
+    "cas-inh-retry-backoff",
+    "cas-inh-self-consistency",
+    "cas-inh-self-critique",
+    "cas-inh-standard-agent-loop",
+    "cas-inh-function-calling",
+    "cas-inh-structured-output",
+    "cas-inh-supervisor-workers",
+    "cas-inh-task-decomposition",
+    "cas-inh-timeboxing",
+    "cas-inh-tool-sandbox",
+    "cas-inh-tool-use",
+    "cas-inh-tree-of-thoughts",
+    "cas-inh-working-memory-context",
+    "cas-eme-approval-fatigue-rubber-stamping",
+    "cas-eme-authority-confusion-on-handoff",
+    "cas-eme-cascading-hallucination-across-a-pipeline",
+    "cas-eme-compounding-partial-failures",
+    "cas-eme-context-window-silent-truncation",
+    "cas-eme-feedback-loop-cost-runaway",
+    "cas-eme-guardrail-adversarial-drift",
+    "cas-eme-guardrail-bypass-by-composition",
+    "cas-eme-memory-self-reinforcement",
+    "cas-eme-multi-agent-echo-chamber",
+    "cas-eme-planner-executor-livelock",
+    "cas-eme-retry-amplification-storm",
+    "cas-eme-synchronised-failure-via-shared-dependency",
+    "cas-eme-tool-call-race-double-execution",
+    "cas-eme-untrusted-content-instruction-uptake",
+    "cas-eme-version-skew-across-agents",
+    "cas-der-escalation-bypass",
+    "cas-der-approval-fatigue",
+    "cas-der-eval-overfit",
+    "cas-der-web-hidden-injection",
+    "cas-der-drift-silent",
+    "cas-der-context-exfil-truncation",
+    "cas-der-tool-error-instruction",
+    "cas-der-infinite-loop-cost",
+    "cas-cas-cascading-tenant-failure-via-shared-sandbox",
+    "cas-cas-correlated-config-change",
+    "cas-cas-credential-compromise-across-tenants",
+    "cas-cas-domain-general",
+    "cas-cas-data-exfiltration-via-composed-capabilities",
+    "cas-cas-poisoned-shared-knowledge-index",
+    "cas-cas-provider-outage-retry-storm-cost-halt",
+    "cas-cas-queue-backlog-common-mode-failure",
+    "cas-cas-regulatory-action-service-freeze",
+    "cas-cas-shared-model-version-regression-across-the-fleet",
+    "cas-cas-trust-collapse-after-a-visible-bad-action"
+   ],
+   "cascades_inherent": [
+    "cas-inh-incident-playbook",
+    "cas-inh-drift-monitoring",
+    "cas-inh-budget-bounded-exec",
+    "cas-inh-canary-shadow",
+    "cas-inh-chain-of-thought",
+    "cas-inh-circuit-breaker",
+    "cas-inh-context-compression",
+    "cas-inh-tool-retrieval",
+    "cas-inh-eval-harness-redteam",
+    "cas-inh-fallback-chain",
+    "cas-inh-fan-out-caps",
+    "cas-inh-graceful-degradation",
+    "cas-inh-group-chat-moderator",
+    "cas-inh-input-sanitization",
+    "cas-inh-llm-judge",
+    "cas-inh-least-to-most",
+    "cas-inh-loop-detector",
+    "cas-inh-memory-consolidation",
+    "cas-inh-orchestrator-workers",
+    "cas-inh-pipeline-fallback",
+    "cas-inh-plan-and-execute",
+    "cas-inh-prompt-chaining",
+    "cas-inh-quota-rate-limit",
+    "cas-inh-react",
+    "cas-inh-recursive-criticism",
+    "cas-inh-reflexion",
+    "cas-inh-retry-backoff",
+    "cas-inh-self-consistency",
+    "cas-inh-self-critique",
+    "cas-inh-standard-agent-loop",
+    "cas-inh-function-calling",
+    "cas-inh-structured-output",
+    "cas-inh-supervisor-workers",
+    "cas-inh-task-decomposition",
+    "cas-inh-timeboxing",
+    "cas-inh-tool-sandbox",
+    "cas-inh-tool-use",
+    "cas-inh-tree-of-thoughts",
+    "cas-inh-working-memory-context"
+   ],
+   "cascades_emergent": [
+    "cas-eme-approval-fatigue-rubber-stamping",
+    "cas-eme-authority-confusion-on-handoff",
+    "cas-eme-cascading-hallucination-across-a-pipeline",
+    "cas-eme-compounding-partial-failures",
+    "cas-eme-context-window-silent-truncation",
+    "cas-eme-feedback-loop-cost-runaway",
+    "cas-eme-guardrail-adversarial-drift",
+    "cas-eme-guardrail-bypass-by-composition",
+    "cas-eme-memory-self-reinforcement",
+    "cas-eme-multi-agent-echo-chamber",
+    "cas-eme-planner-executor-livelock",
+    "cas-eme-retry-amplification-storm",
+    "cas-eme-synchronised-failure-via-shared-dependency",
+    "cas-eme-tool-call-race-double-execution",
+    "cas-eme-untrusted-content-instruction-uptake",
+    "cas-eme-version-skew-across-agents"
+   ],
+   "cascades_derived": [
+    "cas-der-escalation-bypass",
+    "cas-der-approval-fatigue",
+    "cas-der-eval-overfit",
+    "cas-der-web-hidden-injection",
+    "cas-der-drift-silent",
+    "cas-der-context-exfil-truncation",
+    "cas-der-tool-error-instruction",
+    "cas-der-infinite-loop-cost"
+   ],
+   "cascades_cascading": [
+    "cas-cas-cascading-tenant-failure-via-shared-sandbox",
+    "cas-cas-correlated-config-change",
+    "cas-cas-credential-compromise-across-tenants",
+    "cas-cas-domain-general",
+    "cas-cas-data-exfiltration-via-composed-capabilities",
+    "cas-cas-poisoned-shared-knowledge-index",
+    "cas-cas-provider-outage-retry-storm-cost-halt",
+    "cas-cas-queue-backlog-common-mode-failure",
+    "cas-cas-regulatory-action-service-freeze",
+    "cas-cas-shared-model-version-regression-across-the-fleet",
+    "cas-cas-trust-collapse-after-a-visible-bad-action"
+   ]
+  },
+  "governance": {
+   "patterns": [
+    "consensus-voting"
+   ],
+   "scenarios": [],
+   "cascades_all": [],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "healthcare": {
+   "patterns": [
+    "self-consistency",
+    "chain-of-verification",
+    "metacognitive-confidence",
+    "human-in-the-loop",
+    "parallelization-voting",
+    "rag-augmented",
+    "forgetting-decay",
+    "blackboard",
+    "specialist-triage",
+    "least-privilege",
+    "policy-engine",
+    "approval-gates",
+    "content-shielding",
+    "output-filtering-pii",
+    "provenance-citation",
+    "audit-trail",
+    "dlp",
+    "uncertainty-abstention",
+    "ensemble-verify",
+    "healthcare-triage"
+   ],
+   "scenarios": [
+    "health-dosage"
+   ],
+   "cascades_all": [
+    "cas-inh-uncertainty-abstention",
+    "cas-inh-healthcare-triage",
+    "cas-inh-metacognitive-confidence",
+    "cas-inh-output-filtering-pii",
+    "cas-der-health-dosage"
+   ],
+   "cascades_inherent": [
+    "cas-inh-uncertainty-abstention",
+    "cas-inh-healthcare-triage",
+    "cas-inh-metacognitive-confidence",
+    "cas-inh-output-filtering-pii"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-health-dosage"
+   ],
+   "cascades_cascading": []
+  },
+  "hr": {
+   "patterns": [],
+   "scenarios": [
+    "hr-bias"
+   ],
+   "cascades_all": [
+    "cas-der-hr-bias"
+   ],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-hr-bias"
+   ],
+   "cascades_cascading": []
+  },
+  "iot": {
+   "patterns": [],
+   "scenarios": [
+    "iot-lockout"
+   ],
+   "cascades_all": [
+    "cas-der-iot-lockout"
+   ],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-iot-lockout"
+   ],
+   "cascades_cascading": []
+  },
+  "legal": {
+   "patterns": [
+    "chain-of-thought",
+    "tree-of-thoughts",
+    "chain-of-verification",
+    "self-critique",
+    "metacognitive-confidence",
+    "analogical-reasoning",
+    "skeptic-devils-advocate",
+    "human-in-the-loop",
+    "parallelization-sectioning",
+    "parallelization-voting",
+    "evaluator-optimizer",
+    "semantic-memory-kg",
+    "rag-augmented",
+    "debate-council",
+    "specialist-triage",
+    "sequential-pipeline",
+    "output-filtering-pii",
+    "provenance-citation",
+    "uncertainty-abstention",
+    "research-citation-agent"
+   ],
+   "scenarios": [
+    "legal-privilege-leak"
+   ],
+   "cascades_all": [
+    "cas-inh-analogical-reasoning",
+    "cas-inh-evaluator-optimizer",
+    "cas-inh-provenance-citation",
+    "cas-der-legal-privilege-leak"
+   ],
+   "cascades_inherent": [
+    "cas-inh-analogical-reasoning",
+    "cas-inh-evaluator-optimizer",
+    "cas-inh-provenance-citation"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-legal-privilege-leak"
+   ],
+   "cascades_cascading": []
+  },
+  "logistics": {
+   "patterns": [
+    "auction-allocation",
+    "simulation-twin",
+    "saga-compensation"
+   ],
+   "scenarios": [
+    "supply-counterfeit"
+   ],
+   "cascades_all": [
+    "cas-inh-auction-allocation",
+    "cas-der-supply-counterfeit"
+   ],
+   "cascades_inherent": [
+    "cas-inh-auction-allocation"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-supply-counterfeit"
+   ],
+   "cascades_cascading": []
+  },
+  "marketing": {
+   "patterns": [
+    "self-critique",
+    "batch-agents"
+   ],
+   "scenarios": [
+    "marketing-brand"
+   ],
+   "cascades_all": [
+    "cas-der-marketing-brand"
+   ],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-marketing-brand"
+   ],
+   "cascades_cascading": []
+  },
+  "operations": {
+   "patterns": [
+    "auction-allocation",
+    "computer-use",
+    "self-healing-replan"
+   ],
+   "scenarios": [],
+   "cascades_all": [
+    "cas-inh-computer-use"
+   ],
+   "cascades_inherent": [
+    "cas-inh-computer-use"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "procurement": {
+   "patterns": [
+    "plan-and-execute",
+    "interrupt-resume",
+    "subgoal-gating",
+    "browser-agent",
+    "dry-run-tools",
+    "budget-guardrails",
+    "procurement-agent"
+   ],
+   "scenarios": [
+    "procurement-seo-injection"
+   ],
+   "cascades_all": [
+    "cas-inh-procurement-agent",
+    "cas-der-procurement-seo-injection"
+   ],
+   "cascades_inherent": [
+    "cas-inh-procurement-agent"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-procurement-seo-injection"
+   ],
+   "cascades_cascading": []
+  },
+  "public-sector": {
+   "patterns": [],
+   "scenarios": [
+    "gov-misinfo"
+   ],
+   "cascades_all": [
+    "cas-der-gov-misinfo"
+   ],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-gov-misinfo"
+   ],
+   "cascades_cascading": []
+  },
+  "research": {
+   "patterns": [
+    "tree-of-thoughts",
+    "react",
+    "plan-and-execute",
+    "task-decomposition",
+    "chain-of-verification",
+    "subgoal-gating",
+    "parallelization-sectioning",
+    "orchestrator-workers",
+    "semantic-memory-kg",
+    "rag-augmented",
+    "scratchpad-external",
+    "blackboard",
+    "browser-agent",
+    "provenance-citation",
+    "research-citation-agent",
+    "rag-poison-defense"
+   ],
+   "scenarios": [
+    "research-fabricated-citation"
+   ],
+   "cascades_all": [
+    "cas-inh-browser-agent",
+    "cas-inh-chain-of-verification",
+    "cas-inh-parallelization-sectioning",
+    "cas-inh-research-citation-agent",
+    "cas-der-research-fabricated-citation"
+   ],
+   "cascades_inherent": [
+    "cas-inh-browser-agent",
+    "cas-inh-chain-of-verification",
+    "cas-inh-parallelization-sectioning",
+    "cas-inh-research-citation-agent"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-research-fabricated-citation"
+   ],
+   "cascades_cascading": []
+  },
+  "robotics": {
+   "patterns": [
+    "ooda",
+    "simulation-twin"
+   ],
+   "scenarios": [],
+   "cascades_all": [
+    "cas-inh-simulation-twin"
+   ],
+   "cascades_inherent": [
+    "cas-inh-simulation-twin"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "sales": {
+   "patterns": [
+    "long-term-vector-memory"
+   ],
+   "scenarios": [],
+   "cascades_all": [],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "strategy": {
+   "patterns": [
+    "skeptic-devils-advocate",
+    "debate-council",
+    "group-chat-moderator"
+   ],
+   "scenarios": [],
+   "cascades_all": [],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  },
+  "support": {
+   "patterns": [
+    "analogical-reasoning",
+    "routing",
+    "batch-agents",
+    "long-term-vector-memory",
+    "episodic-memory",
+    "memory-consolidation",
+    "supervisor-workers",
+    "handoff-swarm",
+    "specialist-triage",
+    "content-shielding",
+    "output-filtering-pii",
+    "support-triage"
+   ],
+   "scenarios": [
+    "support-pii-echo",
+    "support-refund-social-engineering"
+   ],
+   "cascades_all": [
+    "cas-inh-handoff-swarm",
+    "cas-inh-support-triage",
+    "cas-inh-episodic-memory",
+    "cas-inh-specialist-triage",
+    "cas-inh-long-term-vector-memory",
+    "cas-inh-content-shielding",
+    "cas-inh-routing",
+    "cas-der-support-refund-social-engineering",
+    "cas-der-support-pii-echo"
+   ],
+   "cascades_inherent": [
+    "cas-inh-handoff-swarm",
+    "cas-inh-support-triage",
+    "cas-inh-episodic-memory",
+    "cas-inh-specialist-triage",
+    "cas-inh-long-term-vector-memory",
+    "cas-inh-content-shielding",
+    "cas-inh-routing"
+   ],
+   "cascades_emergent": [],
+   "cascades_derived": [
+    "cas-der-support-refund-social-engineering",
+    "cas-der-support-pii-echo"
+   ],
+   "cascades_cascading": []
+  },
+  "trading": {
+   "patterns": [
+    "ooda"
+   ],
+   "scenarios": [],
+   "cascades_all": [],
+   "cascades_inherent": [],
+   "cascades_emergent": [],
+   "cascades_derived": [],
+   "cascades_cascading": []
+  }
+ },
+ "totals": {
+  "patterns": 107,
+  "scenarios": 38,
+  "cascades": 175,
+  "domains": 26
+ }
+}
