@@ -277,6 +277,22 @@ function copilotNew() {
   cpSave();
   if (el("cpInput")) el("cpInput").focus();
 }
+/* Show the exact catalog context that would be sent to the model — grounding
+   transparency so an architect can audit (and correct) what the model sees. */
+function copilotPreview() {
+  if (typeof AIContext === "undefined") { showNotif("Context module not loaded"); return; }
+  let q = (el("cpInput") && el("cpInput").value || "").trim();
+  if (!q) {
+    for (let i = cpMessages.length - 1; i >= 0; i--) { if (cpMessages[i].role === "user") { q = cpMessages[i].content; break; } }
+  }
+  if (!q) { showNotif("Type a question first"); return; }
+  const ctx = AIContext.build(q, cpScope);
+  const html = '<p class="muted small">Deterministic retrieval from the catalog for: <b>' + escHtml(q) + "</b></p>" +
+    "<p class=\"muted small\">" + ctx.cites.length + " items retrieved · " + ctx.text.length + " chars. This is the ground truth handed to the model — no model tokens were spent.</p>" +
+    '<pre style="white-space:pre-wrap;font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:12px;max-height:60vh;overflow:auto">' +
+    escHtml(ctx.text) + "</pre>";
+  openDetail("Grounding preview", "AIContext.build", html);
+}
 function copilotExport() {
   const md = cpMessages.map(function (m) {
     return (m.role === "user" ? "## You\n\n" : "## Architect Copilot" + (m.meta ? " _(" + m.meta + ")_" : "") + "\n\n") + m.content;

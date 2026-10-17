@@ -171,32 +171,101 @@ const AIContext = (function () {
   }
 
   /* Deterministic fallback answer, composed locally from the same retrieval.
-     Full implementation lands with the offline-fallback step; this keeps the
-     copilot useful the moment retrieval is switched on. */
+     Used when no model backend is reachable, and as the offline "cascade lens":
+     inherent failures come from matched patterns, derived chains from matched
+     scenario attack chains, emergent risk from interaction-heavy categories,
+     cascading risk from domains that recur across matched scenarios. */
+  function uniqPush(dst, src, n) {
+    (src || []).forEach(function (v) { if (v && dst.indexOf(v) < 0 && dst.length < n) dst.push(v); });
+  }
   function answer(query, ctx, scope) {
     ctx = ctx || build(query, scope);
     const h = ctx.hits || {};
+    const pats = (h.patterns || []).map(function (x) { return x.raw; });
+    const scns = (h.scenarios || []).map(function (x) { return x.raw; });
     const cites = [];
-    const lines = [];
-    lines.push("**Answered locally** (no model backend reachable) — composed from the catalog.\n");
-    if (h.patterns && h.patterns.length) {
-      lines.push("**Relevant patterns**");
-      h.patterns.slice(0, 5).forEach(function (x) {
-        lines.push("- **" + x.raw.name + "** — " + squash(x.raw.summary, 200));
-        cites.push({ kind: "pattern", id: x.raw.id, label: "◆ " + x.raw.name });
+    const L = [];
+
+    L.push("**Answered locally** — no model backend is reachable, so this is composed " +
+      "deterministically from the catalog. Start Fox-Services (or bring **axiom** online) " +
+      "for a tailored, conversational answer.\n");
+
+    if (!pats.length && !scns.length) {
+      L.push("_No catalog items matched your wording._ Try naming a **domain** (finance, healthcare, " +
+        "devops, support, procurement), a **risk** (prompt injection, spend, memory poisoning, retry storm, " +
+        "data exfiltration) or an **autonomy level**.");
+      return { text: L.join("\n"), cites: cites };
+    }
+
+    L.push("### What to plan for");
+    const headline = [];
+    if (pats[0]) headline.push("adopt **" + pats[0].name + "** (" + pats[0].cat + ")");
+    if (scns[0]) headline.push("rehearse **" + squash(scns[0].title, 70) + "**");
+    L.push("For this request, the closest catalog precedent suggests you " + headline.join(" and ") + ".\n");
+
+    if (pats.length) {
+      L.push("### Patterns to adopt");
+      pats.slice(0, 5).forEach(function (p) {
+        L.push("- **" + p.name + "** — " + squash(p.summary, 180));
+        if (p.protections && p.protections.length) L.push("  - _buys you:_ " + squash(arrStr(p.protections, 3), 160));
+        cites.push({ kind: "pattern", id: p.id, label: "◆ " + p.name });
       });
     }
-    if (h.scenarios && h.scenarios.length) {
-      lines.push("\n**Threat scenarios to plan for**");
-      h.scenarios.slice(0, 4).forEach(function (x) {
-        lines.push("- **" + x.raw.title + "** (" + x.raw.domain + ", " + x.raw.severity + ") — vector: " + x.raw.vector);
-        cites.push({ kind: "scenario", id: x.raw.id, label: "⚠ " + squash(x.raw.title, 40) });
+
+    // ---- four-class cascade lens ----
+    L.push("\n### Cascade lens");
+    const inherent = [];
+    pats.slice(0, 5).forEach(function (p) { (p.failures || []).forEach(function (f) { uniqPush(inherent, [f.n + " (" + f.sev + ")"], 6); }); });
+    L.push("**Inherent** — failure modes that live in a component itself: " +
+      (inherent.length ? inherent.join(", ") : "none surfaced from the matched patterns") + ".");
+
+    const derived = [];
+    scns.slice(0, 3).forEach(function (s) { if (s.attackChain && s.attackChain.length) derived.push(squash(s.attackChain.join(" → "), 190)); });
+    L.push("**Derived** — the necessary consequence chains to break early: " +
+      (derived.length ? "\n  - " + derived.join("\n  - ") : "no multi-step chain matched — inspect the Scenarios tab."));
+
+    const interCat = { multiagent: 1, loop: 1, workflow: 1, planning: 1 };
+    const emergent = pats.filter(function (p) { return interCat[p.cat] && (p.components || []).length >= 2; })
+      .map(function (p) { return p.name; });
+    L.push("**Emergent** — risks that arise only from how parts interact (watch loop/iteration caps, bulkheads, contract tests): " +
+      (emergent.length ? emergent.join(", ") : "no interaction-heavy pattern matched — likely a single-agent design."));
+
+    const domCount = {};
+    scns.forEach(function (s) { domCount[s.domain] = (domCount[s.domain] || 0) + 1; });
+    const hot = Object.keys(domCount).filter(function (d) { return domCount[d] >= 2; });
+    const cross = pats.filter(function (p) { return (p.domains || []).length >= 3; }).map(function (p) { return p.name; });
+    L.push("**Cascading** — where a local failure can spread: " +
+      (hot.length ? "domains with correlated exposure: **" + hot.map(function (d) { return d + " ×" + domCount[d]; }).join(", ") + "**. " : "") +
+      (cross.length ? "Cross-domain patterns to isolate behind bulkheads: " + squash(cross.join(", "), 160) + "." : (hot.length ? "" : "Add per-tenant isolation and rate/queue caps as default policy.")));
+
+    if (scns.length) {
+      L.push("\n### Threat scenarios to rehearse");
+      scns.slice(0, 4).forEach(function (s) {
+        L.push("- **" + s.title + "** _(" + s.domain + "/" + s.severity + ", likelihood " + s.likelihood + ")_ — vector: " + s.vector);
+        cites.push({ kind: "scenario", id: s.id, label: "⚠ " + squash(s.title, 40) });
       });
     }
-    if (!lines.length || (ctx.cites || []).length === 0) {
-      lines.push("_No catalog items matched. Try naming a domain (finance, healthcare, devops) or a risk (injection, spend, memory, retries)._");
+
+    // ---- mitigation checklist ----
+    const prev = [], det = [], con = [];
+    pats.forEach(function (p) { uniqPush(prev, p.protections, 7); });
+    scns.forEach(function (s) { uniqPush(prev, s.protections, 7); uniqPush(det, s.detection, 6); uniqPush(con, s.response, 6); });
+    L.push("\n### Mitigation checklist (prevent · detect · contain/recover)");
+    L.push("- **Prevent:** " + (prev.length ? prev.join("; ") : "least privilege, schema-locked tools, confirm-before-irreversible"));
+    L.push("- **Detect:** " + (det.length ? det.join("; ") : "tracing, cost/rate alarms, egress monitoring, canary tokens"));
+    L.push("- **Contain / recover:** " + (con.length ? con.join("; ") : "kill switch, per-tenant bulkheads, rollback + reconciliation"));
+
+    const trc = (h.traces || []);
+    if (trc.length) {
+      L.push("\n### Replay to verify");
+      trc.forEach(function (t) {
+        L.push("- **" + t.raw.name + "** — verdict _" + t.raw.verdict + "_");
+        cites.push({ kind: "trace", id: t.raw.id, label: "▶ " + squash(t.raw.name, 38) });
+      });
     }
-    return { text: lines.join("\n"), cites: cites };
+
+    L.push("\n---\n_grounded in " + pats.length + " patterns · " + scns.length + " scenarios · " + trc.length + " traces (0 model tokens)_");
+    return { text: L.join("\n"), cites: cites };
   }
 
   return { build: build, answer: answer, brief: brief, terms: terms };
