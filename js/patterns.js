@@ -146,6 +146,7 @@ function openPattern(id) {
       </table></div>
     <div class="dsec"><h4>How to protect</h4><ul>${p.protections.map(x => `<li>${escHtml(x)}</li>`).join("")}</ul></div>
     ${rel ? `<div class="dsec"><h4>Related patterns</h4><p>${rel}</p></div>` : ""}
+    ${typeof casLinksForPattern === "function" ? casLinksForPattern(p.id) : ""}
     <div class="dsec"><h4>Category context</h4>${diagramHtml(P.categoryDiagrams[p.cat] || "", cat.name)}<p class="small muted">${escHtml(cat.desc || "")}</p></div>`;
   openDetail(p.name, cat.name || p.cat, html);
 }

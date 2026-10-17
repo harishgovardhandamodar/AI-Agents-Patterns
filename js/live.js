@@ -79,11 +79,27 @@ function loadTrace(id) {
   if (!t) return;
   const s = traceScenario(t);
   document.querySelectorAll(".trace-item").forEach(i => i.classList.toggle("active", i.dataset.tid === id));
+  const links = [];
+  if (s && typeof casAll === "function") {
+    const cl = casAll().filter(function (c) { return (c.scenarioRefs || []).indexOf(s.id) >= 0; });
+    if (cl.length) {
+      links.push({ text: "Cascades: " + cl.length, onClick: function () {
+        switchTab("cascades");
+        setTimeout(function () {
+          document.querySelectorAll("#casClasses input, #casDomains input").forEach(function (i) { i.checked = false; });
+          const i = document.querySelector('#casDomains input[data-v="' + s.domain + '"]');
+          if (i) { i.checked = true; i.dispatchEvent(new Event("change")); }
+          if (typeof renderCascadeList === "function") renderCascadeList();
+        }, 80);
+      }});
+    }
+  }
   livePlayer.load({
     id: t.id,
     title: traceLabel(t) + (s ? "  ·  " + s.domain + " · " + s.severity : ""),
     verdict: t.verdict, verdictClass: t.verdict,
     flow: t.flow, steps: t.steps, events: t.events, metrics: t.metrics,
+    links: links
   });
 }
 

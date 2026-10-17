@@ -36,6 +36,7 @@ function LivePlayer(container, opts) {
       <div style="flex:1"></div>
       <span class="verdict" data-p="verdict"></span>
       <span class="muted small mono" data-p="title"></span>
+      <span data-p="links" style="display:flex;gap:6px;flex-wrap:wrap"></span>
     </div>
     <div class="live-body">
       <div class="live-flow panel">
@@ -65,6 +66,18 @@ function LivePlayer(container, opts) {
     q("verdict").className = "verdict " + (data.verdictClass || data.verdict || "degraded");
     q("verdict").textContent = data.verdictText || data.verdict || "";
     q("title").textContent = data.title || "";
+    const L = q("links");
+    if (L) {
+      L.innerHTML = "";
+      (data.links || []).forEach(function (lnk) {
+        const b = document.createElement("span");
+        b.className = "cp-cite c";
+        b.textContent = lnk.text;
+        b.title = "Open cascade";
+        b.onclick = lnk.onClick;
+        L.appendChild(b);
+      });
+    }
     q("speed").value = String(st.speed);
     q("flow").innerHTML =
       `<button class="design-expand" onclick="openZoom(this)">⤢ enlarge</button>` +

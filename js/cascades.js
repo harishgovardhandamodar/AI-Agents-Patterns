@@ -74,6 +74,26 @@ function casDiagram(c) {
   return lines.join("\n");
 }
 
+/* ---------------- bidirectional cross-links ---------------- */
+function cascadesForScenario(sid) { return casAll().filter(function (c) { return (c.scenarioRefs || []).indexOf(sid) >= 0; }); }
+function cascadesForPattern(pid) { return casAll().filter(function (c) { return (c.patternRefs || []).indexOf(pid) >= 0; }); }
+function casLinksBlock(list, title) {
+  if (!list || !list.length) return "";
+  const order = { inherent: 0, emergent: 1, derived: 2, cascading: 3 };
+  const sorted = list.slice().sort(function (a, b) { return (order[a.cls] - order[b.cls]) || (casBlastRank(b) - casBlastRank(a)); });
+  const byCls = {};
+  sorted.forEach(function (c) { (byCls[c.cls] = byCls[c.cls] || []).push(c); });
+  const groups = Object.keys(order).filter(function (k) { return byCls[k]; }).map(function (k) {
+    return '<div style="margin:5px 0"><span class="cls-chip ' + k + '">' + k + "</span> " +
+      byCls[k].map(function (c) { return '<span class="cp-cite c" onclick="openCascade(\'' + c.id + '\')">' + escHtml(c.name) + "</span>"; }).join(" ") + "</div>";
+  }).join("");
+  return '<div class="dsec"><h4>' + escHtml(title) + ' <span class="muted small" style="text-transform:none">(' + list.length + ")</span></h4>" +
+    '<p class="small muted" style="margin:0 0 4px">How this can propagate — grouped by cascade class. Click to open the full analysis, simulator and mitigation plan.</p>' +
+    groups + "</div>";
+}
+function casLinksForScenario(sid) { return casLinksBlock(cascadesForScenario(sid), "Cascade analysis"); }
+function casLinksForPattern(pid) { return casLinksBlock(cascadesForPattern(pid), "Cascade exposure"); }
+
 /* ---------------- mitigation planner ---------------- */
 const MIT_STORE = "aap.mitigations";
 const MIT_FUNCS = [["prevent", "Prevent"], ["detect", "Detect"], ["contain", "Contain"], ["recover", "Recover"]];

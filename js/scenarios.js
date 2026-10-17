@@ -81,6 +81,7 @@ function openScenario(id) {
     <div class="dsec"><h4>Detection signals</h4><ul>${s.detection.map(d => `<li>${escHtml(d)}</li>`).join("")}</ul></div>
     <div class="dsec"><h4>Incident response</h4><ul>${s.response.map(r => `<li>${escHtml(r)}</li>`).join("")}</ul></div>
     ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}
+    ${casLinksForScenario(s.id)}
     ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
       <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>loadTrace('${s.traceId}'),100);">▶ Open in Live View</button></div>` : ""}`;
   openDetail(s.title, `${s.severity} · ${s.domain}`, html);
