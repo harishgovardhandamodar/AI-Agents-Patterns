@@ -97,7 +97,19 @@ command palette, keyboard shortcuts, full review export, cascade-aware
 guardrail rules, a11y/perf polish, docs + validation.
 
 Each iteration is a real, committed increment; the app must stay green after
-every one.
+every one. **Status: complete** — A–E delivered across 30 commits on
+`feat/architect-copilot`:
+
+| Block | Iterations | Delivered |
+|---|---|---|
+| A | 2–6 | LLM proxy + watchdog, client, grounded copilot, offline fallback |
+| B | 7–12 | cascade taxonomy (175), explorer, diagrams, simulator, mitigation planner, cross-links |
+| C | 13–20 | coverage index, deploy wizard → scorecard → stack → rollout → risk register → ADR |
+| D | 21–23 | blueprint builder, cost/latency/risk estimator, per-blueprint threat model |
+| E | 24–30 | architect dashboard, command palette, shortcuts, report export, cascade-aware rules, a11y/perf/mobile, docs |
+
+Validation: headless-browser smoke test after each iteration — 11 tabs render,
+0 console/page errors, state persists across reload, keyboard paths work.
 
 ## 5. How the local model is used (and when it is not)
 
@@ -107,7 +119,8 @@ every one.
   substitute an already-loaded preferred model for latency; the response's
   `model` field reports what actually served, and the UI surfaces that honestly.
 - **Backend B — axiom** (`AXIOM_LLM_URL`, a tailnet/mesh node): probed for
-  health; promoted to primary when reachable. Currently offline.
+  health; promoted to primary when reachable. Currently reachable and serving
+  live calls.
 - **Proxy, not direct:** the browser calls `serve.py`'s `/api/llm/*`, which
   forwards server-side. This keeps one origin, works from any LAN/Tailscale
   client, hides backend URLs, and lets us fall back A→B transparently.
