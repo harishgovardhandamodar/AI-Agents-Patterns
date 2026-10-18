@@ -1321,6 +1321,10 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 
 .cas-more { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; flex-wrap: wrap; }
 
+/* drawer action rows (add-to-blueprint / ask-copilot) */
+.d-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.dsec.d-actions { padding-bottom: 2px; }
+
 /* sticky filter bars + active-filter chips (catalog panes) */
 .sticky-bar {
   position: sticky; top: 0; z-index: 6;

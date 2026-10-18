@@ -128,6 +128,35 @@ function bpAdd(id) {
   if (bpHas(id)) return;
   bpState.comps.push(id); bpSave(); bpRender(); bpRenderPalette();
 }
+/* Bulk add (used by pattern / scenario / cascade drawers): adds every linked
+   pattern that isn't already present, reports names, offers Undo + View. */
+function bpAddMany(ids) {
+  const fresh = (ids || []).filter(id => bpPat(id) && !bpHas(id));
+  if (!fresh.length) { showNotif("Already in blueprint — nothing to add"); return 0; }
+  fresh.forEach(id => bpState.comps.push(id));
+  bpSave(); bpRender(); bpRenderPalette();
+  const names = fresh.map(id => bpPat(id).name);
+  const shown = names.slice(0, 3).join(", ") + (names.length > 3 ? " + " + (names.length - 3) + " more" : "");
+  undoPush("add " + fresh.length + " to blueprint",
+    () => { bpState.comps = bpState.comps.filter(id => fresh.indexOf(id) < 0); bpSave(); bpRender(); bpRenderPalette(); },
+    () => { fresh.forEach(id => { if (!bpHas(id)) bpState.comps.push(id); }); bpSave(); bpRender(); bpRenderPalette(); });
+  showNotif("Added to blueprint — " + shown, {
+    kind: "ok",
+    actions: [{ label: "Undo", primary: true, fn: undoOnce }, { label: "View", fn: () => switchTab("blueprint") }]
+  });
+  return fresh.length;
+}
+/* One button for drawers: state-aware, safe to call before blueprints load. */
+function bpDrawerBtnHtml(id) {
+  if (typeof bpHas !== "function" || typeof bpAddMany !== "function" || !bpPat(id)) return "";
+  if (bpHas(id)) return `<button class="btn sm" onclick="closeDetail();switchTab('blueprint')">✓ In blueprint — open</button>`;
+  return `<button class="btn sm primary" onclick='bpAddMany(["${id}"])'>＋ Add to blueprint</button>`;
+}
+function bpRefsBtnHtml(ids, what) {
+  const list = (ids || []).filter(id => typeof bpPat === "function" && bpPat(id) && typeof bpHas === "function" && !bpHas(id));
+  if (typeof bpAddMany !== "function" || !list.length) return "";
+  return `<button class="btn sm primary" onclick='bpAddMany(${JSON.stringify(list)})'>＋ Add ${list.length} linked pattern${list.length === 1 ? "" : "s"}${what ? " " + escHtml(what) : ""} to blueprint</button>`;
+}
 function bpRemove(i) {
   const id = bpState.comps[i];
   if (id == null) return;

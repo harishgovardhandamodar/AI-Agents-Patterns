@@ -106,6 +106,7 @@ function openScenario(id) {
   }).join(" · ");
 
   const html = `
+    ${typeof bpRefsBtnHtml === "function" && (s.patternRefs || []).length ? `<div class="dsec d-actions">${bpRefsBtnHtml(s.patternRefs, "from this scenario")}</div>` : ""}
     <div class="dsec">
       <p><span class="sev-dot sev-${s.severity}"></span><b style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${s.severity.toUpperCase()}</b>
       &nbsp; likelihood: <b>${escHtml(s.likelihood)}</b> &nbsp; vector: <b>${escHtml(s.vector)}</b> &nbsp; domain: <b>${escHtml(s.domain)}</b></p>

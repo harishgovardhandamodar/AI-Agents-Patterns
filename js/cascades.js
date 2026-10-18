@@ -538,7 +538,9 @@ function openCascade(id) {
     "<p>" + escHtml(c.residual || "") + "</p>" +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:16px 0 6px">In the catalog</h4>' +
     casRefChips(c) +
-    '<div style="margin-top:14px"><button class="btn primary" onclick="askCopilotAbout(\'cascade: ' + escHtml(c.name) + '\')">🤖 Ask the Copilot about this</button></div>';
+    '<div class="d-actions" style="margin-top:14px">' +
+    (typeof bpRefsBtnHtml === "function" && (c.patternRefs || []).length ? bpRefsBtnHtml(c.patternRefs, "from this cascade") : "") +
+    '<button class="btn primary" onclick="askCopilotAbout(\'cascade: ' + escHtml(c.name) + '\')">🤖 Ask the Copilot about this</button></div>';
   openDetail(c.name, c.cls + " cascade", html);
 }
 
