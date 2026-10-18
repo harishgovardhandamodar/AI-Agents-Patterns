@@ -15,6 +15,7 @@ function initGuardrail() {
 
 function persistGuard() {
   try { localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items)); } catch (e) { showNotif("Could not persist collection (storage unavailable)"); }
+  if (typeof markSaved === "function") markSaved("guard");
 }
 function seedExample() {
   return analyzeRequest(

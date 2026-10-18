@@ -111,6 +111,7 @@ function dpLoad() {
 }
 function dpSave() {
   try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus })); } catch (e) {}
+  if (typeof markSaved === "function") markSaved("dp");
 }
 function dpReset() {
   const snap = { a: JSON.parse(JSON.stringify(dpState.a)), step: dpState.step, done: dpState.done, target: dpState.target, ack: Object.assign({}, dpState.ack), adrStatus: dpState.adrStatus };
@@ -391,10 +392,12 @@ function dpRender() {
   root.innerHTML = `
     <div class="dp-head">
       <div><h2>Deployment Planner</h2>
-      <p class="muted small">Answer four questions about the system. The plan that comes out is grounded in this catalog — patterns, scenarios and cascades cited by name.</p></div>
+      <p class="muted small">Answer four questions about the system. The plan that comes out is grounded in this catalog — patterns, scenarios and cascades cited by name.
+      <span class="save-stamp" data-save-stamp="dp"></span></p></div>
     </div>
     ${stepper}
     ${body}`;
+  if (typeof paintSaveStamps === "function") paintSaveStamps();
 }
 
 function dpRailHTML() {

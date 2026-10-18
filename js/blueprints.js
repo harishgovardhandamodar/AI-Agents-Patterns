@@ -77,6 +77,7 @@ const bpState = { name: "", comps: [], notes: "", q: "", cat: "", lib: [], est: 
 /* ---------------- persistence ---------------- */
 function bpSave() {
   try { localStorage.setItem(BP_STORE, JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes, est: bpState.est })); } catch (e) {}
+  if (typeof markSaved === "function") markSaved("bp");
 }
 function bpSaveLib() {
   try { localStorage.setItem(BP_LIB_STORE, JSON.stringify(bpState.lib)); } catch (e) {}
@@ -776,6 +777,7 @@ function bpRender() {
         `<input class="bp-name" id="bpName" value="${escHtml(bpState.name)}" placeholder="Name this blueprint…" ` +
           `oninput="bpSetField('name', this.value)" onkeydown="if(event.key==='Enter')this.blur()">` +
         `<span class="muted small">drag-free ordering: ${stages.length} stage${stages.length === 1 ? "" : "s"} → ${controls.length} control${controls.length === 1 ? "" : "s"}</span>` +
+        `<span class="save-stamp" data-save-stamp="bp"></span>` +
       `</div>` +
       `<div class="bp-actions">` +
         `<button class="btn sm" onclick="bpSaveToLib()">💾 Save to library</button>` +
@@ -874,6 +876,7 @@ function bpRender() {
 
   bpRenderEst();
   mmRenderAll(root);
+  if (typeof paintSaveStamps === "function") paintSaveStamps();
 }
 
 tabLoaders.blueprint = function () { if (el("bpPalette")) bpRenderPalette(); };

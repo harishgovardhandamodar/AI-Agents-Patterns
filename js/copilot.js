@@ -15,6 +15,7 @@ let cpScope = { patterns: true, scenarios: true, cascades: true, traces: true };
 /* ---------------- persistence ---------------- */
 function cpSave() {
   try { localStorage.setItem(CP_STORE, JSON.stringify({ messages: cpMessages, scope: cpScope, model: el("cpModel") && el("cpModel").value })); } catch (e) {}
+  if (typeof markSaved === "function") markSaved("cp");
 }
 function cpRestore() {
   try {

@@ -207,6 +207,33 @@ function notifLogPaint() {
 
 function notifLogClear() { notifHistory.length = 0; notifLogPaint(); }
 
+/* ---------------- autosave status ("✓ saved …") --------------------
+   bpSave / dpSave / persistGuard / cpSave call markSaved(key). The tiny
+   stamps live in each tool's header and repaint from saveTimes, so the user
+   can see at a glance that work survived a reload. */
+const saveTimes = (function () {
+  try { return JSON.parse(localStorage.getItem("aap.saved.v1") || "{}"); }
+  catch (e) { return {}; }
+})();
+
+function markSaved(key) {
+  saveTimes[key] = Date.now();
+  try { localStorage.setItem("aap.saved.v1", JSON.stringify(saveTimes)); } catch (e) {}
+  paintSaveStamps();
+}
+
+function paintSaveStamps() {
+  document.querySelectorAll("[data-save-stamp]").forEach(s => {
+    const t = saveTimes[s.getAttribute("data-save-stamp")];
+    s.innerHTML = t
+      ? "✓ saved " + escHtml(new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" }))
+      : "· not saved yet";
+    s.title = t
+      ? "Autosaved to this browser at " + new Date(t).toLocaleString()
+      : "Changes autosave to this browser (localStorage)";
+  });
+}
+
 /* ---------------- undo / redo (global, keyboard + topbar + toast actions) ----
    undoPush(label, undoFn, redoFn) snapshots a destructive action. Handlers for
    blueprint, library, guardrail and deploy ops call it, so every "Removed …"
@@ -459,6 +486,7 @@ async function loadAll() {
     if (typeof initShortcuts === "function") initShortcuts();
     if (typeof dashRender === "function") dashRender();
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
+    if (typeof paintSaveStamps === "function") paintSaveStamps();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {
