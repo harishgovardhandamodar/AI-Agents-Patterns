@@ -2,7 +2,7 @@
 
 An interactive dashboard for the full lifecycle of designing an AI agent: **design patterns → what can go wrong → how to protect → live control-flow simulation → architecture (UML) → a lab that turns your own agent idea into a guardrail design with a mock run.**
 
-It is a **no-build, browser-only single-page app** — vanilla JS, CSS custom properties, and Mermaid diagrams rendered at view time. There is no backend and no data leaves the page.
+It is a **no-build single-page app** — vanilla JS, CSS custom properties, and Mermaid diagrams rendered at view time. The only server piece is `serve.py`: a thin static host plus an optional **same-origin LLM proxy** (`/api/llm/*`) that fans out to tailnet model backends (axiom first, Fox-Services fallback). No data ever leaves your network for a third-party cloud.
 
 The **Design & Architecture** tab follows the same pattern as the *Agentic Knowledge Mapper* classic GUI: markdown documents in `design/` are fetched and rendered live, with ` ```mermaid ` fenced blocks becoming interactive diagrams (with a pan/zoom "enlarge" viewer). Nothing is a screenshot.
 
@@ -45,7 +45,7 @@ python3 serve.py           # then open http://localhost:5175
 python3 serve.py 8080      # custom port
 ```
 
-A server is needed only because the Design tab fetches `design/*.md`; `file://` would block that fetch. Any static host works.
+A server is needed because the Design tab fetches `design/*.md` (`file://` would block that fetch) and because Fox - Architect answers through the same-origin `/api/llm/*` proxy. Any static host works if you don't need the model backend (the app degrades to a deterministic catalog fallback).
 
 ---
 
@@ -53,21 +53,25 @@ A server is needed only because the Design tab fetches `design/*.md`; `file://` 
 
 | Tab | What it does |
 |---|---|
-| **Overview** | Architect dashboard (planner readiness, blueprint coverage/risk/exposure, copilot and rule-lab state, a deterministic "Next:" suggestion and report export), plus totals, patterns-per-category, scenarios-by-severity, domain coverage, and a "how defenses stack" view of protection layers. |
-| **Architect Copilot** | Chat with a local model (`quai-qwen3.8-27b` via Fox-Services, axiom fallback) grounded in the catalog through a server-side proxy; streaming, citations, scope toggles, and a deterministic offline fallback when no backend answers. |
-| **Patterns** | The catalog: **107 design patterns** across 9 categories, each with how it works, components, failure modes, protections, related patterns, and a control-flow diagram (32 diagrams; every pattern also gets its category diagram). Filter by category, domain, or "has diagram / has failures". |
-| **Scenarios** | **38 failure scenarios** across 15 domains (12 critical / 18 high / 8 medium). Each opens to the attack chain, protection table, detection signals, incident response, and links to a replayable mock run. |
-| **Cascades** | **175 catalogued composition cascades** in four classes (inherent, derived, emergent, cascading) with propagation paths, amplifiers, blast radius, detection and mitigation columns, plus a simulator and bidirectional links to the patterns/scenarios they involve. |
-| **Coverage** | Gap view: control families mapped to catalog patterns, what's covered and what isn't. |
+| **Overview** | Landing page (hero, new-in-catalog spotlight, dated field notes mapped to the catalog, incident-anatomy diagram, cascade-class chart) plus the architect dashboard (planner readiness, blueprint coverage/risk/exposure, Fox - Architect and rule-lab state, a deterministic "Next:" suggestion, pinned working set and report export), totals, patterns-per-category, scenarios-by-severity, domain coverage, and a "how defenses stack" view of protection layers. |
+| **Fox - Architect** | Chat with Qwen 3.8-27B (`quai-qwen3.8-27b`, served via **axiom first**, Fox-Services fallback, `LLM_PRIMARY` to flip) grounded in the catalog through the server-side proxy; streaming, citations, scope toggles, tables and Mermaid diagrams in answers, message actions (copy/regenerate), follow-ups, and a deterministic offline fallback. |
+| **Patterns** | The catalog: **107 design patterns** across 9 categories, each with how it works, components, failure modes, protections, related patterns, and a control-flow diagram (32 diagrams; every pattern also gets its category diagram). Filter by category, domain, or "has diagram / has failures"; card or compact-list layout; least-protected-first sort. |
+| **Scenarios** | **43 failure scenarios** across 15 domains (14 critical / 21 high / 8 medium) — including five on **self-improving agents** (reward hacking, self-distillation collapse, prompt self-editing, spawn-fleet runaway, metric gaming). Each opens to the attack chain, protection table, detection signals, incident response, and links to a replayable mock run. |
+| **Cascades** | **180 catalogued composition cascades** in four classes (inherent, derived, emergent, cascading) with propagation paths, amplifiers, blast radius, detection and mitigation columns, plus a simulator and bidirectional links to the patterns/scenarios they involve. Paged explorer + ranked mitigation backlog (leverage-scored, owner/status tracked). |
+| **Coverage** | Gap view: heatmap of patterns/scenarios/cascade-classes per domain, ranked gap cards with concrete authoring suggestions, domain drill-downs into the catalog. |
 | **Deployment Plan** | Four-step intake → readiness scorecard across weighted dimensions → recommended stack + guardrail config → autonomy/rollout dial → residual-risk register → ADR generator (citations validated against the catalog). |
-| **Blueprints** | Reference-architecture builder: compose patterns from templates or the palette into a pipeline + control overlay, with Mermaid export, deterministic warnings, a cost/latency/risk estimator and a per-blueprint **threat model** (exposure index vs. the catalog ceiling, matched scenarios/cascades/failure modes, one-click add of missing defenses). |
-| **Live View** | An exhaustive, filterable library of **39 mock execution traces — one for every scenario** (plus the flagship approved path). The control-flow diagram highlights the active node while the step tracker, budget/cost/token gauges, guardrail counters, and event log advance in sync. Play / step / back / reset with adjustable speed; filter by domain, severity, verdict or free text. |
-| **Design & Architecture** | UML & architecture documents with live Mermaid: system context, component/class UML, control flow & runtime, financial guardrail architecture, data model (ER), and threat model. Rail + scroll-spy outline + source toggle + zoom viewer (wheel zoom, drag pan, ←/→ step). Loaded lazily on first visit. |
+| **Blueprints** | Reference-architecture builder: compose patterns from templates or the palette into a pipeline + control overlay, with Mermaid export, deterministic warnings, a cost/latency/risk estimator, a per-blueprint **threat model** (exposure index vs. the catalog ceiling, matched scenarios/cascades/failure modes, one-click add of missing defenses) and **baseline compare** (template/library diff with metric deltas, undoable restore). |
+| **Live View** | An exhaustive, filterable library of **39 mock execution traces**, linked from the scenarios that have replays. The control-flow diagram highlights the active node while the step tracker, budget/cost/token gauges, guardrail counters, and event log advance in sync. Play / step / back / reset with adjustable speed; filter by domain, severity, verdict or free text. |
+| **Design & Architecture** | UML & architecture documents with live Mermaid: system context, component/class UML, control flow & runtime, financial guardrail architecture, data model (ER), threat model, and the architect value map. Rail + scroll-spy outline + source toggle + zoom viewer (wheel zoom, drag pan, ←/→ step). Loaded lazily on first visit. |
 | **Guardrail Lab** | Type any agent idea and it is analyzed into a full design (see below). Every analysis is saved to a collection in `localStorage` and exportable as JSON. |
 
 **Global**: `Ctrl/⌘ K` (or `/`) opens a command palette over everything — patterns,
-scenarios, cascades, tabs, templates, saved blueprints. `?` shows keyboard
-shortcuts; `Alt+1…9/0/-` jump between tabs. The Overview export row produces a
+scenarios, cascades, tabs, templates, saved blueprints — plus one-shot **commands**
+(`>` prefix), scoped prefixes (`pat:`/`scn:`/`cas:`), recents and usage learning.
+`?` shows keyboard shortcuts; `Alt+1…9/0/-` jump between tabs; `ⓘ guide` opens a
+contextual guide for the current tab (with glossary). `Ctrl+Z` / `Ctrl+Shift+Z`
+undo and redo destructive actions; the 🔔 bell keeps a notification history; `⛭ display`
+controls density and text size. The Overview export row produces a
 full architect report as Markdown, JSON, or a print-friendly page.
 
 ---
@@ -122,9 +126,11 @@ js/cascades.js             Cascade explorer, simulator, mitigation planner
 js/coverage.js             control-family coverage index
 js/deploy.js               deployment planner (intake, scorecard, stack, rollout, risks, ADR)
 js/blueprints.js           reference-architecture builder + estimator + threat model
-js/copilot.js              architect copilot chat (grounding, citations, fallback)
+js/copilot.js              Fox - Architect chat (rendering, tables, diagrams, citations, fallback)
 js/context.js              catalog grounding context builder
-js/llm.js                  LLM client (watchdog, streaming)
+js/llm.js                  LLM client (watchdog, streaming, backend pill)
+js/help.js                 contextual per-tab guide + glossary
+js/landing.js              Overview landing page (hero, spotlight, field notes, diagrams)
 js/live.js                 trace library (filters) driving the player
 js/design.js               markdown renderer + Design & Architecture tab (lazy)
 js/guardrail.js            Guardrail Lab rule engine + collection + replay + cascade rules
@@ -133,14 +139,14 @@ js/palette.js              Ctrl/⌘K command palette
 js/shortcuts.js            global keyboard shortcuts + help
 js/report.js               full report export (Markdown / JSON / print)
 data/patterns.json         107 patterns, categories, category diagrams
-data/scenarios.json        38 scenarios (attack chains, protections, detection, response)
-data/cascades.json         175 composition cascades (four classes)
-data/traces.json           39 mock execution traces — one per scenario + the approved path
+data/scenarios.json        43 scenarios (attack chains, protections, detection, response)
+data/cascades.json         180 composition cascades (four classes)
+data/traces.json           39 mock execution traces (scenarios link a replay where one exists)
 data/coverage.json         control-family coverage index (26 domains)
 tools/gen_cascades.py      cascade dataset generator
-tools/gen_scenarios.py     scenario dataset generator
-design/*.md                6 UML/architecture docs (24 Mermaid diagrams total)
-serve.py                   thin static server + /api/llm/* proxy (watchdog, failover)
+tools/gen_coverage.py      coverage-index generator (byte-identical on unchanged data)
+design/*.md                7 UML/architecture docs (30 Mermaid diagrams total)
+serve.py                   thin static server + /api/llm/* proxy (axiom-first failover, watchdog, LLM_PRIMARY)
 Dockerfile                 image: python:3.12-slim, non-root, read-only, healthcheck
 docker-compose.yml         default deployment (LAN + host Tailscale)
 docker-compose.tailscale.yml   dedicated Tailscale node (+ HTTPS URL)
@@ -170,6 +176,6 @@ All datasets are plain JSON, versioned, and diffable. There are no hidden defaul
 
 ## Scope
 
-107 design patterns · 207 documented failure modes · 38 failure scenarios · 175 composition cascades · 15 domains · 12 critical scenarios · 39 replayable mock traces · 6 architecture documents · 24 architecture diagrams · 32 pattern control-flow diagrams · 70+ Mermaid diagrams total, all validated to parse · local-model architect copilot (Fox-Services primary, axiom fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index · command palette and keyboard shortcuts · full report export.
+107 design patterns · 207 documented failure modes · 43 failure scenarios (14 critical / 21 high / 8 medium) · 180 composition cascades · 15 scenario domains · 39 replayable mock traces · 7 architecture documents · 30 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox - Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · command palette (commands, recents) and keyboard shortcuts · full report export.
 
 **Caveats, honestly:** the exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like blueprints. The copilot's grounding is deterministic retrieval, not RAG fine-tuning; when both LLM backends are down it degrades to a deterministic catalog answer rather than failing. Cost/latency figures are estimates from stated assumptions, not benchmarks.

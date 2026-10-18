@@ -98,3 +98,23 @@ each verified headless (no page errors) before commit. Headline numbers:
 - Wayfinding: onboarding tour, per-tab guides + 18-term glossary, palette
   commands/recents/usage learning, pinned working set, sticky filter bars with
   removable chips, designed empty states on every pane.
+
+## Iterations 51–60 (post-50 hardening, on `main`)
+
+| # | Change | Commit |
+|---|---|---|
+| 51 | 5 self-improving-agent scenarios (43 total); cascades regen 175→180; new `tools/gen_coverage.py`; dynamic counts via `catN()` | `f31f3f7` |
+| 52 | Architect Copilot renamed to **Fox - Architect** across UI, prompts, exports | `10c935d` |
+| 53 | Qwen 3.8-27B default served via **axiom first** (`LLM_PRIMARY`, Fox-Services fallback) | `8d16be4` |
+| 54 | Markdown tables + fenced Mermaid diagrams render in chat; prompt guidance | `4f38bba` |
+| 55 | Bare (unfenced) diagram detection + error-source fallback in chat | `f50227e` |
+| 56 | Mermaid native error-SVG swapped for readable source in chat | `a54c455` |
+| 57 | Double-fencing fix (bare detector skips fenced blocks) + empty-fence guard | `b9de4ef` |
+| 58 | Overview landing page: hero, self-improvement spotlight, field notes, incident diagram, class chart | `e37f293` |
+| 59 | Light-mode Mermaid readability (dual-readable fills, label halos both themes) | `626657c` |
+| 60 | Merge to `main` + docs refresh (README, design docs, this file) | — |
+
+Field notes in the landing page cite real Oct-2026 research (SEABench, SAVER
+survey, APEX/ClawGuard/ActGuard, FIDES/Janus); each note links into the catalog
+items that cover it. The `X-Fox-Backend: axiom` header on every proxied chat
+call is the ground truth for which backend served an answer.

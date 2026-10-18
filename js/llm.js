@@ -294,7 +294,7 @@ const LLM = (function () {
         '<span><button class="iconbtn" type="button" onclick="LLM.probe(true).then(()=>LLM.paintPill())">↻ retry</button>' +
         '<button class="iconbtn" type="button" onclick="LLM.infoToggle(false)" aria-label="Close backend status">✕</button></span></div>' +
         '<div class="llm-pop-body" id="llmPopBody"></div>' +
-        '<div class="llm-pop-foot"><button class="btn" type="button" onclick="LLM.infoToggle(false);switchTab(\'copilot\')">Open Architect Copilot</button></div>';
+        '<div class="llm-pop-foot"><button class="btn" type="button" onclick="LLM.infoToggle(false);switchTab(\'copilot\')">Open Fox - Architect</button></div>';
       document.body.appendChild(p);
     }
     p.classList.toggle("open", force == null ? !p.classList.contains("open") : !!force);

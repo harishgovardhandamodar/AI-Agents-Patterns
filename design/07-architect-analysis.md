@@ -2,7 +2,7 @@
 
 This document is the design rationale for the architect-facing upgrade: what the
 dashboard knew, what an architect needs, and the four-class cascade model that
-connects them. It is the reference behind the **Architect Copilot**, **Cascades**,
+connects them. It is the reference behind the **Fox - Architect**, **Cascades**,
 **Coverage**, and **Planner** tabs.
 
 ## 1. From catalog to advisory system
@@ -11,7 +11,7 @@ connects them. It is the reference behind the **Architect Copilot**, **Cascades*
 flowchart LR
   subgraph TODAY["Today — reference"]
     P["107 patterns"]
-    S["38 scenarios"]
+    S["43 scenarios"]
     T["39 traces"]
     D["6 design docs"]
   end
@@ -22,7 +22,7 @@ flowchart LR
     Q4["What do I do, in what order?"]
   end
   subgraph NEW["New — advisory"]
-    CP["Architect Copilot<br/>(grounded, local model)"]
+    CP["Fox - Architect<br/>(grounded, local model)"]
     CV["Coverage &amp; gap analysis"]
     CA["Cascade explorer + simulator"]
     PL["Planner: readiness, stack,<br/>rollout, risk register"]
@@ -119,21 +119,21 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant UI as Architect Copilot UI
+  participant UI as Fox - Architect UI
   participant PX as serve.py /api/llm
+  participant AX as axiom :8210 (primary)
   participant FS as Fox-Services :8210
-  participant AX as axiom node
   UI->>PX: chat(messages, model, context)
-  PX->>FS: /v1/chat/completions (stream)
-  alt Fox-Services healthy
-    FS-->>PX: SSE deltas (served model reported)
-  else Fox-Services down and axiom online
-    PX->>AX: /v1/chat/completions (stream)
-    AX-->>PX: SSE deltas
+  PX->>AX: /v1/chat/completions (stream)
+  alt axiom healthy
+    AX-->>PX: SSE deltas (served model reported)
+  else axiom down and Fox-Services online
+    PX->>FS: /v1/chat/completions (stream)
+    FS-->>PX: SSE deltas
   else neither available
     PX-->>UI: 503 → UI runs deterministic fallback
   end
-  PX-->>UI: SSE deltas + X-Served-By / X-Served-Model
+  PX-->>UI: SSE deltas + X-Fox-Backend
 ```
 
 The model is an accelerator, never a dependency: retrieval, scoring, coverage,

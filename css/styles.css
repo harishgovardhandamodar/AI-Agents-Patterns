@@ -1336,6 +1336,19 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 
 .cas-more { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; flex-wrap: wrap; }
 
+/* chat markdown extras: tables, code language tags, diagrams */
+.cp-bubble .tbl { margin: 8px 0; }
+.cp-bubble .diagram-wrap { margin: 10px 0; }
+.cp-code-lang {
+  display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text3); margin-bottom: 5px;
+}
+.cp-mermaid-src {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 7px;
+  padding: 9px 11px; font-size: 11px; line-height: 1.5; overflow-x: auto;
+  white-space: pre; margin: 8px 0;
+}
+
 /* copilot message actions + follow-ups */
 .cp-actions { display: flex; gap: 4px; margin-top: 6px; }
 .cp-msg.user .cp-actions { justify-content: flex-end; }
@@ -1430,6 +1443,56 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 .onb-card span { font-size: 12px; color: var(--text2); flex: 1; }
 .onb-foot { display: flex; align-items: center; gap: 8px; margin-top: 18px; }
 @media (max-width: 760px) { .onb-cards { grid-template-columns: 1fr; } .onb-box { padding: 18px; } }
+
+/* ---------------- landing page (Overview) ---------------- */
+.land-hero {
+  border: 1px solid var(--border); border-radius: 12px;
+  background: linear-gradient(180deg, var(--bg2), var(--bg));
+  padding: 22px 24px; margin-bottom: 20px;
+}
+.land-kicker { font-size: 10px; letter-spacing: .14em; color: var(--text3); margin-bottom: 8px; }
+.land-title { margin: 0 0 8px; font-size: 22px; letter-spacing: -.01em; }
+.land-sub { margin: 0 0 16px; color: var(--text2); font-size: 13px; max-width: 78ch; }
+.land-ctas { display: flex; gap: 8px; flex-wrap: wrap; }
+.land-sec { margin-bottom: 22px; }
+.land-sec-h { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; flex-wrap: wrap; }
+.land-sec-h h3 { margin: 0 0 6px; font-size: 15px; }
+.land-spots { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.land-spot {
+  border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px;
+  background: var(--bg2); cursor: pointer;
+}
+.land-spot:hover { border-color: var(--accent); }
+.land-spot-sev { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; margin-bottom: 3px; }
+.land-spot-t { font-weight: 600; font-size: 12.5px; margin-bottom: 4px; }
+.land-spot-d { font-size: 11.5px; color: var(--text2); line-height: 1.45; }
+.land-notes { display: flex; flex-direction: column; gap: 10px; }
+.land-note { border: 1px solid var(--border); border-radius: 9px; padding: 10px 13px; background: var(--bg2); }
+.land-note-head { display: flex; align-items: baseline; gap: 9px; flex-wrap: wrap; margin-bottom: 2px; }
+.land-note-head b { font-size: 13px; }
+.land-note p { margin: 4px 0 8px; font-size: 12.5px; color: var(--text2); line-height: 1.55; max-width: 100ch; }
+.land-note p a { white-space: nowrap; }
+#ovLanding .diagram-wrap { margin: 4px 0 6px; }
+@media (max-width: 760px) { .land-title { font-size: 18px; } .land-hero { padding: 16px; } }
+
+/* mermaid readability backstop: a theme-colored halo behind every diagram
+   label, so text survives whatever fill an authored `style` directive (or a
+   model-generated diagram) puts behind it — light halo in light mode, dark
+   halo in dark mode. Subtle on matching backgrounds, decisive on clashes. */
+html.light .diagram-wrap svg text {
+  paint-order: stroke; stroke: #ffffff !important; stroke-width: 2px; stroke-opacity: .9;
+}
+html.light .diagram-wrap .nodeLabel, html.light .diagram-wrap .edgeLabel,
+html.light .diagram-wrap .label, html.light .diagram-wrap .pieTitleText {
+  text-shadow: 0 0 3px #fff, 0 0 7px #fff;
+}
+html:not(.light) .diagram-wrap svg text {
+  paint-order: stroke; stroke: #0d1117 !important; stroke-width: 2px; stroke-opacity: .9;
+}
+html:not(.light) .diagram-wrap .nodeLabel, html:not(.light) .diagram-wrap .edgeLabel,
+html:not(.light) .diagram-wrap .label {
+  text-shadow: 0 0 3px #0d1117, 0 0 7px #0d1117;
+}
 
 /* working-set pins (Overview) */
 .dash-pin {

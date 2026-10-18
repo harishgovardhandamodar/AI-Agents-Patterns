@@ -64,7 +64,7 @@ function rpMarkdown() {
   out.push("");
 
   /* 3 — copilot transcript */
-  out.push("## 3. Copilot consult");
+  out.push("## 3. Fox - Architect consult");
   out.push("");
   const us = cpMessages.filter(m => m.role === "user");
   if (us.length) {
@@ -73,7 +73,7 @@ function rpMarkdown() {
       else if (m.role === "assistant") { out.push("**A —** " + escMd((m.content || "").slice(0, 900))); out.push(""); }
     });
   } else {
-    out.push("_No copilot conversation yet — ask the copilot to stress-test the architecture._");
+    out.push("_No Fox - Architect conversation yet — ask Fox - Architect to stress-test the architecture._");
   }
   return out.join("\n");
 }

@@ -29,15 +29,15 @@ const HELP = {
   overview: {
     t: "Overview",
     b: `<p>This tab answers <b>“where do I stand?”</b> — catalog size, severity split, domain coverage, and a Next-step pointer that looks at your actual planner, blueprint and copilot state.</p>
+    <ul><li>The landing strip on top collects what's new (spotlight scenarios), what the field just found (field notes with paper links), an incident-anatomy diagram and the cascade-class chart — everything below it is the standing catalog summary.</li>
     <ul><li>Start here after any break: the <b>Next</b> box tells you the single most useful thing to do.</li>
     <li><b>Pins you make</b> in any catalog drawer collect in the Working set below for review and export.</li></ul>
     <p class="muted small">Tip: Alt+1…− jumps between tabs; ? shows every shortcut.</p>`
   },
   copilot: {
-    t: "Architect Copilot",
+    t: "Fox - Architect",
     b: `<p>Ask in plain language. Answers are <b>grounded in this catalog</b> — every claim cites the pattern, scenario or cascade it came from, via the local model with a deterministic fallback when no backend answers.</p>
-    <ul><li>Scope answers with the <b>Ground answers in</b> checkboxes.</li><li><b>Grounding</b> shows the exact context sent to the model — audit what it was allowed to know.</li><li>The top-bar pill shows which backend answered: Fox-Services, axiom, or the local fallback.</li></ul>
-    <p class="muted small">Tip: “Ask the Copilot” buttons inside catalog drawers pre-fill a grounded question about that item.</p>`
+    <ul><li>Scope answers with the <b>Ground answers in</b> checkboxes.</li><li>Pick a <b>persona</b> (AI Agent Architect, Security Architect, PhD Researcher, Council of Researchers) and an <b>audience</b> — the live model reshapes its voice and depth; the offline fallback always uses the default catalog voice.</li><li><b>Grounding</b> shows the exact context sent to the model — audit what it was allowed to know.</li><li>The top-bar pill shows which backend answered: Fox-Services, axiom, or the local fallback.</li><li><b>Ask Fox - Architect</b> buttons inside catalog drawers pre-fill a grounded question about that item.</li></ul>`
   },
   patterns: {
     t: "Patterns",
@@ -47,12 +47,12 @@ const HELP = {
   },
   scenarios: {
     t: "Scenarios",
-    b: `<p>38 concrete <b>failure stories</b>: attack chain, protections that stop it, detection signals, incident response. Scenarios are what the threat model matches your blueprint against.</p>
+    b: `<p>${catN("scenarios", 43)} concrete <b>failure stories</b>: attack chain, protections that stop it, detection signals, incident response. Scenarios are what the threat model matches your blueprint against.</p>
     <ul><li>Sort by least-protected to find the scenarios your controls don't cover yet.</li><li>“▶ mock run” replays the scenario as a trace in Live View.</li><li>“Add linked patterns” builds a blueprint from the scenario's defences.</li></ul>`
   },
   cascades: {
     t: "Cascades",
-    b: `<p>175 ways small faults <b>propagate and amplify</b>, in four classes: <b>inherent</b> (one part fails alone), <b>emergent</b> (only the interaction fails), <b>derived</b> (A must lead to B), <b>cascading</b> (crosses a boundary and amplifies).</p>
+    b: `<p>${catN("cascades", 180)} ways small faults <b>propagate and amplify</b>, in four classes: <b>inherent</b> (one part fails alone), <b>emergent</b> (only the interaction fails), <b>derived</b> (A must lead to B), <b>cascading</b> (crosses a boundary and amplifies).</p>
     <ul><li>The Mitigation planner de-duplicates every control across all cascades, ranked by leverage — fix the top rows first.</li><li>Assign owners and status; it persists locally and exports to CSV.</li><li>The propagation simulator shows how a trigger fans out step by step.</li></ul>
     <p class="muted small">Tip: adding more controls can never raise the Blueprint exposure index — it only discounts matched cascades.</p>`
   },

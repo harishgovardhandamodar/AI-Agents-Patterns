@@ -51,7 +51,7 @@ function palMemSave() {
 function palUseKey(it) { return it.kind + ":" + it.id; }
 
 const PAL_TABS = [
-  ["overview", "Overview"], ["copilot", "Architect Copilot"], ["patterns", "Patterns"],
+  ["overview", "Overview"], ["copilot", "Fox - Architect"], ["patterns", "Patterns"],
   ["scenarios", "Failure Scenarios"], ["cascades", "Cascade Explorer"], ["coverage", "Coverage"],
   ["deploy", "Deployment Planner"], ["blueprint", "Blueprints"], ["live", "Live View"],
   ["design", "Design & Architecture"], ["guard", "Guardrail Lab"]

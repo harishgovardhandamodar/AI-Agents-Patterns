@@ -502,7 +502,7 @@ function bpThreatModel() {
 
 function bpTmSev(sev) { return `<span class="bp-sev"><i class="sev-dot sev-${escHtml(sev)}"></i>${escHtml(sev)}</span>`; }
 
-/* Raw exposure grows with catalog size (175 cascades alone), so it can't be
+/* Raw exposure grows with catalog size (180 cascades alone), so it can't be
    banded on absolute values — a 400 means nothing without a ceiling. Index it
    against the theoretical maximum: every scenario and cascade matched at full
    weight, plus every non-control catalogue failure unguarded (control failure
@@ -926,7 +926,7 @@ function bpRender() {
         `<button class="btn sm" onclick="bpCopy('md','Blueprint copied as Markdown')">⧉ Copy Markdown</button>` +
         `<button class="btn sm" onclick="bpCopy('mermaid','Mermaid source copied')">⧉ Copy diagram</button>` +
         `<button class="btn sm" onclick="bpDownload()">⬇ Download .md</button>` +
-        `<button class="btn sm accent" onclick="bpAskCopilot()">🤖 Stress-test with Copilot</button>` +
+        `<button class="btn sm accent" onclick="bpAskCopilot()">🤖 Stress-test with Fox - Architect</button>` +
         `<button class="btn sm" onclick="bpClear()">Clear</button>` +
       `</div>` +
     `</div>` +

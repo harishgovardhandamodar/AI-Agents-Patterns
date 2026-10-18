@@ -154,6 +154,15 @@ function escHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function el(id) { return document.getElementById(id); }
+/* Live catalog counts for UI copy — never hardcode 107/43/180 in strings. */
+function catN(kind, fallback) {
+  try {
+    if (kind === "patterns" && DATA.patterns) return DATA.patterns.patterns.length;
+    if (kind === "scenarios" && DATA.scenarios) return DATA.scenarios.scenarios.length;
+    if (kind === "cascades" && DATA.cascades) return DATA.cascades.cascades.length;
+  } catch (e) {}
+  return fallback;
+}
 function skipToContent(e) {
   if (e) e.preventDefault();
   const pane = document.querySelector(".pane.visible") || document.getElementById(currentTab + "Pane");
@@ -399,10 +408,10 @@ function onbShow(force) {
       `<span>Compose stages and controls → live coverage, cost, threat exposure and cascade analysis.</span>` +
       `<button class="btn primary" onclick="onbGo('blueprint')">Open the blueprint builder</button></div>` +
       `<div class="onb-card"><div class="onb-ico">⧉</div><b>Study how agents fail</b>` +
-      `<span>107 patterns, 38 scenarios, 175 cascades — how small faults cross boundaries and amplify.</span>` +
+      `<span>${catN("patterns", 107)} patterns, ${catN("scenarios", 43)} scenarios, ${catN("cascades", 180)} cascades — how small faults cross boundaries and amplify.</span>` +
       `<button class="btn primary" onclick="onbGo('cascades')">Explore the cascade catalog</button></div>` +
       `</div>` +
-      `<div class="onb-foot"><button class="btn sm ghost" onclick="onbGo('copilot')">Just ask the copilot instead →</button>` +
+      `<div class="onb-foot"><button class="btn sm ghost" onclick="onbGo('copilot')">Just ask Fox - Architect instead →</button>` +
       `<span style="flex:1"></span>` +
       `<button class="btn sm" onclick="onbGo(null)">Skip — I'll explore</button></div>` +
       `</div>`;
@@ -677,6 +686,7 @@ async function loadAll() {
     if (typeof initPalette === "function") initPalette();
     if (typeof initShortcuts === "function") initShortcuts();
     if (typeof dashRender === "function") dashRender();
+    if (typeof initLanding === "function") initLanding();
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     if (typeof paintSaveStamps === "function") paintSaveStamps();
     if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
