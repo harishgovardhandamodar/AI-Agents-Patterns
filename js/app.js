@@ -207,6 +207,59 @@ function notifLogPaint() {
 
 function notifLogClear() { notifHistory.length = 0; notifLogPaint(); }
 
+/* ---------------- undo / redo (global, keyboard + topbar + toast actions) ----
+   undoPush(label, undoFn, redoFn) snapshots a destructive action. Handlers for
+   blueprint, library, guardrail and deploy ops call it, so every "Removed …"
+   toast can offer Undo. */
+const undoStack = [], redoStack = [];
+
+function undoPush(label, undoFn, redoFn) {
+  if (typeof undoFn !== "function") return;
+  undoStack.push({ label: label || "change", undo: undoFn, redo: redoFn });
+  if (undoStack.length > 25) undoStack.shift();
+  redoStack.length = 0;
+  undoPaint();
+}
+
+function undoOnce() {
+  const e = undoStack.pop();
+  if (!e) { showNotif("Nothing to undo"); return; }
+  try { e.undo(); } catch (err) { console.warn("undo failed", err); }
+  if (typeof e.redo === "function") redoStack.push(e);
+  undoPaint();
+  showNotif("Undid — " + e.label, e.redo
+    ? { kind: "ok", actions: [{ label: "Redo", fn: redoOnce }] }
+    : { kind: "ok" });
+}
+
+function redoOnce() {
+  const e = redoStack.pop();
+  if (!e) { showNotif("Nothing to redo"); return; }
+  try { e.redo(); } catch (err) { console.warn("redo failed", err); }
+  undoStack.push(e);
+  undoPaint();
+}
+
+function undoPaint() {
+  const u = document.getElementById("undoBtn"), r = document.getElementById("redoBtn");
+  const top = undoStack[undoStack.length - 1], rtop = redoStack[redoStack.length - 1];
+  if (u) { u.disabled = !top; u.title = top ? "Undo: " + top.label + " (Ctrl+Z)" : "Undo (Ctrl+Z) — nothing to undo"; }
+  if (r) { r.disabled = !rtop; r.title = rtop ? "Redo: " + rtop.label + " (Ctrl+Shift+Z)" : "Redo (Ctrl+Shift+Z) — nothing to redo"; }
+}
+
+document.addEventListener("keydown", e => {
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+  const k = String(e.key || "").toLowerCase();
+  if (k === "z" && !e.shiftKey && !e.altKey) {
+    const t = e.target;
+    if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA" || t.isContentEditable)) return; /* native field undo wins */
+    if (undoStack.length) { e.preventDefault(); undoOnce(); }
+  } else if ((k === "z" && e.shiftKey) || k === "y") {
+    if (redoStack.length) { e.preventDefault(); redoOnce(); }
+  }
+});
+
 /* ---------------- mermaid engine (sequential queue) ---------------- */
 let mmQueue = Promise.resolve();
 let mmLoaded = false;

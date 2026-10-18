@@ -43,10 +43,17 @@ function openGuardItem(id) {
   if (it) renderGuardReport(it);
 }
 function deleteGuardItem(id, ev) {
-  ev.stopPropagation();
-  guardState.items = guardState.items.filter(x => x.id !== id);
+  if (ev) ev.stopPropagation();
+  const idx = guardState.items.findIndex(x => x.id === id);
+  const it = guardState.items[idx];
+  if (!it) return;
+  guardState.items.splice(idx, 1);
   persistGuard(); renderGuardCollection(); newGuardAnalysis();
-  showNotif("Analysis removed from collection");
+  const at = Math.min(idx, guardState.items.length);
+  undoPush("delete analysis",
+    () => { guardState.items.splice(at, 0, it); persistGuard(); renderGuardCollection(); },
+    () => { guardState.items = guardState.items.filter(x => x.id !== id); persistGuard(); renderGuardCollection(); newGuardAnalysis(); });
+  showNotif("Analysis removed from collection", { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
 function exportCollection() {
   const blob = new Blob([JSON.stringify({ version: 1, exported: new Date().toISOString(), items: guardState.items }, null, 2)], { type: "application/json" });

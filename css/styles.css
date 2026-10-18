@@ -73,6 +73,8 @@ button { font: inherit; color: inherit; }
   padding: 4px 9px; cursor: pointer; color: var(--text2); font-size: 12px;
 }
 .iconbtn:hover { color: var(--text); border-color: var(--text3); }
+.iconbtn:disabled { opacity: .38; cursor: default; }
+.iconbtn:disabled:hover { color: var(--text2); border-color: var(--border); }
 
 /* ---------- app tabs ---------- */
 .app-tabs {

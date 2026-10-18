@@ -128,7 +128,15 @@ function bpAdd(id) {
   bpState.comps.push(id); bpSave(); bpRender(); bpRenderPalette();
 }
 function bpRemove(i) {
+  const id = bpState.comps[i];
+  if (id == null) return;
   bpState.comps.splice(i, 1); bpSave(); bpRender(); bpRenderPalette();
+  const nm = bpPat(id) ? bpPat(id).name : id;
+  const at = Math.min(i, bpState.comps.length);
+  undoPush("remove “" + nm + "”",
+    () => { bpState.comps.splice(at, 0, id); bpSave(); bpRender(); bpRenderPalette(); },
+    () => { const j = bpState.comps.indexOf(id); if (j >= 0) { bpState.comps.splice(j, 1); bpSave(); bpRender(); bpRenderPalette(); } });
+  showNotif("Removed " + nm, { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
 function bpMove(i, d) {
   const j = i + d;
@@ -137,10 +145,19 @@ function bpMove(i, d) {
   bpSave(); bpRender();
 }
 function bpToggle(id) { if (bpHas(id)) { const i = bpState.comps.indexOf(id); bpRemove(i); } else bpAdd(id); }
+function bpSnapCanvas() { return { comps: bpState.comps.slice(), name: bpState.name, notes: bpState.notes }; }
+function bpRestoreCanvas(s) {
+  bpState.comps = (s.comps || []).slice(); bpState.name = s.name || ""; bpState.notes = s.notes || "";
+  bpSave(); bpRender(); bpRenderPalette();
+}
 function bpClear() {
   if (!bpState.comps.length && !bpState.name && !bpState.notes) return;
+  const snap = bpSnapCanvas();
   bpState.comps = []; bpState.name = ""; bpState.notes = ""; bpSave(); bpRender(); bpRenderPalette();
-  showNotif("Blueprint cleared");
+  undoPush("clear blueprint",
+    () => bpRestoreCanvas(snap),
+    () => { bpState.comps = []; bpState.name = ""; bpState.notes = ""; bpSave(); bpRender(); bpRenderPalette(); });
+  showNotif("Blueprint cleared", { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
 function bpSetQ(v) { bpState.q = String(v || ""); bpRenderPalette(); }
 function bpSetCat(c) { bpState.cat = bpState.cat === c ? "" : c; bpRenderCats(); bpRenderPalette(); }
@@ -148,10 +165,14 @@ function bpSetField(k, v) { bpState[k] = v; bpSave(); } /* no re-render: keeps f
 function bpApplyTemplate(k) {
   const t = BP_TEMPLATES.find(x => x.k === k);
   if (!t) return;
-  bpState.comps = t.comps.filter(id => bpPat(id));
-  if (!bpState.name) bpState.name = t.name;
+  const snap = bpSnapCanvas(), tname = t.name, tcomps = t.comps.filter(id => bpPat(id));
+  bpState.comps = tcomps.slice();
+  if (!bpState.name) bpState.name = tname;
   bpSave(); bpRender(); bpRenderPalette();
-  showNotif("Template applied — " + t.name);
+  undoPush("apply template “" + tname + "”",
+    () => bpRestoreCanvas(snap),
+    () => { bpState.comps = tcomps.slice(); bpSave(); bpRender(); bpRenderPalette(); });
+  showNotif("Template applied — " + tname, { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
 function bpRemoveFamily(k) { /* no-op hook for future; kept for stable API */ }
 
@@ -678,16 +699,25 @@ function bpSaveToLib() {
 function bpLoadLib(i) {
   const e = bpState.lib[i];
   if (!e) return;
+  const snap = bpSnapCanvas(), ename = e.name;
   bpState.name = e.name; bpState.notes = e.notes || "";
   bpState.comps = (e.comps || []).filter(id => bpPat(id));
   bpSave(); bpRender(); bpRenderPalette();
-  showNotif("Loaded — " + e.name);
+  undoPush("load “" + ename + "”",
+    () => bpRestoreCanvas(snap),
+    () => { bpState.name = ename; bpState.comps = (e.comps || []).filter(id => bpPat(id)); bpSave(); bpRender(); bpRenderPalette(); });
+  showNotif("Loaded — " + ename, { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
 function bpDeleteLib(i) {
   const e = bpState.lib[i];
+  if (!e) return;
   bpState.lib.splice(i, 1); bpSaveLib(); bpRender();
   if (typeof palInvalidate === "function") palInvalidate();
-  if (e) showNotif("Removed from library — " + e.name);
+  const at = Math.min(i, bpState.lib.length), ename = e.name;
+  const putBack = () => { bpState.lib.splice(at, 0, e); bpSaveLib(); bpRender(); if (typeof palInvalidate === "function") palInvalidate(); };
+  undoPush("delete library entry “" + ename + "”", putBack,
+    () => { const j = bpState.lib.indexOf(e); if (j >= 0) { bpState.lib.splice(j, 1); bpSaveLib(); bpRender(); if (typeof palInvalidate === "function") palInvalidate(); } });
+  showNotif("Removed from library — " + ename, { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
 
 /* ---------------- sidebar ---------------- */

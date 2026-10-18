@@ -113,10 +113,14 @@ function dpSave() {
   try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus })); } catch (e) {}
 }
 function dpReset() {
+  const snap = { a: JSON.parse(JSON.stringify(dpState.a)), step: dpState.step, done: dpState.done, target: dpState.target, ack: Object.assign({}, dpState.ack), adrStatus: dpState.adrStatus };
+  const restore = s => { dpState.a = JSON.parse(JSON.stringify(s.a)); dpState.step = s.step; dpState.done = s.done; dpState.target = s.target; dpState.ack = Object.assign({}, s.ack); dpState.adrStatus = s.adrStatus; dpState.err = null; dpSave(); dpRender(); };
   dpState.step = 0; dpState.done = false; dpState.err = null; dpState.target = null; dpState.ack = {};
   dpState.adrStatus = "proposed";
   dpState.a = dpDefault(); dpSave(); dpRender();
-  showNotif("Deployment plan reset");
+  undoPush("reset deployment plan", () => restore(snap),
+    () => { dpState.step = 0; dpState.done = false; dpState.target = null; dpState.ack = {}; dpState.adrStatus = "proposed"; dpState.a = dpDefault(); dpSave(); dpRender(); });
+  showNotif("Deployment plan reset", { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
 
 function initDeploy() {
