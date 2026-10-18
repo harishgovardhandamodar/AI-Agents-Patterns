@@ -76,20 +76,136 @@ function el(id) { return document.getElementById(id); }
 function uniq(a) { return [...new Set(a)]; }
 function fmtUsd(v) { return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
 function debounce(fn, ms) { let t; return function (...a) { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), ms); }; }
-function showNotif(msg) {
+/* ---------------- notifications (v2: announced, actionable, logged) ----------------
+   showNotif(msg) still works exactly as before. Optional second argument:
+   { kind: "info"|"ok"|"warn"|"error", ttl: ms,
+     actions: [{ label, fn, primary }] }  — actions get extra time on screen. */
+const notifHistory = [];   /* newest first: { t, msg, kind } */
+let notifUnread = 0;
+
+function notifBox() {
   let n = document.getElementById("notifBox");
   if (!n) {
     n = document.createElement("div");
     n.id = "notifBox";
-    n.style.cssText = "position:fixed;bottom:16px;right:16px;z-index:200;display:flex;flex-direction:column;gap:6px;align-items:flex-end";
+    n.className = "notif-box";
+    n.setAttribute("role", "log");
+    n.setAttribute("aria-live", "polite");
+    n.setAttribute("aria-label", "Notifications");
     document.body.appendChild(n);
   }
-  const d = document.createElement("div");
-  d.textContent = msg;
-  d.style.cssText = "background:var(--bg3);color:var(--text);border:1px solid var(--accent);border-radius:7px;padding:8px 13px;font-size:12px;box-shadow:0 4px 16px rgba(0,0,0,.4);max-width:380px";
-  n.appendChild(d);
-  setTimeout(() => d.remove(), 4200);
+  return n;
 }
+
+function showNotif(msg, opts) {
+  opts = opts || {};
+  const kind = opts.kind || "info";
+  const acts = (opts.actions || []).filter(a => a && a.label);
+  const ttl = opts.ttl != null ? opts.ttl
+    : kind === "error" ? 9000
+    : acts.length ? 7000 : 4200;
+
+  const n = notifBox();
+  while (n.children.length >= 4) n.firstChild.remove(); /* cap the stack */
+
+  const d = document.createElement("div");
+  d.className = "notif notif-" + kind;
+  d.setAttribute("role", kind === "error" ? "alert" : "status");
+
+  const m = document.createElement("span");
+  m.className = "notif-msg";
+  m.textContent = msg;
+  d.appendChild(m);
+
+  acts.forEach(a => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "notif-act" + (a.primary ? " primary" : "");
+    b.textContent = a.label;
+    b.addEventListener("click", () => { dismiss(); try { a.fn && a.fn(); } catch (e) { console.warn(e); } });
+    d.appendChild(b);
+  });
+
+  const x = document.createElement("button");
+  x.type = "button";
+  x.className = "notif-x";
+  x.setAttribute("aria-label", "Dismiss notification");
+  x.textContent = "×";
+  x.addEventListener("click", () => dismiss());
+  d.appendChild(x);
+
+  /* dismiss timer — pauses while the toast is hovered or focused */
+  let timer = null, remain = ttl, start = 0;
+  function arm() { if (remain <= 0 || timer) return; start = Date.now(); timer = setTimeout(dismiss, remain); }
+  function pause() { if (!timer) return; clearTimeout(timer); timer = null; remain -= Date.now() - start; }
+  function dismiss() {
+    if (timer) clearTimeout(timer);
+    timer = null; remain = 0;
+    d.classList.add("out");
+    setTimeout(() => d.remove(), 160);
+    if (d.contains(document.activeElement)) x.focus();
+  }
+  d.addEventListener("mouseenter", pause);
+  d.addEventListener("mouseleave", arm);
+  d.addEventListener("focusin", pause);
+  d.addEventListener("focusout", arm);
+
+  n.appendChild(d);
+  arm();
+
+  /* history + topbar badge */
+  notifHistory.unshift({ t: Date.now(), msg: msg, kind: kind });
+  if (notifHistory.length > 30) notifHistory.pop();
+  notifUnread++;
+  notifPaintBadge();
+}
+
+function notifPaintBadge() {
+  const c = document.getElementById("notifCount");
+  if (!c) return;
+  c.textContent = notifUnread > 9 ? "9+" : String(notifUnread);
+  c.hidden = notifUnread === 0;
+  const bell = document.getElementById("notifBell");
+  if (bell) bell.setAttribute("aria-label", notifUnread ? `Notifications, ${notifUnread} new` : "Notifications");
+}
+
+function notifLogToggle() { notifLogOpen(document.getElementById("notifLog") ? !document.getElementById("notifLog").classList.contains("open") : true); }
+
+function notifLogOpen(open) {
+  let p = document.getElementById("notifLog");
+  if (!p) {
+    p = document.createElement("div");
+    p.id = "notifLog";
+    p.className = "notif-log";
+    p.setAttribute("role", "dialog");
+    p.setAttribute("aria-label", "Notification history");
+    p.innerHTML = '<div class="notif-log-head"><b>Notifications</b>' +
+      '<span><button class="iconbtn" type="button" onclick="notifLogClear()">clear</button>' +
+      '<button class="iconbtn" type="button" onclick="notifLogToggle()" aria-label="Close notification history">✕</button></span></div>' +
+      '<div class="notif-log-body" id="notifLogBody"></div>';
+    document.body.appendChild(p);
+  }
+  p.classList.toggle("open", !!open);
+  const bell = document.getElementById("notifBell");
+  if (bell) bell.setAttribute("aria-expanded", open ? "true" : "false");
+  if (open) {
+    notifUnread = 0;
+    notifPaintBadge();
+    notifLogPaint();
+    const f = p.querySelector(".notif-log-head button");
+    if (f) f.focus();
+  } else if (bell) bell.focus();
+}
+
+function notifLogPaint() {
+  const body = document.getElementById("notifLogBody");
+  if (!body) return;
+  body.innerHTML = notifHistory.length
+    ? notifHistory.map(h => `<div class="notif-log-row notif-${h.kind}"><span class="notif-log-time">${new Date(h.t).toLocaleTimeString()}</span><span>${escHtml(h.msg)}</span></div>`).join("")
+    : '<p class="muted small" style="padding:10px">No notifications yet — results, saves and errors show up here.</p>';
+}
+
+function notifLogClear() { notifHistory.length = 0; notifLogPaint(); }
 
 /* ---------------- mermaid engine (sequential queue) ---------------- */
 let mmQueue = Promise.resolve();
@@ -254,10 +370,19 @@ function closeDetail() {
 }
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
+    const log = document.getElementById("notifLog");
+    if (log && log.classList.contains("open")) { notifLogToggle(); return; }
     const pal = document.getElementById("palOverlay");
     if (pal && pal.classList.contains("open")) return; /* palette handles its own Esc */
     closeDetail();
   }
+});
+/* click outside closes the notification log */
+document.addEventListener("mousedown", e => {
+  const p = document.getElementById("notifLog");
+  if (!p || !p.classList.contains("open")) return;
+  if (p.contains(e.target) || (e.target.closest && e.target.closest("#notifBell"))) return;
+  notifLogToggle();
 });
 
 /* ---------------- boot ---------------- */
