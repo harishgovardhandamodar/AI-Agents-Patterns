@@ -1205,3 +1205,35 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
   padding-top: 9px; border-top: 1px dashed var(--border);
   font-size: 10.5px; color: var(--text3); line-height: 1.5;
 }
+
+/* ---------------- architect dashboard (Overview) ---------------- */
+.dash-next {
+  display: flex; gap: 12px; align-items: flex-start;
+  padding: 12px 14px; margin-bottom: 14px;
+  background: linear-gradient(180deg, rgba(122,162,247,.10), rgba(122,162,247,.03));
+  border: 1px solid rgba(122,162,247,.35); border-radius: 10px;
+  font-size: 12.5px; line-height: 1.6; color: var(--text);
+}
+.dash-next-ico { font-size: 15px; line-height: 1.4; }
+.dash-next .btn { margin-left: 8px; vertical-align: middle; }
+.dash-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px; margin-bottom: 18px;
+}
+.dash-card {
+  padding: 12px 14px; border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg2); display: flex; flex-direction: column; gap: 6px;
+}
+.dash-card.dim { opacity: .78; }
+.dash-card .dash-h { font-size: 11.5px; font-weight: 600; color: var(--text2); }
+.dash-card .dash-v { font-size: 21px; font-weight: 700; color: var(--text); }
+.dash-card .dash-v i { font-size: 11px; font-weight: 400; color: var(--text3); font-style: normal; }
+.dash-card .dash-v .chip { font-size: 10px; vertical-align: middle; }
+.dash-card .dash-m { font-size: 10.5px; color: var(--text3); line-height: 1.5; flex: 1; }
+.dash-card .btn { align-self: flex-start; }
+.chip.accent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.chip.orange { color: var(--orange); border-color: color-mix(in srgb, var(--orange) 45%, transparent); }
+.chip.red { color: var(--red); border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+.chip.good { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
+.chip.mid { color: var(--orange); border-color: color-mix(in srgb, var(--orange) 45%, transparent); }
+.chip.bad { color: var(--red); border-color: color-mix(in srgb, var(--red) 45%, transparent); }
