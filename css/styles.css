@@ -1319,6 +1319,42 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 .cr-prev, .cr-resid { font-size: 10.5px; color: var(--text3); line-height: 1.5; margin-top: 3px; }
 .cr-resid { color: var(--orange); }
 
+/* ---------------- display preferences panel ---------------- */
+.ux-panel {
+  position: fixed; top: 48px; right: 12px; z-index: 210;
+  width: min(300px, calc(100vw - 24px));
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .5);
+  display: none; overflow: hidden; padding-bottom: 10px;
+}
+.ux-panel.open { display: block; }
+.ux-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.ux-sec { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--text3); margin: 10px 12px 4px; }
+.ux-opt { display: flex; gap: 9px; align-items: flex-start; padding: 6px 12px; cursor: pointer; font-size: 12px; }
+.ux-opt:hover { background: var(--bg3); }
+.ux-opt input { margin-top: 2px; accent-color: var(--accent); }
+.ux-opt span b { display: block; font-weight: 600; }
+.ux-opt span i { display: block; font-style: normal; color: var(--text3); font-size: 11px; }
+
+/* text-size preference: scales everything set in px off body */
+html[data-uxfs="14"] body { font-size: 14px; }
+html[data-uxfs="15"] body { font-size: 15px; }
+html[data-uxfs="16"] body { font-size: 16px; }
+
+/* compact density: tighter cards and rows where the panes are heaviest */
+html[data-uxdensity="compact"] .pat-card { padding: 8px 10px; }
+html[data-uxdensity="compact"] .pat-card .nm { margin: 2px 0 3px; }
+html[data-uxdensity="compact"] .pat-card .chips { margin-top: 5px; }
+html[data-uxdensity="compact"] .cas-card { padding: 7px 10px; gap: 3px; }
+html[data-uxdensity="compact"] .bp-row { padding: 5px 8px; }
+html[data-uxdensity="compact"] .g-item { padding: 6px 8px; }
+html[data-uxdensity="compact"] .cp-bubble { padding: 8px 10px; }
+html[data-uxdensity="compact"] .pane { padding: 10px 12px; }
+html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
+
 /* ---------------- model-backend pill + popover ---------------- */
 .llm-pill .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: baseline; }
 .llm-pill.is-off { border-color: var(--orange); color: var(--text); }

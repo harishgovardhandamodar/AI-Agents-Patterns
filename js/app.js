@@ -29,6 +29,74 @@ function toggleTheme() {
   if (t === "light") document.documentElement.classList.add("light");
 })();
 
+/* ---------------- reading preferences: density + font size ----------------
+   Persisted in localStorage; applied as data attributes on <html> so every
+   pane (including re-rendered ones) follows without extra render code. */
+const UX_STORE = "aap.ux.v1";
+const uxPrefs = (function () {
+  const dflt = { density: "comfortable", fs: 13 };
+  try { return Object.assign({}, dflt, JSON.parse(localStorage.getItem(UX_STORE) || "{}")); }
+  catch (e) { return Object.assign({}, dflt); }
+})();
+
+function uxApply() {
+  const root = document.documentElement;
+  root.dataset.uxdensity = uxPrefs.density === "compact" ? "compact" : "comfortable";
+  root.dataset.uxfs = [13, 14, 15, 16].indexOf(Number(uxPrefs.fs)) >= 0 ? String(uxPrefs.fs) : "13";
+}
+function uxSave() {
+  try { localStorage.setItem(UX_STORE, JSON.stringify(uxPrefs)); } catch (e) {}
+  uxApply();
+  uxPaintPanel();
+}
+function uxSetDensity(d) { uxPrefs.density = d === "compact" ? "compact" : "comfortable"; uxSave(); }
+function uxSetFs(fs) { uxPrefs.fs = Math.min(16, Math.max(13, Number(fs) || 13)); uxSave(); }
+uxApply();
+
+function uxPanelToggle(force) {
+  let p = document.getElementById("uxPanel");
+  if (!p) {
+    p = document.createElement("div");
+    p.id = "uxPanel";
+    p.className = "ux-panel";
+    p.setAttribute("role", "dialog");
+    p.setAttribute("aria-label", "Display preferences");
+    document.body.appendChild(p);
+  }
+  p.classList.toggle("open", force == null ? !p.classList.contains("open") : !!force);
+  const btn = document.getElementById("uxBtn");
+  if (btn) btn.setAttribute("aria-expanded", p.classList.contains("open") ? "true" : "false");
+  if (p.classList.contains("open")) { uxPaintPanel(); const f = p.querySelector("input"); if (f) f.focus(); }
+  else if (btn) btn.focus();
+}
+function uxPaintPanel() {
+  const p = document.getElementById("uxPanel");
+  if (!p || !p.classList.contains("open")) return;
+  const dens = ["comfortable", "compact"].map(d =>
+    `<label class="ux-opt"><input type="radio" name="uxdens" value="${d}" ${uxPrefs.density === d ? "checked" : ""} onchange="uxSetDensity(this.value)">` +
+    `<span><b>${d === "comfortable" ? "Comfortable" : "Compact"}</b><i>${d === "comfortable" ? "roomy cards, easier scanning" : "denser lists, more on screen"}</i></span></label>`).join("");
+  const fss = [13, 14, 15, 16].map(f =>
+    `<label class="ux-opt"><input type="radio" name="uxfs" value="${f}" ${Number(uxPrefs.fs) === f ? "checked" : ""} onchange="uxSetFs(this.value)">` +
+    `<span><b style="font-size:${f}px">${f}px</b><i>${f === 13 ? "default" : f < 15 ? "easier reading" : "large text"}</i></span></label>`).join("");
+  p.innerHTML = '<div class="ux-head"><b>Display</b>' +
+    '<button class="iconbtn" type="button" onclick="uxPanelToggle(false)" aria-label="Close display preferences">✕</button></div>' +
+    '<div class="ux-sec">Density</div>' + dens +
+    '<div class="ux-sec">Text size</div>' + fss +
+    '<div class="muted small" style="margin-top:8px">Saved in this browser; applies to every tab.</div>';
+}
+document.addEventListener("mousedown", function (e) {
+  const p = document.getElementById("uxPanel");
+  if (!p || !p.classList.contains("open")) return;
+  if (p.contains(e.target) || (e.target.closest && e.target.closest("#uxBtn"))) return;
+  p.classList.remove("open");
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    const p = document.getElementById("uxPanel");
+    if (p && p.classList.contains("open")) uxPanelToggle(false);
+  }
+});
+
 /* ---------------- tabs ---------------- */
 let currentTab = "overview";
 const tabLoaders = {}; // filled by per-tab scripts
