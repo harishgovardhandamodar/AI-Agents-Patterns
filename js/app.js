@@ -154,6 +154,28 @@ function escHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function el(id) { return document.getElementById(id); }
+/* Stale-shell detector: if the cached index.html predates the JS (or vice
+   versa), tabs and panes disagree — e.g. a tab button with no pane, or a
+   first-run tour looping over an app the user already knows. Banner offers
+   a cache-busting reload instead of failing silently. */
+function shellFreshCheck() {
+  try {
+    const tabs = (typeof SK_TABS !== "undefined" ? SK_TABS : []);
+    const missing = tabs.filter(t => !document.getElementById(t + "Pane"));
+    const orphan = [...document.querySelectorAll(".pane")].map(p => p.id.replace(/Pane$/, "")).filter(t => tabs.indexOf(t) < 0);
+    const bad = missing.concat(orphan.map(t => t + " (unwired)"));
+    if (!bad.length) return true;
+    let b = document.getElementById("freshBanner");
+    if (!b) {
+      b = document.createElement("div");
+      b.id = "freshBanner";
+      b.innerHTML = `<b>Update available.</b><span>This page is a stale cached copy (mismatch: ${bad.map(escHtml).join(", ")}). </span>` +
+        `<button class="btn sm primary" onclick="location.href=location.pathname+'?v='+Date.now()+location.hash">Reload fresh copy</button>`;
+      document.body.appendChild(b);
+    }
+    return false;
+  } catch (e) { return true; }
+}
 /* Live catalog counts for UI copy — never hardcode 107/43/180 in strings. */
 function catN(kind, fallback) {
   try {
@@ -785,6 +807,7 @@ async function loadAll() {
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     if (typeof paintSaveStamps === "function") paintSaveStamps();
     if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
+    if (typeof shellFreshCheck === "function") shellFreshCheck();
     if (typeof onbShow === "function") setTimeout(() => onbShow(false), 350);
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
