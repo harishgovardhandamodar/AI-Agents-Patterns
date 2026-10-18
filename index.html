@@ -83,6 +83,10 @@
     <h4>Model</h4>
     <select class="search" id="cpModel" style="width:100%" aria-label="Model" onchange="cpSave()"></select>
     <div class="save-stamp" data-save-stamp="cp" style="margin-top:4px"></div>
+    <h4>Persona</h4>
+    <select class="search" id="cpPersona" style="width:100%" aria-label="Answer persona" onchange="cpSetPersona(this.value)" title="Who answers: the voice and expertise behind the reply"></select>
+    <h4>Explain it for</h4>
+    <select class="search" id="cpAudience" style="width:100%" aria-label="Delivery audience" onchange="cpSetAudience(this.value)" title="Delivery mode: who the answer is written for"></select>
     <h4>Ground answers in</h4>
     <div class="cp-scope" id="cpScope"></div>
     <h4>Suggested questions</h4>

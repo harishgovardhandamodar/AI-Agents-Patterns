@@ -14,7 +14,7 @@ let cpScope = { patterns: true, scenarios: true, cascades: true, traces: true };
 
 /* ---------------- persistence ---------------- */
 function cpSave() {
-  try { localStorage.setItem(CP_STORE, JSON.stringify({ messages: cpMessages, scope: cpScope, model: el("cpModel") && el("cpModel").value })); } catch (e) {}
+  try { localStorage.setItem(CP_STORE, JSON.stringify({ messages: cpMessages, scope: cpScope, model: el("cpModel") && el("cpModel").value, persona: cpPersona, audience: cpAudience })); } catch (e) {}
   if (typeof markSaved === "function") markSaved("cp");
 }
 function cpRestore() {
@@ -22,6 +22,8 @@ function cpRestore() {
     const s = JSON.parse(localStorage.getItem(CP_STORE) || "{}");
     if (Array.isArray(s.messages)) cpMessages = s.messages;
     if (s.scope) cpScope = Object.assign(cpScope, s.scope);
+    if (typeof s.persona === "string" && CP_PERSONAS.some(p => p.id === s.persona)) cpPersona = s.persona;
+    if (typeof s.audience === "string" && CP_AUDIENCES.some(a => a.id === s.audience)) cpAudience = s.audience;
   } catch (e) {}
 }
 
@@ -140,6 +142,9 @@ function cpMsgEl(m, stream, i, isLast) {
   }
   wrap.innerHTML = '<div class="who">◆ Fox - Architect' +
     (m.meta ? ' <span class="chip" style="font-size:9px">' + escHtml(m.meta) + "</span>" : "") +
+    (m.persona ? ' <span class="chip" style="font-size:9px" title="Answer voice and delivery audience">' +
+      escHtml((CP_PERSONAS.find(p => p.id === m.persona) || {}).label || m.persona) + " → " +
+      escHtml((CP_AUDIENCES.find(a => a.id === (m.audience || "peer")) || {}).label || m.audience || "") + "</span>" : "") +
     (stream ? ' <span class="cp-stream-dot">●</span>' : "") + "</div>";
   const bubble = document.createElement("div");
   bubble.className = "cp-bubble";
@@ -284,6 +289,77 @@ async function cpLoadModels() {
   sel.value = ids.indexOf(cur) >= 0 ? cur : (ids.indexOf(LLM.state.defaultModel) >= 0 ? LLM.state.defaultModel : ids[0]);
 }
 
+/* ---------------- personas + delivery modes --------------------
+   Persona = WHO answers (voice, expertise, method). Audience = who the
+   answer is FOR (depth, vocabulary, what "done" looks like). Both are
+   persisted and composed into the live model's system prompt; the offline
+   deterministic fallback always uses the default catalog voice. */
+const CP_PERSONAS = [
+  { id: "agent-architect", label: "AI Agent Architect",
+    blurb: "pragmatic builder's view",
+    sys: "You answer as a pragmatic senior AI-agent architect. Lead with what to build and in what order. Concrete, opinionated, allergic to hand-waving." },
+  { id: "security-architect", label: "Security Architect",
+    blurb: "adversarial, assume-breach",
+    sys: "You answer as a security architect. Assume breach: start from how this fails or gets abused, map every recommendation to STRIDE and to a protection layer (identity, context, policy, process, infrastructure, data, DLP, observability). Name the residual risk explicitly. Never accept a control at face value — say how you would test or red-team it." },
+  { id: "phd-researcher", label: "Experienced Researcher (PhD)",
+    blurb: "rigorous, mechanism-first",
+    sys: "You answer as an experienced researcher with a PhD in AI systems. Lead with mechanisms, not slogans: define terms, separate what is measured from what is assumed, cite the catalog items that ground each claim, and close with open questions and what evidence would change your mind." },
+  { id: "council", label: "Council of Researchers",
+    blurb: "several viewpoints + dissent",
+    sys: "You answer as a council of three researchers with different priors (a builder, a skeptic, an empiricist). Give each a short named viewpoint on the question, let them disagree explicitly (mark dissent!), then synthesize a joint recommendation and list what the council still disagrees on. Keep each voice to a few sentences." }
+];
+const CP_AUDIENCES = [
+  { id: "peer", label: "Architect (peer)",
+    blurb: "trade-offs, structure",
+    sys: "Audience: a fellow architect. Skim context, go deep on structure, trade-offs and failure interactions. Jargon is fine." },
+  { id: "engineer", label: "Engineer",
+    blurb: "concrete, implementation",
+    sys: "Audience: a hands-on engineer. Be concrete and implementation-oriented: name components, configs, thresholds and tests. Show commands, pseudo-config or request shapes where they clarify. Skip the strategy preamble." },
+  { id: "data-scientist", label: "Data Scientist",
+    blurb: "metrics, evals, measurement",
+    sys: "Audience: a data scientist. Frame everything as measurable: metrics, evals, baselines, confidence and what would falsify the recommendation. Call out where numbers are estimates vs measured." },
+  { id: "management", label: "Management",
+    blurb: "risk, cost, timelines",
+    sys: "Audience: engineering management. Lead with risk, cost, staffing and timeline implications in plain business language. Minimize jargon; every technical term gets a one-line translation. End with a resourcing recommendation." },
+  { id: "executive", label: "Executive",
+    blurb: "bottom line first",
+    sys: "Audience: an executive. Bottom line first in at most three bullets: what is at stake, what it costs, what decision is needed. Then a short 'why' — no jargon, no implementation detail unless asked." },
+  { id: "customer-team", label: "Customer Team Member",
+    blurb: "empathetic, user impact",
+    sys: "Audience: a customer-facing team member. Be empathetic and user-centric: what does this mean for customers, what will they see, what should the team say and do. Avoid internals; translate every risk into customer impact." },
+  { id: "external-researcher", label: "External Researcher",
+    blurb: "formal, precise, open problems",
+    sys: "Audience: an external researcher. Be formal and precise: define terms, distinguish claims from conjectures, reference the grounding catalog items by name, and note related open problems and what evidence is missing." }
+];
+let cpPersona = "agent-architect";
+let cpAudience = "peer";
+
+function cpPersonaDef() { return CP_PERSONAS.find(p => p.id === cpPersona) || CP_PERSONAS[0]; }
+function cpAudienceDef() { return CP_AUDIENCES.find(a => a.id === cpAudience) || CP_AUDIENCES[0]; }
+function cpSetPersona(v) {
+  if (CP_PERSONAS.some(p => p.id === v)) cpPersona = v;
+  cpRenderPersonaLabels(); cpSave();
+}
+function cpSetAudience(v) {
+  if (CP_AUDIENCES.some(a => a.id === v)) cpAudience = v;
+  cpSave();
+}
+function cpRenderPersonaLabels() {
+  const ps = el("cpPersona"), as = el("cpAudience");
+  if (ps && !ps.options.length) CP_PERSONAS.forEach(p => {
+    const o = document.createElement("option");
+    o.value = p.id; o.textContent = p.label + " — " + p.blurb;
+    ps.appendChild(o);
+  });
+  if (as && !as.options.length) CP_AUDIENCES.forEach(a => {
+    const o = document.createElement("option");
+    o.value = a.id; o.textContent = a.label + " — " + a.blurb;
+    as.appendChild(o);
+  });
+  if (ps) ps.value = cpPersona;
+  if (as) as.value = cpAudience;
+}
+
 /* ---------------- prompts ---------------- */
 const CP_SUGGESTIONS = [
   "A customer-support agent can refund up to $2,000 and email customers. What patterns, cascade risks and mitigations should I plan?",
@@ -309,6 +385,7 @@ function cpRenderSuggestions() {
 function cpBuildMessages(query) {
   const msgs = [];
   let system = "You are Fox - Architect for an enterprise AI-agent design catalog. " +
+    cpPersonaDef().sys + " " + cpAudienceDef().sys + " " +
     "Answer as a pragmatic, senior enterprise architect. Be concrete and structured: use short headings and bullet lists, name specific patterns and scenarios from the catalog, and always cover risk and mitigation. " +
     "Prefer the four cascade classes (inherent, emergent, derived, cascading) when analysing failure propagation. " +
     "Format for readability: use Markdown tables when comparing options, controls or trade-offs, and include a ```mermaid diagram (flowchart, sequenceDiagram or quadrantChart, at most 10 nodes with short labels) whenever you explain a flow, an attack chain or how a failure propagates. " +
@@ -356,7 +433,7 @@ function cpRegen(i) {
   cpRunAssistant(q);
 }
 async function cpRunAssistant(q) {
-  const assistant = { role: "assistant", content: "", cites: [] };
+  const assistant = { role: "assistant", content: "", cites: [], persona: cpPersona, audience: cpAudience };
   cpMessages.push(assistant);
   cpRenderLog();
   cpBusy = true;
@@ -496,6 +573,7 @@ function initCopilot() {
   if (!el("cpLog")) return;
   cpRestore();
   cpRenderScope();
+  cpRenderPersonaLabels();
   cpRenderSuggestions();
   cpRenderLog();
   cpSetStatus();
