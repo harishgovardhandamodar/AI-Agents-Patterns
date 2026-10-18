@@ -226,14 +226,17 @@ async function cpSend() {
     if (e && e.name === "AbortError") {
       assistant.content += "\n\n_(stopped)_";
     } else {
-      // deterministic local fallback
+      // deterministic local fallback (unreachable *or* timed out — a backend
+      // can report "online" while its model is wedged)
       const fb = (typeof AIContext !== "undefined")
         ? AIContext.answer(q, payload._ctx, cpScope)
         : { text: "The local model is unreachable and no fallback is available.", cites: [] };
       assistant.offline = true;
       assistant.content = fb.text;
       if (fb.cites) assistant.cites = fb.cites;
-      showNotif("Model unreachable — answered from the local catalog");
+      showNotif(e && e.name === "TimeoutError"
+        ? "Model timed out — answered from the local catalog"
+        : "Model unreachable — answered from the local catalog");
     }
   } finally {
     cpBusy = false;

@@ -58,10 +58,41 @@ const LLM = (function () {
     return state.models;
   }
 
+  /* Watchdog values. A backend can answer /health instantly (Fox-Services is
+     "online") while the model behind it never produces a token — without a
+     bound the UI would spin for the full 600s read timeout. Loaded once from
+     serve.py so ops can tune via LLM_FIRST_TOKEN_TIMEOUT / LLM_STALL_TIMEOUT. */
+  const wd = { firstToken: 60000, stall: 45000, loaded: false };
+  let cfgPromise = null;
+
+  function config() {
+    if (!cfgPromise) {
+      cfgPromise = fetch("api/llm/config", { cache: "no-store" })
+        .then(r => r.json())
+        .then(j => {
+          if (j && j.first_token_timeout) wd.firstToken = j.first_token_timeout * 1000;
+          if (j && j.stall_timeout) wd.stall = j.stall_timeout * 1000;
+          if (j && j.default_model) state.defaultModel = j.default_model;
+          wd.loaded = true;
+        })
+        .catch(() => { wd.loaded = true; });
+    }
+    return cfgPromise;
+  }
+
+  function timeoutErr(msg) {
+    const e = new Error(msg);
+    e.name = "TimeoutError";
+    return e;
+  }
+
   /* Streaming chat. Calls onDelta(textChunk) as tokens arrive and
      onMeta({backend,model}) once the served model is known.
-     Returns the full concatenated text. Abortable via opts.signal. */
+     Returns the full concatenated text. Abortable via opts.signal.
+     Throws TimeoutError when the backend goes silent past the watchdog
+     before any token arrives (the caller then falls back offline). */
   async function chat(opts) {
+    await config();
     const messages = opts.messages || [];
     const body = {
       model: opts.model || state.defaultModel,
@@ -71,20 +102,44 @@ const LLM = (function () {
     };
     if (opts.max_tokens) body.max_tokens = opts.max_tokens;
 
+    const firstMs = opts.firstTokenTimeout || wd.firstToken;
+    const stallMs = opts.stallTimeout || wd.stall;
+
+    /* Own controller so a watchdog abort is distinguishable from the caller
+       cancelling (opts.signal) — the two must not look alike to the caller. */
+    const ctrl = new AbortController();
+    let callerAborted = false;
+    if (opts.signal) {
+      if (opts.signal.aborted) callerAborted = true;
+      else opts.signal.addEventListener("abort", () => { callerAborted = true; ctrl.abort(); }, { once: true });
+    }
+    let timedOut = false;
+    let timer = null;
+    const arm = ms => { clearTimeout(timer); timer = setTimeout(() => { timedOut = true; ctrl.abort(); }, ms); };
+    const disarm = () => { clearTimeout(timer); timer = null; };
+
     let res;
+    arm(firstMs);
     try {
       res = await fetch("api/llm/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
-        signal: opts.signal
+        signal: ctrl.signal
       });
     } catch (e) {
+      disarm();
+      if (timedOut) {
+        state.ready = false;
+        state.lastError = "no response headers after " + Math.round(firstMs / 1000) + "s";
+        throw timeoutErr("LLM timed out — " + state.lastError);
+      }
       if (e && e.name === "AbortError") throw e;
       state.ready = false;
       state.lastError = String(e && e.message || e);
       throw new Error("LLM unreachable: " + state.lastError);
     }
+    disarm();
 
     if (!res.ok) {
       let detail = "";
@@ -102,7 +157,12 @@ const LLM = (function () {
     if (ct.indexOf("text/event-stream") === -1) {
       // JSON path: either a real non-streaming completion, or our own
       // {ok:false,error} when no backend is reachable.
-      const j = await res.json();
+      let j;
+      arm(firstMs);
+      try { j = await res.json(); } catch (e) {
+        if (timedOut) { state.ready = false; state.lastError = "body stalled"; throw timeoutErr("LLM timed out — no JSON body"); }
+        throw e;
+      } finally { disarm(); }
       if (j && j.ok === false) {
         state.ready = false;
         state.lastError = j.error || "no LLM backend";
@@ -119,29 +179,59 @@ const LLM = (function () {
     const reader = res.body.getReader();
     const dec = new TextDecoder();
     let buf = "";
-    for (;;) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buf += dec.decode(value, { stream: true });
-      let idx;
-      while ((idx = buf.indexOf("\n\n")) >= 0) {
-        const frame = buf.slice(0, idx);
-        buf = buf.slice(idx + 2);
-        for (const line of frame.split("\n")) {
-          if (!line.startsWith("data:")) continue;
-          const data = line.slice(5).trim();
-          if (!data || data === "[DONE]") continue;
-          let j;
-          try { j = JSON.parse(data); } catch (e) { continue; }
-          if (j.model) state.lastModel = j.model;
-          if (!metaSent && (j.model || backend)) {
-            metaSent = true;
-            if (opts.onMeta) opts.onMeta({ backend: backend, model: j.model || state.lastModel });
+    let sawData = false;   // any body byte at all — proves the backend is alive
+    try {
+      for (;;) {
+        /* First window waits for the first byte, then each window is bounded
+           by the stall timeout: a wedged model must not hang the UI. */
+        arm(sawData ? stallMs : firstMs);
+        let chunk, done;
+        try {
+          const r = await reader.read();
+          done = r.done; chunk = r.value;
+        } catch (e) {
+          if (timedOut) {
+            if (full.trim()) return full;   // stalled after a partial answer: ship it
+            state.ready = false;
+            state.lastError = "backend silent for " + Math.round(firstMs / 1000) + "s with no tokens";
+            throw timeoutErr("LLM timed out — " + state.lastError);
           }
-          const d = j.choices && j.choices[0] && j.choices[0].delta;
-          if (d && d.content) { full += d.content; if (opts.onDelta) opts.onDelta(d.content); }
+          if (e && e.name === "AbortError") throw e;
+          throw e;
+        } finally {
+          disarm();
+        }
+        if (done) break;
+        if (!chunk || !chunk.length) continue;
+        if (!sawData) { sawData = true; state.ready = true; }
+        buf += dec.decode(chunk, { stream: true });
+        let idx;
+        while ((idx = buf.indexOf("\n\n")) >= 0) {
+          const frame = buf.slice(0, idx);
+          buf = buf.slice(idx + 2);
+          for (const line of frame.split("\n")) {
+            if (!line.startsWith("data:")) continue;
+            const data = line.slice(5).trim();
+            if (!data || data === "[DONE]") continue;
+            let j;
+            try { j = JSON.parse(data); } catch (e) { continue; }
+            if (j.model) state.lastModel = j.model;
+            if (!metaSent && (j.model || backend)) {
+              metaSent = true;
+              if (opts.onMeta) opts.onMeta({ backend: backend, model: j.model || state.lastModel });
+            }
+            const d = j.choices && j.choices[0] && j.choices[0].delta;
+            if (d && d.content) { full += d.content; if (opts.onDelta) opts.onDelta(d.content); }
+          }
         }
       }
+      if (!sawData) {
+        state.ready = false;
+        state.lastError = "backend returned an empty response";
+        throw new Error(state.lastError);
+      }
+    } finally {
+      disarm();
     }
     return full;
   }

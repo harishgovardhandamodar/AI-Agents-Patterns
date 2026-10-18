@@ -31,6 +31,10 @@ services:
       FOX_LLM_URL: "${FOX_LLM_URL:-http://host.docker.internal:8210}"
       AXIOM_LLM_URL: "${AXIOM_LLM_URL:-http://100.101.3.115:8210}"
       LLM_MODEL: "${LLM_MODEL:-quai-qwen3.8-27b:latest}"
+      LLM_CONNECT_TIMEOUT: "${LLM_CONNECT_TIMEOUT:-5}"
+      LLM_READ_TIMEOUT: "${LLM_READ_TIMEOUT:-600}"
+      LLM_FIRST_TOKEN_TIMEOUT: "${LLM_FIRST_TOKEN_TIMEOUT:-60}"
+      LLM_STALL_TIMEOUT: "${LLM_STALL_TIMEOUT:-45}"
     extra_hosts:
       - "host.docker.internal:host-gateway"
     read_only: true

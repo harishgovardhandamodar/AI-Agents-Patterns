@@ -35,6 +35,8 @@ Configuration (environment variables):
     LLM_MODEL      default quai-qwen3.8-27b:latest
     LLM_CONNECT_TIMEOUT  default 5     (seconds, per backend)
     LLM_READ_TIMEOUT     default 600   (seconds, model may cold-load)
+    LLM_FIRST_TOKEN_TIMEOUT default 60 (seconds, before first token reaches client)
+    LLM_STALL_TIMEOUT    default 45    (seconds, max silence mid-stream)
 """
 import http.client
 import http.server
@@ -65,6 +67,11 @@ def _backend_list():
 DEFAULT_MODEL = os.environ.get("LLM_MODEL", "quai-qwen3.8-27b:latest")
 CONNECT_TIMEOUT = float(os.environ.get("LLM_CONNECT_TIMEOUT", "5"))
 READ_TIMEOUT = float(os.environ.get("LLM_READ_TIMEOUT", "600"))
+# Client-facing watchdog values (served via /api/llm/config): how long js/llm.js
+# waits before giving up on a backend that accepts a connection but produces no
+# token (Fox-Services can report "online" while the model behind it is wedged).
+FIRST_TOKEN_TIMEOUT = float(os.environ.get("LLM_FIRST_TOKEN_TIMEOUT", "60"))
+STALL_TIMEOUT = float(os.environ.get("LLM_STALL_TIMEOUT", "45"))
 
 
 def _split(url):
@@ -184,6 +191,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 "backends": [b["name"] for b in _backend_list()],
                 "connect_timeout": CONNECT_TIMEOUT,
                 "read_timeout": READ_TIMEOUT,
+                "first_token_timeout": FIRST_TOKEN_TIMEOUT,
+                "stall_timeout": STALL_TIMEOUT,
             })
         if path == "/api/llm/models":
             return self._models()
