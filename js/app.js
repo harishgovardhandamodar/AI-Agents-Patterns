@@ -243,6 +243,7 @@ async function loadAll() {
     if (typeof initDeploy === "function") initDeploy();
     if (typeof initBlueprint === "function") initBlueprint();
     if (typeof initPalette === "function") initPalette();
+    if (typeof initShortcuts === "function") initShortcuts();
     if (typeof dashRender === "function") dashRender();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);

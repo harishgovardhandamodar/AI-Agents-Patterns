@@ -1276,3 +1276,14 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
   border-top: 1px solid var(--border); padding: 7px 14px;
   font-size: 10px; color: var(--text3); background: var(--bg);
 }
+
+/* ---------------- shortcuts help ---------------- */
+.sk-box { width: min(460px, 92vw); padding-bottom: 4px; }
+.sk-head { padding: 12px 16px 8px; font-size: 13px; font-weight: 700; color: var(--text); border-bottom: 1px solid var(--border); }
+.sk-rows { padding: 8px 12px; display: flex; flex-direction: column; gap: 2px; }
+.sk-row { display: flex; align-items: center; gap: 14px; padding: 6px 6px; font-size: 12px; color: var(--text2); }
+.sk-row kbd {
+  flex: 0 0 120px; text-align: center;
+  background: var(--bg3); border: 1px solid var(--border); border-bottom-width: 2px;
+  border-radius: 6px; padding: 3px 6px; font-size: 11px; font-family: inherit; color: var(--text);
+}
