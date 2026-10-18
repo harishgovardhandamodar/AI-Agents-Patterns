@@ -196,21 +196,32 @@ function cpRenderLog() {
   }
 }
 /* Replace mermaid error notes in chat with the raw source in a <pre>, so a
-   malformed diagram is still readable instead of hidden behind an error. */
+   malformed diagram is still readable instead of hidden behind an error.
+   Covers both failure modes: our own .mm-err-note, and mermaid's native
+   error SVG ("Syntax error in text" + .error-icon), which suppressErrors
+   renders inline. */
 function cpMermaidFallback(log) {
   if (!log || !log.querySelectorAll) return;
-  log.querySelectorAll(".mm-err-note").forEach(function (n) {
-    const wrap = n.closest(".diagram-wrap");
-    const pre = wrap && wrap.querySelector("pre.mermaid");
-    const src = (pre && pre.getAttribute("data-src")) || (pre && pre.textContent) || "";
-    if (!src) { n.remove(); return; }
+  const toSource = function (pre) {
+    const wrap = pre.closest(".diagram-wrap");
+    const src = (pre.getAttribute("data-src") || pre.textContent || "").trim();
+    if (!src) return;
     const d = document.createElement("pre");
     d.className = "cp-mermaid-src";
     d.textContent = src;
-    n.replaceWith(d);
-    if (pre && pre.parentElement === wrap) pre.remove();
-    const btn = wrap && wrap.querySelector(".design-expand");
-    if (btn) btn.remove();
+    if (wrap) wrap.replaceWith(d); else pre.replaceWith(d);
+  };
+  log.querySelectorAll(".mm-err-note").forEach(function (n) {
+    const wrap = n.closest(".diagram-wrap");
+    const pre = wrap && wrap.querySelector("pre.mermaid");
+    if (pre && (pre.getAttribute("data-src") || pre.textContent || "").trim()) {
+      n.remove();
+      toSource(pre);
+    } else n.remove();
+  });
+  log.querySelectorAll("pre.mermaid").forEach(function (pre) {
+    if (pre.querySelector(".error-icon") || /syntax error in text/i.test(pre.textContent || ""))
+      toSource(pre);
   });
 }
 function cpScroll() { const log = el("cpLog"); if (log) log.scrollTop = log.scrollHeight; }
