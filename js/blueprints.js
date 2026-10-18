@@ -356,6 +356,196 @@ function bpRenderEst() {
     `p95 = 1.5 × p50 with a bounded-retry control, 3 × without. Edit any assumption above.</div>`;
 }
 
+/* ---------------- per-blueprint threat model ----------------
+   Three evidence sources, all matched against the current component list:
+   1. attack scenarios whose defense patterns (`patternRefs`) touch the
+      blueprint — shows which of their defences you actually have;
+   2. cascades whose participants are in the blueprint — the emergent and
+      cascading failures that only exist because these parts compose;
+   3. each component's own catalogued failure modes, "guarded" only when a
+      related control from the catalog is also in the blueprint.
+   Exposure is a weighted sum of severity (and cascade class) weights — a
+   score to compare two blueprints, not an absolute risk number. */
+const BP_SEVW = { critical: 4, high: 3, medium: 2, low: 1 };
+const BP_CLSW = { inherent: 1, derived: 1.25, emergent: 1.5, cascading: 2 };
+const BP_TM_CAP = 6;
+let bpTmExp = { scn: false, cas: false, fail: false }; /* transient expand flags */
+
+function bpTmToggle(k) { bpTmExp[k] = !bpTmExp[k]; bpRender(); }
+
+function bpThreatModel() {
+  const set = new Set(bpState.comps);
+  const out = { scns: [], cas: [], fails: [], exp: 0, idx: 0, max: bpTmMax(), unguardedHigh: 0, has: set.size > 0, band: ["—", "mid"] };
+  if (!set.size) return out;
+
+  /* 1 — attack scenarios applicable to what this blueprint actually runs.
+     Matching on defence refs would be backwards: adding a control would
+     *create* new applicable scenarios. So applicability comes from the
+     stages (they define the domain and the victim), plus 'general'
+     scenarios which apply to anything with a stage; the scenario's defence
+     refs then only set the coverage discount. */
+  const stageDom = new Set();
+  bpState.comps.forEach(id => { const p = bpPat(id); if (p && !bpIsControl(p)) (p.domains || []).forEach(d => stageDom.add(d)); });
+  (DATA.scenarios.scenarios || []).forEach(s => {
+    const refs = s.patternRefs || [];
+    const victimIn = refs.some(r => { const p = bpPat(r); return p && p.cat === "domain" && set.has(r); });
+    const applicable = victimIn || (set.size > 0 && (s.domain === "general" || stageDom.has(s.domain)));
+    if (!applicable) return;
+    const need = refs.filter(r => { const p = bpPat(r); return p && p.cat !== "domain"; });
+    const present = need.filter(r => set.has(r));
+    const missing = need.filter(r => !set.has(r));
+    const w = BP_SEVW[s.severity] || 2;
+    /* Residual weight = severity x (1 - defences present): a fully defended
+       scenario costs nothing, so adding a defence can never raise the index. */
+    const covered = need.length ? present.length / need.length : 0;
+    out.scns.push({ s: s, present: present.length, need: need.length, missing: missing, w: w, raw: w, eff: w * (1 - covered) });
+    out.exp += w * (1 - covered);
+  });
+  out.scns.sort((a, b) => b.eff - a.eff || ((BP_SEVW[b.s.likelihood] || 0) - (BP_SEVW[a.s.likelihood] || 0)));
+
+  /* 2 — composition cascades. Match on stage participants ONLY: a cascade
+     becomes active because a pipeline stage of yours sits in its path, never
+     because a control does — otherwise adding a recommended control would
+     *create* new matches (its id appears in the cascade's inherited refs) and
+     raise the index, which is backwards. Controls act through the discount:
+     more covered families, less residual cascade exposure. */
+  const famCov = (function () { const c = bpCoverage(); return c.total ? c.ok / c.total : 0; })();
+  (DATA.cascades.cascades || []).forEach(c => {
+    const stageHits = (c.patternRefs || []).filter(r => { const rp = bpPat(r); return rp && set.has(r) && !bpIsControl(rp); }).length;
+    if (!stageHits) return; /* no stage of yours on the path: not active */
+    const mult = BP_CLSW[c.cls] || 1;
+    const w = (BP_SEVW[c.impact] || 2) * mult;
+    out.cas.push({ c: c, w: w, mult: mult, eff: w * (1 - 0.6 * famCov), stageHits: stageHits });
+    out.exp += w * (1 - 0.6 * famCov);
+  });
+  out.cas.sort((a, b) => b.eff - a.eff);
+
+  /* 3 — component failure modes. Only pipeline stages feed the index: a
+     control's own failure modes stay listed (a reviewer should see them) but
+     weigh nothing, otherwise adding a guard would add exposure through its
+     own failure list and the index would punish defence. With this split the
+     invariant is clean — adding a control never raises the index, adding a
+     stage can. */
+  bpState.comps.forEach(id => {
+    const p = bpPat(id); if (!p) return;
+    const isCtl = bpIsControl(p);
+    const guards = (p.related || []).filter(r => { const rp = bpPat(r); return rp && bpIsControl(rp); });
+    (p.failures || []).forEach(f => {
+      const present = guards.filter(r => set.has(r));
+      const missing = guards.filter(r => !set.has(r));
+      const sev = f.sev || "medium";
+      const guarded = present.length > 0;
+      const w = isCtl ? 0 : (BP_SEVW[sev] || 2) / 2;
+      out.fails.push({ p: p, f: f, sev: sev, guarded: guarded, present: present, missing: missing, w: w });
+      out.exp += w;
+      if (!isCtl && !guarded && (sev === "critical" || sev === "high")) out.unguardedHigh++;
+    });
+  });
+  out.fails.sort((a, b) => (b.guarded === a.guarded ? b.w - a.w : (a.guarded ? 1 : -1)));
+  out.exp = Math.round(out.exp);
+  out.max = bpTmMax();
+  out.idx = Math.min(100, Math.round(out.exp / (out.max || 1) * 100));
+  out.band = out.idx < 8 ? ["Low", "good"] : out.idx < 14 ? ["Elevated", "mid"] : out.idx < 20 ? ["High", "mid"] : ["Severe", "bad"];
+  return out;
+}
+
+function bpTmSev(sev) { return `<span class="bp-sev"><i class="sev-dot sev-${escHtml(sev)}"></i>${escHtml(sev)}</span>`; }
+
+/* Raw exposure grows with catalog size (175 cascades alone), so it can't be
+   banded on absolute values — a 400 means nothing without a ceiling. Index it
+   against the theoretical maximum: every scenario and cascade matched at full
+   weight, plus every non-control catalogue failure unguarded (control failure
+   modes weigh nothing in the index, mirroring the failure term above). */
+let bpTmMaxCache = null;
+function bpTmMax() {
+  if (bpTmMaxCache != null) return bpTmMaxCache;
+  let m = 0;
+  (DATA.scenarios.scenarios || []).forEach(s => { m += BP_SEVW[s.severity] || 2; });
+  (DATA.cascades.cascades || []).forEach(c => { m += (BP_SEVW[c.impact] || 2) * (BP_CLSW[c.cls] || 1); });
+  (DATA.patterns.patterns || []).forEach(p => {
+    if (bpIsControl(p)) return;
+    (p.failures || []).forEach(f => { m += (BP_SEVW[f.sev] || 2) / 2; });
+  });
+  bpTmMaxCache = Math.round(m);
+  return bpTmMaxCache;
+}
+function bpTmBtn(id) { return `<button class="btn sm ghost" onclick="bpAdd('${id}')">+ ${id}</button>`; }
+
+function bpTmScnRow(x) {
+  const s = x.s;
+  const cov = x.need ? Math.round(x.present / x.need * 100) : 100;
+  return `<div class="bp-tmrow">` +
+    `<div class="bp-tmbody">` +
+      `<a class="bp-tmttl" onclick="openScenario('${s.id}')">${escHtml(s.title)}</a>` +
+      `<span class="bp-tmmeta">${bpTmSev(s.severity)} × ${escHtml(s.likelihood)} · ${escHtml(s.vector)} · ` +
+        `<b class="${cov === 100 ? "bp-covok" : cov >= 50 ? "bp-covmid" : "bp-covlow"}">${x.present}/${x.need} defenses present</b></span>` +
+    `</div>` +
+    (x.missing.length ? bpTmBtn(x.missing[0]) : `<span class="bp-tmk">fully covered</span>`) +
+  `</div>`;
+}
+function bpTmCasRow(x) {
+  const c = x.c;
+  return `<div class="bp-tmrow">` +
+    `<div class="bp-tmbody">` +
+      `<a class="bp-tmttl" onclick="openCascade('${c.id}')">${escHtml(c.name)}</a>` +
+      `<span class="bp-tmmeta"><b class="bp-cls-${escHtml(c.cls)}">${escHtml(c.cls)}</b> · ${bpTmSev(c.impact)} · ` +
+        `blast: ${escHtml(c.blastRadius)} · ${escHtml(c.speed)} · ${x.stageHits} stage participant${x.stageHits === 1 ? "" : "s"}</span>` +
+    `</div>` +
+    `<span class="bp-tmk">+${Math.round(x.eff)}</span>` +
+  `</div>`;
+}
+function bpTmFailRow(x) {
+  return `<div class="bp-tmrow">` +
+    `<div class="bp-tmbody">` +
+      `<span class="bp-tmttl">${escHtml(x.f.n)} <span class="muted small">— ${escHtml(x.p.name)}</span></span>` +
+      `<span class="bp-tmmeta">${bpTmSev(x.sev)} · ${escHtml(x.f.d || "")}</span>` +
+    `</div>` +
+    (x.guarded
+      ? `<span class="bp-tmk">guarded by ${escHtml(x.present.join(", "))}</span>`
+      : x.missing.length ? bpTmBtn(x.missing[0]) : `<span class="bp-tmk">unguarded</span>`) +
+  `</div>`;
+}
+function bpTmList(kind, rows, renderRow) {
+  const open = bpTmExp[kind];
+  const shown = open ? rows : rows.slice(0, BP_TM_CAP);
+  return shown.map(renderRow).join("") +
+    (rows.length > BP_TM_CAP
+      ? `<button class="bp-tmmore" onclick="bpTmToggle('${kind}')">${open ? "show top " + BP_TM_CAP : "show all " + rows.length}</button>`
+      : "");
+}
+
+function bpTmHtml() {
+  const tm = bpThreatModel();
+  if (!tm.has) return "";
+  const crit = tm.scns.filter(x => x.s.severity === "critical").length;
+  const hard = tm.cas.filter(x => x.c.cls === "cascading" || x.c.cls === "emergent").length;
+  return `<div class="bp-tm">` +
+    `<div class="bp-tmhead">` +
+      `<h4>Threat model <span class="muted small">matched against ${bpState.comps.length} components · ${tm.scns.length} scenarios · ${tm.cas.length} cascades · ${tm.fails.length} failure modes</span></h4>` +
+      `<span class="bp-tmexp ${tm.band[1]}">${tm.idx}<i>/100</i><b>${tm.band[0]} exposure</b></span>` +
+    `</div>` +
+    `<div class="bp-tmgrid">` +
+      `<div class="bp-tmcol">` +
+        `<h5>Attack scenarios${crit ? ` <span class="bp-tmbadge crit">${crit} critical</span>` : ""}</h5>` +
+        (tm.scns.length ? bpTmList("scn", tm.scns, bpTmScnRow) : `<div class="muted small">No catalogued attack scenario names these components.</div>`) +
+      `</div>` +
+      `<div class="bp-tmcol">` +
+        `<h5>Composition cascades${hard ? ` <span class="bp-tmbadge crit">${hard} emergent/cascading</span>` : ""}</h5>` +
+        (tm.cas.length ? bpTmList("cas", tm.cas, bpTmCasRow) : `<div class="muted small">No catalogued cascade has these components as participants.</div>`) +
+      `</div>` +
+    `</div>` +
+    `<div class="bp-tmcol wide">` +
+      `<h5>Component failure modes${tm.unguardedHigh ? ` <span class="bp-tmbadge crit">${tm.unguardedHigh} high/critical unguarded</span>` : ""}</h5>` +
+      (tm.fails.length ? bpTmList("fail", tm.fails, bpTmFailRow) : `<div class="muted small">Selected components catalogue no failure modes.</div>`) +
+    `</div>` +
+    `<div class="bp-tmnote">Exposure index = residual weighted sum ÷ the theoretical ceiling ${tm.max} (every scenario and cascade matched at full weight, every catalogue failure unguarded) × 100. ` +
+      `Weights: severity critical 4 … low 1, discounted by how many of the scenario's defences you already run (a fully defended scenario costs nothing); ` +
+      `cascade impact × class (inherent ×1, derived ×1.25, emergent ×1.5, cascading ×2) discounted by control-family coverage, and only counted when one of your pipeline stages is a participant; ` +
+      `half weight per unguarded pipeline-stage failure — guarded failures cost nothing, and a control's own failure modes are listed for review but weigh nothing (so adding a control can never raise the index). Residual sum: <b>${tm.exp}</b>. ` +
+      `The index measures matched threat <i>surface</i>: a broad-domain blueprint can out-score a narrow undefended one, so compare like-for-like blueprints — defence quality lives in the Risk card above.</div>` +
+  `</div>`;
+}
+
 /* ---------------- export ---------------- */
 function bpMarkdown() {
   const F = "```";
@@ -399,6 +589,37 @@ function bpMarkdown() {
   }
   const dia = bpDiagram();
   if (dia) { out.push("## Diagram"); out.push(""); out.push(F + "mermaid"); out.push(dia); out.push(F); out.push(""); }
+  const tm = bpThreatModel();
+  if (tm.has) {
+    out.push("## Threat model");
+    out.push("");
+    out.push(`- Exposure index: **${tm.idx}/100 (${tm.band[0]})** — residual ${tm.exp} of ${tm.max} ceiling; ${tm.scns.length} matched scenarios (${tm.scns.filter(x => x.s.severity === "critical").length} critical), ` +
+      `${tm.cas.length} composition cascades (${tm.cas.filter(x => x.c.cls === "cascading" || x.c.cls === "emergent").length} emergent/cascading), ` +
+      `${tm.fails.length} component failure modes, ${tm.unguardedHigh} high/critical unguarded.`);
+    if (tm.scns.length) {
+      out.push("");
+      out.push("| Scenario | Severity | Defenses present |");
+      out.push("| --- | --- | --- |");
+      tm.scns.slice(0, 8).forEach(x => out.push(`| ${x.s.title} | ${x.s.severity} × ${x.s.likelihood} | ${x.present}/${x.need} |`));
+      const gap = uniq(tm.scns.flatMap(x => x.missing.slice(0, 1))).slice(0, 5);
+      if (gap.length) out.push("\n_Scenario defense gaps: " + gap.map(g => "`" + g + "`").join(", ") + "_");
+    }
+    if (tm.cas.length) {
+      out.push("");
+      out.push("| Cascade | Class | Impact | Blast radius |");
+      out.push("| --- | --- | --- | --- |");
+      tm.cas.slice(0, 8).forEach(x => out.push(`| ${x.c.name} | ${x.c.cls} | ${x.c.impact} | ${x.c.blastRadius} |`));
+    }
+    const ung = tm.fails.filter(x => !x.guarded && x.w > 0);
+    if (ung.length) {
+      out.push("");
+      out.push("### Unguarded failure modes");
+      out.push("");
+      ung.slice(0, 10).forEach(x => out.push(`- **${x.f.n}** (${x.sev}) — ${x.p.name}: ${x.f.d || ""}` +
+        (x.missing.length ? ` — closest related control not in blueprint: \`${x.missing[0]}\`` : "")));
+    }
+    out.push("");
+  }
   out.push("## Related catalog items");
   out.push("");
   out.push("- " + bpState.comps.map(id => "`" + id + "`").join(", "));
@@ -425,6 +646,7 @@ function bpAskCopilot() {
   if (!bpState.comps.length) { showNotif("Add components before asking the copilot"); return; }
   const c = bpCoverage();
   const r = bpEstimate(), e = bpState.est;
+  const tm = bpThreatModel();
   const q = "Stress-test this reference architecture. For each weakness, name the component in the blueprint that would have to change. Keep it short.\n\n" +
     "**Blueprint:** " + (bpState.name || "Untitled") + "\n" +
     "**Components:** " + bpState.comps.join(", ") + "\n" +
@@ -433,8 +655,12 @@ function bpAskCopilot() {
     "**Cost / latency / risk:** " + bpMoney(r.cost.total) + "/mo, p50 " + bpSec(r.lat.p50) + ", p95 " + bpSec(r.lat.p95) +
       ", risk " + r.risk.score + "/100 (" + r.risk.band[0] + ") — assumptions: " + e.tin + "/" + e.tout +
       " tokens, " + e.toolCalls + " tool calls, " + e.model + " model\n" +
+    (tm.has ? "**Threat exposure:** " + tm.idx + "/100 (" + tm.band[0] + "; residual " + tm.exp + "/" + tm.max + "); worst matched scenario: " +
+      (tm.scns[0] ? tm.scns[0].s.title + " [" + tm.scns[0].s.severity + ", " + tm.scns[0].present + "/" + tm.scns[0].need + " defenses]" : "none") +
+      "; worst cascade: " + (tm.cas[0] ? tm.cas[0].c.name + " [" + tm.cas[0].c.cls + "]" : "none") +
+      "; unguarded high/critical failure modes: " + tm.unguardedHigh + "\n" : "") +
     (bpState.notes ? "**Notes:** " + bpState.notes + "\n" : "") +
-    "\nFocus on ordering (which stage should run first/last), on controls attached to the wrong stage, and on which single assumption above, if wrong by 10x, would change the recommendation.";
+    "\nFocus on ordering (which stage should run first/last), on controls attached to the wrong stage, on which single assumption above, if wrong by 10x, would change the recommendation, and on whether the worst matched scenario would succeed against this composition.";
   copilotAsk(q);
 }
 
@@ -596,6 +822,8 @@ function bpRender() {
           `</div>`).join("") + `</div>` +
       `</div>` +
     `</div>` +
+
+    bpTmHtml() +
 
     `<div class="bp-lib">` +
       `<h4>Saved blueprints <span class="muted small">${bpState.lib.length}/${BP_MAX_LIB}</span></h4>` +
