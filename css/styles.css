@@ -1343,6 +1343,11 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
   display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
   color: var(--text3); margin-bottom: 5px;
 }
+.cp-mermaid-src {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 7px;
+  padding: 9px 11px; font-size: 11px; line-height: 1.5; overflow-x: auto;
+  white-space: pre; margin: 8px 0;
+}
 
 /* copilot message actions + follow-ups */
 .cp-actions { display: flex; gap: 4px; margin-top: 6px; }

@@ -29,6 +29,10 @@ function cpRestore() {
 function cpMd(text) {
   const blocks = [];
   let s = String(text == null ? "" : text).replace(/\r/g, "");
+  // Models often skip the ```mermaid fence and emit the diagram bare (a
+  // keyword line followed by graph lines). Detect those runs and fence them
+  // so they render instead of showing as source text.
+  s = fenceBareMermaid(s);
   // pull fenced code out first so later rules cannot touch it. Mermaid
   // fences become real diagrams (rendered by mmRenderAll after insert);
   // every other language stays a plain code block.
@@ -184,10 +188,55 @@ function cpRenderLog() {
   });
   cpScroll();
   /* render any mermaid diagrams the answer included (message boundaries
-     only — mid-stream partial fences stay plain text until completion) */
-  if (typeof mmRenderAll === "function") { try { mmRenderAll(log); } catch (e) { console.warn("chat mermaid failed", e); } }
+     only — mid-stream partial fences stay plain text until completion).
+     Diagrams mermaid cannot parse fall back to a readable code block. */
+  if (typeof mmRenderAll === "function") {
+    try { mmRenderAll(log).then(function () { cpMermaidFallback(log); }); }
+    catch (e) { console.warn("chat mermaid failed", e); }
+  }
+}
+/* Replace mermaid error notes in chat with the raw source in a <pre>, so a
+   malformed diagram is still readable instead of hidden behind an error. */
+function cpMermaidFallback(log) {
+  if (!log || !log.querySelectorAll) return;
+  log.querySelectorAll(".mm-err-note").forEach(function (n) {
+    const wrap = n.closest(".diagram-wrap");
+    const pre = wrap && wrap.querySelector("pre.mermaid");
+    const src = (pre && pre.getAttribute("data-src")) || (pre && pre.textContent) || "";
+    if (!src) { n.remove(); return; }
+    const d = document.createElement("pre");
+    d.className = "cp-mermaid-src";
+    d.textContent = src;
+    n.replaceWith(d);
+    if (pre && pre.parentElement === wrap) pre.remove();
+    const btn = wrap && wrap.querySelector(".design-expand");
+    if (btn) btn.remove();
+  });
 }
 function cpScroll() { const log = el("cpLog"); if (log) log.scrollTop = log.scrollHeight; }
+
+/* Wrap unfenced diagram runs in ```mermaid fences so they render.
+   A run starts at a diagram-keyword line and continues over blank-free,
+   non-markdown lines that are indented or carry a graph token — plain prose
+   (even right after a diagram) never qualifies. */
+function fenceBareMermaid(s) {
+  const kw = /^(?:flowchart\s+(?:TD|TB|BT|RL|LR)|sequenceDiagram|classDiagram(?:-v2)?|stateDiagram(?:-v2)?|erDiagram|gantt|pie(?:\s+showData|\s+title\b)?|quadrantChart|xychart-beta|mindmap|timeline|gitGraph)\b/;
+  const mdish = /^[ \t]*(?:#{1,6}[ \t]|```|[-*][ \t]|\d+[.)][ \t]|>[ \t]|\|)/;
+  const token = /-->|---|->>|==>|\|[^\n|]+\||\(\(|\)\)|\[|\{|\(|::/;
+  const lines = String(s).split("\n"), out = [];
+  let i = 0;
+  while (i < lines.length) {
+    if (kw.test(lines[i])) {
+      const run = [lines[i++]];
+      while (i < lines.length && lines[i].trim() !== "" && !mdish.test(lines[i]) &&
+        (/^[ \t]+\S/.test(lines[i]) || token.test(lines[i]))) run.push(lines[i++]);
+      const block = run.join("\n");
+      if (run.length >= 2 && token.test(block)) out.push("```mermaid", block, "```");
+      else out.push(block);
+    } else out.push(lines[i++]);
+  }
+  return out.join("\n");
+}
 
 /* ---------------- status + models ---------------- */
 function cpSetStatus() {
