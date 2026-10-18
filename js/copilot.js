@@ -14,7 +14,15 @@ let cpScope = { patterns: true, scenarios: true, cascades: true, traces: true };
 
 /* ---------------- persistence ---------------- */
 function cpSave() {
-  try { localStorage.setItem(CP_STORE, JSON.stringify({ messages: cpMessages, scope: cpScope, model: el("cpModel") && el("cpModel").value, persona: cpPersona, audience: cpAudience })); } catch (e) {}
+  const trim = n => {
+    try {
+      localStorage.setItem(CP_STORE, JSON.stringify({ messages: cpMessages.slice(-n), scope: cpScope, model: el("cpModel") && el("cpModel").value, persona: cpPersona, audience: cpAudience }));
+      return true;
+    } catch (e) { return false; }
+  };
+  /* Cap history so one long chat can't fill browser storage (which would
+     silently break every other save in the app). Trim oldest first. */
+  if (!trim(40) && !trim(20)) showNotif("Chat history too large to persist — oldest messages were dropped from storage", { kind: "warn" });
   if (typeof markSaved === "function") markSaved("cp");
 }
 function cpRestore() {

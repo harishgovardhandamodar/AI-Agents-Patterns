@@ -14,7 +14,18 @@ function initGuardrail() {
 }
 
 function persistGuard() {
-  try { localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items)); } catch (e) { showNotif("Could not persist collection (storage unavailable)"); }
+  try {
+    localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+  } catch (e) {
+    /* Storage full: drop oldest analyses (keep the 20 newest) and retry once
+       instead of failing silently — a collection that can't save looks saved. */
+    guardState.items = guardState.items.slice(-20);
+    renderGuardCollection();
+    try {
+      localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+      showNotif("Browser storage was full — trimmed the collection to the 20 newest analyses", { kind: "warn" });
+    } catch (e2) { showNotif("Could not persist collection (storage unavailable)", { kind: "error" }); }
+  }
   if (typeof markSaved === "function") markSaved("guard");
 }
 function seedExample() {

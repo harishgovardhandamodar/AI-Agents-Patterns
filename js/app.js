@@ -374,16 +374,40 @@ function paintSaveStamps() {
   });
 }
 
+/* ---------------- storage: quota-aware persistence --------------------
+   Browser storage (localStorage, ~5MB) can fill up — long copilot chats and
+   big guardrail collections are the usual culprits. When a write fails with
+   quota errors the old code failed SILENTLY (flags never stuck, so the
+   welcome tour reappeared on every reload). These helpers make failure loud
+   and recover by trimming regenerable history. */
+function storeGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function storeSet(key, val) {
+  try { localStorage.setItem(key, val); return true; }
+  catch (e) { return false; }
+}
+function storeDel(key) {
+  try { localStorage.removeItem(key); } catch (e) {}
+}
+
 /* ---------------- onboarding: first-run welcome tour --------------------
-   Three guided paths for the three real jobs. Shown once (flag in
-   localStorage); replayable from the shortcuts help overlay. */
+   Shown once (flag in localStorage, sessionStorage fallback, in-memory last
+   resort — so a full/broken store can nag at most once per session). */
 const ONB_STORE = "aap.onboard.v1";
+let onbSeenMem = false;
 
 function onbSeen() {
-  try { return localStorage.getItem(ONB_STORE) === "seen"; } catch (e) { return true; }
+  if (onbSeenMem) return true;
+  if (storeGet(ONB_STORE) === "seen") return true;
+  try { if (sessionStorage.getItem(ONB_STORE) === "seen") return true; } catch (e) {}
+  return false;
 }
 function onbMarkSeen() {
-  try { localStorage.setItem(ONB_STORE, "seen"); } catch (e) {}
+  onbSeenMem = true;
+  if (storeGet(ONB_STORE) === "seen") return;
+  if (storeSet(ONB_STORE, "seen")) return;
+  try { sessionStorage.setItem(ONB_STORE, "seen"); } catch (e) {}
 }
 function onbShow(force) {
   if (!force && onbSeen()) return;
@@ -533,9 +557,33 @@ function mmRender(nodes) {
         if (!node.querySelector("svg")) noteMmErr(node, src || node.textContent);
       } catch (e) { noteMmErr(node, src || ""); }
     }
+    mmScheduleHeal(list);
   }).catch(e => console.warn("mermaid queue error", e));
   mmQueue = job.catch(() => {});
   return job;
+}
+
+/* Heal pass for diagrams mermaid laid out before fonts arrived: a NaN
+   translate means measurement failed, not that the source is bad. Re-run
+   ONLY the affected nodes once fonts are ready (capped retries, so a truly
+   broken diagram can never loop). */
+function mmScheduleHeal(list) {
+  const bad = (list || []).filter(n => {
+    if (!n || !document.contains(n)) return false;
+    const svg = n.querySelector("svg");
+    if (!svg) return false;
+    if (!svg.querySelector('[transform*="NaN"], [transform*="undefined"]')) return false;
+    const tries = parseInt(n.getAttribute("data-mmheal") || "0", 10);
+    if (tries >= 2) return false;
+    n.setAttribute("data-mmheal", String(tries + 1));
+    return true;
+  });
+  if (!bad.length) return;
+  const heal = () => mmRender(bad);
+  try {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(heal, 60)).catch(() => setTimeout(heal, 1200));
+    else setTimeout(heal, 1200);
+  } catch (e) { setTimeout(heal, 1200); }
 }
 function noteMmErr(node, src) {
   if (!node.parentElement || node.parentElement.querySelector(".mm-err-note")) { node.innerHTML = ""; }
