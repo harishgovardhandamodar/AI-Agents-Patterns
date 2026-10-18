@@ -29,6 +29,7 @@ const HELP = {
   overview: {
     t: "Overview",
     b: `<p>This tab answers <b>“where do I stand?”</b> — catalog size, severity split, domain coverage, and a Next-step pointer that looks at your actual planner, blueprint and copilot state.</p>
+    <ul><li>The landing strip on top collects what's new (spotlight scenarios), what the field just found (field notes with paper links), an incident-anatomy diagram and the cascade-class chart — everything below it is the standing catalog summary.</li>
     <ul><li>Start here after any break: the <b>Next</b> box tells you the single most useful thing to do.</li>
     <li><b>Pins you make</b> in any catalog drawer collect in the Working set below for review and export.</li></ul>
     <p class="muted small">Tip: Alt+1…− jumps between tabs; ? shows every shortcut.</p>`

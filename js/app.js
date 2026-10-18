@@ -686,6 +686,7 @@ async function loadAll() {
     if (typeof initPalette === "function") initPalette();
     if (typeof initShortcuts === "function") initShortcuts();
     if (typeof dashRender === "function") dashRender();
+    if (typeof initLanding === "function") initLanding();
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     if (typeof paintSaveStamps === "function") paintSaveStamps();
     if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
