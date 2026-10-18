@@ -22,12 +22,14 @@ Endpoints (all read-only proxies, no secrets, no auth):
     GET  /api/llm/config   -> non-secret configuration for the UI
     POST /api/llm/chat     -> streaming chat completion (SSE passthrough)
 
-Backends are tried in order (Fox-Services first, then axiom).  If none are
-reachable the proxy returns 503 and the UI falls back to a deterministic,
-local analysis — the model is an accelerator, never a hard dependency.
+Backends are tried in order (axiom first, then Fox-Services — see LLM_PRIMARY).
+If none are reachable the proxy returns 503 and the UI falls back to a
+deterministic, local analysis — the model is an accelerator, never a hard
+dependency.
 
 Configuration (environment variables):
 
+    LLM_PRIMARY    default axiom   (which backend is tried first: axiom|fox)
     FOX_LLM_URL    default http://localhost:8210   (Fox-Services gateway)
     FOX_LLM_NAME   default fox-services
     AXIOM_LLM_URL  default http://100.101.3.115:8210 (tailnet node, optional)
@@ -53,15 +55,16 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------------- backends
 def _backend_list():
-    """Return configured backends in failover order (primary first)."""
-    out = []
-    fox = os.environ.get("FOX_LLM_URL", "http://localhost:8210").rstrip("/")
-    if fox:
-        out.append({"name": os.environ.get("FOX_LLM_NAME", "fox-services"), "url": fox})
-    ax = os.environ.get("AXIOM_LLM_URL", "http://100.101.3.115:8210").rstrip("/")
-    if ax:
-        out.append({"name": os.environ.get("AXIOM_LLM_NAME", "axiom"), "url": ax})
-    return out
+    """Return configured backends in failover order (primary first).
+
+    LLM_PRIMARY selects the primary: "axiom" (default — the GPU node that
+    serves the default Qwen 3.8-27B build) or "fox" (local Fox-Services)."""
+    fox = {"name": os.environ.get("FOX_LLM_NAME", "fox-services"),
+           "url": os.environ.get("FOX_LLM_URL", "http://localhost:8210").rstrip("/")}
+    ax = {"name": os.environ.get("AXIOM_LLM_NAME", "axiom"),
+          "url": os.environ.get("AXIOM_LLM_URL", "http://100.101.3.115:8210").rstrip("/")}
+    first, second = (ax, fox) if os.environ.get("LLM_PRIMARY", "axiom").lower() != "fox" else (fox, ax)
+    return [b for b in (first, second) if b["url"]]
 
 
 DEFAULT_MODEL = os.environ.get("LLM_MODEL", "quai-qwen3.8-27b:latest")
