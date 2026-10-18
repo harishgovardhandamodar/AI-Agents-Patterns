@@ -18,7 +18,7 @@ function dashNext() {
   const tm = bpThreatModel();
   if (tm.has && (tm.band[0] === "High" || tm.band[0] === "Severe") && tm.scns.length) return { t: "Exposure is " + tm.band[0].toLowerCase() + " — worst matched scenario: " + tm.scns[0].s.title + ".", tab: "blueprint", cta: "Open threat model" };
   if (!cpMessages.length) return { t: "Everything is covered. Stress-test the architecture with the copilot — it goes out with your blueprint, exposure and cost estimates.", tab: "copilot", cta: "Ask the copilot" };
-  return { t: "All planning steps done. Export the report (Blueprint → Download .md) to share it.", tab: "blueprint", cta: "Export report" };
+  return { t: "All planning steps done — export the full report below (Markdown, JSON or print) to share it.", tab: "overview", cta: "Use the export buttons" };
 }
 
 function dashRender() {
@@ -82,9 +82,19 @@ function dashRender() {
   </div>`;
 
   const nx = dashNext();
+  const anyWork = dpState.done || bpState.comps.length || cpMessages.length;
   root.innerHTML =
     `<div class="dash-next"><span class="dash-next-ico">➡</span><div><b>Next:</b> ${escHtml(nx.t)} <button class="btn sm accent" onclick="switchTab('${nx.tab}')">${escHtml(nx.cta)}</button></div></div>` +
-    `<div class="dash-grid">${dpCard}${bpCard}${cpCard}${glCard}</div>`;
+    `<div class="dash-grid">${dpCard}${bpCard}${cpCard}${glCard}</div>` +
+    `<div class="dash-export${anyWork ? "" : " dim"}">
+      <b>Export architect report</b>
+      <span class="muted small">Deployment plan + blueprint + threat model + copilot consult in one document</span>
+      <span class="dash-export-btns">
+        <button class="btn sm" onclick="rpDownload('md')" ${anyWork ? "" : "disabled"}>⬇ Markdown</button>
+        <button class="btn sm" onclick="rpDownload('json')" ${anyWork ? "" : "disabled"}>⬇ JSON</button>
+        <button class="btn sm" onclick="rpPrint()" ${anyWork ? "" : "disabled"}>🖨 Print</button>
+      </span>
+    </div>`;
 }
 
 tabLoaders.overview = function () { dashRender(); };

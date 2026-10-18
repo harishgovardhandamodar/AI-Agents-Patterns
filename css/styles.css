@@ -1287,3 +1287,10 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
   background: var(--bg3); border: 1px solid var(--border); border-bottom-width: 2px;
   border-radius: 6px; padding: 3px 6px; font-size: 11px; font-family: inherit; color: var(--text);
 }
+.dash-export {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 10px 14px; margin-bottom: 18px;
+  border: 1px dashed var(--border); border-radius: 10px; font-size: 12px;
+}
+.dash-export.dim { opacity: .6; }
+.dash-export-btns { margin-left: auto; display: flex; gap: 6px; }
