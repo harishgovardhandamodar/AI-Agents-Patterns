@@ -164,6 +164,7 @@ function analyzeRequest(text, origin) {
   const proposals = buildProposals(domain, cls, risk);
   const advice = buildAdvice(cls, signals, risk);
   const mockRun = buildMockRun(text, cls, signals, tier);
+  const cascadeRules = buildCascadeRules(domain.id, text);
 
   return {
     id: "ga-" + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
@@ -172,8 +173,54 @@ function analyzeRequest(text, origin) {
     signals, classes: [...cls], advice, controls, proposals,
     architecture: buildArchitecture(cls, controls),
     mockRun,
+    cascadeRules,
     rollout: buildRollout(tier, controls.length)
   };
+}
+
+/* Cascade-aware rules: for the analysis' domain, pull the catalogued
+   composition cascades (domain + general) and turn each into enforceable
+   pseudo-config — a `when` clause from its detection signals and a `then`
+   clause from its containment. Every rule cites the cascade it breaks, so
+   the rule set is reviewable against the catalog instead of free-form. */
+const CR_CLSW = { inherent: 1, derived: 1.25, emergent: 1.5, cascading: 2 };
+const CR_IW = { critical: 4, high: 3, medium: 2, low: 1 };
+
+function buildCascadeRules(domainId, text) {
+  const cas = (typeof DATA !== "undefined" && DATA.cascades && DATA.cascades.cascades) || [];
+  const words = String(text).toLowerCase().match(/[a-z]{5,}/g) || [];
+  const score = c => {
+    let s = (CR_IW[c.impact] || 2) * (CR_CLSW[c.cls] || 1);
+    if (c.domain === domainId && domainId !== "general") s += 2; /* domain match beats general */
+    const hay = (c.name + " " + (c.summary || "") + " " + (c.trigger || "")).toLowerCase();
+    words.forEach(w => { if (hay.indexOf(w) >= 0) s += 0.5; });
+    return s;
+  };
+  const rel = cas.filter(c => c.domain === domainId || c.domain === "general")
+    .map(c => ({ c: c, s: score(c) }))
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 6);
+  return rel.map(({ c, s }) => {
+    const mit = c.mitigations || {};
+    const when = (c.detection || []).slice(0, 2).map(d => String(d).replace(/\s+/g, " ").trim().replace(/\.$/, ""));
+    const then = (mit.contain || []).slice(0, 2).map(d => String(d).replace(/\s+/g, " ").trim().replace(/\.$/, ""));
+    return {
+      cas: c.id, name: c.name, cls: c.cls, impact: c.impact, likelihood: c.likelihood,
+      path: c.path || "", residual: c.residual || "", score: Math.round(s * 10) / 10,
+      when: when.length ? when : ["trace invariant violated on " + (c.path || "the interaction").split("→")[0].trim()],
+      then: then.length ? then : ["halt the interaction and isolate the diverging stage"],
+      prevent: (mit.prevent || []).slice(0, 2)
+    };
+  });
+}
+
+function crRuleText(r) {
+  const q = s => '"' + String(s).replace(/"/g, "'") + '"';
+  return "rule " + q("break " + r.cas) + " {\n" +
+    "  when:  " + r.when.map(w => q(w)).join(" or ") + "\n" +
+    "  then:  " + r.then.map(t => q(t)).join("; ") + "\n" +
+    "  else:  alert(" + q(r.cas + " residual: " + (r.residual || "untracked")) + ")\n" +
+    "}";
 }
 
 function makeTitle(text) {
@@ -454,7 +501,26 @@ function renderGuardReport(it) {
     </div>
 
     <div class="g-sec">
-      <h3>6 · Mock run with data — live replay</h3>
+      <h3>6 · Cascade-aware rules (${(it.cascadeRules || []).length} from the catalog)</h3>
+      ${it.cascadeRules && it.cascadeRules.length ? `
+        <p class="muted small">Composition cascades catalogued for <b>${escHtml(it.meta.domain)}</b> and general — each broken into a rule you can drop into a policy engine or gateway. Every rule cites the cascade it breaks; open one to see its full path.</p>
+        ${it.cascadeRules.map(r => `
+          <div class="cr-rule">
+            <div class="cr-head">
+              <a class="cr-name" onclick="openCascade('${escHtml(r.cas)}')">${escHtml(r.name)}</a>
+              <span class="chip cr-cls cr-cls-${escHtml(r.cls)}">${escHtml(r.cls)}</span>
+              <span class="muted small">${escHtml(r.impact)} impact · ${escHtml(r.likelihood)} likely · score ${r.score}</span>
+            </div>
+            ${r.path ? `<div class="cr-path">${escHtml(r.path)}</div>` : ""}
+            <pre class="cr-code">${escHtml(crRuleText(r))}</pre>
+            ${r.prevent && r.prevent.length ? `<div class="cr-prev"><b>Upstream:</b> ${r.prevent.map(escHtml).join(" · ")}</div>` : ""}
+            ${r.residual ? `<div class="cr-resid"><b>Residual:</b> ${escHtml(r.residual)}</div>` : ""}
+          </div>`).join("")}
+      ` : `<p class="muted small">No catalogued cascades match this domain.</p>`}
+    </div>
+
+    <div class="g-sec">
+      <h3>7 · Mock run with data — live replay</h3>
       <p class="muted small">Synthetic replay of the <b>attack path</b> (blocked by the design above) and the <b>legitimate path</b> (approved and executed). Verdict: <b>${escHtml(it.mockRun.verdict)}</b> — press <b>Play</b> to watch the control flow, or step through it one node at a time.</p>
       <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px;margin-bottom:10px">
         <div class="gauge"><div class="k">Attack outcome</div><div class="v st-block" style="font-size:12px">${escHtml(it.mockRun.data.attackOutcome)}</div></div>
@@ -468,7 +534,7 @@ function renderGuardReport(it) {
     </div>
 
     <div class="g-sec">
-      <h3>7 · Rollout plan</h3>
+      <h3>8 · Rollout plan</h3>
       <ul>${it.rollout.map(r => `<li>${r}</li>`).join("")}</ul>
     </div>`;
   mmRenderAll(el("guardArch-" + it.id));

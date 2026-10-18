@@ -1294,3 +1294,25 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 }
 .dash-export.dim { opacity: .6; }
 .dash-export-btns { margin-left: auto; display: flex; gap: 6px; }
+
+/* ---------------- cascade-aware rules (Guardrail Lab) ---------------- */
+.cr-rule {
+  border: 1px solid var(--border); border-radius: 9px; padding: 10px 12px;
+  margin-bottom: 9px; background: var(--bg2);
+}
+.cr-head { display: flex; align-items: center; gap: 9px; flex-wrap: wrap; }
+.cr-name { font-size: 12.5px; font-weight: 600; cursor: pointer; }
+.cr-name:hover { color: var(--accent); }
+.cr-cls { font-size: 9.5px; text-transform: uppercase; letter-spacing: .04em; }
+.cr-cls-inherent { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
+.cr-cls-derived { color: var(--orange); border-color: color-mix(in srgb, var(--orange) 45%, transparent); }
+.cr-cls-emergent { color: var(--red); border-color: color-mix(in srgb, var(--red) 45%, transparent); }
+.cr-cls-cascading { color: var(--red); border-color: color-mix(in srgb, var(--red) 70%, transparent); font-weight: 700; }
+.cr-path { font-size: 10.5px; color: var(--text3); margin: 4px 0 2px; }
+.cr-code {
+  margin: 7px 0 4px; padding: 9px 11px; font-size: 11px; line-height: 1.55;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 7px;
+  overflow-x: auto; white-space: pre;
+}
+.cr-prev, .cr-resid { font-size: 10.5px; color: var(--text3); line-height: 1.5; margin-top: 3px; }
+.cr-resid { color: var(--orange); }
