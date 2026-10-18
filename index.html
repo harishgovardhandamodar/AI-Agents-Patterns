@@ -26,6 +26,7 @@
   <div class="app-tab" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
   <div class="app-tab" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
   <div class="app-tab" data-tab="coverage" onclick="switchTab('coverage')">📊 Coverage &amp; Gaps</div>
+  <div class="app-tab" data-tab="deploy" onclick="switchTab('deploy')">🧭 Deployment Plan</div>
   <div class="app-tab" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
   <div class="app-tab" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
   <div class="app-tab" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
@@ -179,8 +180,15 @@
 
 <!-- ======================= COVERAGE & GAPS ======================= -->
 <section class="pane" id="coveragePane">
-  <div class="ov-wrap" style="padding:16px 20px; overflow:auto">
+  <div class="ov-wrap">
     <div id="covMain"></div>
+  </div>
+</section>
+
+<!-- ======================= DEPLOYMENT PLANNER ======================= -->
+<section class="pane" id="deployPane">
+  <div class="ov-wrap">
+    <div id="dpRoot"></div>
   </div>
 </section>
 
@@ -270,6 +278,7 @@
 <script src="js/scenarios.js"></script>
 <script src="js/cascades.js"></script>
 <script src="js/coverage.js"></script>
+<script src="js/deploy.js"></script>
 <script src="js/live.js"></script>
 <script src="js/design.js"></script>
 <script src="js/guardrail.js"></script>

@@ -675,3 +675,105 @@ td.heat-0 { color: var(--red); }
 .cov-fix { display: block; color: var(--text3); font-size: 11px; margin-top: 1px; }
 .cov-actions { display: flex; gap: 6px; margin-top: auto; }
 .cov-gaps { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
+
+/* ============================================================
+   DEPLOYMENT PLANNER
+   ============================================================ */
+#coveragePane .ov-wrap, #deployPane .ov-wrap { overflow: auto; max-width: 1360px; }
+
+.dp-head { margin-bottom: 10px; }
+.dp-head h2 { margin: 0 0 4px; font-size: 18px; }
+.dp-head p { margin: 0; }
+
+.dp-steps { list-style: none; display: flex; gap: 6px; padding: 0; margin: 14px 0; flex-wrap: wrap; }
+.dp-step { flex: 1; min-width: 150px; }
+.dp-step button {
+  width: 100%; display: flex; align-items: center; gap: 8px; padding: 8px 10px;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text2); font-size: 12px; cursor: pointer; text-align: left;
+}
+.dp-step button:hover { border-color: var(--text3); color: var(--text); }
+.dp-step i {
+  font-style: normal; width: 20px; height: 20px; border-radius: 50%; flex: none;
+  display: grid; place-items: center; background: var(--bg3); color: var(--text2);
+  font-size: 11px; border: 1px solid var(--border);
+}
+.dp-step.on button { border-color: var(--accent); color: var(--text); }
+.dp-step.on i { background: color-mix(in srgb, var(--accent) 25%, transparent); color: var(--accent); border-color: var(--accent); }
+.dp-step.done i { background: color-mix(in srgb, var(--green) 30%, transparent); color: var(--green); border-color: var(--green); }
+.dp-step.done button { color: var(--text2); }
+
+.dp-body { display: grid; grid-template-columns: 1fr 260px; gap: 16px; align-items: start; }
+@media (max-width: 1000px) { .dp-body { grid-template-columns: 1fr; } }
+
+.dp-form { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+.dp-stephead h2 { margin: 0 0 4px; font-size: 16px; }
+.dp-stephead p { margin: 0 0 16px; color: var(--text2); font-size: 12.5px; }
+.dp-field { margin-bottom: 16px; }
+.dp-label { display: block; font-size: 12px; color: var(--text2); margin-bottom: 6px; text-transform: uppercase; letter-spacing: .04em; }
+.dp-label .req { color: var(--red); }
+.dp-hint { display: block; margin-top: 5px; color: var(--text3); font-size: 11px; }
+.dp-input {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 7px;
+  color: var(--text); padding: 7px 9px; font: inherit; font-size: 13px;
+}
+.dp-input:focus { outline: none; border-color: var(--accent); }
+
+.dp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 8px; }
+.dp-cards.dp-auto { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.dp-card {
+  display: flex; flex-direction: column; gap: 3px; align-items: flex-start; text-align: left;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 9px 11px; cursor: pointer; font-size: 12px; color: var(--text);
+}
+.dp-card b { font-size: 12.5px; }
+.dp-card span { color: var(--text3); font-size: 11px; line-height: 1.4; }
+.dp-card:hover { border-color: var(--text3); }
+.dp-card.on { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 12%, var(--bg)); }
+.dp-card.on span { color: var(--text2); }
+
+.dp-chiprow { display: flex; flex-wrap: wrap; gap: 6px; }
+.dp-chip {
+  background: var(--bg3); border: 1px solid var(--border); border-radius: 13px;
+  padding: 4px 11px; font-size: 11.5px; color: var(--text2); cursor: pointer;
+}
+.dp-chip:hover { color: var(--text); border-color: var(--text3); }
+.dp-chip.on { background: color-mix(in srgb, var(--accent) 22%, var(--bg3)); border-color: var(--accent); color: var(--text); }
+
+.dp-toggle-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.dp-toggle-row .dp-label { margin: 0; }
+.dp-toggle {
+  display: inline-flex; align-items: center; gap: 7px; background: var(--bg3);
+  border: 1px solid var(--border); border-radius: 16px; padding: 4px 11px 4px 5px;
+  font-size: 11.5px; color: var(--text2); cursor: pointer;
+}
+.dp-toggle i { width: 12px; height: 12px; border-radius: 50%; background: var(--text3); display: block; transition: .15s; }
+.dp-toggle.on { color: var(--text); border-color: var(--green); }
+.dp-toggle.on i { background: var(--green); box-shadow: 0 0 0 3px color-mix(in srgb, var(--green) 30%, transparent); }
+
+.dp-foot { display: flex; gap: 8px; align-items: center; margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--border); }
+.dp-err {
+  background: color-mix(in srgb, var(--red) 14%, var(--bg3)); border: 1px solid var(--red);
+  color: var(--text); border-radius: 7px; padding: 8px 11px; font-size: 12px; margin-bottom: 14px;
+}
+
+.dp-rail { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 14px; position: sticky; top: 0; }
+.dp-rail h4 { margin: 0 0 9px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); }
+.dp-rail-item { display: flex; justify-content: space-between; gap: 8px; padding: 4px 0; font-size: 11.5px; border-bottom: 1px dashed var(--border); }
+.dp-rail-item span { color: var(--text3); }
+.dp-rail-item b { font-weight: 600; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 60%; }
+.dp-rail p { margin: 9px 0 0; }
+.dp-need { color: var(--orange); font-size: 11.5px; }
+
+.dp-planhead { display: flex; align-items: flex-start; gap: 14px; justify-content: space-between; margin-bottom: 12px; }
+.dp-planhead h2 { margin: 0 0 4px; font-size: 18px; }
+.dp-planhead p { margin: 0; }
+.dp-sections { display: grid; gap: 12px; }
+.dp-sec h3 { display: flex; align-items: center; gap: 8px; }
+.dp-sectbody { font-size: 12.5px; }
+
+.dp-kvlist { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 4px 22px; margin: 0; }
+.dp-kv { display: grid; grid-template-columns: 130px 1fr; gap: 10px; padding: 5px 0; border-bottom: 1px dashed var(--border); }
+.dp-kv dt { color: var(--text3); }
+.dp-kv dd { margin: 0; color: var(--text); }
+.dp-actions-row { display: flex; gap: 7px; flex-wrap: wrap; margin-top: 12px; align-items: center; }
