@@ -26,7 +26,9 @@ function initLive() {
 
   livePlayer = LivePlayer(el("livePlayer"), { speed: 700 });
   renderTraceList();
-  loadTrace(all[0].id);
+  /* The default trace loads on first tab visit (see tabLoaders.live), not
+     here: rendering mermaid into the hidden pane at boot produces spurious
+     "Syntax error in text" diagrams that then sit baked into the DOM. */
 }
 
 function traceScenario(t) { return t.scenarioId ? liveState.byScenario[t.scenarioId] : null; }
@@ -105,4 +107,11 @@ function loadTrace(id) {
   });
 }
 
-tabLoaders.live = () => { /* loaded during init */ };
+let liveBooted = false;
+
+tabLoaders.live = () => {
+  if (liveBooted || !livePlayer) return;
+  liveBooted = true;
+  const all = (typeof DATA !== "undefined" && DATA.traces) ? DATA.traces.traces : [];
+  if (all.length) loadTrace(all[0].id);
+};
