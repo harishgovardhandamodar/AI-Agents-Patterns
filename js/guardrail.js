@@ -359,6 +359,17 @@ function buildArchitecture(cls, controls) {
 }
 
 /* ---- synthetic mock run ---- */
+/* Mermaid-safe node label: even inside "..." labels, ", #, ;, [] and {}
+   break the parse (or truncate the label), so normalize them. Titles stay
+   human-readable; node ids (N01…) are unchanged so the player still joins
+   steps to diagram nodes. */
+function flowLabel(s) {
+  return String(s == null ? "" : s)
+    .replace(/"/g, "'").replace(/`/g, "'").replace(/#/g, "no.")
+    .replace(/;/g, ",").replace(/\|/g, "/")
+    .replace(/[\[\]]/g, "(").replace(/[\{\}]/g, "(")
+    .replace(/\s+/g, " ").trim().slice(0, 44);
+}
 function buildMockRun(text, cls, signals, tier) {
   const has = x => cls.has(x);
   const steps = [];
@@ -411,7 +422,9 @@ function buildMockRun(text, cls, signals, tier) {
   const done = push("guardrail", "Audit sealed + monitoring", "Hash-chained log complete: inputs, policy decisions, approvals, execution. Drift metrics updated. Attack sample added to eval corpus.", "ok");
   link(done);
 
-  const flow = ["flowchart TB", ...lines].join("\n");
+  const flow = ["flowchart TB",
+    ...steps.map(s => `  ${s.node}["${flowLabel(s.title)}"]`),
+    ...lines].join("\n");
   const tokensIn = steps.reduce((s, x) => s + x.tokens, 0);
   return { verdict: "blocked-then-approved", flow, steps, events,
     metrics: {
