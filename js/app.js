@@ -432,8 +432,23 @@ function onbHasHistory() {
   } catch (e) {}
   return false;
 }
+/* Storage probe: localStorage can be full or blocked outright. When writes
+   fail, "seen" flags never stick and a first-run tour would nag on every
+   reload while saves silently die — so the auto tour requires PROVEN
+   writable storage (manual replay always works). */
+let onbStorageOk = null;
+function onbStorageWorks() {
+  if (onbStorageOk !== null) return onbStorageOk;
+  try {
+    localStorage.setItem("aap.probe", "1");
+    localStorage.removeItem("aap.probe");
+    onbStorageOk = true;
+  } catch (e) { onbStorageOk = false; }
+  return onbStorageOk;
+}
 function onbShow(force) {
   if (!force && onbSeen()) return;
+  if (!force && !onbStorageWorks()) return;
   if (!force && onbHasHistory()) { onbMarkSeen(); return; } /* returning user, never auto-tour */
   onbMarkSeen(); /* mark on SHOW, not on dismiss: refreshing mid-tour must not nag again */
   let o = document.getElementById("onbOverlay");
