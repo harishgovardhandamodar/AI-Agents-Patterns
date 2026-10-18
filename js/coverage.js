@@ -3,16 +3,20 @@
 let covView = null;
 
 function initCoverage() {
-  if (!el("covPane")) return;
-  covView = covView || (DATA.coverage ? DATA.coverage : null);
-  if (!covView && DATA.coverage) covView = DATA.coverage;
-  if (!covView) {
-    fetch("data/coverage.json", {cache:"no-store"}).then(r=>r.json()).then(j=>{covView=j;renderCoverage();});
-    renderCoverageStub();
+  if (!el("coveragePane")) return;
+  if (typeof DATA !== "undefined" && DATA.coverage) {
+    covView = DATA.coverage;
+    renderCoverage();
     return;
   }
-  renderCoverage();
+  covView = null;
+  fetch("data/coverage.json", {cache:"no-store"})
+    .then(r=>r.json())
+    .then(j=>{ covView=j; if (typeof DATA!=="undefined") DATA.coverage=j; renderCoverage(); })
+    .catch(()=>{});
+  renderCoverageStub();
 }
+
 
 function renderCoverageStub() {
   const main = el("covMain");
