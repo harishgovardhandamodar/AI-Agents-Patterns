@@ -41,9 +41,14 @@ function renderScenarios() {
     return true;
   });
   const sevRank = { critical: 0, high: 1, medium: 2, low: 3 };
-  list.sort((a, b) => sevRank[a.severity] - sevRank[b.severity] || a.title.localeCompare(b.title));
+  const sort = (el("scnSort") && el("scnSort").value) || "severity";
+  if (sort === "name") list.sort((a, b) => a.title.localeCompare(b.title));
+  else if (sort === "gaps") list.sort((a, b) => (a.protections || []).length - (b.protections || []).length || sevRank[a.severity] - sevRank[b.severity]);
+  else if (sort === "vector") list.sort((a, b) => a.vector.localeCompare(b.vector) || sevRank[a.severity] - sevRank[b.severity]);
+  else list.sort((a, b) => sevRank[a.severity] - sevRank[b.severity] || a.title.localeCompare(b.title));
 
   el("scnCount").textContent = `${list.length} of ${S.scenarios.length} scenarios — click for attack chain, protections, and mock run`;
+  if ((uxPrefs.scnView || "cards") === "list") return renderScenarioList(list);
   el("scnGrid").innerHTML = list.map(s => `
     <div class="pat-card" onclick="openScenario('${s.id}')">
       <div class="cat" style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${escHtml(s.severity.toUpperCase())} · ${escHtml(s.domain)}</div>
@@ -54,7 +59,23 @@ function renderScenarios() {
         <span class="chip ok">${(s.protections || []).length} protections</span>
         ${s.traceId ? `<span class="chip" style="color:var(--teal)">▶ mock run</span>` : ""}
       </div>
-    </div>`).join("") || `<p class="muted">No scenarios match the current filters.</p>`;
+    </div>`).join("") || `<p class="muted">No scenarios match the current filters. <button class="btn sm" onclick="resetScnFilters()">Reset filters</button></p>`;
+}
+
+/* Compact list view: one dense row per scenario for fast scanning. */
+function renderScenarioList(list) {
+  if (!list.length) {
+    el("scnGrid").innerHTML = `<p class="muted">No scenarios match the current filters. <button class="btn sm" onclick="resetScnFilters()">Reset filters</button></p>`;
+    return;
+  }
+  const dot = s => s.severity === "critical" ? "var(--red)" : s.severity === "high" ? "var(--orange)" : s.severity === "medium" ? "var(--accent)" : "var(--green)";
+  el("scnGrid").innerHTML = `<div class="mini-list" role="list">` + list.map(s => `
+    <div class="mini-row" role="listitem" tabindex="0" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter')openScenario('${s.id}')">
+      <span class="sev-dot sev-${s.severity}"></span>
+      <span class="mini-nm">${escHtml(s.title)}</span>
+      <span class="mini-meta">${escHtml(s.vector)} · ${(s.protections || []).length} protections${s.traceId ? " · ▶ mock run" : ""}</span>
+      <span class="mini-sev" style="color:${dot(s)}">${escHtml(s.severity)}</span>
+    </div>`).join("") + `</div>`;
 }
 
 function openScenario(id) {

@@ -118,9 +118,11 @@ function renderPatterns() {
   const sort = el("patSort").value;
   if (sort === "name") list.sort((a, b) => a.name.localeCompare(b.name));
   else if (sort === "risk") list.sort((a, b) => (b.failures || []).length - (a.failures || []).length);
+  else if (sort === "gap") list.sort((a, b) => (a.protections || []).length - (b.protections || []).length || (b.failures || []).length - (a.failures || []).length);
   else list.sort((a, b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
 
   el("patCount").textContent = `${list.length} of ${P.patterns.length} patterns`;
+  if ((uxPrefs.patView || "cards") === "list") return renderPatternList(list, P);
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   el("patGrid").innerHTML = list.map(p => `
     <div class="pat-card" onclick="openPattern('${p.id}')">
@@ -132,7 +134,21 @@ function renderPatterns() {
         <span class="chip ok">${(p.protections || []).length} protections</span>
         ${p.diagram ? `<span class="chip">◇ diagram</span>` : ""}
       </div>
-    </div>`).join("") || `<p class="muted">No patterns match the current filters.</p>`;
+    </div>`).join("") || `<p class="muted">No patterns match the current filters. <button class="btn sm" onclick="resetPatFilters()">Reset filters</button></p>`;
+}
+
+/* Compact list view: one dense row per pattern for fast scanning. */
+function renderPatternList(list, P) {
+  const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
+  if (!list.length) {
+    el("patGrid").innerHTML = `<p class="muted">No patterns match the current filters. <button class="btn sm" onclick="resetPatFilters()">Reset filters</button></p>`;
+    return;
+  }
+  el("patGrid").innerHTML = `<div class="mini-list" role="list">` + list.map(p => `
+    <div class="mini-row" role="listitem" tabindex="0" onclick="openPattern('${p.id}')" onkeydown="if(event.key==='Enter')openPattern('${p.id}')">
+      <span class="mini-nm">${escHtml(p.name)}</span>
+      <span class="mini-meta">${escHtml(catName(p.cat))} · ${(p.failures || []).length} failure${(p.failures || []).length === 1 ? "" : "s"} · ${(p.protections || []).length} protections${p.diagram ? " · ◇ diagram" : ""}</span>
+    </div>`).join("") + `</div>`;
 }
 
 function openPattern(id) {

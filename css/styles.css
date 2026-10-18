@@ -1321,6 +1321,29 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 
 .cas-more { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; flex-wrap: wrap; }
 
+/* cards-vs-list segmented control (patterns, scenarios) */
+.view-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; flex: none; }
+.view-seg button {
+  background: transparent; border: 0; padding: 3px 9px; cursor: pointer;
+  color: var(--text3); font-size: 13px; line-height: 1.6;
+}
+.view-seg button + button { border-left: 1px solid var(--border); }
+.view-seg button:hover { color: var(--text); background: var(--bg3); }
+.view-seg button.on { color: var(--accent); background: var(--bg3); }
+
+/* compact mini-list rows for fast scanning */
+.mini-list { display: flex; flex-direction: column; gap: 2px; }
+.mini-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 6px 10px; border: 1px solid transparent; border-radius: 7px;
+  cursor: pointer; font-size: 12.5px;
+}
+.mini-row:hover { background: var(--bg2); border-color: var(--border); }
+.mini-row .sev-dot { transform: translateY(1px); flex: none; }
+.mini-nm { font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 44%; flex: none; }
+.mini-meta { color: var(--text3); font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1; }
+.mini-sev { flex: none; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; }
+
 /* ---------------- display preferences panel ---------------- */
 .ux-panel {
   position: fixed; top: 48px; right: 12px; z-index: 210;

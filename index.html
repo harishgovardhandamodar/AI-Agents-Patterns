@@ -120,10 +120,14 @@
       <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="patCount"></span>
         <div style="flex:1"></div>
+        <span class="view-seg" role="group" aria-label="Layout">
+          <button type="button" id="patViewCards" onclick="uxSetView('patView','cards');renderPatterns()" title="Card layout">▦</button><button type="button" id="patViewList" onclick="uxSetView('patView','list');renderPatterns()" title="Compact list layout">☰</button>
+        </span>
         <select class="search" style="width:auto" id="patSort" onchange="renderPatterns()">
           <option value="cat">sort: category</option>
           <option value="name">sort: name</option>
           <option value="risk">sort: riskiest (by failure count)</option>
+          <option value="gap">sort: least protected first</option>
         </select>
       </div>
       <div class="card-grid" id="patGrid"></div>
@@ -145,7 +149,19 @@
       <div style="margin-top:10px"><button class="btn" onclick="resetScnFilters()">Reset filters</button></div>
     </aside>
     <main class="main">
-      <div class="muted small" style="margin-bottom:10px" id="scnCount"></div>
+      <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+        <div class="muted small" style="margin-bottom:0" id="scnCount"></div>
+        <div style="flex:1"></div>
+        <span class="view-seg" role="group" aria-label="Layout">
+          <button type="button" id="scnViewCards" onclick="uxSetView('scnView','cards');renderScenarios()" title="Card layout">▦</button><button type="button" id="scnViewList" onclick="uxSetView('scnView','list');renderScenarios()" title="Compact list layout">☰</button>
+        </span>
+        <select class="search" style="width:auto" id="scnSort" onchange="renderScenarios()">
+          <option value="severity">sort: severity</option>
+          <option value="name">sort: title</option>
+          <option value="gaps">sort: least protected first</option>
+          <option value="vector">sort: attack vector</option>
+        </select>
+      </div>
       <div class="card-grid" id="scnGrid"></div>
     </main>
   </div>

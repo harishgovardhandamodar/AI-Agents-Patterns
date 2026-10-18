@@ -51,6 +51,19 @@ function uxSave() {
 }
 function uxSetDensity(d) { uxPrefs.density = d === "compact" ? "compact" : "comfortable"; uxSave(); }
 function uxSetFs(fs) { uxPrefs.fs = Math.min(16, Math.max(13, Number(fs) || 13)); uxSave(); }
+function uxSetView(key, v) {
+  uxPrefs[key] = v === "list" ? "list" : "cards";
+  uxSave();
+  uxPaintViewSegs();
+}
+function uxPaintViewSegs() {
+  [["patView", "patViewCards", "patViewList"], ["scnView", "scnViewCards", "scnViewList"]].forEach(function (t) {
+    const v = uxPrefs[t[0]] || "cards";
+    const c = document.getElementById(t[1]), l = document.getElementById(t[2]);
+    if (c) { c.classList.toggle("on", v === "cards"); c.setAttribute("aria-pressed", v === "cards" ? "true" : "false"); }
+    if (l) { l.classList.toggle("on", v === "list"); l.setAttribute("aria-pressed", v === "list" ? "true" : "false"); }
+  });
+}
 uxApply();
 
 function uxPanelToggle(force) {
@@ -555,6 +568,7 @@ async function loadAll() {
     if (typeof dashRender === "function") dashRender();
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     if (typeof paintSaveStamps === "function") paintSaveStamps();
+  if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {
