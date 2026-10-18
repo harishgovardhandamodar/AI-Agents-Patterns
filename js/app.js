@@ -306,6 +306,13 @@ function markSaved(key) {
 /* ---------------- active-filter chips (catalog panes) --------------------
    paintActiveChips(id, chips) renders removable filter pills. Each chip is
    { label, title, fn } — fn is a global function name + JS-escaped argument. */
+function emptyState(icon, title, body, actionLabel, actionFn) {
+  return `<div class="empty-state"><div class="empty-ico">${icon}</div>` +
+    `<div class="empty-t">${escHtml(title)}</div>` +
+    (body ? `<div class="empty-b">${body}</div>` : "") +
+    (actionLabel && actionFn ? `<button class="btn sm primary" onclick="${escHtml(actionFn)}">${escHtml(actionLabel)}</button>` : "") +
+    `</div>`;
+}
 function escJs(s) { return String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
 
 function paintActiveChips(id, chips) {

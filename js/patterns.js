@@ -163,14 +163,18 @@ function renderPatterns() {
         <span class="chip ok">${(p.protections || []).length} protections</span>
         ${p.diagram ? `<span class="chip">◇ diagram</span>` : ""}
       </div>
-    </div>`).join("") || `<p class="muted">No patterns match the current filters. <button class="btn sm" onclick="resetPatFilters()">Reset filters</button></p>`;
+    </div>`).join("") || (typeof emptyState === "function"
+      ? emptyState("◆", "No patterns match", "The catalog holds 107 patterns — loosen a filter or clear the search to see them again.", "Reset filters", "resetPatFilters()")
+      : `<p class="muted">No patterns match the current filters.</p>`);
 }
 
 /* Compact list view: one dense row per pattern for fast scanning. */
 function renderPatternList(list, P) {
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   if (!list.length) {
-    el("patGrid").innerHTML = `<p class="muted">No patterns match the current filters. <button class="btn sm" onclick="resetPatFilters()">Reset filters</button></p>`;
+    el("patGrid").innerHTML = typeof emptyState === "function"
+      ? emptyState("◆", "No patterns match", "The catalog holds 107 patterns — loosen a filter or clear the search to see them again.", "Reset filters", "resetPatFilters()")
+      : `<p class="muted">No patterns match the current filters.</p>`;
     return;
   }
   el("patGrid").innerHTML = `<div class="mini-list" role="list">` + list.map(p => `

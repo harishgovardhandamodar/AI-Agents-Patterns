@@ -152,13 +152,20 @@ function buildMitigationBacklog() {
   });
   return list;
 }
-const mitFilter = { func: null, pri: null, limit: 40 };
+const mitFilter = { func: null, pri: null, limit: 40, q: "" };
 const MIT_PAGE_STEP = 40;
 function setMitFilter(k, v) {
-  mitFilter[k] = (k === "limit") ? v : (mitFilter[k] === v ? null : v);
+  mitFilter[k] = (k === "limit") ? v : (v === null ? null : (k === "q" ? String(v).toLowerCase() : (mitFilter[k] === v ? null : v)));
   renderMitigation();
 }
 function mitShowMore() { mitFilter.limit += MIT_PAGE_STEP; renderMitigation(); }
+function mitSetQ(v) {
+  mitFilter.q = String(v || "").toLowerCase();
+  renderMitigation();
+  const inp = document.getElementById("mitSearch");
+  if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {} }
+}
+function mitClearFilters() { mitFilter.func = null; mitFilter.pri = null; mitFilter.q = ""; mitFilter.limit = MIT_PAGE_STEP; renderMitigation(); }
 function renderMitigation() {
   const box = el("casMitigation");
   if (!box) return;
@@ -167,6 +174,7 @@ function renderMitigation() {
   const filtered = all.filter(function (e) {
     if (mitFilter.func && e.func !== mitFilter.func) return false;
     if (mitFilter.pri && e.priority !== mitFilter.pri) return false;
+    if (mitFilter.q && (e.text + " " + e.func).toLowerCase().indexOf(mitFilter.q) < 0) return false;
     return true;
   });
   const shown = filtered.slice(0, mitFilter.limit);
@@ -181,6 +189,7 @@ function renderMitigation() {
     '<p class="muted small">Every control across all cascades, de-duplicated and ranked by leverage (how many cascades it addresses), the worst impact it prevents and the widest blast radius it bounds. Priority is relative (top 15% / next 25% / tail) — a planning heuristic, not your risk appetite. Assign owners and track status; it persists locally.</p>' +
     '<div class="seg" style="margin:10px 0 8px">' + fbtn("All functions", "func", null) + MIT_FUNCS.map(function (f) { return fbtn(f[1], "func", f[0]); }).join("") + "</div>" +
     '<div class="seg" style="margin:0 0 8px">' + fbtn("All priorities", "pri", null) + fbtn("P1", "pri", "P1", " · " + counts.P1) + fbtn("P2", "pri", "P2", " · " + counts.P2) + fbtn("P3", "pri", "P3", " · " + counts.P3) + "</div>" +
+    '<div style="margin:0 0 8px"><input class="search" id="mitSearch" style="width:100%" placeholder="Search controls… (e.g. audit, sandbox, approval)" value="' + escHtml(mitFilter.q || "") + '" oninput="mitSetQ(this.value)"></div>' +
     '<div style="display:flex;gap:8px;align-items:center;margin-top:8px">' +
     '<span class="muted small">showing ' + shown.length + " of " + filtered.length + "</span>" +
     (filtered.length > shown.length
@@ -190,7 +199,10 @@ function renderMitigation() {
     '<div style="flex:1"></div>' +
     '<button class="btn" onclick="exportMitigations(\'md\')">⬇ Export markdown</button>' +
     '<button class="btn" onclick="exportMitigations(\'csv\')">⬇ Export CSV</button></div></div>' +
-    '<div class="mit-table">' + shown.map(function (e) { return mitRow(e, saved[e.key] || {}); }).join("") + "</div>";
+    '<div class="mit-table">' + (shown.length ? shown.map(function (e) { return mitRow(e, saved[e.key] || {}); }).join("")
+      : (typeof emptyState === "function"
+        ? emptyState("✔", "No controls match these filters", "Every control is filtered out — clear the search or a function/priority filter to see the backlog again.", "Clear mitigation filters", "mitClearFilters()")
+        : '<p class="muted">No controls match.</p>')) + "</div>";
 }
 function mitRow(e, st) {
   const fn = MIT_FUNCS.find(function (f) { return f[0] === e.func; });
@@ -467,7 +479,9 @@ function renderCascadeList() {
         '<button class="btn ghost" onclick="casShowAll()">Show all ' + list.length + "</button></div>"
       : (casState.limit > CAS_LIST_STEP && list.length > CAS_LIST_STEP
         ? '<div class="cas-more"><button class="btn ghost" onclick="casShowFewer()">Show fewer</button></div>' : "")) ||
-    `<p class="muted">No cascades match the current filters. <button class="btn sm" onclick="resetCasFilters()">Reset filters</button></p>`;
+    (typeof emptyState === "function"
+      ? emptyState("⧉", "No cascades match", "175 cascade records and nothing fits — a filter is probably too narrow. Reset to browse the full taxonomy.", "Reset filters", "resetCasFilters()")
+      : `<p class="muted">No cascades match the current filters.</p>`);
 }
 function casCardHtml(c) {
   const hi = casBlastRank(c) >= 4 ? " hi" : "";

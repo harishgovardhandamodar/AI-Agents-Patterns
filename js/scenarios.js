@@ -77,13 +77,17 @@ function renderScenarios() {
         <span class="chip ok">${(s.protections || []).length} protections</span>
         ${s.traceId ? `<span class="chip" style="color:var(--teal)">▶ mock run</span>` : ""}
       </div>
-    </div>`).join("") || `<p class="muted">No scenarios match the current filters. <button class="btn sm" onclick="resetScnFilters()">Reset filters</button></p>`;
+    </div>`).join("") || (typeof emptyState === "function"
+      ? emptyState("⚠", "No scenarios match", "Try a broader vector or severity — or clear the search to browse all 38 scenarios.", "Reset filters", "resetScnFilters()")
+      : `<p class="muted">No scenarios match the current filters.</p>`);
 }
 
 /* Compact list view: one dense row per scenario for fast scanning. */
 function renderScenarioList(list) {
   if (!list.length) {
-    el("scnGrid").innerHTML = `<p class="muted">No scenarios match the current filters. <button class="btn sm" onclick="resetScnFilters()">Reset filters</button></p>`;
+    el("scnGrid").innerHTML = typeof emptyState === "function"
+      ? emptyState("⚠", "No scenarios match", "Try a broader vector or severity — or clear the search to browse all 38 scenarios.", "Reset filters", "resetScnFilters()")
+      : `<p class="muted">No scenarios match the current filters.</p>`;
     return;
   }
   const dot = s => s.severity === "critical" ? "var(--red)" : s.severity === "high" ? "var(--orange)" : s.severity === "medium" ? "var(--accent)" : "var(--green)";

@@ -71,7 +71,9 @@ function renderTraceList() {
     <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" data-tid="${escHtml(t.id)}" onclick="loadTrace('${t.id}')">
       <div class="t">${escHtml(traceLabel(t))}</div>
       <div class="m"><span class="verdict ${t.verdict}">${t.verdict}</span> ${escHtml(traceDomain(t))} · ${t.metrics.steps} steps · ${escHtml(traceSeverity(t))}</div>
-    </div>`).join("") || `<p class="muted small" style="padding:0 6px">No traces match the current filters.</p>`;
+    </div>`).join("") || (typeof emptyState === "function"
+      ? emptyState("▶", "No traces match", "Every trace is filtered out — clear a verdict, severity or domain filter to get the replay list back.", "Reset filters", "resetLiveFilters()")
+      : `<p class="muted small" style="padding:0 6px">No traces match the current filters.</p>`);
 }
 
 function loadTrace(id) {

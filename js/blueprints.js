@@ -975,7 +975,12 @@ function bpRender() {
                   `<button title="Remove" class="bp-x" onclick="bpRemove(${i})">×</button>` +
                 `</span></li>`;
             }).join("") + `</ol>`
-          : `<div class="muted small">Nothing added yet.</div>`) +
+          : `<div class="empty-state"><div class="empty-ico">🧩</div>` +
+            `<div class="empty-t">Empty canvas</div>` +
+            `<div class="empty-b">Start from a proven shape, then add or remove components — coverage, cost and exposure update live.</div>` +
+            `<div class="d-actions" style="justify-content:center">` +
+            BP_TEMPLATES.slice(0, 3).map(t => `<button class="btn sm" onclick="bpApplyTemplate('${t.k}')">${escHtml(t.name)}</button>`).join("") +
+            `</div></div>`) +
         `<div class="bp-notes">` +
           `<h4>Notes</h4>` +
           `<textarea class="bp-noteta" placeholder="Assumptions, data classes, known constraints…" ` +
