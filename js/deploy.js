@@ -408,4 +408,175 @@ function dpRail() {
     ${missing ? '<p class="dp-need">Start by naming the system.</p>' : ""}`;
 }
 
+/* ---------------- section 2: readiness scorecard (iteration 16) ---------- */
+/* Every citation is validated against the loaded catalog at render time, so a
+   renamed pattern can never produce a dead link — it just degrades to text. */
+function dpHas(kind, id) {
+  if (!id) return false;
+  if (kind === "pattern") return !!(DATA.patterns && DATA.patterns.patterns || []).some(p => p.id === id);
+  if (kind === "scenario") return !!(DATA.scenarios && DATA.scenarios.scenarios || []).some(s => s.id === id);
+  if (kind === "cascade") return !!(DATA.cascades && DATA.cascades.cascades || []).some(c => c.id === id);
+  return false;
+}
+function dpFinding(t, kind, id) { return { t: t, kind: kind, id: dpHas(kind, id) ? id : null }; }
+
+function dpOpenCite(kind, id) {
+  try {
+    if (kind === "pattern" && typeof openPattern === "function") openPattern(id);
+    else if (kind === "scenario") { switchTab("scenarios"); setTimeout(() => openScenario(id), 70); }
+    else if (kind === "cascade") { switchTab("cascades"); setTimeout(() => openCascade(id), 70); }
+    else showNotif("Reference: " + id);
+  } catch (e) { showNotif("Couldn't open " + id); }
+}
+
+const dpClamp = n => Math.max(0, Math.min(100, Math.round(n)));
+
+/* Domain facts from the real catalog — used by the alignment dimension. */
+function dpDomainData() {
+  const dom = dpState.a.domain;
+  const scens = ((DATA.scenarios && DATA.scenarios.scenarios) || []).filter(s => s.domain === dom);
+  const casc = ((DATA.cascades && DATA.cascades.cascades) || []).filter(c => (c.domain || "general") === dom);
+  return {
+    dom: dom,
+    scens: scens,
+    casc: casc,
+    severe: scens.filter(s => s.severity === "critical" || s.severity === "high"),
+    systemic: casc.filter(c => c.cls === "derived" || c.cls === "cascading")
+  };
+}
+
+function dpDims() {
+  const a = dpState.a, dd = dpDomainData();
+  const B = ["transact", "delete", "publish"];
+  const held = B.filter(x => (a.actions || []).indexOf(x) >= 0);
+  const D = [];
+
+  /* 1 — can the control model hold the autonomy we asked for? */
+  {
+    let s = 100; const f = [];
+    if (!a.approvalGate) {
+      if (a.autonomy >= 3) { s -= 35; f.push(dpFinding(`L${a.autonomy} autonomy with no human gate over irreversible actions`, "pattern", "approval-gates")); }
+      if (held.length) { s -= 25; f.push(dpFinding(`Can "${held.join('", "')}" with no approval step`, "pattern", "dual-control")); }
+      if (!held.length && a.autonomy < 3) f.push(dpFinding("Read-mostly action set keeps approval pressure low", "pattern", "human-in-the-loop"));
+    } else {
+      f.push(dpFinding("Approval gate required for irreversible actions", "pattern", "human-in-the-loop"));
+      if (a.autonomy >= 3 && held.length >= 2) { s -= 15; f.push(dpFinding("Gates across a wide action surface invite review fatigue — cap by policy, not by vigilance", "scenario", "approval-fatigue")); }
+    }
+    if (a.autonomy === 4) { s -= 10; f.push(dpFinding("Fully autonomous operation needs a rollback path it can trigger itself", "pattern", "checkpoint-rollback")); }
+    if ((a.actions || []).length > 5) { s -= 8; f.push(dpFinding("Broad action surface — express what is allowed as policy in the runtime", "pattern", "policy-engine")); }
+    if (a.criticality === "critical" && a.autonomy >= 2) { s -= 10; f.push(dpFinding("Critical system acting on its own: keep an always-on eval harness, not a launch test", "pattern", "eval-harness-redteam")); }
+    D.push({ id: "control", title: "Autonomy & control fit", weight: 25, score: dpClamp(s), findings: f });
+  }
+
+  /* 2 — can one mistake be contained? */
+  {
+    let s = 100; const f = [];
+    const rank = DP_BLAST.indexOf(a.blast);
+    if (rank >= 2 && a.autonomy >= 3) { s -= 25; f.push(dpFinding(`${a.blast}-sized blast radius at L${a.autonomy}: cap per-action effect`, "pattern", "quota-rate-limit")); }
+    else if (rank >= 4) { s -= 12; f.push(dpFinding(`${a.blast} blast radius: isolate and shut off segments independently`, "pattern", "least-privilege")); }
+    if (a.autonomy >= 2 && held.length) { f.push(dpFinding("Spend/size ceilings bound what a single run can consume", "pattern", "budget-guardrails")); }
+    if (dd.systemic.length) f.push(dpFinding(`${dd.systemic.length} derived/cascading chains are already modeled for ${dd.dom}`, "cascade", dd.systemic[0].id));
+    else f.push(dpFinding("No modeled propagation for this domain — assume correlation you cannot yet see", "pattern", "retry-backoff"));
+    if (!f.length || s === 100) f.push(dpFinding("Blast radius is small relative to autonomy", "pattern", "least-privilege"));
+    D.push({ id: "contain", title: "Blast-radius containment", weight: 20, score: dpClamp(s), findings: f });
+  }
+
+  /* 3 — does what it can see stay contained? */
+  {
+    let s = 100; const f = [];
+    const heavy = (a.dataClasses || []).filter(c => ["pii", "health", "credentials", "financial"].indexOf(c) >= 0);
+    if (a.sensitivity === "restricted") { s -= 12; f.push(dpFinding("Restricted ceiling: tokenize and row-scope before the model sees it", "pattern", "least-privilege")); }
+    if ((a.dataClasses || []).indexOf("credentials") >= 0) { s -= 18; f.push(dpFinding("Never hand raw credentials to a model — issue scoped, short-lived identity", "pattern", "agent-identity")); }
+    if (heavy.length >= 3) { s -= 15; f.push(dpFinding("Three or more sensitive classes in one context: separate them", "scenario", "tenant-leak")); }
+    if (!heavy.length && a.sensitivity === "public") s += 0;
+    f.push(dpFinding("Output shield scans what leaves the boundary", "pattern", "content-shielding"));
+    D.push({ id: "data", title: "Data protection", weight: 15, score: dpClamp(s), findings: f });
+  }
+
+  /* 4 — how much control work did we sign up for? */
+  {
+    const n = (a.compliance || []).length;
+    let s = 100 - Math.max(0, n - 1) * 8; const f = [];
+    if (!n) { s = Math.min(s, 65); f.push(dpFinding("No regime selected — decide what \"compliant\" means before launch", "pattern", "audit-trail")); }
+    else f.push(dpFinding(`${n} regime${n > 1 ? "s" : ""} in scope: every guardrail needs an owner, a control and evidence`, "pattern", "audit-trail"));
+    const map = { "eu-ai-act": ["pattern", "human-in-the-loop"], "gdpr": ["pattern", "audit-trail"], "hipaa": ["pattern", "least-privilege"], "pci-dss": ["pattern", "content-shielding"], "nist-ai-rmf": ["pattern", "eval-harness-redteam"] };
+    (a.compliance || []).slice(0, 2).forEach(c => { const m = map[c]; if (m) f.push(dpFinding(`${dpLabel("compliance", c)}: ${m[1]} is the load-bearing control`, m[0], m[1])); });
+    D.push({ id: "compliance", title: "Compliance load", weight: 15, score: dpClamp(s), findings: f });
+  }
+
+  /* 5 — who catches it at 2am, and how does it reach users? */
+  {
+    let s = 100; const f = [];
+    if (a.rollout === "big-bang") { s -= 30; f.push(dpFinding("Big-bang rollout produces no parity evidence — go shadow → canary", "pattern", "canary-shadow")); }
+    else if (a.rollout === "staged") { f.push(dpFinding("Staged rollout bounds blast; add dry-run parity before each widening", "pattern", "shadow-agents")); }
+    else f.push(dpFinding(`${dpLabel("rollout", a.rollout)} rollout keeps the first exposure small`, "pattern", "canary-shadow"));
+    if (a.oncall === "none") { s -= 35; f.push(dpFinding("Nobody is on call when the agent misbehaves", "pattern", "drift-monitoring")); }
+    if (a.oncall === "business" && a.criticality === "critical") { s -= 12; f.push(dpFinding("Critical systems don't take evenings off — round-the-clock coverage or a hard blast cap", "pattern", "drift-monitoring")); }
+    if (a.team === "solo" && a.autonomy >= 3) { s -= 15; f.push(dpFinding("Solo team at L3+: the builder is also the reviewer", "pattern", "dual-control")); }
+    if (a.hosting === "serverless" && a.autonomy >= 3) { s -= 8; f.push(dpFinding("Serverless egress is easy to miss — allowlist what it can reach", "pattern", "tool-sandbox")); }
+    D.push({ id: "ops", title: "Operational readiness", weight: 15, score: dpClamp(s), findings: f });
+  }
+
+  /* 6 — grounded: does the catalog actually cover this domain? */
+  {
+    let s = 100; const f = [];
+    if (!dd.scens.length) { s = 35; f.push(dpFinding(`No scenarios authored for "${dd.dom}" — planning blind from here`, null, null)); }
+    else if (dd.severe.length < 2) { s = 75; f.push(dpFinding(`${dd.scens.length} scenarios on file for ${dd.dom}, ${dd.severe.length} severe — expand the severe cases`, "scenario", dd.scens[0].id)); }
+    else f.push(dpFinding(`${dd.scens.length} scenarios for ${dd.dom}, ${dd.severe.length} critical/high — test against them`, "scenario", dd.severe[0].id));
+    if (dd.systemic.length) f.push(dpFinding(`Run the ${dd.systemic.length} derived/cascading chains as failure drills`, "cascade", dd.systemic[0].id));
+    else if (dd.casc.length) f.push(dpFinding(`${dd.casc.length} cascades modeled; none yet cross a boundary in this domain`, "cascade", dd.casc[0].id));
+    else { s -= 20; f.push(dpFinding(`No cascade model for ${dd.dom} — emergent coupling is undocumented`, null, null)); }
+    D.push({ id: "catalog", title: "Catalog alignment", weight: 10, score: dpClamp(s), findings: f });
+  }
+
+  return D;
+}
+
+function dpScore() {
+  const dims = dpDims();
+  const tw = dims.reduce((s, d) => s + d.weight, 0);
+  const overall = Math.round(dims.reduce((s, d) => s + d.score * d.weight, 0) / tw);
+  const band = overall >= 85 ? ["Ready", "ok"]
+    : overall >= 70 ? ["Ready with controls", "accent"]
+    : overall >= 50 ? ["Needs work", "orange"]
+    : ["Not ready", "red"];
+  const moves = dims.slice()
+    .filter(d => d.score < 85)
+    .sort((x, y) => (y.weight * (100 - y.score)) - (x.weight * (100 - x.score)))
+    .map(d => ({ dim: d, f: d.findings.find(x => x.id) || d.findings[0] }))
+    .filter(m => m.f)
+    .slice(0, 3);
+  return { dims: dims, overall: overall, band: band, moves: moves };
+}
+
+function dpGrade(score) { return score >= 90 ? "A" : score >= 80 ? "B" : score >= 70 ? "C" : score >= 55 ? "D" : "F"; }
+
+function dpSectionScore() {
+  const sc = dpScore();
+  return `
+    <div class="dp-scorehead">
+      <div class="dp-scorebig"><b>${sc.overall}</b><span>${dpGrade(sc.overall)}</span></div>
+      <div class="dp-scoremeta">
+        <span class="chip ${sc.band[1]}">${escHtml(sc.band[0])}</span>
+        <p class="muted small">Weighted across ${sc.dims.length} dimensions from your intake answers. Lower-scoring dimensions are the ones to fix first.</p>
+      </div>
+      <div class="dp-scorebar"><div class="dp-bar-fill" style="width:${sc.overall}%"></div></div>
+    </div>
+    <div class="dp-dims">${sc.dims.map(d => `
+      <div class="dp-dim">
+        <div class="dp-dimhead"><b>${escHtml(d.title)}</b><span>${d.score} · ${dpGrade(d.score)} <i class="muted">w${d.weight}</i></span></div>
+        <div class="dp-bar"><div class="dp-bar-fill ${d.score >= 70 ? "good" : d.score >= 50 ? "mid" : "bad"}" style="width:${d.score}%"></div></div>
+        <ul class="dp-find">${d.findings.map(f => `
+          <li>${f.id ? `<button class="dp-cite" onclick="dpOpenCite('${escHtml(f.kind)}','${escHtml(f.id)}')" title="Open in catalog">${escHtml(f.id)}</button> ` : ""}${escHtml(f.t)}</li>`).join("")}
+        </ul>
+      </div>`).join("")}</div>
+    ${sc.moves.length ? `
+    <div class="dp-moves">
+      <h4>Highest-leverage next moves</h4>
+      <ol>${sc.moves.map(m => `<li><b>${escHtml(m.dim.title)}:</b> ${escHtml(m.f.t)}${m.f.id ? ` — <button class="dp-cite" onclick="dpOpenCite('${escHtml(m.f.kind)}','${escHtml(m.f.id)}')">${escHtml(m.f.id)}</button>` : ""}</li>`).join("")}</ol>
+    </div>` : ""}`;
+}
+
+DP_SECTIONS.push({ id: "scorecard", title: "Readiness scorecard", render: dpSectionScore });
+
 tabLoaders.deploy = function () { initDeploy(); };
