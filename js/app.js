@@ -235,6 +235,7 @@ async function loadAll() {
     initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot(); initCascades();
     if (typeof initCoverage === "function") initCoverage();
     if (typeof initDeploy === "function") initDeploy();
+    if (typeof initBlueprint === "function") initBlueprint();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {

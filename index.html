@@ -27,6 +27,7 @@
   <div class="app-tab" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
   <div class="app-tab" data-tab="coverage" onclick="switchTab('coverage')">📊 Coverage &amp; Gaps</div>
   <div class="app-tab" data-tab="deploy" onclick="switchTab('deploy')">🧭 Deployment Plan</div>
+  <div class="app-tab" data-tab="blueprint" onclick="switchTab('blueprint')">🧩 Blueprints</div>
   <div class="app-tab" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
   <div class="app-tab" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
   <div class="app-tab" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
@@ -192,6 +193,20 @@
   </div>
 </section>
 
+<!-- ======================= BLUEPRINT BUILDER ======================= -->
+<section class="pane" id="blueprintPane">
+  <aside class="side">
+    <input class="search" id="bpSearch" placeholder="Search patterns…  (e.g. approval, sandbox, judge)" oninput="bpSetQ(this.value)">
+    <h4>Start from a template</h4>
+    <div id="bpTemplates"></div>
+    <h4>Category</h4>
+    <div id="bpCats" class="bp-cats"></div>
+    <h4>Palette <span class="muted small" id="bpPalCount"></span></h4>
+    <div id="bpPalette" class="bp-palette"></div>
+  </aside>
+  <main class="main" id="bpMain"></main>
+</section>
+
 <!-- ======================= LIVE VIEW ======================= -->
 <section class="pane" id="livePane">
   <aside class="side">
@@ -279,6 +294,7 @@
 <script src="js/cascades.js"></script>
 <script src="js/coverage.js"></script>
 <script src="js/deploy.js"></script>
+<script src="js/blueprints.js"></script>
 <script src="js/live.js"></script>
 <script src="js/design.js"></script>
 <script src="js/guardrail.js"></script>
