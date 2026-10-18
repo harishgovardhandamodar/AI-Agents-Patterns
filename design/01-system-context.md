@@ -42,7 +42,7 @@ flowchart TB
   DASH --> SCN
   DASH --> TRC
   DASH --> DES
-  DASH -->|grounded chat (optional)| AXM
+  DASH -->|grounded chat| AXM
   DASH -->|failover| FOX
 ```
 
@@ -65,7 +65,7 @@ flowchart LR
   TABS --> ENG1 & ENG2 & ENG3 & ENG4 & ENG5 & ENG6
   ENG5 --> STORE
   ENG6 --> STORE
-  ENG6 -->|/api/llm/* (same origin)| PROXY["serve.py LLM proxy<br/>axiom first, Fox-Services fallback"]
+  ENG6 -->|/api/llm/*| PROXY["serve.py LLM proxy<br/>axiom first, Fox-Services fallback"]
 ```
 
 There is **no server-side agent**. The Guardrail Lab's "agent" is a deterministic rule engine (`js/guardrail.js`) that classifies the request, scores risk, selects controls, and synthesizes a mock run — chosen so the demo is auditable and reproducible: an un-auditable analyzer would undercut the very thesis the tool teaches. The only model calls in the system are Fox - Architect chats, which stream through the same-origin proxy with a deterministic catalog fallback when no backend answers.
