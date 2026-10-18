@@ -110,6 +110,39 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
+/* ---------------- client diagnostics beacon --------------------
+   Reports JS errors + boot markers to the server log (GET /api/diag),
+   same origin only. This is how a blank tab with no visible error gets
+   diagnosed: the browser tells us what it hit. sendBeacon never throws and
+   never blocks rendering; if the endpoint is absent it 404s silently. */
+(function bootDiag() {
+  function send(kind, msg) {
+    try {
+      const u = "api/diag?kind=" + encodeURIComponent(kind) +
+        "&msg=" + encodeURIComponent(String(msg == null ? "" : msg).slice(0, 300)) +
+        "&tab=" + encodeURIComponent(typeof currentTab === "string" ? currentTab : "") +
+        "&ua=" + encodeURIComponent((navigator.userAgent || "").slice(0, 120));
+      if (navigator.sendBeacon) navigator.sendBeacon(u);
+      else { const im = new Image(); im.src = u; }
+    } catch (e) { /* diagnostics must never break the app */ }
+  }
+  window.addEventListener("error", function (e) {
+    send("js", (e.message || "error") + " @ " + String(e.filename || "").split("/").pop() + ":" + (e.lineno || 0));
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    const r = e && e.reason;
+    send("promise", String((r && r.message) || r || "unknown").slice(0, 200));
+  });
+  window.__diag = send;
+  setTimeout(function () {
+    try {
+      send("boot", "ok tabs=" + document.querySelectorAll(".app-tab").length +
+        " panes=" + document.querySelectorAll(".pane").length +
+        " disc=" + (!!document.getElementById("discMain")));
+    } catch (e) { /* ignore */ }
+  }, 3000);
+})();
+
 /* ---------------- tabs ---------------- */
 let currentTab = "overview";
 const tabLoaders = {}; // filled by per-tab scripts

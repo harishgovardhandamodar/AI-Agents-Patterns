@@ -185,6 +185,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
+        if path == "/api/diag":
+            # Client-side diagnostics beacon (see bootDiag in js/app.js):
+            # logs browser errors + boot markers to stderr (docker logs).
+            # Same-origin only, no PII beyond UA string and tab name.
+            try:
+                q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                msg = (q.get("msg") or [""])[0][:300].replace("\n", " ")
+                kind = (q.get("kind") or [""])[0][:20].replace("\n", " ")
+                tab = (q.get("tab") or [""])[0][:20].replace("\n", " ")
+                ua = (q.get("ua") or [""])[0][:120].replace("\n", " ")
+                sys.stderr.write(f"DIAG [{self.client_address[0]}] {kind} tab={tab} :: {msg} :: {ua}\n")
+                sys.stderr.flush()
+            except Exception:
+                pass
+            self.send_response(204)
+            self.end_headers()
+            return
         if path == "/api/llm/health":
             return self._json(health())
         if path == "/api/llm/config":
