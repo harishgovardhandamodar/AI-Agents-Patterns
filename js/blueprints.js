@@ -671,6 +671,7 @@ function bpSaveToLib() {
   bpState.name = name;
   bpState.lib.unshift({ name: name, comps: bpState.comps.slice(), notes: bpState.notes, at: Date.now() });
   bpState.lib = bpState.lib.slice(0, BP_MAX_LIB);
+  if (typeof palInvalidate === "function") palInvalidate();
   bpSave(); bpSaveLib(); bpRender();
   showNotif("Saved to library — " + name);
 }
@@ -685,6 +686,7 @@ function bpLoadLib(i) {
 function bpDeleteLib(i) {
   const e = bpState.lib[i];
   bpState.lib.splice(i, 1); bpSaveLib(); bpRender();
+  if (typeof palInvalidate === "function") palInvalidate();
   if (e) showNotif("Removed from library — " + e.name);
 }
 

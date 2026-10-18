@@ -217,7 +217,13 @@ function openDetail(title, catLabel, html) {
   mmRenderAll(el("detailBody"));
 }
 function closeDetail() { el("detailOverlay").classList.remove("open"); }
-document.addEventListener("keydown", e => { if (e.key === "Escape") closeDetail(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape") {
+    const pal = document.getElementById("palOverlay");
+    if (pal && pal.classList.contains("open")) return; /* palette handles its own Esc */
+    closeDetail();
+  }
+});
 
 /* ---------------- boot ---------------- */
 async function loadAll() {
@@ -236,6 +242,7 @@ async function loadAll() {
     if (typeof initCoverage === "function") initCoverage();
     if (typeof initDeploy === "function") initDeploy();
     if (typeof initBlueprint === "function") initBlueprint();
+    if (typeof initPalette === "function") initPalette();
     if (typeof dashRender === "function") dashRender();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
