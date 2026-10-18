@@ -117,7 +117,7 @@
       <div style="margin-top:10px"><button class="btn" onclick="resetPatFilters()">Reset filters</button></div>
     </aside>
     <main class="main">
-      <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+      <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="patCount"></span>
         <div style="flex:1"></div>
         <span class="view-seg" role="group" aria-label="Layout">
@@ -129,6 +129,7 @@
           <option value="risk">sort: riskiest (by failure count)</option>
           <option value="gap">sort: least protected first</option>
         </select>
+        <div class="fchip-row" id="patActive" style="display:none"></div>
       </div>
       <div class="card-grid" id="patGrid"></div>
     </main>
@@ -149,7 +150,7 @@
       <div style="margin-top:10px"><button class="btn" onclick="resetScnFilters()">Reset filters</button></div>
     </aside>
     <main class="main">
-      <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+      <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <div class="muted small" style="margin-bottom:0" id="scnCount"></div>
         <div style="flex:1"></div>
         <span class="view-seg" role="group" aria-label="Layout">
@@ -161,6 +162,7 @@
           <option value="gaps">sort: least protected first</option>
           <option value="vector">sort: attack vector</option>
         </select>
+        <div class="fchip-row" id="scnActive" style="display:none"></div>
       </div>
       <div class="card-grid" id="scnGrid"></div>
     </main>
@@ -188,7 +190,7 @@
     </div>
     <div id="casExplorer">
       <div class="panel" id="casOverview" style="margin-bottom:12px"></div>
-      <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
+      <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="casCount"></span>
         <div style="flex:1"></div>
         <select class="search" style="width:auto" id="casSort" onchange="casState.sort=this.value;casState.limit=CAS_LIST_STEP;renderCascadeList()">
@@ -197,6 +199,7 @@
           <option value="class">sort: class</option>
           <option value="name">sort: name</option>
         </select>
+        <div class="fchip-row" id="casActive" style="display:none"></div>
       </div>
       <div class="card-grid" id="casGrid"></div>
     </div>

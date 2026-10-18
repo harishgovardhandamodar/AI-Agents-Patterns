@@ -27,6 +27,23 @@ function resetScnFilters() {
   renderScenarios();
 }
 
+function scnClearQ() { el("scnSearch").value = ""; renderScenarios(); }
+function scnUncheck(group, val) {
+  scnState[group].delete(val);
+  const sel = group === "domains" ? "#scnDomains" : group === "sevs" ? "#scnSev" : "#scnVectors";
+  const attr = group === "domains" ? "data-dom" : group === "sevs" ? "data-sev" : "data-vec";
+  document.querySelectorAll(sel + " input").forEach(i => { if (i.getAttribute(attr) === val) i.checked = false; });
+  renderScenarios();
+}
+function scnActiveChips(q) {
+  const chips = [];
+  if (q) chips.push({ label: "“" + q.slice(0, 24) + "”", title: "Search text — click × to clear", fn: "scnClearQ()" });
+  [...scnState.domains].forEach(d => chips.push({ label: d, title: "Domain filter — click × to remove", fn: "scnUncheck('domains','" + escJs(d) + "')" }));
+  [...scnState.sevs].forEach(s => chips.push({ label: s, title: "Severity filter — click × to remove", fn: "scnUncheck('sevs','" + escJs(s) + "')" }));
+  [...scnState.vectors].forEach(v => chips.push({ label: v, title: "Vector filter — click × to remove", fn: "scnUncheck('vectors','" + escJs(v) + "')" }));
+  return chips;
+}
+
 function renderScenarios() {
   const S = DATA.scenarios;
   const q = el("scnSearch").value.trim().toLowerCase();
@@ -48,6 +65,7 @@ function renderScenarios() {
   else list.sort((a, b) => sevRank[a.severity] - sevRank[b.severity] || a.title.localeCompare(b.title));
 
   el("scnCount").textContent = `${list.length} of ${S.scenarios.length} scenarios — click for attack chain, protections, and mock run`;
+  if (typeof paintActiveChips === "function") paintActiveChips("scnActive", scnActiveChips(q));
   if ((uxPrefs.scnView || "cards") === "list") return renderScenarioList(list);
   el("scnGrid").innerHTML = list.map(s => `
     <div class="pat-card" onclick="openScenario('${s.id}')">

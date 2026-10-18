@@ -100,6 +100,34 @@ function resetPatFilters() {
   renderPatterns();
 }
 
+function patClearQ() { el("patSearch").value = ""; renderPatterns(); }
+function patRecheckCat(id) {
+  patState.cats.add(id);
+  document.querySelectorAll("#patCats input").forEach(i => { if (i.dataset.cat === id) i.checked = true; });
+  renderPatterns();
+}
+function patUncheckDom(d) {
+  patState.domains.delete(d);
+  document.querySelectorAll("#patDomains input").forEach(i => { if (i.dataset.dom === d) i.checked = false; });
+  renderPatterns();
+}
+function patUnflag(which) {
+  if (which === "dia") el("patHasDiagram").checked = false;
+  if (which === "fail") el("patHasFailures").checked = false;
+  renderPatterns();
+}
+function patActiveChips(q, needDia, needFail) {
+  const P = DATA.patterns, chips = [];
+  if (q) chips.push({ label: "“" + q.slice(0, 24) + "”", title: "Search text — click × to clear", fn: "patClearQ()" });
+  P.categories.forEach(c => {
+    if (!patState.cats.has(c.id)) chips.push({ label: "not: " + c.name, title: "Category hidden — click × to show again", fn: "patRecheckCat('" + escJs(c.id) + "')" });
+  });
+  [...patState.domains].forEach(d => chips.push({ label: d, title: "Domain filter — click × to remove", fn: "patUncheckDom('" + escJs(d) + "')" }));
+  if (needDia) chips.push({ label: "has diagram", title: "Quick filter — click × to remove", fn: "patUnflag('dia')" });
+  if (needFail) chips.push({ label: "has failures", title: "Quick filter — click × to remove", fn: "patUnflag('fail')" });
+  return chips;
+}
+
 function renderPatterns() {
   const P = DATA.patterns;
   const q = el("patSearch").value.trim().toLowerCase();
@@ -122,6 +150,7 @@ function renderPatterns() {
   else list.sort((a, b) => a.cat.localeCompare(b.cat) || a.name.localeCompare(b.name));
 
   el("patCount").textContent = `${list.length} of ${P.patterns.length} patterns`;
+  if (typeof paintActiveChips === "function") paintActiveChips("patActive", patActiveChips(q, needDia, needFail));
   if ((uxPrefs.patView || "cards") === "list") return renderPatternList(list, P);
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   el("patGrid").innerHTML = list.map(p => `

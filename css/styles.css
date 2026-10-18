@@ -1321,6 +1321,31 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 
 .cas-more { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; flex-wrap: wrap; }
 
+/* sticky filter bars + active-filter chips (catalog panes) */
+.sticky-bar {
+  position: sticky; top: 0; z-index: 6;
+  background: var(--bg); padding: 8px 0;
+  flex-wrap: wrap;
+}
+.sticky-bar::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -1px;
+  border-bottom: 1px solid var(--border); opacity: .6;
+}
+.fchip-row { display: flex; flex-wrap: wrap; gap: 6px; flex-basis: 100%; }
+.fchip-row:empty, .fchip-row[style*="none"] { display: none; }
+.fchip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--text);
+  background: var(--bg3); border: 1px solid var(--accent);
+  border-radius: 20px; padding: 2px 4px 2px 10px;
+}
+.fchip button {
+  background: transparent; border: 0; cursor: pointer;
+  color: var(--text2); font-size: 13px; line-height: 1;
+  border-radius: 50%; width: 18px; height: 18px; padding: 0;
+}
+.fchip button:hover { color: #fff; background: var(--accent); }
+
 /* cards-vs-list segmented control (patterns, scenarios) */
 .view-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; flex: none; }
 .view-seg button {

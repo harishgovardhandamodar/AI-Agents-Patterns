@@ -432,6 +432,27 @@ function casScrollKeep() {
   if (grid && grid.lastElementChild) grid.lastElementChild.scrollIntoView({ block: "nearest" });
 }
 
+function casClearQ() {
+  casState.q = "";
+  const s = el("casSearch"); if (s) s.value = "";
+  casState.limit = CAS_LIST_STEP; renderCascadeList();
+}
+function casUncheck(group, val) {
+  const key = group === "cls" ? "cls" : group === "domain" ? "domain" : "blast";
+  casState[key].delete(val);
+  const box = group === "cls" ? el("casClasses") : group === "domain" ? el("casDomains") : el("casBlast");
+  if (box) box.querySelectorAll("input").forEach(i => { if (i.dataset.v === val) i.checked = false; });
+  casState.limit = CAS_LIST_STEP; renderCascadeList();
+}
+function casActiveChips() {
+  const chips = [];
+  if (casState.q) chips.push({ label: "“" + casState.q.slice(0, 24) + "”", title: "Search text — click × to clear", fn: "casClearQ()" });
+  [...casState.cls].forEach(v => chips.push({ label: "class: " + v, title: "Cascade class — click × to remove", fn: "casUncheck('cls','" + escJs(v) + "')" }));
+  [...casState.domain].forEach(v => chips.push({ label: v, title: "Domain filter — click × to remove", fn: "casUncheck('domain','" + escJs(v) + "')" }));
+  [...casState.blast].forEach(v => chips.push({ label: "blast: " + v, title: "Blast radius — click × to remove", fn: "casUncheck('blast','" + escJs(v) + "')" }));
+  return chips;
+}
+
 function renderCascadeList() {
   const grid = el("casGrid");
   if (!grid) return;
@@ -439,6 +460,7 @@ function renderCascadeList() {
   const shown = list.slice(0, casState.limit);
   const cnt = el("casCount");
   if (cnt) cnt.textContent = "showing " + shown.length + " of " + list.length + " cascades" + (list.length !== casAll().length ? " (" + casAll().length + " total)" : "");
+  if (typeof paintActiveChips === "function") paintActiveChips("casActive", casActiveChips());
   grid.innerHTML = shown.map(casCardHtml).join("") +
     (list.length > shown.length
       ? '<div class="cas-more"><button class="btn" onclick="casShowMore()">Show ' + Math.min(CAS_LIST_STEP, list.length - shown.length) + ' more (' + (list.length - shown.length) + ' remaining)</button>' +

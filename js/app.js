@@ -303,6 +303,20 @@ function markSaved(key) {
   paintSaveStamps();
 }
 
+/* ---------------- active-filter chips (catalog panes) --------------------
+   paintActiveChips(id, chips) renders removable filter pills. Each chip is
+   { label, title, fn } — fn is a global function name + JS-escaped argument. */
+function escJs(s) { return String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
+
+function paintActiveChips(id, chips) {
+  const box = document.getElementById(id);
+  if (!box) return;
+  box.innerHTML = (chips || []).map(c =>
+    `<span class="fchip" title="${escHtml(c.title || c.label)}">${escHtml(c.label)}` +
+    `<button type="button" onclick="${escHtml(c.fn)}" aria-label="Remove filter ${escHtml(c.label)}">×</button></span>`).join("");
+  box.style.display = chips && chips.length ? "" : "none";
+}
+
 function paintSaveStamps() {
   document.querySelectorAll("[data-save-stamp]").forEach(s => {
     const t = saveTimes[s.getAttribute("data-save-stamp")];
