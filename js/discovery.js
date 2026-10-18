@@ -223,12 +223,13 @@ function discRun(cfg) {
 }
 
 /* ---- persistence + actions ---- */
-function discRunAll(compare) {
+function discRunAll(compare, quiet) {
   const cfg = Object.assign({}, discState.cfg);
   discState.run = discRun(Object.assign({}, cfg, { forget: true }));
   discState.compare = compare ? discRun(Object.assign({}, cfg, { forget: false })) : null;
   discSave();
   discRender();
+  if (quiet) return;
   const w = discState.run.winners.length;
   showNotif("Discovery complete — " + w + " novel drafts kept, " + discState.run.forgotten + " near-duplicates forgotten" +
     (compare && discState.compare ? " (compare run kept " + discState.compare.winners.length + ")" : ""),
@@ -354,4 +355,11 @@ function initDiscovery() {
   discRender();
 }
 
-tabLoaders.discovery = function () { if (el("discMain")) discRender(); };
+let discAutoRan = false;
+tabLoaders.discovery = function () {
+  if (!el("discMain")) return;
+  /* First visit with no saved run: run once so the tab opens alive instead
+     of an empty state. Deterministic, local, <1s. */
+  if (!discAutoRan && !discState.run) { discAutoRan = true; discRunAll(false, true); return; }
+  discRender();
+};
