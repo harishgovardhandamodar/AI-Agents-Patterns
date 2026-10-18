@@ -5,7 +5,8 @@
 
 "use strict";
 
-const casState = { q: "", cls: new Set(), domain: new Set(), blast: new Set(), sort: "impact" };
+const casState = { q: "", cls: new Set(), domain: new Set(), blast: new Set(), sort: "impact", limit: 60 };
+const CAS_LIST_STEP = 60;
 
 const CAS_CLASSES = [
   ["inherent", "Inherent", "Fails in isolation — a property of one component."],
@@ -44,10 +45,12 @@ function casFilterList() {
 function onCasFilter(inp, key) {
   const v = inp.dataset.v;
   if (inp.checked) casState[key].add(v); else casState[key].delete(v);
+  casState.limit = CAS_LIST_STEP; /* new result set — start paged from the top */
   renderCascadeList();
 }
 function resetCasFilters() {
   casState.q = ""; casState.cls.clear(); casState.domain.clear(); casState.blast.clear();
+  casState.limit = CAS_LIST_STEP;
   const s = el("casSearch"); if (s) s.value = "";
   document.querySelectorAll("#casClasses input,#casDomains input,#casBlast input").forEach(function (i) { i.checked = false; });
   renderCascadeList();
@@ -149,11 +152,13 @@ function buildMitigationBacklog() {
   });
   return list;
 }
-const mitFilter = { func: null, pri: null, limit: 120 };
+const mitFilter = { func: null, pri: null, limit: 40 };
+const MIT_PAGE_STEP = 40;
 function setMitFilter(k, v) {
   mitFilter[k] = (k === "limit") ? v : (mitFilter[k] === v ? null : v);
   renderMitigation();
 }
+function mitShowMore() { mitFilter.limit += MIT_PAGE_STEP; renderMitigation(); }
 function renderMitigation() {
   const box = el("casMitigation");
   if (!box) return;
@@ -178,7 +183,10 @@ function renderMitigation() {
     '<div class="seg" style="margin:0 0 8px">' + fbtn("All priorities", "pri", null) + fbtn("P1", "pri", "P1", " · " + counts.P1) + fbtn("P2", "pri", "P2", " · " + counts.P2) + fbtn("P3", "pri", "P3", " · " + counts.P3) + "</div>" +
     '<div style="display:flex;gap:8px;align-items:center;margin-top:8px">' +
     '<span class="muted small">showing ' + shown.length + " of " + filtered.length + "</span>" +
-    (filtered.length > shown.length ? '<button class="btn" onclick="setMitFilter(\'limit\',' + filtered.length + ')">Show all ' + filtered.length + "</button>" : (mitFilter.limit > 120 ? '<button class="btn" onclick="setMitFilter(\'limit\',120)">Show top 120</button>' : "")) +
+    (filtered.length > shown.length
+      ? '<button class="btn" onclick="mitShowMore()">Show ' + Math.min(MIT_PAGE_STEP, filtered.length - shown.length) + " more</button>" +
+        '<button class="btn ghost" onclick="setMitFilter(\'limit\',' + filtered.length + ')">Show all ' + filtered.length + "</button>"
+      : (mitFilter.limit > MIT_PAGE_STEP ? '<button class="btn ghost" onclick="setMitFilter(\'limit\',' + MIT_PAGE_STEP + ')">Show top ' + MIT_PAGE_STEP + "</button>" : "")) +
     '<div style="flex:1"></div>' +
     '<button class="btn" onclick="exportMitigations(\'md\')">⬇ Export markdown</button>' +
     '<button class="btn" onclick="exportMitigations(\'csv\')">⬇ Export CSV</button></div></div>' +
@@ -416,13 +424,28 @@ function casOpenDomain(dom) {
   }, 40);
 }
 
+function casShowMore() { casState.limit += CAS_LIST_STEP; renderCascadeList(); casScrollKeep(); }
+function casShowAll() { casState.limit = casFilterList().length; renderCascadeList(); casScrollKeep(); }
+function casShowFewer() { casState.limit = CAS_LIST_STEP; renderCascadeList(); }
+function casScrollKeep() {
+  const grid = el("casGrid");
+  if (grid && grid.lastElementChild) grid.lastElementChild.scrollIntoView({ block: "nearest" });
+}
+
 function renderCascadeList() {
   const grid = el("casGrid");
   if (!grid) return;
   const list = casFilterList();
+  const shown = list.slice(0, casState.limit);
   const cnt = el("casCount");
-  if (cnt) cnt.textContent = list.length + " of " + casAll().length + " cascades";
-  grid.innerHTML = list.map(casCardHtml).join("");
+  if (cnt) cnt.textContent = "showing " + shown.length + " of " + list.length + " cascades" + (list.length !== casAll().length ? " (" + casAll().length + " total)" : "");
+  grid.innerHTML = shown.map(casCardHtml).join("") +
+    (list.length > shown.length
+      ? '<div class="cas-more"><button class="btn" onclick="casShowMore()">Show ' + Math.min(CAS_LIST_STEP, list.length - shown.length) + ' more (' + (list.length - shown.length) + ' remaining)</button>' +
+        '<button class="btn ghost" onclick="casShowAll()">Show all ' + list.length + "</button></div>"
+      : (casState.limit > CAS_LIST_STEP && list.length > CAS_LIST_STEP
+        ? '<div class="cas-more"><button class="btn ghost" onclick="casShowFewer()">Show fewer</button></div>' : "")) ||
+    `<p class="muted">No cascades match the current filters. <button class="btn sm" onclick="resetCasFilters()">Reset filters</button></p>`;
 }
 function casCardHtml(c) {
   const hi = casBlastRank(c) >= 4 ? " hi" : "";

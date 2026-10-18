@@ -154,7 +154,7 @@
 <!-- ======================= CASCADES ======================= -->
 <section class="pane" id="cascadesPane" role="tabpanel" aria-label="cascades">
   <aside class="side">
-    <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" oninput="casState.q=this.value.trim().toLowerCase();renderCascadeList()">
+    <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" oninput="casState.q=this.value.trim().toLowerCase();casState.limit=CAS_LIST_STEP;renderCascadeList()">
     <h4>Cascade class</h4>
     <div id="casClasses" class="cas-legend"></div>
     <h4>Domain</h4>
@@ -175,7 +175,7 @@
       <div style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="casCount"></span>
         <div style="flex:1"></div>
-        <select class="search" style="width:auto" id="casSort" onchange="casState.sort=this.value;renderCascadeList()">
+        <select class="search" style="width:auto" id="casSort" onchange="casState.sort=this.value;casState.limit=CAS_LIST_STEP;renderCascadeList()">
           <option value="impact">sort: impact</option>
           <option value="blast">sort: blast radius</option>
           <option value="class">sort: class</option>
