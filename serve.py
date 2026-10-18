@@ -222,6 +222,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path == "/api/llm/chat":
             return self._chat()
+        if path == "/api/diag":
+            # sendBeacon posts here; same handling as the GET beacon.
+            try:
+                q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                msg = (q.get("msg") or [""])[0][:300].replace("\n", " ")
+                kind = (q.get("kind") or [""])[0][:20].replace("\n", " ")
+                tab = (q.get("tab") or [""])[0][:20].replace("\n", " ")
+                ua = (q.get("ua") or [""])[0][:120].replace("\n", " ")
+                sys.stderr.write(f"DIAG [{self.client_address[0]}] {kind} tab={tab} :: {msg} :: {ua}\n")
+                sys.stderr.flush()
+            except Exception:
+                pass
+            self.send_response(204)
+            self.end_headers()
+            return
         self._json({"error": "not found"}, 404)
 
     # -- llm handlers ------------------------------------------------------
