@@ -58,11 +58,59 @@ function cpMd(text) {
 }
 
 /* ---------------- rendering ---------------- */
-function cpMsgEl(m, stream) {
+function cpAnnounce(text) {
+  let r = document.getElementById("cpLive");
+  if (!r) {
+    r = document.createElement("div");
+    r.id = "cpLive";
+    r.className = "sr-only";
+    r.setAttribute("role", "status");
+    r.setAttribute("aria-live", "polite");
+    document.body.appendChild(r);
+  }
+  r.textContent = "";
+  setTimeout(() => { r.textContent = text; }, 30);
+}
+function cpCopyMsg(i) {
+  const m = cpMessages[i];
+  if (!m || !m.content) { showNotif("Nothing to copy"); return; }
+  if (navigator.clipboard) navigator.clipboard.writeText(m.content)
+    .then(() => showNotif("Answer copied to clipboard"))
+    .catch(() => showNotif("Clipboard blocked — select the text manually", { kind: "warn" }));
+  else showNotif("Clipboard unavailable — select the text manually", { kind: "warn" });
+}
+function cpActionsHtml(m, i, isLast) {
+  if (m.role === "user") return `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this question">⧉ copy</button></div>`;
+  let h = `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this answer">⧉ copy</button>`;
+  if (isLast) h += `<button type="button" onclick="cpRegen(${i})" title="Ask the same question again"${cpBusy ? " disabled" : ""}>↻ regenerate</button>`;
+  return h + "</div>";
+}
+function cpFollowHtml(m) {
+  const cites = (m.cites || []).slice(0, 3);
+  const qs = cites.length
+    ? cites.map(c => ({ q: `What controls defend against “${c.label}”?`, t: `Defend: ${c.label}` }))
+    : [{ q: "What are the residual gaps in this answer?", t: "Residual gaps?" },
+       { q: "What should I implement first, and why?", t: "What first?" },
+       { q: "How do I test that these controls actually hold?", t: "How to test?" }];
+  return `<div class="cp-follow"><span class="muted small">Follow up:</span> ` + qs.map((f, k) =>
+    `<button type="button" onclick="cpFollowAsk(${k})" data-fq="${escHtml(f.q)}">${escHtml(f.t)}</button>`).join("") + `</div>`;
+}
+function cpFollowAsk(k) {
+  const log = el("cpLog");
+  const row = log && log.querySelector(".cp-follow");
+  const btn = row && row.querySelectorAll("button")[k];
+  const q = btn && btn.getAttribute("data-fq");
+  if (!q || cpBusy) return;
+  const input = el("cpInput");
+  if (input) input.value = q;
+  cpSend();
+}
+function cpMsgEl(m, stream, i, isLast) {
   const wrap = document.createElement("div");
   wrap.className = "cp-msg " + (m.role === "user" ? "user" : "assistant");
   if (m.role === "user") {
     wrap.textContent = m.content;
+    wrap.insertAdjacentHTML("beforeend", cpActionsHtml(m, i, isLast));
     return wrap;
   }
   wrap.innerHTML = '<div class="who">◆ Architect Copilot' +
@@ -74,6 +122,8 @@ function cpMsgEl(m, stream) {
     (m.content ? cpMd(m.content) : '<div class="cp-thinking"><span class="spinner"></span> thinking…</div>');
   wrap.appendChild(bubble);
   if (m.cites && m.cites.length) wrap.appendChild(cpCiteEl(m.cites));
+  wrap.insertAdjacentHTML("beforeend", cpActionsHtml(m, i, isLast));
+  if (isLast && m.content && !stream) wrap.insertAdjacentHTML("beforeend", cpFollowHtml(m));
   return wrap;
 }
 function cpCiteEl(cites) {
@@ -109,7 +159,7 @@ function cpRenderLog() {
   }
   const last = cpMessages[cpMessages.length - 1];
   cpMessages.forEach(function (m, i) {
-    log.appendChild(cpMsgEl(m, cpBusy && m === last && m.role === "assistant"));
+    log.appendChild(cpMsgEl(m, cpBusy && m === last && m.role === "assistant", i, m === last));
   });
   cpScroll();
 }
@@ -196,12 +246,34 @@ async function cpSend() {
   const q = (input.value || "").trim();
   if (!q) return;
   input.value = "";
+  cpAskNew(q);
+}
+/* New question: push the user turn, then stream the answer. */
+function cpAskNew(q) {
   cpMessages.push({ role: "user", content: q });
+  cpRunAssistant(q);
+}
+/* Regenerate: drop the old assistant answer, re-run the same question
+   without duplicating the user turn. */
+function cpRegen(i) {
+  if (cpBusy) return;
+  const cur = cpMessages[i];
+  if (!cur || cur.role !== "assistant") return;
+  let q = "";
+  for (let j = i - 1; j >= 0; j--) {
+    if (cpMessages[j].role === "user") { q = cpMessages[j].content; break; }
+  }
+  if (!q) { showNotif("No question found to regenerate"); return; }
+  cpMessages.splice(i, 1);
+  cpRunAssistant(q);
+}
+async function cpRunAssistant(q) {
   const assistant = { role: "assistant", content: "", cites: [] };
   cpMessages.push(assistant);
   cpRenderLog();
   cpBusy = true;
   cpSetBusyUI(true);
+  cpAnnounce("Thinking — grounding the question in the catalog.");
 
   const payload = cpBuildMessages(q);
   if (payload._ctx) assistant.cites = payload._ctx.cites;
@@ -246,6 +318,11 @@ async function cpSend() {
     cpSetBusyUI(false);
     cpRenderLog();
     cpSave();
+    cpAnnounce(/_\(stopped\)_\s*$/.test(assistant.content)
+      ? "Stopped."
+      : assistant.offline
+        ? "Answer complete, from the local catalog fallback."
+        : "Answer complete" + (assistant.cites && assistant.cites.length ? ", grounded in " + assistant.cites.length + " catalog items." : "."));
   }
 }
 
