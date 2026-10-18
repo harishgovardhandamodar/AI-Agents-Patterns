@@ -142,7 +142,7 @@ function bpAddMany(ids) {
     () => { fresh.forEach(id => { if (!bpHas(id)) bpState.comps.push(id); }); bpSave(); bpRender(); bpRenderPalette(); });
   showNotif("Added to blueprint — " + shown, {
     kind: "ok",
-    actions: [{ label: "Undo", primary: true, fn: undoOnce }, { label: "View", fn: () => switchTab("blueprint") }]
+    actions: [{ label: "Undo", primary: true, fn: undoOnce }, { label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }]
   });
   return fresh.length;
 }
@@ -916,7 +916,7 @@ function bpRender() {
   root.innerHTML =
     `<div class="bp-head">` +
       `<div class="bp-titlerow">` +
-        `<input class="bp-name" id="bpName" value="${escHtml(bpState.name)}" placeholder="Name this blueprint…" ` +
+        `<input class="bp-name" id="bpName" aria-label="Blueprint name" value="${escHtml(bpState.name)}" placeholder="Name this blueprint…" ` +
           `oninput="bpSetField('name', this.value)" onkeydown="if(event.key==='Enter')this.blur()">` +
         `<span class="muted small">drag-free ordering: ${stages.length} stage${stages.length === 1 ? "" : "s"} → ${controls.length} control${controls.length === 1 ? "" : "s"}</span>` +
         `<span class="save-stamp" data-save-stamp="bp"></span>` +

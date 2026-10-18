@@ -27,7 +27,7 @@ function seedExample() {
 /* ---------------- collection UI ---------------- */
 function renderGuardCollection() {
   el("guardCollection").innerHTML = guardState.items.map(it => `
-    <div class="g-item ${it.id === guardState.currentId ? "active" : ""}" onclick="openGuardItem('${it.id}')">
+    <div class="g-item ${it.id === guardState.currentId ? "active" : ""}" role="listitem" onclick="openGuardItem('${it.id}')">
       <div class="t">${escHtml(it.title)}</div>
       <div class="m">${escHtml(it.meta.domain)} · risk ${it.meta.riskScore} · ${escHtml(it.meta.tier)} · ${it.controls.length} controls</div>
     </div>`).join("");

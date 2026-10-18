@@ -172,26 +172,27 @@ function dpErrors(stepIdx) {
 /* ---------------- field rendering ---------------- */
 function dpField(f) {
   const v = dpState.a[f.k];
-  const label = `<span class="dp-label">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</span>`;
+  const fid = "dp-f-" + String(f.k).replace(/[^a-z0-9_-]/gi, "");
   const hint = f.hint ? `<small class="dp-hint">${escHtml(f.hint)}</small>` : "";
+  const label = `<span class="dp-label" id="${fid}-lbl">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</span>`;
 
   switch (f.type) {
     case "text":
-      return `<div class="dp-field">${label}<input class="dp-input" type="text" value="${escHtml(v)}" placeholder="${escHtml(f.placeholder || "")}" oninput="dpSet('${f.k}', this.value, true)">${hint}</div>`;
+      return `<div class="dp-field"><label class="dp-label" for="${fid}">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</label><input class="dp-input" id="${fid}" type="text" value="${escHtml(v)}" placeholder="${escHtml(f.placeholder || "")}" oninput="dpSet('${f.k}', this.value, true)">${hint}</div>`;
 
     case "select":
-      return `<div class="dp-field">${label}<select class="dp-input" onchange="dpSet('${f.k}', this.value)">${
+      return `<div class="dp-field"><label class="dp-label" for="${fid}">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</label><select class="dp-input" id="${fid}" onchange="dpSet('${f.k}', this.value)">${
         dpOpts(f.opts).map(o => `<option value="${escHtml(o[0])}"${o[0] === v ? " selected" : ""}>${escHtml(o[1])}</option>`).join("")
       }</select>${hint}</div>`;
 
     case "cards":
-      return `<div class="dp-field">${label}<div class="dp-cards">${
+      return `<div class="dp-field">${label}<div class="dp-cards" role="group" aria-labelledby="${fid}-lbl">${
         f.opts.map(o => `<button class="dp-card${o[0] === v ? " on" : ""}" onclick="dpSet('${f.k}','${escHtml(o[0])}')">
           <b>${escHtml(o[1])}</b>${o[2] ? `<span>${escHtml(o[2])}</span>` : ""}</button>`).join("")
       }</div>${hint}</div>`;
 
     case "autonomy":
-      return `<div class="dp-field">${label}<div class="dp-cards dp-auto">${
+      return `<div class="dp-field">${label}<div class="dp-cards dp-auto" role="group" aria-labelledby="${fid}-lbl">${
         DP_AUTONOMY.map(o => `<button class="dp-card${Number(v) === o.v ? " on" : ""}" onclick="dpSet('autonomy',${o.v})">
           <b>${escHtml(o.label)}</b><span>${escHtml(o.desc)}</span></button>`).join("")
       }</div>${hint}</div>`;
@@ -199,19 +200,19 @@ function dpField(f) {
     case "chips": {
       const opts = Array.isArray(f.opts) ? f.opts.map(o => [o, o]) : dpOpts(f.opts);
       const sel = f.single ? [v] : (v || []);
-      return `<div class="dp-field">${label}<div class="dp-chiprow">${
+      return `<div class="dp-field">${label}<div class="dp-chiprow" role="group" aria-labelledby="${fid}-lbl">${
         opts.map(o => dpChipBtn(f.k, o[0], o[1], sel, f.single)).join("")
       }</div>${hint}</div>`;
     }
 
     case "compliance":
-      return `<div class="dp-field">${label}<div class="dp-chiprow">${
+      return `<div class="dp-field">${label}<div class="dp-chiprow" role="group" aria-labelledby="${fid}-lbl">${
         f.opts.map(o => dpChipBtn(f.k, o[0], o[1], v || [], false)).join("")
       }</div>${hint}</div>`;
 
     case "toggle":
       return `<div class="dp-field dp-toggle-row">${label}
-        <button class="dp-toggle${v ? " on" : ""}" role="switch" aria-checked="${v ? "true" : "false"}" onclick="dpSet('${f.k}', ${v ? "false" : "true"})">
+        <button class="dp-toggle${v ? " on" : ""}" role="switch" aria-checked="${v ? "true" : "false"}" aria-labelledby="${fid}-lbl" onclick="dpSet('${f.k}', ${v ? "false" : "true"})">
           <i></i><span>${v ? "Required" : "Not required"}</span>
         </button>${hint}</div>`;
 

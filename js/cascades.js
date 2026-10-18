@@ -189,7 +189,7 @@ function renderMitigation() {
     '<p class="muted small">Every control across all cascades, de-duplicated and ranked by leverage (how many cascades it addresses), the worst impact it prevents and the widest blast radius it bounds. Priority is relative (top 15% / next 25% / tail) — a planning heuristic, not your risk appetite. Assign owners and track status; it persists locally.</p>' +
     '<div class="seg" style="margin:10px 0 8px">' + fbtn("All functions", "func", null) + MIT_FUNCS.map(function (f) { return fbtn(f[1], "func", f[0]); }).join("") + "</div>" +
     '<div class="seg" style="margin:0 0 8px">' + fbtn("All priorities", "pri", null) + fbtn("P1", "pri", "P1", " · " + counts.P1) + fbtn("P2", "pri", "P2", " · " + counts.P2) + fbtn("P3", "pri", "P3", " · " + counts.P3) + "</div>" +
-    '<div style="margin:0 0 8px"><input class="search" id="mitSearch" style="width:100%" placeholder="Search controls… (e.g. audit, sandbox, approval)" value="' + escHtml(mitFilter.q || "") + '" oninput="mitSetQ(this.value)"></div>' +
+    '<div style="margin:0 0 8px"><input class="search" id="mitSearch" aria-label="Search mitigation controls" style="width:100%" placeholder="Search controls… (e.g. audit, sandbox, approval)" value="' + escHtml(mitFilter.q || "") + '" oninput="mitSetQ(this.value)"></div>' +
     '<div style="display:flex;gap:8px;align-items:center;margin-top:8px">' +
     '<span class="muted small">showing ' + shown.length + " of " + filtered.length + "</span>" +
     (filtered.length > shown.length
@@ -220,7 +220,7 @@ function mitRow(e, st) {
       const c = casById(id); return c ? '<span class="cp-cite c" onclick="openCascade(\'' + id + '\')">' + escHtml(c.name.slice(0, 34)) + "</span>" : "";
     }).join("") + "</div>" +
     '<div class="mit-verify">verify: ' + escHtml(MIT_VERIFY[e.func]) + "</div></div>" +
-    '<div class="mit-side"><input class="mit-owner" placeholder="owner" value="' + escHtml(owner) + '" oninput="mitSet(\'' + escHtml(e.key) + '\',\'owner\',this.value)">' +
+    '<div class="mit-side"><input class="mit-owner" aria-label="Control owner" placeholder="owner" value="' + escHtml(owner) + '" oninput="mitSet(\'' + escHtml(e.key) + '\',\'owner\',this.value)">' +
     '<select class="mit-status" onchange="mitSet(\'' + escHtml(e.key) + '\',\'status\',this.value)">' + stOpts + "</select></div>" +
     "</div>";
 }
@@ -487,7 +487,7 @@ function casCardHtml(c) {
   const hi = casBlastRank(c) >= 4 ? " hi" : "";
   const mit = c.mitigations || {};
   const mc = ["prevent", "detect", "contain", "recover"].reduce(function (n, k) { return n + ((mit[k] || []).length); }, 0);
-  return '<div class="cas-card" onclick="openCascade(\'' + c.id + '\')">' +
+  return '<div class="cas-card" role="listitem" onclick="openCascade(\'' + c.id + '\')">' +
     '<div class="t"><span class="cls-chip ' + c.cls + '">' + c.cls + '</span> ' + escHtml(c.name) + "</div>" +
     '<div class="m"><span class="blast-chip' + hi + '">blast: ' + escHtml(c.blastRadius) + "</span>" +
     '<span class="blast-chip">' + escHtml(c.impact) + " impact</span>" +

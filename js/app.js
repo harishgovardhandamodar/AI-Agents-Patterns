@@ -154,6 +154,35 @@ function escHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function el(id) { return document.getElementById(id); }
+function skipToContent(e) {
+  if (e) e.preventDefault();
+  const pane = document.querySelector(".pane.visible") || document.getElementById(currentTab + "Pane");
+  if (pane) {
+    if (!pane.hasAttribute("tabindex")) pane.setAttribute("tabindex", "-1");
+    pane.focus({ preventScroll: true });
+    pane.scrollTop = 0;
+  }
+}
+/* Move keyboard focus into a tab's pane after a cross-tab jump that was
+   triggered from a drawer, toast or dashboard button. */
+function focusPane(tab) {
+  const pane = document.getElementById(tab + "Pane");
+  if (!pane) return;
+  if (!pane.hasAttribute("tabindex")) pane.setAttribute("tabindex", "-1");
+  setTimeout(() => { try { pane.focus({ preventScroll: true }); } catch (e) {} }, 60);
+}
+/* Keep Tab cycling inside open modal dialogs (drawer, palette, help, tour). */
+document.addEventListener("keydown", function (e) {
+  if (e.key !== "Tab") return;
+  const box = document.querySelector(".overlay.open .drawer, .onb-overlay.open .onb-box, .pal-overlay.open .pal-box");
+  if (!box) return;
+  const f = [...box.querySelectorAll("button, a[href], input, select, textarea, [tabindex]:not([tabindex='-1'])")]
+    .filter(x => !x.disabled && x.getClientRects().length);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+});
 function uniq(a) { return [...new Set(a)]; }
 function fmtUsd(v) { return "$" + Number(v).toLocaleString(undefined, { maximumFractionDigits: 2 }); }
 function debounce(fn, ms) { let t; return function (...a) { clearTimeout(t); t = setTimeout(() => fn.apply(this, a), ms); }; }
@@ -388,7 +417,7 @@ function onbGo(tab) {
   onbMarkSeen();
   const o = document.getElementById("onbOverlay");
   if (o) o.classList.remove("open");
-  if (tab) switchTab(tab);
+  if (tab) { switchTab(tab); focusPane(tab); }
 }
 document.addEventListener("keydown", function (e) {
   if (e.key === "Escape") {

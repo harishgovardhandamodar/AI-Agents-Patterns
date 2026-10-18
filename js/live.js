@@ -68,7 +68,7 @@ function renderTraceList() {
   });
   el("traceCount").textContent = list.length + " / " + all.length;
   el("traceList").innerHTML = list.map(t => `
-    <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" data-tid="${escHtml(t.id)}" onclick="loadTrace('${t.id}')">
+    <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" role="listitem" data-tid="${escHtml(t.id)}" onclick="loadTrace('${t.id}')">
       <div class="t">${escHtml(traceLabel(t))}</div>
       <div class="m"><span class="verdict ${t.verdict}">${t.verdict}</span> ${escHtml(traceDomain(t))} · ${t.metrics.steps} steps · ${escHtml(traceSeverity(t))}</div>
     </div>`).join("") || (typeof emptyState === "function"

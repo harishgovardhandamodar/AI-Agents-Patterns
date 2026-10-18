@@ -26,7 +26,7 @@ function LivePlayer(container, opts) {
       <button class="btn" data-p="step">⏭ Step</button>
       <button class="btn" data-p="back">⏮ Back</button>
       <button class="btn" data-p="reset">↺ Reset</button>
-      <select class="search" style="width:auto" data-p="speed">
+      <select class="search" style="width:auto" data-p="speed" aria-label="Replay speed">
         <option value="1200">slow</option>
         <option value="700" selected>normal</option>
         <option value="300">fast</option>

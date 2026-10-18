@@ -122,7 +122,7 @@ function initPalette() {
   d.setAttribute("aria-modal", "true");
   d.setAttribute("aria-label", "Command palette");
   d.innerHTML = `<div class="pal-box">
-    <input id="palInput" class="pal-input" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" oninput="palSel=0;palRender()" autocomplete="off">
+    <input id="palInput" class="pal-input" aria-label="Search everything" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" oninput="palSel=0;palRender()" autocomplete="off">
     <div id="palList" class="pal-list"></div>
     <div class="pal-foot"><span><b>Ctrl/⌘ K</b> open · <b>↑↓</b> move · <b>Enter</b> open · <b>Esc</b> close</span></div>
   </div>`;

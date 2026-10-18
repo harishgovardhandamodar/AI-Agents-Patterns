@@ -68,7 +68,7 @@ function renderScenarios() {
   if (typeof paintActiveChips === "function") paintActiveChips("scnActive", scnActiveChips(q));
   if ((uxPrefs.scnView || "cards") === "list") return renderScenarioList(list);
   el("scnGrid").innerHTML = list.map(s => `
-    <div class="pat-card" onclick="openScenario('${s.id}')">
+    <div class="pat-card" role="listitem" onclick="openScenario('${s.id}')">
       <div class="cat" style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${escHtml(s.severity.toUpperCase())} · ${escHtml(s.domain)}</div>
       <div class="nm">${escHtml(s.title)}</div>
       <div class="sm">${escHtml(s.description.slice(0, 180))}…</div>
@@ -130,6 +130,6 @@ function openScenario(id) {
     ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}
     ${casLinksForScenario(s.id)}
     ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
-      <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>loadTrace('${s.traceId}'),100);">▶ Open in Live View</button></div>` : ""}`;
+      <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>{loadTrace('${s.traceId}');focusPane('live');},100);">▶ Open in Live View</button></div>` : ""}`;
   openDetail(s.title, `${s.severity} · ${s.domain}`, html);
 }

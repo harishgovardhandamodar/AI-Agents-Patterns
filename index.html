@@ -10,6 +10,8 @@
 </head>
 <body>
 
+<a href="#main" class="skip-link" id="skipLink" onclick="skipToContent(event)">Skip to main content</a>
+<div id="main">
 <div class="topbar">
   <div class="logo">A</div>
   <h1>AI Agent Patterns &amp; Guardrails</h1>
@@ -78,7 +80,7 @@
       </div>
     </div>
     <h4>Model</h4>
-    <select class="search" id="cpModel" style="width:100%" onchange="cpSave()"></select>
+    <select class="search" id="cpModel" style="width:100%" aria-label="Model" onchange="cpSave()"></select>
     <div class="save-stamp" data-save-stamp="cp" style="margin-top:4px"></div>
     <h4>Ground answers in</h4>
     <div class="cp-scope" id="cpScope"></div>
@@ -94,7 +96,7 @@
   <main class="cp-main">
     <div class="cp-log" id="cpLog"></div>
     <div class="cp-input">
-      <textarea id="cpInput" placeholder="Describe your agent deployment… e.g. &quot;A refunds agent with Stripe tool access, 3 approvals/day, EU customers. What patterns, cascade risks and mitigations should I plan?&quot;"></textarea>
+      <textarea id="cpInput" aria-label="Ask the Architect Copilot" placeholder="Describe your agent deployment… e.g. &quot;A refunds agent with Stripe tool access, 3 approvals/day, EU customers. What patterns, cascade risks and mitigations should I plan?&quot;"></textarea>
       <div class="cp-input-side">
         <button class="btn primary" id="cpSend" onclick="cpSend()">Send ▸</button>
         <button class="btn" id="cpStop" onclick="copilotStop()" style="display:none">■ Stop</button>
@@ -107,7 +109,7 @@
 <section class="pane" id="patternsPane" role="tabpanel" aria-label="patterns">
   <div class="split">
     <aside class="side">
-      <input class="search" id="patSearch" placeholder="Search patterns…  (e.g. budget, injection, memory)" oninput="renderPatterns()">
+      <input class="search" id="patSearch" placeholder="Search patterns…  (e.g. budget, injection, memory)" aria-label="Search patterns" oninput="renderPatterns()">
       <h4>Category</h4>
       <div id="patCats"></div>
       <h4>Domain</h4>
@@ -124,7 +126,7 @@
         <span class="view-seg" role="group" aria-label="Layout">
           <button type="button" id="patViewCards" onclick="uxSetView('patView','cards');renderPatterns()" title="Card layout">▦</button><button type="button" id="patViewList" onclick="uxSetView('patView','list');renderPatterns()" title="Compact list layout">☰</button>
         </span>
-        <select class="search" style="width:auto" id="patSort" onchange="renderPatterns()">
+        <select class="search" style="width:auto" id="patSort" aria-label="Sort patterns" onchange="renderPatterns()">
           <option value="cat">sort: category</option>
           <option value="name">sort: name</option>
           <option value="risk">sort: riskiest (by failure count)</option>
@@ -132,7 +134,7 @@
         </select>
         <div class="fchip-row" id="patActive" style="display:none"></div>
       </div>
-      <div class="card-grid" id="patGrid"></div>
+      <div class="card-grid" id="patGrid" role="list"></div>
     </main>
   </div>
 </section>
@@ -141,7 +143,7 @@
 <section class="pane" id="scenariosPane" role="tabpanel" aria-label="scenarios">
   <div class="split">
     <aside class="side">
-      <input class="search" id="scnSearch" placeholder="Search scenarios…" oninput="renderScenarios()">
+      <input class="search" id="scnSearch" placeholder="Search scenarios…" aria-label="Search scenarios" oninput="renderScenarios()">
       <h4>Domain</h4>
       <div id="scnDomains"></div>
       <h4>Severity</h4>
@@ -157,7 +159,7 @@
         <span class="view-seg" role="group" aria-label="Layout">
           <button type="button" id="scnViewCards" onclick="uxSetView('scnView','cards');renderScenarios()" title="Card layout">▦</button><button type="button" id="scnViewList" onclick="uxSetView('scnView','list');renderScenarios()" title="Compact list layout">☰</button>
         </span>
-        <select class="search" style="width:auto" id="scnSort" onchange="renderScenarios()">
+        <select class="search" style="width:auto" id="scnSort" aria-label="Sort scenarios" onchange="renderScenarios()">
           <option value="severity">sort: severity</option>
           <option value="name">sort: title</option>
           <option value="gaps">sort: least protected first</option>
@@ -165,7 +167,7 @@
         </select>
         <div class="fchip-row" id="scnActive" style="display:none"></div>
       </div>
-      <div class="card-grid" id="scnGrid"></div>
+      <div class="card-grid" id="scnGrid" role="list"></div>
     </main>
   </div>
 </section>
@@ -173,7 +175,7 @@
 <!-- ======================= CASCADES ======================= -->
 <section class="pane" id="cascadesPane" role="tabpanel" aria-label="cascades">
   <aside class="side">
-    <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" oninput="casState.q=this.value.trim().toLowerCase();casState.limit=CAS_LIST_STEP;renderCascadeList()">
+    <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" aria-label="Search cascades" oninput="casState.q=this.value.trim().toLowerCase();casState.limit=CAS_LIST_STEP;renderCascadeList()">
     <h4>Cascade class</h4>
     <div id="casClasses" class="cas-legend"></div>
     <h4>Domain</h4>
@@ -194,7 +196,7 @@
       <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="casCount"></span>
         <div style="flex:1"></div>
-        <select class="search" style="width:auto" id="casSort" onchange="casState.sort=this.value;casState.limit=CAS_LIST_STEP;renderCascadeList()">
+        <select class="search" style="width:auto" id="casSort" aria-label="Sort cascades" onchange="casState.sort=this.value;casState.limit=CAS_LIST_STEP;renderCascadeList()">
           <option value="impact">sort: impact</option>
           <option value="blast">sort: blast radius</option>
           <option value="class">sort: class</option>
@@ -202,7 +204,7 @@
         </select>
         <div class="fchip-row" id="casActive" style="display:none"></div>
       </div>
-      <div class="card-grid" id="casGrid"></div>
+      <div class="card-grid" id="casGrid" role="list"></div>
     </div>
     <div id="casMitigation" class="hidden"></div>
   </main>
@@ -225,7 +227,7 @@
 <!-- ======================= BLUEPRINT BUILDER ======================= -->
 <section class="pane" id="blueprintPane" role="tabpanel" aria-label="blueprint">
   <aside class="side">
-    <input class="search" id="bpSearch" placeholder="Search patterns…  (e.g. approval, sandbox, judge)" oninput="bpSetQ(this.value)">
+    <input class="search" id="bpSearch" placeholder="Search patterns…  (e.g. approval, sandbox, judge)" aria-label="Search patterns to add" oninput="bpSetQ(this.value)">
     <h4>Start from a template</h4>
     <div id="bpTemplates"></div>
     <h4>Category</h4>
@@ -239,7 +241,7 @@
 <!-- ======================= LIVE VIEW ======================= -->
 <section class="pane" id="livePane" role="tabpanel" aria-label="live">
   <aside class="side">
-    <input class="search" id="traceSearch" placeholder="Search traces…  (e.g. injection, spend, prod)" oninput="onLiveSearch(this.value)">
+    <input class="search" id="traceSearch" placeholder="Search traces…  (e.g. injection, spend, prod)" aria-label="Search traces" oninput="onLiveSearch(this.value)">
     <h4>Domain</h4>
     <div id="traceDomains"></div>
     <h4>Severity</h4>
@@ -247,7 +249,7 @@
     <h4>Verdict</h4>
     <div id="traceVerdicts"></div>
     <h4>Mock execution traces <span class="chip" id="traceCount">–</span></h4>
-    <div id="traceList"></div>
+    <div id="traceList" role="list"></div>
     <div style="margin-top:10px"><button class="btn" onclick="resetLiveFilters()">Reset filters</button></div>
     <h4>About</h4>
     <p class="muted small" style="padding:0 6px">Every scenario in the catalog has a replayable trace: the control-flow diagram highlights the active node while steps, guardrail decisions, budget burn and the event log track in sync. Use ⤢ to enlarge any diagram with zoom. All data is synthetic.</p>
@@ -278,12 +280,13 @@
     <button class="btn primary" style="width:100%;margin-bottom:10px" onclick="newGuardAnalysis()">＋ New analysis</button>
     <h4 style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:4px 6px 6px">Collection</h4>
     <div class="save-stamp" data-save-stamp="guard" style="margin:0 6px 6px"></div>
-    <div id="guardCollection"></div>
+    <div id="guardCollection" role="list"></div>
     <div style="flex:1"></div>
     <button class="btn" style="margin-top:10px" onclick="exportCollection()">⬇ Export JSON</button>
   </aside>
   <main class="g-main" id="guardMain"></main>
 </section>
+</div>
 
 <!-- ======================= OVERLAYS ======================= -->
 <div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Detail" onclick="if(event.target===this)closeDetail()">
