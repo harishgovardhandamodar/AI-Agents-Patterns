@@ -805,6 +805,15 @@ document.addEventListener("mousedown", e => {
 /* ---------------- boot ---------------- */
 async function loadAll() {
   const get = async p => (await fetch(p)).json();
+  /* One failing module must never kill the whole boot: run each init in
+     isolation and announce the culprit instead of failing silently. */
+  async function safeInit(name, fn) {
+    try { await fn(); }
+    catch (e) {
+      console.warn("init " + name + " failed", e);
+      if (typeof showNotif === "function") showNotif("Could not start " + name + " — other tabs are unaffected", { kind: "warn" });
+    }
+  }
   try {
     const [pats, scns, trcs, cass, cova] = await Promise.all([
       get("data/patterns.json"), get("data/scenarios.json"), get("data/traces.json"), get("data/cascades.json"), get("data/coverage.json").catch(()=>null)
@@ -815,15 +824,22 @@ async function loadAll() {
     el("scnBadge").textContent = scns.scenarios.length;
     el("traceBadge").textContent = trcs.traces.length;
     if (el("casBadge")) el("casBadge").textContent = cass.cascades.length;
-    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot(); initCascades();
-    if (typeof initCoverage === "function") initCoverage();
-    if (typeof initDeploy === "function") initDeploy();
-    if (typeof initBlueprint === "function") initBlueprint();
-    if (typeof initPalette === "function") initPalette();
-    if (typeof initShortcuts === "function") initShortcuts();
-    if (typeof initDiscovery === "function") initDiscovery();
-    if (typeof dashRender === "function") dashRender();
-    if (typeof initLanding === "function") initLanding();
+    await safeInit("Overview", async () => initOverview());
+    await safeInit("Patterns", async () => initPatterns());
+    await safeInit("Scenarios", async () => initScenarios());
+    await safeInit("Live View", async () => initLive());
+    await safeInit("Design docs", async () => initDesign());
+    await safeInit("Guardrail Lab", async () => initGuardrail());
+    await safeInit("Fox - Architect", async () => initCopilot());
+    await safeInit("Cascades", async () => initCascades());
+    if (typeof initCoverage === "function") await safeInit("Coverage", async () => initCoverage());
+    if (typeof initDeploy === "function") await safeInit("Deployment Plan", async () => initDeploy());
+    if (typeof initBlueprint === "function") await safeInit("Blueprints", async () => initBlueprint());
+    if (typeof initPalette === "function") await safeInit("palette", async () => initPalette());
+    if (typeof initShortcuts === "function") await safeInit("shortcuts", async () => initShortcuts());
+    if (typeof initDiscovery === "function") await safeInit("Discovery Lab", async () => initDiscovery());
+    if (typeof dashRender === "function") await safeInit("dashboard", async () => dashRender());
+    if (typeof initLanding === "function") await safeInit("landing", async () => initLanding());
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     if (typeof paintSaveStamps === "function") paintSaveStamps();
     if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
