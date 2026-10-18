@@ -401,6 +401,21 @@ function buildCasFilters() {
   }
 }
 
+/* Jump to Cascades tab filtered to one domain (used by Coverage view). */
+function casOpenDomain(dom) {
+  switchTab("cascades");
+  setTimeout(function () {
+    casState.q = ""; casState.cls.clear(); casState.domain.clear(); casState.blast.clear();
+    const s = el("casSearch"); if (s) s.value = "";
+    const box = el("casDomains");
+    if (box) {
+      box.querySelectorAll("input").forEach(function (i) { i.checked = i.dataset.v === dom; });
+      casState.domain.add(dom);
+    }
+    renderCascadeList();
+  }, 40);
+}
+
 function renderCascadeList() {
   const grid = el("casGrid");
   if (!grid) return;

@@ -637,3 +637,41 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 .mit-side { display: flex; flex-direction: column; gap: 6px; }
 .mit-side input, .mit-side select { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; color: var(--text); padding: 4px 7px; font: inherit; font-size: 11.5px; }
 @media (max-width: 900px) { .mit-row { grid-template-columns: 40px 1fr; } .mit-side { grid-column: 2; flex-direction: row; } }
+
+/* ============================================================
+   COVERAGE & GAP ANALYSIS
+   ============================================================ */
+.cov-controls { display: flex; align-items: center; gap: 8px; margin: 4px 0 14px; flex-wrap: wrap; }
+.cov-controls .spacer { flex: 1; }
+.iconbtn.on { border-color: var(--accent); color: var(--accent); }
+.cov-legend { display: inline-flex; align-items: center; gap: 2px; }
+
+.cov-heatpanel { overflow: hidden; }
+.cov-heatwrap { overflow-x: auto; }
+table.cov-heat { border-collapse: collapse; width: 100%; font-size: 11.5px; }
+table.cov-heat th, table.cov-heat td { border: 1px solid var(--border); padding: 3px 6px; text-align: center; }
+table.cov-heat thead th { background: var(--bg3); color: var(--text2); font-weight: 600; font-size: 10.5px; text-transform: uppercase; letter-spacing: .03em; position: sticky; top: 0; }
+th.cov-domain, td.cov-domain { text-align: left; white-space: nowrap; font-weight: 600; color: var(--text); position: sticky; left: 0; background: var(--bg2); z-index: 1; }
+tr.cov-row:hover th.cov-domain { background: var(--bg3); }
+tr.cov-row { cursor: pointer; }
+tr.cov-row:hover td { outline: 1px solid var(--accent); }
+td.cov-band { white-space: nowrap; }
+
+/* heat levels 0..4 (dark-safe, work in light too) */
+.heat { display: inline-block; width: 13px; height: 13px; border-radius: 3px; border: 1px solid var(--border); vertical-align: middle; margin: 0 1px; }
+.heat-0 { background: color-mix(in srgb, var(--red) 42%, transparent); }
+.heat-1 { background: color-mix(in srgb, var(--orange) 38%, transparent); }
+.heat-2 { background: color-mix(in srgb, var(--orange) 20%, transparent); }
+.heat-3 { background: color-mix(in srgb, var(--green) 30%, transparent); }
+.heat-4 { background: color-mix(in srgb, var(--green) 58%, transparent); }
+td.heat-0 { color: var(--red); }
+
+.cov-sub { margin: 16px 0 8px; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); }
+.cov-legend .heat { width: 11px; height: 11px; }
+.cov-gapcard { display: flex; flex-direction: column; }
+.cov-gapcard h3 a { color: var(--text); }
+.cov-gaplist { margin: 6px 0 10px; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; }
+.cov-gaplist li { font-size: 12px; }
+.cov-fix { display: block; color: var(--text3); font-size: 11px; margin-top: 1px; }
+.cov-actions { display: flex; gap: 6px; margin-top: auto; }
+.cov-gaps { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }

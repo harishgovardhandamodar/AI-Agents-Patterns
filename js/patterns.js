@@ -64,6 +64,18 @@ function jumpToScenarioDomain(dom) {
   }, 30);
 }
 
+/* Jump to Patterns tab filtered to a single domain (used by Coverage view). */
+function goPatternDomain(dom) {
+  switchTab("patterns");
+  setTimeout(() => {
+    const box = el("patDomains");
+    if (!box) return;
+    box.querySelectorAll("input").forEach(i => i.checked = false);
+    const input = box.querySelector(`input[data-dom="${CSS.escape(dom)}"]`);
+    if (input) { patState.domains.clear(); input.checked = true; onPatDomain(input); }
+  }, 40);
+}
+
 /* =============== PATTERNS =============== */
 const patState = { cats: new Set(), domains: new Set() };
 

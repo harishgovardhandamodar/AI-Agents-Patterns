@@ -338,4 +338,18 @@ function initCopilot() {
   }
   cpLoadModels().then(cpSetStatus);
 }
+/* Deep-link entry used by other views (Coverage, Cascades, Deployment…):
+   switch to the Copilot tab, seed the input and send the question. */
+function copilotAsk(q) {
+  if (!q) return;
+  switchTab("copilot");
+  setTimeout(function () {
+    if (!el("cpLog")) return;
+    const input = el("cpInput");
+    if (!input) return;
+    input.value = q;
+    cpSend();
+  }, 60);
+}
+
 tabLoaders.copilot = function () { initCopilot(); };
