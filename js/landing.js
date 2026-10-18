@@ -102,9 +102,9 @@ function landDiagram() {
     "  C -->|spend guard<br/>allowlist<br/>dual control| E[Blocked + logged]\n" +
     "  D --> F[Cascade<br/>retry storm / split / exfil]\n" +
     "  E --> G[Copilot consult<br/>+ Guardrail Lab rule]\n" +
-    "  style C fill:#2a1f0d,stroke:#d29922\n" +
-    "  style E fill:#0d2818,stroke:#3fb950\n" +
-    "  style F fill:#2d0d0d,stroke:#f85149";
+    "  style C fill:#e8c35a,color:#1f2328,stroke:#9a6700\n" +
+    "  style E fill:#8fd6a4,color:#0d2818,stroke:#1a7f37\n" +
+    "  style F fill:#f2a3a3,color:#2d0d0d,stroke:#cf222e";
   return `<div class="land-sec"><div class="land-sec-h"><h3>🗺 How a failure becomes a loss — and where this app stops it</h3></div>` +
     diagramHtml(src, "incident anatomy") +
     `<p class="muted small">Left to right: the $50k card scenario's shape. Every red node is a catalog scenario; every green node is a pattern you can add to a blueprint. The diamond is the whole thesis: authorize effects at the boundary, not intentions in the prompt.</p></div>`;

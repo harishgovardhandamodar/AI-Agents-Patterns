@@ -1475,6 +1475,25 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 #ovLanding .diagram-wrap { margin: 4px 0 6px; }
 @media (max-width: 760px) { .land-title { font-size: 18px; } .land-hero { padding: 16px; } }
 
+/* mermaid readability backstop: a theme-colored halo behind every diagram
+   label, so text survives whatever fill an authored `style` directive (or a
+   model-generated diagram) puts behind it — light halo in light mode, dark
+   halo in dark mode. Subtle on matching backgrounds, decisive on clashes. */
+html.light .diagram-wrap svg text {
+  paint-order: stroke; stroke: #ffffff !important; stroke-width: 2px; stroke-opacity: .9;
+}
+html.light .diagram-wrap .nodeLabel, html.light .diagram-wrap .edgeLabel,
+html.light .diagram-wrap .label, html.light .diagram-wrap .pieTitleText {
+  text-shadow: 0 0 3px #fff, 0 0 7px #fff;
+}
+html:not(.light) .diagram-wrap svg text {
+  paint-order: stroke; stroke: #0d1117 !important; stroke-width: 2px; stroke-opacity: .9;
+}
+html:not(.light) .diagram-wrap .nodeLabel, html:not(.light) .diagram-wrap .edgeLabel,
+html:not(.light) .diagram-wrap .label {
+  text-shadow: 0 0 3px #0d1117, 0 0 7px #0d1117;
+}
+
 /* working-set pins (Overview) */
 .dash-pin {
   border: 1px dashed var(--border); border-radius: 10px;
