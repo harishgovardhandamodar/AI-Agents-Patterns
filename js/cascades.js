@@ -547,6 +547,7 @@ function openCascade(id) {
 /* Feed a cascade (or any item) into the copilot and switch to it. */
 function askCopilotAbout(text) {
   closeDetail();
+  if (typeof copilotAsk === "function") { copilotAsk(text); return; }
   switchTab("copilot");
   setTimeout(function () {
     const i = el("cpInput");
