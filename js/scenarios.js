@@ -110,7 +110,7 @@ function openScenario(id) {
   }).join(" · ");
 
   const scnActions = ((typeof bpRefsBtnHtml === "function" && (s.patternRefs || []).length) ? bpRefsBtnHtml(s.patternRefs, "from this scenario") : "") +
-    `<button class="btn sm" onclick="askCopilotAbout('scenario: ${escHtml(s.title)}')">🤖 Ask the Copilot about this scenario</button>` +
+    `<button class="btn sm" onclick="askCopilotAbout('scenario: ${escHtml(s.title)}')">🤖 Ask Fox - Architect about this scenario</button>` +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("scenarios", s.id) : "");
   const html = `
     <div class="dsec d-actions">${scnActions}</div>

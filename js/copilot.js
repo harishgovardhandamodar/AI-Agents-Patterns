@@ -113,7 +113,7 @@ function cpMsgEl(m, stream, i, isLast) {
     wrap.insertAdjacentHTML("beforeend", cpActionsHtml(m, i, isLast));
     return wrap;
   }
-  wrap.innerHTML = '<div class="who">◆ Architect Copilot' +
+  wrap.innerHTML = '<div class="who">◆ Fox - Architect' +
     (m.meta ? ' <span class="chip" style="font-size:9px">' + escHtml(m.meta) + "</span>" : "") +
     (stream ? ' <span class="cp-stream-dot">●</span>' : "") + "</div>";
   const bubble = document.createElement("div");
@@ -152,7 +152,7 @@ function cpRenderLog() {
   if (!log) return;
   log.innerHTML = "";
   if (!cpMessages.length) {
-    log.innerHTML = '<div class="cp-empty"><h3>Architect Copilot</h3>' +
+    log.innerHTML = '<div class="cp-empty"><h3>Fox - Architect</h3>' +
       "<p>Ask about your agent deployment in plain words. Answers are grounded in the pattern catalog, threat scenarios, cascade model and traces.</p>" +
       "<p class=\"small\">Model: local Qwen 3.8-27B via Fox-Services (axiom fallback). Press <span class=\"cp-kbd\">Enter</span> to send, <span class=\"cp-kbd\">Shift</span>+<span class=\"cp-kbd\">Enter</span> for a new line.</p></div>";
     return;
@@ -221,7 +221,7 @@ function cpRenderSuggestions() {
 /* ---------------- send / stream ---------------- */
 function cpBuildMessages(query) {
   const msgs = [];
-  let system = "You are the Architect Copilot for an enterprise AI-agent design catalog. " +
+  let system = "You are Fox - Architect for an enterprise AI-agent design catalog. " +
     "Answer as a pragmatic, senior enterprise architect. Be concrete and structured: use short headings and bullet lists, name specific patterns and scenarios from the catalog, and always cover risk and mitigation. " +
     "Prefer the four cascade classes (inherent, emergent, derived, cascading) when analysing failure propagation. " +
     "Never invent catalog items that are not in the provided context. If context is missing, say so and reason from first principles. Keep answers tight — no filler.";
@@ -377,9 +377,9 @@ function copilotPreview() {
 }
 function copilotExport() {
   const md = cpMessages.map(function (m) {
-    return (m.role === "user" ? "## You\n\n" : "## Architect Copilot" + (m.meta ? " _(" + m.meta + ")_" : "") + "\n\n") + m.content;
+    return (m.role === "user" ? "## You\n\n" : "## Fox - Architect" + (m.meta ? " _(" + m.meta + ")_" : "") + "\n\n") + m.content;
   }).join("\n\n---\n\n");
-  cpDownload("architect-copilot-chat.md", md);
+  cpDownload("fox-architect-chat.md", md);
 }
 function cpDownload(name, text) {
   const blob = new Blob([text], { type: "text/markdown" });

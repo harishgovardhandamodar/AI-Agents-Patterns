@@ -54,7 +54,7 @@ A server is needed only because the Design tab fetches `design/*.md`; `file://` 
 | Tab | What it does |
 |---|---|
 | **Overview** | Architect dashboard (planner readiness, blueprint coverage/risk/exposure, copilot and rule-lab state, a deterministic "Next:" suggestion and report export), plus totals, patterns-per-category, scenarios-by-severity, domain coverage, and a "how defenses stack" view of protection layers. |
-| **Architect Copilot** | Chat with a local model (`quai-qwen3.8-27b` via Fox-Services, axiom fallback) grounded in the catalog through a server-side proxy; streaming, citations, scope toggles, and a deterministic offline fallback when no backend answers. |
+| **Fox - Architect** | Chat with a local model (`quai-qwen3.8-27b` via Fox-Services, axiom fallback) grounded in the catalog through a server-side proxy; streaming, citations, scope toggles, and a deterministic offline fallback when no backend answers. |
 | **Patterns** | The catalog: **107 design patterns** across 9 categories, each with how it works, components, failure modes, protections, related patterns, and a control-flow diagram (32 diagrams; every pattern also gets its category diagram). Filter by category, domain, or "has diagram / has failures". |
 | **Scenarios** | **38 failure scenarios** across 15 domains (12 critical / 18 high / 8 medium). Each opens to the attack chain, protection table, detection signals, incident response, and links to a replayable mock run. |
 | **Cascades** | **175 catalogued composition cascades** in four classes (inherent, derived, emergent, cascading) with propagation paths, amplifiers, blast radius, detection and mitigation columns, plus a simulator and bidirectional links to the patterns/scenarios they involve. |

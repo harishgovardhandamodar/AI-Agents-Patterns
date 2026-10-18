@@ -1205,7 +1205,7 @@ function dpSectionAdr() {
       <div class="dp-actions-row" style="margin-top:0">
         <button class="iconbtn" onclick="dpCopyAdr()">Copy Markdown</button>
         <button class="iconbtn" onclick="dpDownloadAdr()">Download .md</button>
-        <button class="iconbtn" onclick="dpAdrToCopilot()">Refine with Copilot</button>
+        <button class="iconbtn" onclick="dpAdrToCopilot()">Refine with Fox - Architect</button>
       </div>
     </div>
     <div class="dp-adr">${typeof cpMd === "function" ? cpMd(md) : "<pre>" + escHtml(md) + "</pre>"}</div>

@@ -34,7 +34,7 @@ const HELP = {
     <p class="muted small">Tip: Alt+1…− jumps between tabs; ? shows every shortcut.</p>`
   },
   copilot: {
-    t: "Architect Copilot",
+    t: "Fox - Architect",
     b: `<p>Ask in plain language. Answers are <b>grounded in this catalog</b> — every claim cites the pattern, scenario or cascade it came from, via the local model with a deterministic fallback when no backend answers.</p>
     <ul><li>Scope answers with the <b>Ground answers in</b> checkboxes.</li><li><b>Grounding</b> shows the exact context sent to the model — audit what it was allowed to know.</li><li>The top-bar pill shows which backend answered: Fox-Services, axiom, or the local fallback.</li></ul>
     <p class="muted small">Tip: “Ask the Copilot” buttons inside catalog drawers pre-fill a grounded question about that item.</p>`

@@ -67,10 +67,10 @@ function dashRender() {
 
   /* — copilot — */
   const cpCard = `<div class="dash-card ${cpMessages.length ? "" : "dim"}">
-    <div class="dash-h">🤖 Copilot</div>
+    <div class="dash-h">🤖 Fox - Architect</div>
     <div class="dash-v">${cpMessages.length}<i> messages</i></div>
     <div class="dash-m">${cpMessages.length ? "Last question answered " + escHtml(cpMessages.filter(m => m.role === "user").slice(-1).map(m => (m.content || "").slice(0, 60) + "…")[0] || "") : "Grounded in the catalog via the local Qwen model, with deterministic fallback."}</div>
-    <button class="btn sm ghost" onclick="switchTab('copilot')">Open copilot</button>
+    <button class="btn sm ghost" onclick="switchTab('copilot')">Open Fox - Architect</button>
   </div>`;
 
   /* — guardrail lab — */
@@ -89,7 +89,7 @@ function dashRender() {
     (typeof pinPanelHtml === "function" ? pinPanelHtml() : "") +
     `<div class="dash-export${anyWork ? "" : " dim"}">
       <b>Export architect report</b>
-      <span class="muted small">Deployment plan + blueprint + threat model + copilot consult in one document</span>
+      <span class="muted small">Deployment plan + blueprint + threat model + Fox - Architect consult in one document</span>
       <span class="dash-export-btns">
         <button class="btn sm" onclick="rpDownload('md')" ${anyWork ? "" : "disabled"}>⬇ Markdown</button>
         <button class="btn sm" onclick="rpDownload('json')" ${anyWork ? "" : "disabled"}>⬇ JSON</button>

@@ -2,7 +2,7 @@
 
 This document is the design rationale for the architect-facing upgrade: what the
 dashboard knew, what an architect needs, and the four-class cascade model that
-connects them. It is the reference behind the **Architect Copilot**, **Cascades**,
+connects them. It is the reference behind the **Fox - Architect**, **Cascades**,
 **Coverage**, and **Planner** tabs.
 
 ## 1. From catalog to advisory system
@@ -22,7 +22,7 @@ flowchart LR
     Q4["What do I do, in what order?"]
   end
   subgraph NEW["New — advisory"]
-    CP["Architect Copilot<br/>(grounded, local model)"]
+    CP["Fox - Architect<br/>(grounded, local model)"]
     CV["Coverage &amp; gap analysis"]
     CA["Cascade explorer + simulator"]
     PL["Planner: readiness, stack,<br/>rollout, risk register"]

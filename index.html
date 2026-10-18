@@ -31,7 +31,7 @@
 
 <div class="app-tabs" id="appTabs" role="tablist" aria-label="Main sections">
   <div class="app-tab active" role="tab" aria-controls="overviewPane" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
-  <div class="app-tab" role="tab" aria-controls="copilotPane" data-tab="copilot" onclick="switchTab('copilot')">🤖 Architect Copilot</div>
+  <div class="app-tab" role="tab" aria-controls="copilotPane" data-tab="copilot" onclick="switchTab('copilot')">🤖 Fox - Architect</div>
   <div class="app-tab" role="tab" aria-controls="patternsPane" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
   <div class="app-tab" role="tab" aria-controls="scenariosPane" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
   <div class="app-tab" role="tab" aria-controls="cascadesPane" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
@@ -69,13 +69,13 @@
   </div>
 </section>
 
-<!-- ======================= ARCHITECT COPILOT ======================= -->
+<!-- ======================= FOX - ARCHITECT ======================= -->
 <section class="pane" id="copilotPane" role="tabpanel" aria-label="copilot">
   <aside class="cp-rail">
     <div class="cp-brand">
       <div class="cp-brand-ico">🤖</div>
       <div>
-        <div class="cp-brand-t">Architect Copilot</div>
+        <div class="cp-brand-t">Fox - Architect</div>
         <div class="cp-status" id="cpStatus">checking model…</div>
       </div>
     </div>
@@ -96,7 +96,7 @@
   <main class="cp-main">
     <div class="cp-log" id="cpLog"></div>
     <div class="cp-input">
-      <textarea id="cpInput" aria-label="Ask the Architect Copilot" placeholder="Describe your agent deployment… e.g. &quot;A refunds agent with Stripe tool access, 3 approvals/day, EU customers. What patterns, cascade risks and mitigations should I plan?&quot;"></textarea>
+      <textarea id="cpInput" aria-label="Ask Fox - Architect" placeholder="Describe your agent deployment… e.g. &quot;A refunds agent with Stripe tool access, 3 approvals/day, EU customers. What patterns, cascade risks and mitigations should I plan?&quot;"></textarea>
       <div class="cp-input-side">
         <button class="btn primary" id="cpSend" onclick="cpSend()">Send ▸</button>
         <button class="btn" id="cpStop" onclick="copilotStop()" style="display:none">■ Stop</button>

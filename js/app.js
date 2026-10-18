@@ -411,7 +411,7 @@ function onbShow(force) {
       `<span>${catN("patterns", 107)} patterns, ${catN("scenarios", 43)} scenarios, ${catN("cascades", 180)} cascades — how small faults cross boundaries and amplify.</span>` +
       `<button class="btn primary" onclick="onbGo('cascades')">Explore the cascade catalog</button></div>` +
       `</div>` +
-      `<div class="onb-foot"><button class="btn sm ghost" onclick="onbGo('copilot')">Just ask the copilot instead →</button>` +
+      `<div class="onb-foot"><button class="btn sm ghost" onclick="onbGo('copilot')">Just ask Fox - Architect instead →</button>` +
       `<span style="flex:1"></span>` +
       `<button class="btn sm" onclick="onbGo(null)">Skip — I'll explore</button></div>` +
       `</div>`;

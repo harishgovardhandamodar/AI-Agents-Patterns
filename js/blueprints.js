@@ -926,7 +926,7 @@ function bpRender() {
         `<button class="btn sm" onclick="bpCopy('md','Blueprint copied as Markdown')">⧉ Copy Markdown</button>` +
         `<button class="btn sm" onclick="bpCopy('mermaid','Mermaid source copied')">⧉ Copy diagram</button>` +
         `<button class="btn sm" onclick="bpDownload()">⬇ Download .md</button>` +
-        `<button class="btn sm accent" onclick="bpAskCopilot()">🤖 Stress-test with Copilot</button>` +
+        `<button class="btn sm accent" onclick="bpAskCopilot()">🤖 Stress-test with Fox - Architect</button>` +
         `<button class="btn sm" onclick="bpClear()">Clear</button>` +
       `</div>` +
     `</div>` +
