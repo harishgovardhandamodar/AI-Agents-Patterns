@@ -119,21 +119,21 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant UI as Architect Copilot UI
+  participant UI as Fox - Architect UI
   participant PX as serve.py /api/llm
+  participant AX as axiom :8210 (primary)
   participant FS as Fox-Services :8210
-  participant AX as axiom node
   UI->>PX: chat(messages, model, context)
-  PX->>FS: /v1/chat/completions (stream)
-  alt Fox-Services healthy
-    FS-->>PX: SSE deltas (served model reported)
-  else Fox-Services down and axiom online
-    PX->>AX: /v1/chat/completions (stream)
-    AX-->>PX: SSE deltas
+  PX->>AX: /v1/chat/completions (stream)
+  alt axiom healthy
+    AX-->>PX: SSE deltas (served model reported)
+  else axiom down and Fox-Services online
+    PX->>FS: /v1/chat/completions (stream)
+    FS-->>PX: SSE deltas
   else neither available
     PX-->>UI: 503 → UI runs deterministic fallback
   end
-  PX-->>UI: SSE deltas + X-Served-By / X-Served-Model
+  PX-->>UI: SSE deltas + X-Fox-Backend
 ```
 
 The model is an accelerator, never a dependency: retrieval, scoring, coverage,
