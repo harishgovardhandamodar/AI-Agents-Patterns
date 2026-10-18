@@ -65,11 +65,18 @@ function bpGapLabels(ids) {
   return BP_FAMILIES.filter(f => !f.ids.some(id => set.has(id))).map(f => f.label);
 }
 
-const bpState = { name: "", comps: [], notes: "", q: "", cat: "", lib: [] };
+/* Assumptions the reviewer can edit; kept next to bpState because bpState
+   initialises from it at load time. */
+const bpDefaultEst = () => ({
+  req: 500000, tin: 1800, tout: 500, model: "local",
+  toolCalls: 4, toolPrice: 0.002, share: 15, wait: 3, hourly: 65, infra: 0
+});
+
+const bpState = { name: "", comps: [], notes: "", q: "", cat: "", lib: [], est: bpDefaultEst() };
 
 /* ---------------- persistence ---------------- */
 function bpSave() {
-  try { localStorage.setItem(BP_STORE, JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes })); } catch (e) {}
+  try { localStorage.setItem(BP_STORE, JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes, est: bpState.est })); } catch (e) {}
 }
 function bpSaveLib() {
   try { localStorage.setItem(BP_LIB_STORE, JSON.stringify(bpState.lib)); } catch (e) {}
@@ -84,6 +91,7 @@ function bpLoad() {
         bpState.comps = valid ? j.comps.filter(id => valid.has(id)) : j.comps;
         bpState.name = typeof j.name === "string" ? j.name : "";
         bpState.notes = typeof j.notes === "string" ? j.notes : "";
+        if (j.est && typeof j.est === "object") bpState.est = Object.assign(bpDefaultEst(), j.est);
       }
     }
     const lraw = localStorage.getItem(BP_LIB_STORE);
@@ -210,6 +218,144 @@ function bpDiagram() {
   return L.join("\n");
 }
 
+/* ---------------- cost / latency / risk estimator ---------------- */
+/* A deterministic model: every number below is derived from the component
+   list plus the assumptions the reviewer edits. Prices are $/Mtok and the
+   latency table is per stage — the local model charges $0 per token, which
+   is exactly why it is the default and why infra is a separate line. */
+const BP_MODELS = [
+  { k: "local",    name: "Local Qwen 3.8-27B (Fox-Services)", in: 0,    out: 0,    call: 2600 },
+  { k: "hosted",   name: "Hosted mid-size (70B-class API)",    in: 0.35, out: 0.90, call: 1400 },
+  { k: "frontier", name: "Hosted frontier",                    in: 3.00, out: 15.0, call: 1900 }
+];
+const BP_STAGE_MS = { planning: 1, loop: 1, workflow: 1, memory: 1.15, multiagent: 1.4, tools: 1, domain: 1, safety: 0, resilience: 0 };
+const BP_TOOL_MS = 700, BP_CTL_MS = 90;
+
+function bpNum(v, d) { const n = parseFloat(v); return isFinite(n) && n >= 0 ? n : (d || 0); }
+function bpSetEst(k, v) {
+  if (k === "model") bpState.est.model = BP_MODELS.some(m => m.k === v) ? v : "local";
+  else bpState.est[k] = bpNum(v, bpDefaultEst()[k]);
+  bpSave(); bpRenderEst();
+}
+function bpMoney(n) {
+  if (n >= 1e6) return "$" + (n / 1e6).toFixed(2) + "M";
+  if (n >= 1e4) return "$" + (n / 1e3).toFixed(1) + "k";
+  if (n >= 100) return "$" + Math.round(n).toLocaleString();
+  if (n >= 1) return "$" + n.toFixed(2);
+  return "$" + n.toFixed(4);
+}
+function bpSec(ms) {
+  if (ms < 1000) return Math.round(ms) + " ms";
+  if (ms < 60000) return (ms / 1000).toFixed(ms < 10000 ? 2 : 1) + " s";
+  return (ms / 60000).toFixed(1) + " min";
+}
+
+function bpEstimate() {
+  const e = bpState.est, m = BP_MODELS.find(x => x.k === e.model) || BP_MODELS[0];
+  const c = bpCoverage(), set = new Set(bpState.comps);
+  const comps = bpState.comps.map(bpPat).filter(Boolean);
+  const stages = comps.filter(p => !bpIsControl(p));
+
+  /* cost */
+  const inTok = e.req * e.tin / 1e6, outTok = e.req * e.tout / 1e6;
+  const inference = inTok * m.in + outTok * m.out;
+  const tools = e.req * e.toolCalls * e.toolPrice;
+  const human = e.req * (e.share / 100) * (e.wait / 60) * e.hourly;
+  const total = inference + tools + human + e.infra;
+
+  /* latency — sum of stage times; controls are inline and cheap; a human
+     gate doesn't slow the automated path, it adds a wait to the share of
+     traffic that hits it (reported separately). */
+  let p50 = 0;
+  comps.forEach(p => {
+    if (bpIsControl(p)) { p50 += BP_CTL_MS; return; }
+    p50 += m.call * (BP_STAGE_MS[p.cat] != null ? BP_STAGE_MS[p.cat] : 1) + (p.cat === "tools" ? BP_TOOL_MS : 0);
+  });
+  const bounded = ["retry-backoff", "fallback-chain", "circuit-breaker", "validation-loop"].some(id => set.has(id));
+  const p95 = p50 * (bounded ? 1.5 : 3.0);
+  const gated = c.rows.some(r => r.k === "gate" && r.ok);
+
+  /* risk — explicit weights, so the score can be argued with. */
+  const missing = c.rows.filter(r => !r.ok);
+  const drivers = [];
+  let risk = missing.length * 6;
+  missing.slice(0, 3).forEach(r => drivers.push(r.label + " open (−6)"));
+  if (missing.length > 3) drivers.push("and " + (missing.length - 3) + " more open famil" + (missing.length - 3 === 1 ? "y" : "ies") + " (−6 each)");
+  const toolish = ["tool-use", "browser-agent", "code-as-action", "computer-use"].some(id => set.has(id));
+  if (toolish && !gated) { risk += 10; drivers.push("Tool use with no human gate (+10)"); }
+  if (stages.length >= 10) { risk += 8; drivers.push("≥10 pipeline stages widen the trace surface (+8)"); }
+  if (stages.length >= 3 && comps.length - stages.length === 0) { risk += 12; drivers.push("No runtime controls at all (+12)"); }
+  risk = Math.max(0, Math.min(100, risk));
+  const band = risk < 25 ? ["Low", "good"] : risk < 45 ? ["Moderate", "mid"] : risk < 65 ? ["Elevated", "mid"] : risk < 85 ? ["High", "bad"] : ["Critical", "bad"];
+
+  return {
+    model: m, cost: { inference: inference, tools: tools, human: human, infra: e.infra, total: total, perReq: e.req ? total / e.req : 0 },
+    lat: { p50: p50, p95: p95, gated: gated, share: e.share, wait: e.wait, bounded: bounded },
+    risk: { score: risk, band: band, drivers: drivers, missing: missing.length },
+    cov: c
+  };
+}
+
+function bpEstInputs() {
+  const e = bpState.est;
+  const num = (k, label, step, extra) =>
+    `<label class="bp-fld"><span>${label}</span><input type="number" min="0" step="${step}" value="${e[k]}" ` +
+    `oninput="bpSetEst('${k}', this.value)">${extra || ""}</label>`;
+  const grp = (title, body) => `<div class="bp-estgrp"><h5>${title}</h5>${body}</div>`;
+  return grp("Volume &amp; shape",
+      num("req", "Requests / month", "1000") + num("tin", "Input tokens / req", "100") + num("tout", "Output tokens / req", "50")) +
+    grp("Model &amp; tools",
+      `<label class="bp-fld"><span>Model</span><select onchange="bpSetEst('model', this.value)">` +
+      BP_MODELS.map(m => `<option value="${m.k}"${e.model === m.k ? " selected" : ""}>${m.name} — ` +
+        (m.in === 0 ? "$0 / Mtok" : "$" + m.in + "/" + m.out + " per Mtok") + `</option>`).join("") + `</select></label>` +
+      num("toolCalls", "Tool calls / req", "1") + num("toolPrice", "$ / tool call", "0.001")) +
+    grp("People &amp; infra",
+      num("share", "% of actions gated", "1") + num("wait", "Approver wait, min", "1") +
+      num("hourly", "$ / hour loaded", "5") + num("infra", "Infra $ / month", "10"));
+}
+
+function bpRenderEst() {
+  const out = el("bpEstOut");
+  if (!out) return;
+  const r = bpEstimate(), c = r.cost;
+  const share = bpState.est.share;
+  const bar = (w, cls, label) => w > 0.5 ? `<div class="bp-seg ${cls}" style="width:${w}%"><span>${label}</span></div>` : "";
+  const sum = c.total || 1;
+  out.innerHTML =
+    `<div class="bp-estcards">` +
+      `<div class="bp-estcard">` +
+        `<div class="bp-estval">${bpMoney(c.total)}<span>/mo</span></div>` +
+        `<div class="bp-estsub">${bpMoney(c.perReq)} per request · ${bpMoney(c.total * 12)}/yr</div>` +
+        `<div class="bp-bar">${bar(c.inference / sum * 100, "s1", "inference")}${bar(c.tools / sum * 100, "s2", "tools")}` +
+          `${bar(c.human / sum * 100, "s3", "human")}${bar(c.infra / sum * 100, "s4", "infra")}</div>` +
+        `<div class="bp-estlines">` +
+          `<span><i class="s1"></i>inference <b>${bpMoney(c.inference)}</b></span>` +
+          `<span><i class="s2"></i>tools <b>${bpMoney(c.tools)}</b></span>` +
+          `<span><i class="s3"></i>human review <b>${bpMoney(c.human)}</b></span>` +
+          `<span><i class="s4"></i>infra <b>${bpMoney(c.infra)}</b></span>` +
+        `</div>` +
+      `</div>` +
+      `<div class="bp-estcard">` +
+        `<div class="bp-estval">${bpSec(r.lat.p50)}<span>p50</span></div>` +
+        `<div class="bp-estsub">p95 ${bpSec(r.lat.p95)} · ${r.lat.bounded ? "retries bounded" : "no bounded retry — p95 assumes end-to-end retry"}</div>` +
+        `<div class="bp-estlines">` +
+          `<span>${r.cov.ok}/${r.cov.total} control families · ${r.lat.gated ? "gated" : "no human gate"}</span>` +
+          (r.lat.gated ? `<span>${share}% of actions wait <b>${r.lat.wait} min</b> for an approver</span>` : "") +
+        `</div>` +
+      `</div>` +
+      `<div class="bp-estcard">` +
+        `<div class="bp-estval ${r.risk.band[1]}">${r.risk.score}<span>/100</span></div>` +
+        `<div class="bp-estsub">risk band: <b>${r.risk.band[0]}</b> · ${r.risk.missing} open famil${r.risk.missing === 1 ? "y" : "ies"}</div>` +
+        `<div class="bp-estlines bp-drivers">` +
+          (r.risk.drivers.length ? r.risk.drivers.map(d => `<span>${escHtml(d)}</span>`).join("") : `<span>No open control families and no structural flags.</span>`) +
+        `</div>` +
+      `</div>` +
+    `</div>` +
+    `<div class="bp-estnote">Deterministic, not a benchmark: cost = tokens × price + tool calls + gated review time + infra; ` +
+    `p50 = Σ stage latencies (${bpSec(r.model.call)}/model call, +${BP_TOOL_MS} ms per tool stage, +${BP_CTL_MS} ms per inline control); ` +
+    `p95 = 1.5 × p50 with a bounded-retry control, 3 × without. Edit any assumption above.</div>`;
+}
+
 /* ---------------- export ---------------- */
 function bpMarkdown() {
   const F = "```";
@@ -238,6 +384,19 @@ function bpMarkdown() {
   out.push("");
   const w = bpWarnings().filter(x => x.level !== "ok");
   if (w.length) { out.push("## Findings"); out.push(""); w.forEach(x => out.push("- " + (x.level === "warn" ? "**" : "") + x.text + (x.level === "warn" ? "**" : ""))); out.push(""); }
+  if (bpState.comps.length) {
+    const r = bpEstimate(), e = bpState.est;
+    out.push("## Cost · latency · risk estimate");
+    out.push("");
+    out.push(`- **Cost:** ${bpMoney(r.cost.total)}/mo for ${e.req.toLocaleString()} requests/mo — inference ${bpMoney(r.cost.inference)}, tools ${bpMoney(r.cost.tools)}, human review ${bpMoney(r.cost.human)}, infra ${bpMoney(r.cost.infra)} (${bpMoney(r.cost.perReq)}/request, ${bpMoney(r.cost.total * 12)}/yr).`);
+    out.push(`- **Latency:** p50 ${bpSec(r.lat.p50)}, p95 ${bpSec(r.lat.p95)} — ${r.lat.bounded ? "bounded retries" : "no bounded-retry control, p95 assumes end-to-end retry"}` +
+      (r.lat.gated ? `; ${e.share}% of actions wait ${e.wait} min for an approver` : "; no human gate") + ".");
+    out.push(`- **Risk:** ${r.risk.score}/100 (${r.risk.band[0]}) across ${r.cov.ok}/${r.cov.total} covered families.`);
+    if (r.risk.drivers.length) r.risk.drivers.forEach(d => out.push("  - " + d));
+    out.push(`- **Assumptions:** ${e.tin}/${e.tout} tokens per request, ${e.toolCalls} tool calls at $${e.toolPrice}, ` +
+      `${e.hourly}$/h loaded review time, ${e.model} model, ${bpMoney(e.infra)}/mo infra.`);
+    out.push("");
+  }
   const dia = bpDiagram();
   if (dia) { out.push("## Diagram"); out.push(""); out.push(F + "mermaid"); out.push(dia); out.push(F); out.push(""); }
   out.push("## Related catalog items");
@@ -265,13 +424,17 @@ function bpAskCopilot() {
   if (typeof copilotAsk !== "function") { showNotif("Copilot unavailable"); return; }
   if (!bpState.comps.length) { showNotif("Add components before asking the copilot"); return; }
   const c = bpCoverage();
+  const r = bpEstimate(), e = bpState.est;
   const q = "Stress-test this reference architecture. For each weakness, name the component in the blueprint that would have to change. Keep it short.\n\n" +
     "**Blueprint:** " + (bpState.name || "Untitled") + "\n" +
     "**Components:** " + bpState.comps.join(", ") + "\n" +
     "**Guardrail coverage:** " + c.ok + "/" + c.total + " families\n" +
-    "**Missing families:** " + c.rows.filter(r => !r.ok).map(r => r.label).join("; ") + "\n" +
+    "**Missing families:** " + c.rows.filter(x => !x.ok).map(x => x.label).join("; ") + "\n" +
+    "**Cost / latency / risk:** " + bpMoney(r.cost.total) + "/mo, p50 " + bpSec(r.lat.p50) + ", p95 " + bpSec(r.lat.p95) +
+      ", risk " + r.risk.score + "/100 (" + r.risk.band[0] + ") — assumptions: " + e.tin + "/" + e.tout +
+      " tokens, " + e.toolCalls + " tool calls, " + e.model + " model\n" +
     (bpState.notes ? "**Notes:** " + bpState.notes + "\n" : "") +
-    "\nFocus on ordering (which stage should run first/last) and on controls attached to the wrong stage.";
+    "\nFocus on ordering (which stage should run first/last), on controls attached to the wrong stage, and on which single assumption above, if wrong by 10x, would change the recommendation.";
   copilotAsk(q);
 }
 
@@ -379,6 +542,17 @@ function bpRender() {
       ? `<div class="bp-diagram">${diagramHtml(dia, "blueprint flow")}</div>`
       : `<div class="bp-empty">No components yet — pick a template on the left, or click patterns in the palette.</div>`) +
 
+    `<div class="bp-est">` +
+      `<div class="bp-esthead">` +
+        `<h4>Cost · latency · risk estimate</h4>` +
+        `<span class="muted small">live from the assumptions on the right — no LLM involved</span>` +
+      `</div>` +
+      `<div class="bp-estbody">` +
+        `<div class="bp-estinputs">${bpEstInputs()}</div>` +
+        `<div class="bp-estout" id="bpEstOut"></div>` +
+      `</div>` +
+    `</div>` +
+
     `<div class="bp-cols">` +
       `<div class="bp-col">` +
         `<h4>Component order <span class="muted small">(top runs first)</span></h4>` +
@@ -438,6 +612,7 @@ function bpRender() {
         : `<div class="muted small">Nothing saved yet. Save a blueprint to compare variants later.</div>`) +
     `</div>`;
 
+  bpRenderEst();
   mmRenderAll(root);
 }
 
