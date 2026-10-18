@@ -510,11 +510,16 @@ function mmTheme() {
 function mmRender(nodes) {
   const list = [...nodes].filter(Boolean);
   if (!list.length) return Promise.resolve();
-  if (!window.mermaid) { list.forEach(n => noteMmErr(n, "mermaid library not loaded (offline?)")); return Promise.resolve(); }
-  try {
-    window.mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "base", themeVariables: mmTheme(), flowchart: { htmlLabels: true, curve: "basis" } });
-  } catch (e) { console.warn("mermaid init failed", e); }
+  /* Everything — including mermaid.initialize, which resets shared global
+     state — runs inside the queue. Two back-to-back mmRenderAll calls (e.g.
+     the Guardrail Lab rendering its architecture diagram and then the mock
+     replay) used to interleave initialize + run and corrupt each other into
+     spurious "Syntax error in text" diagrams. */
   const job = mmQueue.then(async () => {
+    if (!window.mermaid) { list.forEach(n => noteMmErr(n, "mermaid library not loaded (offline?)")); return; }
+    try {
+      window.mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "base", themeVariables: mmTheme(), flowchart: { htmlLabels: true, curve: "basis" } });
+    } catch (e) { console.warn("mermaid init failed", e); }
     for (const node of list) {
       const src = node.dataset && node.dataset.src;
       // reset any previous render state so mermaid will process the node again
