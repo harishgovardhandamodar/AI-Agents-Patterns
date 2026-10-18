@@ -38,7 +38,7 @@ function cpMd(text) {
   // every other language stays a plain code block.
   s = s.replace(/```([a-zA-Z0-9]*)\n?([\s\S]*?)```/g, function (m, lang, code) {
     code = code.replace(/\n$/, "");
-    if (String(lang).toLowerCase() === "mermaid" && typeof diagramHtml === "function") blocks.push(diagramHtml(code));
+    if (String(lang).toLowerCase() === "mermaid" && typeof diagramHtml === "function" && code.trim()) blocks.push(diagramHtml(code));
     else blocks.push("<pre>" + (lang ? '<span class="cp-code-lang">' + escHtml(lang) + "</span>" : "") + escHtml(code) + "</pre>");
     return "\u0000" + (blocks.length - 1) + "\u0000";
   });
@@ -204,11 +204,13 @@ function cpMermaidFallback(log) {
   if (!log || !log.querySelectorAll) return;
   const toSource = function (pre) {
     const wrap = pre.closest(".diagram-wrap");
-    const src = (pre.getAttribute("data-src") || pre.textContent || "").trim();
-    if (!src) return;
+    const raw = pre.getAttribute("data-src") || "";
+    /* Never dump rendered markup as "source": if there is no clean source,
+       leave mermaid's own error render alone. */
+    if (!raw.trim() || /</.test(raw)) return;
     const d = document.createElement("pre");
     d.className = "cp-mermaid-src";
-    d.textContent = src;
+    d.textContent = raw.trim();
     if (wrap) wrap.replaceWith(d); else pre.replaceWith(d);
   };
   log.querySelectorAll(".mm-err-note").forEach(function (n) {
@@ -235,9 +237,10 @@ function fenceBareMermaid(s) {
   const mdish = /^[ \t]*(?:#{1,6}[ \t]|```|[-*][ \t]|\d+[.)][ \t]|>[ \t]|\|)/;
   const token = /-->|---|->>|==>|\|[^\n|]+\||\(\(|\)\)|\[|\{|\(|::/;
   const lines = String(s).split("\n"), out = [];
-  let i = 0;
+  let i = 0, inFence = false;
   while (i < lines.length) {
-    if (kw.test(lines[i])) {
+    if (/^[ \t]*```/.test(lines[i])) { inFence = !inFence; out.push(lines[i++]); continue; }
+    if (!inFence && kw.test(lines[i])) {
       const run = [lines[i++]];
       while (i < lines.length && lines[i].trim() !== "" && !mdish.test(lines[i]) &&
         (/^[ \t]+\S/.test(lines[i]) || token.test(lines[i]))) run.push(lines[i++]);
