@@ -47,12 +47,12 @@ const HELP = {
   },
   scenarios: {
     t: "Scenarios",
-    b: `<p>38 concrete <b>failure stories</b>: attack chain, protections that stop it, detection signals, incident response. Scenarios are what the threat model matches your blueprint against.</p>
+    b: `<p>${catN("scenarios", 43)} concrete <b>failure stories</b>: attack chain, protections that stop it, detection signals, incident response. Scenarios are what the threat model matches your blueprint against.</p>
     <ul><li>Sort by least-protected to find the scenarios your controls don't cover yet.</li><li>“▶ mock run” replays the scenario as a trace in Live View.</li><li>“Add linked patterns” builds a blueprint from the scenario's defences.</li></ul>`
   },
   cascades: {
     t: "Cascades",
-    b: `<p>175 ways small faults <b>propagate and amplify</b>, in four classes: <b>inherent</b> (one part fails alone), <b>emergent</b> (only the interaction fails), <b>derived</b> (A must lead to B), <b>cascading</b> (crosses a boundary and amplifies).</p>
+    b: `<p>${catN("cascades", 180)} ways small faults <b>propagate and amplify</b>, in four classes: <b>inherent</b> (one part fails alone), <b>emergent</b> (only the interaction fails), <b>derived</b> (A must lead to B), <b>cascading</b> (crosses a boundary and amplifies).</p>
     <ul><li>The Mitigation planner de-duplicates every control across all cascades, ranked by leverage — fix the top rows first.</li><li>Assign owners and status; it persists locally and exports to CSV.</li><li>The propagation simulator shows how a trigger fans out step by step.</li></ul>
     <p class="muted small">Tip: adding more controls can never raise the Blueprint exposure index — it only discounts matched cascades.</p>`
   },

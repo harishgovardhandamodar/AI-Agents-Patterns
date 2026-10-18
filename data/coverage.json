@@ -188,7 +188,8 @@
     "code-supply-chain",
     "code-secrets-gist",
     "mcp-tool-poisoning",
-    "sandbox-escape"
+    "sandbox-escape",
+    "selfrewrite-reward-hack"
    ],
    "cascades_all": [
     "cas-inh-blackboard",
@@ -204,6 +205,7 @@
     "cas-der-sandbox-escape",
     "cas-der-code-rm-prod",
     "cas-der-mcp-tool-poisoning",
+    "cas-der-selfrewrite-reward-hack",
     "cas-cas-domain-engineering"
    ],
    "cascades_inherent": [
@@ -222,7 +224,8 @@
     "cas-der-code-supply-chain",
     "cas-der-sandbox-escape",
     "cas-der-code-rm-prod",
-    "cas-der-mcp-tool-poisoning"
+    "cas-der-mcp-tool-poisoning",
+    "cas-der-selfrewrite-reward-hack"
    ],
    "cascades_cascading": [
     "cas-cas-domain-engineering"
@@ -251,7 +254,8 @@
     "exfil-via-logs",
     "tenant-leak",
     "agent-impersonation",
-    "delegation-cascade"
+    "delegation-cascade",
+    "spawn-fleet-runaway"
    ],
    "cascades_all": [
     "cas-inh-agent-identity",
@@ -271,6 +275,7 @@
     "cas-der-tenant-leak",
     "cas-der-rag-poison",
     "cas-der-exfil-via-logs",
+    "cas-der-spawn-fleet-runaway",
     "cas-der-collusion-supervisor",
     "cas-cas-domain-enterprise"
    ],
@@ -295,6 +300,7 @@
     "cas-der-tenant-leak",
     "cas-der-rag-poison",
     "cas-der-exfil-via-logs",
+    "cas-der-spawn-fleet-runaway",
     "cas-der-collusion-supervisor"
    ],
    "cascades_cascading": [
@@ -472,7 +478,8 @@
     "escalation-bypass",
     "context-exfil-truncation",
     "eval-overfit",
-    "tool-error-instruction"
+    "tool-error-instruction",
+    "prompt-selfedit-jailbreak"
    ],
    "cascades_all": [
     "cas-inh-incident-playbook",
@@ -531,6 +538,7 @@
     "cas-eme-untrusted-content-instruction-uptake",
     "cas-eme-version-skew-across-agents",
     "cas-der-escalation-bypass",
+    "cas-der-prompt-selfedit-jailbreak",
     "cas-der-approval-fatigue",
     "cas-der-eval-overfit",
     "cas-der-web-hidden-injection",
@@ -611,6 +619,7 @@
    ],
    "cascades_derived": [
     "cas-der-escalation-bypass",
+    "cas-der-prompt-selfedit-jailbreak",
     "cas-der-approval-fatigue",
     "cas-der-eval-overfit",
     "cas-der-web-hidden-injection",
@@ -668,14 +677,16 @@
     "healthcare-triage"
    ],
    "scenarios": [
-    "health-dosage"
+    "health-dosage",
+    "metric-gaming-triage"
    ],
    "cascades_all": [
     "cas-inh-uncertainty-abstention",
     "cas-inh-healthcare-triage",
     "cas-inh-metacognitive-confidence",
     "cas-inh-output-filtering-pii",
-    "cas-der-health-dosage"
+    "cas-der-health-dosage",
+    "cas-der-metric-gaming-triage"
    ],
    "cascades_inherent": [
     "cas-inh-uncertainty-abstention",
@@ -685,7 +696,8 @@
    ],
    "cascades_emergent": [],
    "cascades_derived": [
-    "cas-der-health-dosage"
+    "cas-der-health-dosage",
+    "cas-der-metric-gaming-triage"
    ],
    "cascades_cascading": []
   },
@@ -880,13 +892,15 @@
     "rag-poison-defense"
    ],
    "scenarios": [
-    "research-fabricated-citation"
+    "research-fabricated-citation",
+    "selfdistill-collapse"
    ],
    "cascades_all": [
     "cas-inh-browser-agent",
     "cas-inh-chain-of-verification",
     "cas-inh-parallelization-sectioning",
     "cas-inh-research-citation-agent",
+    "cas-der-selfdistill-collapse",
     "cas-der-research-fabricated-citation"
    ],
    "cascades_inherent": [
@@ -897,6 +911,7 @@
    ],
    "cascades_emergent": [],
    "cascades_derived": [
+    "cas-der-selfdistill-collapse",
     "cas-der-research-fabricated-citation"
    ],
    "cascades_cascading": []
@@ -1001,8 +1016,8 @@
  },
  "totals": {
   "patterns": 107,
-  "scenarios": 38,
-  "cascades": 175,
+  "scenarios": 43,
+  "cascades": 180,
   "domains": 26
  }
 }

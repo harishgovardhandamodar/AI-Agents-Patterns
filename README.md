@@ -133,9 +133,9 @@ js/palette.js              Ctrl/⌘K command palette
 js/shortcuts.js            global keyboard shortcuts + help
 js/report.js               full report export (Markdown / JSON / print)
 data/patterns.json         107 patterns, categories, category diagrams
-data/scenarios.json        38 scenarios (attack chains, protections, detection, response)
-data/cascades.json         175 composition cascades (four classes)
-data/traces.json           39 mock execution traces — one per scenario + the approved path
+data/scenarios.json        43 scenarios (attack chains, protections, detection, response)
+data/cascades.json         180 composition cascades (four classes)
+data/traces.json           39 mock execution traces (scenarios link a replay where one exists)
 data/coverage.json         control-family coverage index (26 domains)
 tools/gen_cascades.py      cascade dataset generator
 tools/gen_scenarios.py     scenario dataset generator

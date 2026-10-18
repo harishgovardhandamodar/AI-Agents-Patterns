@@ -480,7 +480,7 @@ function renderCascadeList() {
       : (casState.limit > CAS_LIST_STEP && list.length > CAS_LIST_STEP
         ? '<div class="cas-more"><button class="btn ghost" onclick="casShowFewer()">Show fewer</button></div>' : "")) ||
     (typeof emptyState === "function"
-      ? emptyState("⧉", "No cascades match", "175 cascade records and nothing fits — a filter is probably too narrow. Reset to browse the full taxonomy.", "Reset filters", "resetCasFilters()")
+      ? emptyState("⧉", "No cascades match", catN("cascades", 180) + " cascade records and nothing fits — a filter is probably too narrow. Reset to browse the full taxonomy.", "Reset filters", "resetCasFilters()")
       : `<p class="muted">No cascades match the current filters.</p>`);
 }
 function casCardHtml(c) {

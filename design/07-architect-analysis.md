@@ -11,7 +11,7 @@ connects them. It is the reference behind the **Architect Copilot**, **Cascades*
 flowchart LR
   subgraph TODAY["Today — reference"]
     P["107 patterns"]
-    S["38 scenarios"]
+    S["43 scenarios"]
     T["39 traces"]
     D["6 design docs"]
   end

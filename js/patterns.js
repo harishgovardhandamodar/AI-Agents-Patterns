@@ -164,7 +164,7 @@ function renderPatterns() {
         ${p.diagram ? `<span class="chip">◇ diagram</span>` : ""}
       </div>
     </div>`).join("") || (typeof emptyState === "function"
-      ? emptyState("◆", "No patterns match", "The catalog holds 107 patterns — loosen a filter or clear the search to see them again.", "Reset filters", "resetPatFilters()")
+      ? emptyState("◆", "No patterns match", "The catalog holds " + catN("patterns", 107) + " patterns — loosen a filter or clear the search to see them again.", "Reset filters", "resetPatFilters()")
       : `<p class="muted">No patterns match the current filters.</p>`);
 }
 
@@ -173,7 +173,7 @@ function renderPatternList(list, P) {
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   if (!list.length) {
     el("patGrid").innerHTML = typeof emptyState === "function"
-      ? emptyState("◆", "No patterns match", "The catalog holds 107 patterns — loosen a filter or clear the search to see them again.", "Reset filters", "resetPatFilters()")
+      ? emptyState("◆", "No patterns match", "The catalog holds " + catN("patterns", 107) + " patterns — loosen a filter or clear the search to see them again.", "Reset filters", "resetPatFilters()")
       : `<p class="muted">No patterns match the current filters.</p>`;
     return;
   }
