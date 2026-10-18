@@ -94,7 +94,7 @@ const dpDefault = () => ({
   hosting: "cloud-managed", team: "small", rollout: "canary", oncall: "business"
 });
 
-const dpState = { step: 0, done: false, a: dpDefault(), err: null };
+const dpState = { step: 0, done: false, a: dpDefault(), err: null, target: null };
 
 function dpLoad() {
   try {
@@ -104,13 +104,14 @@ function dpLoad() {
     if (j && j.a) Object.assign(dpState.a, j.a);
     if (typeof j.step === "number") dpState.step = Math.min(Math.max(0, j.step), DP_STEPS.length);
     dpState.done = !!j.done;
+    dpState.target = typeof j.target === "number" ? Math.max(0, Math.min(4, j.target)) : null;
   } catch (e) { /* ignore corrupt state */ }
 }
 function dpSave() {
-  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done })); } catch (e) {}
+  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target })); } catch (e) {}
 }
 function dpReset() {
-  dpState.step = 0; dpState.done = false; dpState.err = null;
+  dpState.step = 0; dpState.done = false; dpState.err = null; dpState.target = null;
   dpState.a = dpDefault(); dpSave(); dpRender();
   showNotif("Deployment plan reset");
 }
@@ -725,5 +726,157 @@ function dpSectionStack() {
 }
 
 DP_SECTIONS.push({ id: "stack", title: "Recommended stack & guardrail config", render: dpSectionStack });
+
+/* ---------------- section 4: rollout & autonomy dial (18) ---------------- */
+const DP_GATE_REQ = {
+  1: [{ k: "Read-only actions", has: a => (a.actions || []).every(x => x === "read") || !!a.approvalGate },
+      { k: "Baseline traces on file", has: () => true }],
+  2: [{ k: "Readiness ≥ 65", has: () => dpScore().overall >= 65 },
+      { k: "Approval gate on irreversible actions", has: a => !!a.approvalGate },
+      { k: "Audit trail in place", has: () => dpStack().some(x => x.pat === "audit-trail") }],
+  3: [{ k: "Readiness ≥ 80", has: () => dpScore().overall >= 80 },
+      { k: "Policy engine at the tool layer", has: () => dpStack().some(x => x.pat === "policy-engine") },
+      { k: "Kill switch wired", has: a => a.autonomy >= 2 },
+      { k: "Blast radius ≤ tenant", has: a => DP_BLAST.indexOf(a.blast) <= 3 }],
+  4: [{ k: "Readiness ≥ 90", has: () => dpScore().overall >= 90 },
+      { k: "Rollback on hand", has: () => dpStack().some(x => x.pat === "checkpoint-rollback" || x.pat === "canary-shadow") },
+      { k: "Continuous evals", has: () => dpStack().some(x => x.pat === "eval-harness-redteam") },
+      { k: "Round-the-clock on-call", has: a => a.oncall === "follow" }]
+};
+
+function dpTarget() {
+  const t = dpState.target;
+  return t === null || t === undefined ? dpState.a.autonomy : t;
+}
+function dpCeiling() {
+  let best = 0;
+  for (let L = 1; L <= 4; L++) {
+    const reqs = DP_GATE_REQ[L] || [];
+    if (reqs.every(r => { try { return r.has(dpState.a); } catch (e) { return false; } })) best = L;
+  }
+  return best;
+}
+function dpBlocked(L) {
+  const reqs = DP_GATE_REQ[L] || [];
+  const out = [];
+  reqs.forEach(r => { let ok = false; try { ok = r.has(dpState.a); } catch (e) { ok = false; } if (!ok) out.push(r.k); });
+  return out;
+}
+function dpSetTarget(v) {
+  dpState.target = Math.max(0, Math.min(4, Number(v)));
+  dpSave(); dpRender();
+}
+
+function dpRolloutPlan() {
+  const a = dpState.a, cur = a.autonomy, tgt = dpTarget();
+  const days = { critical: 14, high: 7, medium: 3, low: 1 }[a.criticality] || 3;
+  const pct = a.blast === "org" || a.blast === "fleet" || a.blast === "ecosystem" ? "0.5–2%" : "1–5%";
+  const S = [];
+
+  S.push({
+    n: S.length, name: "Shadow", scope: "100% of traffic · zero effects", days: days,
+    gate: "no effects — dry run only",
+    exit: a.rollout === "shadow" ? "Parity held for the full window with no unexplained divergence"
+      : `Parity ≥ 99% vs. the current path for ${days} day${days > 1 ? "s" : ""}, zero unexplained divergences`,
+    watch: ["parity %", "latency p95", "refusal rate", "token spend"]
+  });
+
+  if (a.rollout !== "shadow") {
+    S.push({
+      n: S.length, name: "Canary", scope: pct + " of traffic · effects bounded to " + a.blast, days: Math.max(1, Math.round(days / 2)),
+      gate: a.approvalGate ? "irreversible actions held for approval" : "effects live",
+      exit: "Zero Sev-1/Sev-2 in the canary window; approval queue depth trending down, not up",
+      watch: ["error rate", "approval queue depth", "budget consumed", "first-time failures"]
+    });
+    S.push({
+      n: S.length, name: "Staged", scope: "25% → 50% → 100% by segment", days: Math.max(2, Math.round(days / 2)),
+      gate: a.approvalGate ? "hold-for-approval retained" : "per-action caps only",
+      exit: "Two full business cycles clean at each step; no blast-radius upgrade needed",
+      watch: ["segment-level error rate", "operator override rate", "drift vs. shadow baseline"]
+    });
+  }
+
+  if (tgt > cur) {
+    for (let L = cur + 1; L <= tgt; L++) {
+      const blocked = dpBlocked(L);
+      S.push({
+        n: S.length, name: `Autonomy raise → L${L} · ${DP_AUTONOMY[L].label.split(" · ")[1] || ""}`.trim(),
+        scope: "same traffic, fewer human checks", days: Math.max(2, Math.round(days / 2)),
+        gate: blocked.length ? "BLOCKED — " + blocked.length + " gate" + (blocked.length > 1 ? "s" : "") + " unmet" : "entry gates met",
+        exit: blocked.length ? "Resolve: " + blocked.join(" · ")
+          : "Sustained readiness at or above the gate threshold for one full cycle",
+        watch: ["gate threshold", "override rate", "cascade drills", "audit completeness"]
+      });
+    }
+  } else if (tgt < cur) {
+    S.push({
+      n: S.length, name: "Step down", scope: "return to L" + tgt, days: 1,
+      gate: "keep L" + tgt + " behaviour while evidence catches up",
+      exit: "Reason for stepping back recorded; no new privilege granted until readiness recovers",
+      watch: ["readiness score", "override rate", "incident log"]
+    });
+  }
+  return S;
+}
+
+function dpSectionRollout() {
+  const a = dpState.a, cur = a.autonomy, tgt = dpTarget(), ceil = dpCeiling();
+  const stages = dpRolloutPlan();
+  const totalDays = stages.reduce((s, x) => s + x.days, 0);
+
+  const ladder = DP_AUTONOMY.map(o => {
+    const state = o.v < cur ? "past" : o.v === cur ? "here" : o.v <= tgt ? "target" : o.v <= ceil ? "open" : "locked";
+    const missing = o.v > ceil ? dpBlocked(o.v) : [];
+    return `<button class="dp-rung ${state}" onclick="dpSetTarget(${o.v})"
+        title="${escHtml(o.desc)}" aria-pressed="${o.v === tgt}">
+        <i>L${o.v}</i><b>${escHtml(o.label.split(" · ")[1] || o.label)}</b>
+        <span>${escHtml(o.desc)}</span>
+        ${missing.length ? `<em>needs: ${escHtml(missing.join(", "))}</em>` : ""}
+        ${o.v === cur ? '<u>current</u>' : ""}
+        ${o.v === tgt && tgt !== cur ? '<u class="tgt">target</u>' : ""}
+      </button>`;
+  }).join("");
+
+  return `
+    <div class="dp-dialhead">
+      <div>
+        <span class="dp-dialnow">L${cur}</span>
+        <span class="muted small">current · ceiling L${ceil}${tgt !== cur ? ` · target L${tgt}` : ""}</span>
+      </div>
+      <p class="muted small">Click a rung to set the <b>target</b> level. A rung is open only when its entry gates are actually satisfied by your answers — locked rungs say exactly what is missing.</p>
+    </div>
+    <div class="dp-dial" role="group" aria-label="Autonomy dial">${ladder}</div>
+    <div class="dp-rollhead">
+      <h4>Rollout path <span class="muted small">${stages.length} stages · ~${totalDays} days</span></h4>
+      <button class="iconbtn" onclick="dpCopyRollout()">Copy plan</button>
+    </div>
+    <ol class="dp-stages">${stages.map(s => `
+      <li class="dp-stage${/BLOCKED/.test(s.gate) ? " blocked" : ""}">
+        <div class="dp-stagenum">${s.n}</div>
+        <div class="dp-stagebody">
+          <div class="dp-stagehead"><b>${escHtml(s.name)}</b><span class="dp-days">${s.days}d</span></div>
+          <p class="dp-stagescope">${escHtml(s.scope)}</p>
+          <div class="dp-stagegrid">
+            <div><em>Gate</em>${escHtml(s.gate)}</div>
+            <div><em>Exit</em>${escHtml(s.exit)}</div>
+            <div><em>Watch</em>${escHtml(s.watch.join(" · "))}</div>
+          </div>
+        </div>
+      </li>`).join("")}</ol>`;
+}
+
+function dpRolloutMarkdown() {
+  const a = dpState.a;
+  return "# Rollout path — " + (a.system || "agent") + "\n\n" +
+    dpRolloutPlan().map(s => `## Stage ${s.n}: ${s.name} (${s.days}d)\n- Scope: ${s.scope}\n- Gate: ${s.gate}\n- Exit: ${s.exit}\n- Watch: ${s.watch.join(", ")}`).join("\n\n") + "\n";
+}
+function dpCopyRollout() {
+  const txt = dpRolloutMarkdown();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(() => showNotif("Rollout plan copied")).catch(() => showNotif("Clipboard blocked"));
+  } else showNotif("Clipboard unavailable");
+}
+
+DP_SECTIONS.push({ id: "rollout", title: "Rollout & autonomy path", render: dpSectionRollout });
 
 tabLoaders.deploy = function () { initDeploy(); };
