@@ -409,8 +409,33 @@ function onbMarkSeen() {
   if (storeSet(ONB_STORE, "seen")) return;
   try { sessionStorage.setItem(ONB_STORE, "seen"); } catch (e) {}
 }
+/* A returning user has THEIR OWN state (not boot-seeded defaults): a chat
+   with a real user turn, a named deployment target, a non-seed analysis, a
+   blueprint with components, library entries, or pins. Only a true
+   first-run — none of the above — gets the auto tour. Manual replay via the
+   shortcuts help always works. */
+function onbHasHistory() {
+  try {
+    const cp = JSON.parse(localStorage.getItem("aap.copilot") || "null");
+    if (cp && Array.isArray(cp.messages) && cp.messages.some(m => m && m.role === "user" && String(m.content || "").trim())) return true;
+    const dp = JSON.parse(localStorage.getItem("aap.deploy") || "null");
+    if (dp && dp.a && typeof dp.a.system === "string" && dp.a.system.trim()) return true;
+    if (dp && dp.done === true) return true;
+    const g = JSON.parse(localStorage.getItem("aap.guardrail.collection.v1") || "[]");
+    if (Array.isArray(g) && g.some(it => it && it.origin !== "seed")) return true;
+    const bp = JSON.parse(localStorage.getItem("aap.blueprint.v1") || "null");
+    if (bp && Array.isArray(bp.comps) && bp.comps.length) return true;
+    const bl = JSON.parse(localStorage.getItem("aap.blueprints.v1") || "[]");
+    if (Array.isArray(bl) && bl.length) return true;
+    const pins = JSON.parse(localStorage.getItem("aap.pins.v1") || "null");
+    if (pins && ((pins.patterns || []).length + (pins.scenarios || []).length + (pins.cascades || []).length) > 0) return true;
+  } catch (e) {}
+  return false;
+}
 function onbShow(force) {
   if (!force && onbSeen()) return;
+  if (!force && onbHasHistory()) { onbMarkSeen(); return; } /* returning user, never auto-tour */
+  onbMarkSeen(); /* mark on SHOW, not on dismiss: refreshing mid-tour must not nag again */
   let o = document.getElementById("onbOverlay");
   if (!o) {
     o = document.createElement("div");
@@ -421,6 +446,7 @@ function onbShow(force) {
     o.setAttribute("aria-label", "Welcome — choose a starting path");
     o.innerHTML =
       `<div class="onb-box">` +
+      `<button class="onb-x" onclick="onbGo(null)" aria-label="Close welcome tour">✕</button>` +
       `<div class="onb-kicker">AI AGENT PATTERNS &amp; GUARDRAILS</div>` +
       `<h2 class="onb-title">What are you designing today?</h2>` +
       `<p class="onb-sub">This is an advisory workbench, not a dashboard. Pick the job — the app lines up the catalog, the planner and the copilot behind it.</p>` +
