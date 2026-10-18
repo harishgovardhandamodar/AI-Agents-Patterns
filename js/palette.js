@@ -118,6 +118,9 @@ function initPalette() {
   const d = document.createElement("div");
   d.id = "palOverlay";
   d.className = "pal-overlay";
+  d.setAttribute("role", "dialog");
+  d.setAttribute("aria-modal", "true");
+  d.setAttribute("aria-label", "Command palette");
   d.innerHTML = `<div class="pal-box">
     <input id="palInput" class="pal-input" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" oninput="palSel=0;palRender()" autocomplete="off">
     <div id="palList" class="pal-list"></div>

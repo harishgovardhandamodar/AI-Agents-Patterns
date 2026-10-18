@@ -1316,3 +1316,37 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 }
 .cr-prev, .cr-resid { font-size: 10.5px; color: var(--text3); line-height: 1.5; margin-top: 3px; }
 .cr-resid { color: var(--orange); }
+
+/* ---------------- a11y ---------------- */
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.app-tab:focus-visible { outline-offset: -2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+/* ---------------- mobile ---------------- */
+@media (max-width: 760px) {
+  .topbar { flex-wrap: wrap; padding: 6px 10px; row-gap: 4px; }
+  .topbar h1 { font-size: 13px; }
+  .topbar .sub { display: none; }
+  .app-tabs { overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+  .app-tabs::-webkit-scrollbar { display: none; }
+  .dash-grid { grid-template-columns: 1fr; }
+  .dash-export { flex-direction: column; align-items: flex-start; }
+  .dash-export-btns { margin-left: 0; }
+  .drawer { width: 100vw; }
+  .pal-overlay { padding-top: 5vh; }
+  .pal-item .pal-sub { display: none; }
+  .pal-item .pal-kind { flex-basis: 52px; }
+  .sk-row kbd { flex-basis: 92px; font-size: 10px; }
+  /* every rail+main pane stacks on phones */
+  #livePane.visible, #designPane.visible, #guardPane.visible,
+  #cascadesPane.visible, #blueprintPane.visible, #copilotPane.visible { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .split { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .split .side { max-height: 170px; }
+  #designPane .side, #cascadesPane .side, #livePane .side { max-height: 170px; }
+  .g-collection { max-height: 180px; }
+  #blueprintPane .side { max-height: 150px; }   /* blueprint palette: give the canvas room */
+  .cp-rail { max-height: 190px; border-right: none; border-bottom: 1px solid var(--border); } /* copilot: rail stacks above chat */
+  .ov-cards { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
+}

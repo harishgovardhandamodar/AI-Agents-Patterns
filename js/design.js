@@ -4,14 +4,14 @@
    mermaid fences -> <pre class="mermaid"> -> sequential render queue. */
 "use strict";
 
-let designState = { docs: [], current: null, srcMode: false };
+let designState = { docs: [], current: null, srcMode: false, loaded: false };
 
 function initDesign() {
+  /* Rail only — the document itself (markdown fetch + mermaid render) is
+     deferred to the first visit via tabLoaders.design, so startup doesn't
+     pay for a tab the user may never open. */
   designState.docs = DESIGN_DOCS;
   el("designRail").innerHTML = groupHtml(designState.docs);
-  const hash = (location.hash || "").replace("#design/", "");
-  const start = designState.docs.find(d => d.id === hash) || designState.docs[0];
-  designShow(start.id);
 }
 
 function groupHtml(docs) {
@@ -124,4 +124,10 @@ function toggleDesignSrc() {
   el("designDoc").classList.toggle("show-src", designState.srcMode);
 }
 
-tabLoaders.design = () => { /* rail already built */ };
+tabLoaders.design = () => {
+  if (designState.loaded) return;
+  designState.loaded = true;
+  const hash = (location.hash || "").replace("#design/", "");
+  const start = designState.docs.find(d => d.id === hash) || designState.docs[0];
+  if (start) designShow(start.id);
+};

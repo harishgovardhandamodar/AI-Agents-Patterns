@@ -21,22 +21,22 @@
   <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme">◐ theme</button>
 </div>
 
-<div class="app-tabs" id="appTabs">
-  <div class="app-tab active" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
-  <div class="app-tab" data-tab="copilot" onclick="switchTab('copilot')">🤖 Architect Copilot</div>
-  <div class="app-tab" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
-  <div class="app-tab" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
-  <div class="app-tab" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
-  <div class="app-tab" data-tab="coverage" onclick="switchTab('coverage')">📊 Coverage &amp; Gaps</div>
-  <div class="app-tab" data-tab="deploy" onclick="switchTab('deploy')">🧭 Deployment Plan</div>
-  <div class="app-tab" data-tab="blueprint" onclick="switchTab('blueprint')">🧩 Blueprints</div>
-  <div class="app-tab" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
-  <div class="app-tab" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
-  <div class="app-tab" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
+<div class="app-tabs" id="appTabs" role="tablist" aria-label="Main sections">
+  <div class="app-tab active" role="tab" aria-controls="overviewPane" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
+  <div class="app-tab" role="tab" aria-controls="copilotPane" data-tab="copilot" onclick="switchTab('copilot')">🤖 Architect Copilot</div>
+  <div class="app-tab" role="tab" aria-controls="patternsPane" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-controls="scenariosPane" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-controls="cascadesPane" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-controls="coveragePane" data-tab="coverage" onclick="switchTab('coverage')">📊 Coverage &amp; Gaps</div>
+  <div class="app-tab" role="tab" aria-controls="deployPane" data-tab="deploy" onclick="switchTab('deploy')">🧭 Deployment Plan</div>
+  <div class="app-tab" role="tab" aria-controls="blueprintPane" data-tab="blueprint" onclick="switchTab('blueprint')">🧩 Blueprints</div>
+  <div class="app-tab" role="tab" aria-controls="livePane" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-controls="designPane" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
+  <div class="app-tab" role="tab" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
 </div>
 
 <!-- ======================= OVERVIEW ======================= -->
-<section class="pane visible" id="overviewPane">
+<section class="pane visible" id="overviewPane" role="tabpanel" aria-label="overview">
   <div class="ov-wrap">
     <div id="ovDash"></div>
     <div class="ov-cards" id="ovCards"></div>
@@ -62,7 +62,7 @@
 </section>
 
 <!-- ======================= ARCHITECT COPILOT ======================= -->
-<section class="pane" id="copilotPane">
+<section class="pane" id="copilotPane" role="tabpanel" aria-label="copilot">
   <aside class="cp-rail">
     <div class="cp-brand">
       <div class="cp-brand-ico">🤖</div>
@@ -97,7 +97,7 @@
 </section>
 
 <!-- ======================= PATTERNS ======================= -->
-<section class="pane" id="patternsPane">
+<section class="pane" id="patternsPane" role="tabpanel" aria-label="patterns">
   <div class="split">
     <aside class="side">
       <input class="search" id="patSearch" placeholder="Search patterns…  (e.g. budget, injection, memory)" oninput="renderPatterns()">
@@ -126,7 +126,7 @@
 </section>
 
 <!-- ======================= SCENARIOS ======================= -->
-<section class="pane" id="scenariosPane">
+<section class="pane" id="scenariosPane" role="tabpanel" aria-label="scenarios">
   <div class="split">
     <aside class="side">
       <input class="search" id="scnSearch" placeholder="Search scenarios…" oninput="renderScenarios()">
@@ -146,7 +146,7 @@
 </section>
 
 <!-- ======================= CASCADES ======================= -->
-<section class="pane" id="cascadesPane">
+<section class="pane" id="cascadesPane" role="tabpanel" aria-label="cascades">
   <aside class="side">
     <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" oninput="casState.q=this.value.trim().toLowerCase();renderCascadeList()">
     <h4>Cascade class</h4>
@@ -183,21 +183,21 @@
 </section>
 
 <!-- ======================= COVERAGE & GAPS ======================= -->
-<section class="pane" id="coveragePane">
+<section class="pane" id="coveragePane" role="tabpanel" aria-label="coverage">
   <div class="ov-wrap">
     <div id="covMain"></div>
   </div>
 </section>
 
 <!-- ======================= DEPLOYMENT PLANNER ======================= -->
-<section class="pane" id="deployPane">
+<section class="pane" id="deployPane" role="tabpanel" aria-label="deploy">
   <div class="ov-wrap">
     <div id="dpRoot"></div>
   </div>
 </section>
 
 <!-- ======================= BLUEPRINT BUILDER ======================= -->
-<section class="pane" id="blueprintPane">
+<section class="pane" id="blueprintPane" role="tabpanel" aria-label="blueprint">
   <aside class="side">
     <input class="search" id="bpSearch" placeholder="Search patterns…  (e.g. approval, sandbox, judge)" oninput="bpSetQ(this.value)">
     <h4>Start from a template</h4>
@@ -211,7 +211,7 @@
 </section>
 
 <!-- ======================= LIVE VIEW ======================= -->
-<section class="pane" id="livePane">
+<section class="pane" id="livePane" role="tabpanel" aria-label="live">
   <aside class="side">
     <input class="search" id="traceSearch" placeholder="Search traces…  (e.g. injection, spend, prod)" oninput="onLiveSearch(this.value)">
     <h4>Domain</h4>
@@ -230,7 +230,7 @@
 </section>
 
 <!-- ======================= DESIGN & ARCHITECTURE ======================= -->
-<section class="pane" id="designPane">
+<section class="pane" id="designPane" role="tabpanel" aria-label="design">
   <aside class="design-rail" id="designRail"></aside>
   <div class="design-main">
     <div class="design-top">
@@ -247,7 +247,7 @@
 </section>
 
 <!-- ======================= GUARDRAIL LAB ======================= -->
-<section class="pane" id="guardPane">
+<section class="pane" id="guardPane" role="tabpanel" aria-label="guard">
   <aside class="g-collection">
     <button class="btn primary" style="width:100%;margin-bottom:10px" onclick="newGuardAnalysis()">＋ New analysis</button>
     <h4 style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:4px 6px 6px">Collection</h4>
@@ -259,7 +259,7 @@
 </section>
 
 <!-- ======================= OVERLAYS ======================= -->
-<div class="overlay" id="detailOverlay" onclick="if(event.target===this)closeDetail()">
+<div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Detail" onclick="if(event.target===this)closeDetail()">
   <div class="drawer">
     <div class="drawer-head">
       <h2 id="detailTitle"></h2>

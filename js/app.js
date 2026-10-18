@@ -35,13 +35,38 @@ const tabLoaders = {}; // filled by per-tab scripts
 
 function switchTab(tab) {
   currentTab = tab;
-  document.querySelectorAll(".app-tab").forEach(t => t.classList.toggle("active", t.dataset.tab === tab));
+  document.querySelectorAll(".app-tab").forEach(t => {
+    const on = t.dataset.tab === tab;
+    t.classList.toggle("active", on);
+    t.setAttribute("aria-selected", on ? "true" : "false");
+    t.tabIndex = on ? 0 : -1;
+  });
   document.querySelectorAll(".pane").forEach(p => p.classList.remove("visible"));
   const pane = document.getElementById(tab + "Pane");
   if (pane) pane.classList.add("visible");
   if (tabLoaders[tab]) tabLoaders[tab]();
   try { location.hash = tab; } catch (e) {}
 }
+
+/* keyboard navigation inside the tab bar (role=tablist): arrows move,
+   Enter/Space activate — same behaviour screen readers expect. */
+function tabKeyNav(e) {
+  const tabs = [...document.querySelectorAll(".app-tab")];
+  const i = tabs.indexOf(e.target.closest(".app-tab"));
+  if (i < 0) return;
+  let j = -1;
+  if (e.key === "ArrowRight") j = (i + 1) % tabs.length;
+  else if (e.key === "ArrowLeft") j = (i - 1 + tabs.length) % tabs.length;
+  else if (e.key === "Home") j = 0;
+  else if (e.key === "End") j = tabs.length - 1;
+  if (j >= 0) {
+    e.preventDefault();
+    switchTab(tabs[j].dataset.tab);
+    tabs[j].focus();
+  }
+}
+
+document.addEventListener("keydown", e => { if (e.target.closest && e.target.closest(".app-tabs")) tabKeyNav(e); });
 
 /* ---------------- helpers ---------------- */
 function escHtml(s) {
@@ -209,14 +234,24 @@ function zoomKeys(e) {
 })();
 
 /* ---------------- detail drawer (patterns & scenarios) ---------------- */
+let detailOpener = null; /* element to restore focus to on close */
 function openDetail(title, catLabel, html) {
   el("detailTitle").textContent = title;
   el("detailCat").textContent = catLabel;
   el("detailBody").innerHTML = html;
+  detailOpener = document.activeElement;
   el("detailOverlay").classList.add("open");
   mmRenderAll(el("detailBody"));
+  const btn = el("detailOverlay").querySelector(".drawer-head .btn");
+  if (btn) btn.focus();
 }
-function closeDetail() { el("detailOverlay").classList.remove("open"); }
+function closeDetail() {
+  const ov = el("detailOverlay");
+  if (!ov.classList.contains("open")) return;
+  ov.classList.remove("open");
+  if (detailOpener && document.contains(detailOpener)) { try { detailOpener.focus(); } catch (e) {} }
+  detailOpener = null;
+}
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
     const pal = document.getElementById("palOverlay");
