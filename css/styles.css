@@ -1319,6 +1319,28 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 .cr-prev, .cr-resid { font-size: 10.5px; color: var(--text3); line-height: 1.5; margin-top: 3px; }
 .cr-resid { color: var(--orange); }
 
+/* ---------------- model-backend pill + popover ---------------- */
+.llm-pill .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px; vertical-align: baseline; }
+.llm-pill.is-off { border-color: var(--orange); color: var(--text); }
+.llm-pop {
+  position: fixed; top: 48px; right: 12px; z-index: 210;
+  width: min(380px, calc(100vw - 24px));
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, .5);
+  display: none; overflow: hidden;
+}
+.llm-pop.open { display: block; }
+.llm-pop-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  padding: 9px 10px; border-bottom: 1px solid var(--border); font-size: 12px;
+}
+.llm-pop-head span { display: flex; gap: 6px; }
+.llm-pop-body { padding: 8px 10px; font-size: 12px; }
+.llm-pop-foot { padding: 0 10px 10px; }
+.llm-row { display: flex; align-items: baseline; gap: 7px; padding: 3px 0; flex-wrap: wrap; }
+.llm-row .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; flex: none; transform: translateY(-1px); }
+.llm-main { font-size: 12.5px; padding-bottom: 6px; border-bottom: 1px solid var(--border); margin-bottom: 4px; }
+
 /* ---------------- notifications (toasts + history log) ---------------- */
 .notif-box {
   position: fixed; bottom: 16px; right: 16px; z-index: 200;

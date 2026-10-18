@@ -248,5 +248,86 @@ const LLM = (function () {
     return "online · " + name + served;
   }
 
-  return { state, probe, models, chat, available, label };
+  /* -------- topbar status pill: paint + detail popover + boot -------- */
+  function paintPill() {
+    const pill = document.getElementById("llmPill");
+    if (pill) {
+      const dot = !state.probed ? "wait" : state.ready ? "on" : "off";
+      const short = !state.probed ? "checking…" : state.ready
+        ? ("● " + (state.active || "model").replace(/^fox-/, "fox‑"))
+        : "● offline";
+      pill.innerHTML = '<span class="dot ' + dot + '"></span>' + escHtml(short);
+      pill.setAttribute("aria-label", "Model backend: " + label() + ". Activate for details.");
+      pill.classList.toggle("is-off", state.probed && !state.ready);
+    }
+    llmPaintPop();
+  }
+
+  function llmPaintPop() {
+    const body = document.getElementById("llmPopBody");
+    if (!body || !document.getElementById("llmPop").classList.contains("open")) return;
+    const rows = (state.backends || []).map(b => {
+      const host = String(b.url || "").replace(/^https?:\/\//, "").split("/")[0] || b.name;
+      const ms = b.latency_ms != null ? " · " + b.latency_ms + "ms" : "";
+      const n = (b.models && b.models.length) ? " · " + b.models.length + " model" + (b.models.length > 1 ? "s" : "") : "";
+      const why = !b.online && b.error ? ' <span class="muted">(' + escHtml(String(b.error).slice(0, 80)) + ")</span>" : "";
+      return '<div class="llm-row"><span class="dot ' + (b.online ? "on" : "off") + '"></span>' +
+        "<b>" + escHtml(b.name) + "</b>" + '<span class="muted mono small"> ' + escHtml(host) + ms + n + "</span>" + why + "</div>";
+    }).join("");
+    body.innerHTML =
+      '<div class="llm-row llm-main"><span class="dot ' + (!state.probed ? "wait" : state.ready ? "on" : "off") + '"></span><b>' +
+      escHtml(label()) + "</b></div>" +
+      (rows || '<p class="muted small">No backend data yet.</p>') +
+      (state.lastError ? '<div class="muted small" style="margin-top:6px">last error: ' + escHtml(state.lastError) + "</div>" : "") +
+      '<div class="muted small" style="margin-top:6px">default model: <span class="mono">' + escHtml(state.defaultModel) + "</span></div>";
+  }
+
+  function llmPopToggle(force) {
+    let p = document.getElementById("llmPop");
+    if (!p) {
+      p = document.createElement("div");
+      p.id = "llmPop";
+      p.className = "llm-pop";
+      p.setAttribute("role", "dialog");
+      p.setAttribute("aria-label", "Model backend status");
+      p.innerHTML = '<div class="llm-pop-head"><b>Model backend</b>' +
+        '<span><button class="iconbtn" type="button" onclick="LLM.probe(true).then(()=>LLM.paintPill())">↻ retry</button>' +
+        '<button class="iconbtn" type="button" onclick="LLM.infoToggle(false)" aria-label="Close backend status">✕</button></span></div>' +
+        '<div class="llm-pop-body" id="llmPopBody"></div>' +
+        '<div class="llm-pop-foot"><button class="btn" type="button" onclick="LLM.infoToggle(false);switchTab(\'copilot\')">Open Architect Copilot</button></div>';
+      document.body.appendChild(p);
+    }
+    p.classList.toggle("open", force == null ? !p.classList.contains("open") : !!force);
+    const pill = document.getElementById("llmPill");
+    if (pill) pill.setAttribute("aria-expanded", p.classList.contains("open") ? "true" : "false");
+    if (p.classList.contains("open")) llmPaintPop();
+  }
+
+  /* Boot: cheap health probe once at load, then quietly re-check every 2 min.
+     Paint failure is shown, never thrown — the app always works offline. */
+  let pillBooted = false;
+  function bootPill() {
+    if (pillBooted) return;
+    pillBooted = true;
+    probe().then(paintPill).catch(paintPill);
+  }
+
+  setInterval(() => {
+    if (pillBooted && !document.hidden) probe(true).then(paintPill).catch(() => {});
+  }, 120000);
+
+  return { state, probe, models, chat, available, label, paintPill, bootPill, infoToggle: llmPopToggle };
 })();
+
+document.addEventListener("mousedown", function (e) {
+  const p = document.getElementById("llmPop");
+  if (!p || !p.classList.contains("open")) return;
+  if (p.contains(e.target) || (e.target.closest && e.target.closest("#llmPill"))) return;
+  p.classList.remove("open");
+});
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    const p = document.getElementById("llmPop");
+    if (p && p.classList.contains("open")) { p.classList.remove("open"); }
+  }
+});

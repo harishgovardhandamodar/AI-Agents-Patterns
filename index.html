@@ -18,7 +18,8 @@
   <span class="sub mono" id="dataStatus">loading…</span>
   <button class="iconbtn" id="undoBtn" onclick="undoOnce()" title="Undo (Ctrl+Z)" disabled>↶</button>
   <button class="iconbtn" id="redoBtn" onclick="redoOnce()" title="Redo (Ctrl+Shift+Z)" disabled>↷</button>
-  <button class="iconbtn" id="notifBell" onclick="notifLogToggle()" title="Notification history" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
+    <button class="iconbtn llm-pill" id="llmPill" onclick="LLM.infoToggle()" title="Model backend status" aria-haspopup="dialog" aria-expanded="false"><span class="dot wait"></span>checking…</button>
+<button class="iconbtn" id="notifBell" onclick="notifLogToggle()" title="Notification history" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
   <button class="iconbtn" onclick="palOpen()" title="Search everything (Ctrl/⌘ K)">🔍 Search ⌘K</button>
   <button class="iconbtn" onclick="skHelpOpen()" title="Keyboard shortcuts (?)">⌨</button>
   <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme">◐ theme</button>

@@ -458,6 +458,7 @@ async function loadAll() {
     if (typeof initPalette === "function") initPalette();
     if (typeof initShortcuts === "function") initShortcuts();
     if (typeof dashRender === "function") dashRender();
+    if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {

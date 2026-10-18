@@ -121,6 +121,7 @@ function cpSetStatus() {
   if (!LLM.state.probed) { s.innerHTML = '<span class="dot wait"></span>checking model…'; return; }
   if (LLM.state.ready) s.innerHTML = '<span class="dot on"></span>' + escHtml(LLM.label());
   else s.innerHTML = '<span class="dot off"></span>model offline · deterministic fallback';
+  if (typeof LLM.paintPill === "function") { try { LLM.paintPill(); } catch (e) {} }
 }
 async function cpLoadModels() {
   const sel = el("cpModel");
