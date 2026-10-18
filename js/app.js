@@ -124,7 +124,15 @@ function switchTab(tab) {
   });
   document.querySelectorAll(".pane").forEach(p => p.classList.remove("visible"));
   const pane = document.getElementById(tab + "Pane");
-  if (pane) pane.classList.add("visible");
+  if (!pane) {
+    /* Unknown tab target (e.g. stale cached shell): fall back to overview
+       instead of leaving every pane hidden behind a blank app. */
+    if (tab !== "overview" && document.getElementById("overviewPane")) { switchTab("overview"); return; }
+    const ov = document.getElementById("overviewPane");
+    if (ov) ov.classList.add("visible");
+    return;
+  }
+  pane.classList.add("visible");
   if (tabLoaders[tab]) tabLoaders[tab]();
   try { location.hash = tab; } catch (e) {}
 }
