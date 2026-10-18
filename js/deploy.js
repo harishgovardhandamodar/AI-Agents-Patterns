@@ -94,7 +94,7 @@ const dpDefault = () => ({
   hosting: "cloud-managed", team: "small", rollout: "canary", oncall: "business"
 });
 
-const dpState = { step: 0, done: false, a: dpDefault(), err: null, target: null };
+const dpState = { step: 0, done: false, a: dpDefault(), err: null, target: null, ack: {} };
 
 function dpLoad() {
   try {
@@ -105,13 +105,14 @@ function dpLoad() {
     if (typeof j.step === "number") dpState.step = Math.min(Math.max(0, j.step), DP_STEPS.length);
     dpState.done = !!j.done;
     dpState.target = typeof j.target === "number" ? Math.max(0, Math.min(4, j.target)) : null;
+    dpState.ack = (j && j.ack && typeof j.ack === "object") ? j.ack : {};
   } catch (e) { /* ignore corrupt state */ }
 }
 function dpSave() {
-  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target })); } catch (e) {}
+  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack })); } catch (e) {}
 }
 function dpReset() {
-  dpState.step = 0; dpState.done = false; dpState.err = null; dpState.target = null;
+  dpState.step = 0; dpState.done = false; dpState.err = null; dpState.target = null; dpState.ack = {};
   dpState.a = dpDefault(); dpSave(); dpRender();
   showNotif("Deployment plan reset");
 }
@@ -878,5 +879,170 @@ function dpCopyRollout() {
 }
 
 DP_SECTIONS.push({ id: "rollout", title: "Rollout & autonomy path", render: dpSectionRollout });
+
+/* ---------------- section 5: residual risk register (19) ----------------- */
+const SEV_W = { critical: 4, high: 3, medium: 2, low: 1 };
+const LIK_W = { high: 3, medium: 2, low: 1 };
+let dpRiskSrc = "all";   // transient view filter
+
+function dpRisks() {
+  const a = dpState.a, dd = dpDomainData(), out = [];
+  const push = r => { r.sevW = SEV_W[r.sev] || 1; r.likW = LIK_W[r.lik] || 1; r.exposure = r.sevW * r.likW; out.push(r); };
+
+  /* 1 — real scenarios in this domain (what can happen here today) */
+  dd.scens.slice(0, 10).forEach(s => {
+    const p0 = (s.protections || [])[0];
+    push({
+      key: "sc:" + s.id, src: "scenario", ref: s.id, title: s.title,
+      sev: s.severity, lik: s.likelihood,
+      note: p0 ? `${p0.name} — ${p0.mechanism}` : (s.vector || ""),
+      detail: (s.response || []).slice(0, 2)
+    });
+  });
+
+  /* 2 — modeled cascades for this domain (what a failure turns into) */
+  dd.casc
+    .filter(c => c.impact === "critical" || c.impact === "high" || c.cls === "derived" || c.cls === "cascading")
+    .slice(0, 10)
+    .forEach(c => {
+      const prev = ((c.mitigations || {}).prevent || [])[0];
+      push({
+        key: "ca:" + c.id, src: "cascade", ref: c.id, title: c.name,
+        sev: c.impact, lik: c.likelihood,
+        note: c.residual || "",
+        detail: prev ? [prev] : []
+      });
+    });
+
+  /* 3 — gaps this profile introduces (what the intake itself implies) */
+  dpDims().filter(d => d.score < 85).forEach(d => {
+    const f = d.findings.find(x => x.id) || d.findings[0];
+    push({
+      key: "gap:" + d.id, src: "gap", ref: f && f.id, kind: f && f.kind,
+      title: `Control gap — ${d.title} (${d.score})`,
+      sev: d.score < 50 ? "critical" : d.score < 70 ? "high" : "medium",
+      lik: "medium",
+      note: f ? f.t : "",
+      detail: []
+    });
+  });
+  if (dpTarget() > dpCeiling()) {
+    const miss = dpBlocked(dpTarget());
+    push({
+      key: "gap:target", src: "gap", ref: null,
+      title: `Target autonomy L${dpTarget()} is above the entry ceiling L${dpCeiling()}`,
+      sev: "high", lik: "high",
+      note: "Unmet gates: " + miss.join(" · "),
+      detail: []
+    });
+  }
+  const sc = dpScore();
+  if (sc.overall < 70) {
+    push({
+      key: "gap:readiness", src: "gap", ref: null,
+      title: `Readiness ${sc.overall} — ${sc.band[0]}`,
+      sev: sc.overall < 50 ? "critical" : "high", lik: "high",
+      note: "The plan would ship below the bar this app sets for launch.",
+      detail: []
+    });
+  }
+  return out;
+}
+
+function dpRiskList() {
+  const all = dpRisks().sort((x, y) => y.exposure - x.exposure || x.title.localeCompare(y.title));
+  return { all: all, shown: dpRiskSrc === "all" ? all : all.filter(r => r.src === dpRiskSrc) };
+}
+function dpSetRiskSrc(v) { dpRiskSrc = v; dpRender(); }
+function dpAckRisk(key) {
+  if (!dpState.ack) dpState.ack = {};
+  if (dpState.ack[key]) delete dpState.ack[key]; else dpState.ack[key] = 1;
+  dpSave(); dpRender();
+}
+function dpAckAll() {
+  const list = dpRiskList().shown;
+  if (!dpState.ack) dpState.ack = {};
+  const allAcked = list.every(r => dpState.ack[r.key]);
+  list.forEach(r => { if (allAcked) delete dpState.ack[r.key]; else dpState.ack[r.key] = 1; });
+  dpSave(); dpRender();
+  showNotif(allAcked ? "Cleared acknowledgements" : "Acknowledged " + list.length + " risks");
+}
+function dpRiskCsv() {
+  const rows = [["exposure", "severity", "likelihood", "source", "reference", "risk", "note", "acknowledged"]];
+  dpRiskList().all.forEach(r => rows.push([
+    r.exposure, r.sev, r.lik, r.src, r.ref || "", r.title, String(r.note || "").replace(/\s+/g, " ").slice(0, 240),
+    (dpState.ack && dpState.ack[r.key]) ? "yes" : "no"
+  ]));
+  return rows.map(r => r.map(c => '"' + String(c).replace(/"/g, '""') + '"').join(",")).join("\n");
+}
+function dpCopyRisks() {
+  const txt = dpRiskCsv();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt).then(() => showNotif("Register copied as CSV")).catch(() => showNotif("Clipboard blocked"));
+  } else showNotif("Clipboard unavailable");
+}
+function dpDownloadRisks() {
+  const blob = new Blob([dpRiskCsv()], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "residual-risk-register.csv"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function dpSectionRisks() {
+  const { all, shown } = dpRiskList();
+  const ack = all.filter(r => dpState.ack && dpState.ack[r.key]).length;
+  const open = all.length - ack;
+  const critical = all.filter(r => r.sev === "critical" && !(dpState.ack && dpState.ack[r.key])).length;
+  const srcCount = k => all.filter(r => r.src === k).length;
+  const tag = { scenario: "scenario", cascade: "cascade", gap: "intake gap" };
+
+  const filters = [["all", "All " + all.length], ["scenario", "Scenarios " + srcCount("scenario")],
+    ["cascade", "Cascades " + srcCount("cascade")], ["gap", "Intake gaps " + srcCount("gap")]]
+    .map(([k, label]) => `<button class="dp-chip${dpRiskSrc === k ? " on" : ""}" onclick="dpSetRiskSrc('${k}')">${escHtml(label)}</button>`)
+    .join("");
+
+  const rows = shown.map((r, i) => {
+    const isAck = !!(dpState.ack && dpState.ack[r.key]);
+    const citeKind = r.src === "scenario" ? "scenario"
+      : r.src === "cascade" ? "cascade"
+      : (r.kind === "scenario" || r.kind === "cascade") ? r.kind : "pattern";
+    const cite = r.ref
+      ? `<button class="dp-cite" onclick="dpOpenCite('${escHtml(citeKind)}','${escHtml(r.ref)}')">${escHtml(r.ref)}</button>`
+      : "";
+    return `<li class="dp-risk${isAck ? " ack" : ""}">
+      <div class="dp-riskex ${r.exposure >= 9 ? "hot" : r.exposure >= 6 ? "warm" : ""}"><b>${r.exposure}</b><span>${escHtml(r.sev)} · ${escHtml(r.lik)}</span></div>
+      <div class="dp-riskbody">
+        <div class="dp-riskhead">
+          <b>${escHtml(r.title)}</b>
+          <span class="dp-risksrc">${escHtml(tag[r.src])}${cite ? " · " + cite : ""}</span>
+        </div>
+        ${r.note ? `<p class="dp-risknote">${escHtml(r.note)}</p>` : ""}
+        ${r.detail && r.detail.length ? `<ul class="dp-riskdetail">${r.detail.map(d => `<li>${escHtml(d)}</li>`).join("")}</ul>` : ""}
+      </div>
+      <button class="dp-ack${isAck ? " on" : ""}" onclick="dpAckRisk('${escAttr(r.key)}')" aria-pressed="${isAck}" title="Acknowledge this risk">${isAck ? "✓ ack" : "ack"}</button>
+    </li>`;
+  }).join("");
+
+  return `
+    <div class="dp-riskhead-bar">
+      <div class="dp-riskstats">
+        <span><b>${all.length}</b> risks</span>
+        <span class="${open ? "warn" : ""}"><b>${open}</b> open</span>
+        <span><b>${ack}</b> acknowledged</span>
+        <span class="${critical ? "crit" : ""}"><b>${critical}</b> open critical</span>
+      </div>
+      <div class="dp-chiprow">${filters}</div>
+    </div>
+    <p class="muted small">Residual exposure <i>after</i> the controls in this plan: real scenarios for this domain, modeled cascades, and the gaps this intake still leaves. Acknowledgements persist in this browser.</p>
+    <div class="dp-risktools">
+      <button class="iconbtn" onclick="dpAckAll()">Acknowledge shown</button>
+      <button class="iconbtn" onclick="dpCopyRisks()">Copy CSV</button>
+      <button class="iconbtn" onclick="dpDownloadRisks()">Download .csv</button>
+    </div>
+    ${rows ? `<ol class="dp-risks">${rows}</ol>` : `<div class="muted small">No risks under this filter.</div>`}`;
+}
+
+DP_SECTIONS.push({ id: "risks", title: "Residual risk register", render: dpSectionRisks });
 
 tabLoaders.deploy = function () { initDeploy(); };
