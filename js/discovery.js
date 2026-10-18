@@ -339,7 +339,9 @@ function paintDiscControls() {
     `<label class="filter-item" style="margin-top:10px"><input type="checkbox" ${cfg.forget ? "checked" : ""} onchange="discSet('forget',this.checked)"> Forgetting on <span class="muted small">discard losers each round</span></label>` +
     `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" style="flex:1" onclick="discRunAll(false)">▶ Run discovery</button></div>` +
     `<div style="margin-top:6px"><button class="btn sm ghost" style="width:100%" onclick="discRunAll(true)">Run + compare (forgetting off)</button></div>` +
-    `<p class="muted small" style="margin:10px 0 0">Single-run, deterministic, local. Drafts never enter the catalog on their own — export for curator review.</p>`;
+    `<p class="muted small" style="margin:10px 0 0">Single-run, deterministic, local. Drafts never enter the catalog on their own — export for curator review.</p>` +
+    `<p class="muted small" style="margin:8px 0 0" title="Support fingerprint: proves which app copy this browser runs">` +
+    (document.querySelectorAll(".app-tab").length + " tabs · storage " + (typeof storeOk === "function" && storeOk() ? "ok" : "BLOCKED — work will not save")) + `</p>`;
 }
 function discSet(k, v) {
   if (k === "rounds") v = Math.min(12, Math.max(1, v || 4));

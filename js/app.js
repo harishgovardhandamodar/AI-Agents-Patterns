@@ -420,6 +420,18 @@ function storeSet(key, val) {
 function storeDel(key) {
   try { localStorage.removeItem(key); } catch (e) {}
 }
+/* Writability probe for support: BLOCKED means saves, flags and runs will
+   not persist in this browser (private mode, disabled/blocked storage). */
+let storeOkCache = null;
+function storeOk() {
+  if (storeOkCache !== null) return storeOkCache;
+  try {
+    localStorage.setItem("aap.probe", "1");
+    localStorage.removeItem("aap.probe");
+    storeOkCache = true;
+  } catch (e) { storeOkCache = false; }
+  return storeOkCache;
+}
 
 /* ---------------- onboarding: first-run welcome tour --------------------
    Shown once (flag in localStorage, sessionStorage fallback, in-memory last
