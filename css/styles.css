@@ -920,3 +920,26 @@ td.heat-0 { color: var(--red); }
 }
 .dp-ack:hover { color: var(--text); border-color: var(--text3); }
 .dp-ack.on { border-color: var(--green); color: var(--green); background: color-mix(in srgb, var(--green) 14%, var(--bg3)); }
+
+/* ---------- ADR generator ---------- */
+.dp-adrhead { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.dp-adrstatus { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.dp-adr {
+  background: var(--bg2); border: 1px solid var(--border); border-left: 3px solid var(--purple);
+  border-radius: 10px; padding: 15px 18px; line-height: 1.65; font-size: 12.5px;
+}
+.dp-adr h4 {
+  margin: 17px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text2); border-top: 1px solid var(--border); padding-top: 15px;
+}
+.dp-adr h4:first-child {
+  font-size: 16px; text-transform: none; letter-spacing: 0; color: var(--text);
+  border-top: 0; padding-top: 0; margin-top: 0; margin-bottom: 8px;
+}
+.dp-adr p:first-of-type + ul { margin-top: 3px; }
+.dp-adr p { margin: 7px 0; }
+.dp-adr ul { margin: 6px 0; padding-left: 20px; }
+.dp-adr li { margin: 3px 0; }
+.dp-adr code { background: var(--bg3); padding: 1px 5px; border-radius: 4px; font-family: var(--mono); font-size: 11.5px; }
+.dp-adr pre { background: var(--bg); border: 1px solid var(--border); border-radius: 7px; padding: 11px 13px; overflow: auto; font-family: var(--mono); font-size: 11.5px; line-height: 1.5; max-height: 380px; }
+.dp-adr strong { color: var(--text); }

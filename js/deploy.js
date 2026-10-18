@@ -94,7 +94,7 @@ const dpDefault = () => ({
   hosting: "cloud-managed", team: "small", rollout: "canary", oncall: "business"
 });
 
-const dpState = { step: 0, done: false, a: dpDefault(), err: null, target: null, ack: {} };
+const dpState = { step: 0, done: false, a: dpDefault(), err: null, target: null, ack: {}, adrStatus: "proposed" };
 
 function dpLoad() {
   try {
@@ -106,13 +106,15 @@ function dpLoad() {
     dpState.done = !!j.done;
     dpState.target = typeof j.target === "number" ? Math.max(0, Math.min(4, j.target)) : null;
     dpState.ack = (j && j.ack && typeof j.ack === "object") ? j.ack : {};
+    if (j && DP_ADR_STATUS.indexOf(j.adrStatus) >= 0) dpState.adrStatus = j.adrStatus;
   } catch (e) { /* ignore corrupt state */ }
 }
 function dpSave() {
-  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack })); } catch (e) {}
+  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus })); } catch (e) {}
 }
 function dpReset() {
   dpState.step = 0; dpState.done = false; dpState.err = null; dpState.target = null; dpState.ack = {};
+  dpState.adrStatus = "proposed";
   dpState.a = dpDefault(); dpSave(); dpRender();
   showNotif("Deployment plan reset");
 }
@@ -1044,5 +1046,188 @@ function dpSectionRisks() {
 }
 
 DP_SECTIONS.push({ id: "risks", title: "Residual risk register", render: dpSectionRisks });
+
+/* ---------------- section 6: ADR generator (20) -------------------------- */
+const DP_ADR_STATUS = ["draft", "proposed", "accepted", "superseded"];
+
+function dpToday() { try { return new Date().toISOString().slice(0, 10); } catch (e) { return "—"; } }
+
+function dpAdrStatus() {
+  const s = dpState.adrStatus;
+  return DP_ADR_STATUS.indexOf(s) >= 0 ? s : "proposed";
+}
+function dpSetAdrStatus(v) { dpState.adrStatus = v; dpSave(); dpRender(); }
+
+function dpAdrMarkdown() {
+  const a = dpState.a, sc = dpScore(), stack = dpStack(), cfg = dpConfig();
+  const cur = a.autonomy, tgt = dpTarget(), ceil = dpCeiling();
+  const auto = DP_AUTONOMY[cur] || DP_AUTONOMY[0];
+  const dd = dpDomainData();
+  const { all: risks } = dpRiskList();
+  const ackOf = r => (dpState.ack && dpState.ack[r.key]) ? "acknowledged" : "open";
+  const P = (DATA.patterns && DATA.patterns.patterns || []).length;
+  const S = (DATA.scenarios && DATA.scenarios.scenarios || []).length;
+  const C = (DATA.cascades && DATA.cascades.cascades || []).length;
+  const patIds = uniq(stack.map(x => x.pat).filter(Boolean));
+  const scenIds = uniq(risks.filter(r => r.src === "scenario").map(r => r.ref).filter(Boolean));
+  const casIds = uniq(risks.filter(r => r.src === "cascade").map(r => r.ref).filter(Boolean));
+  const regimes = (a.compliance || []).map(c => dpLabel("compliance", c));
+  const missing = tgt > ceil ? dpBlocked(tgt) : [];
+  const byLayer = DP_LAYERS.map(([id, label]) => {
+    const items = stack.filter(x => x.layer === id);
+    return items.length ? "- **" + label + ":** " + items.map(x => x.name).join("; ") : "";
+  }).filter(Boolean).join("\n");
+  const topRisks = risks.slice(0, 3).map(r =>
+    "- " + r.exposure + " · " + r.sev + "/" + r.lik + " · " + r.title + " — " + ackOf(r) + (r.ref ? " (`" + r.ref + "`)" : "")).join("\n");
+  const badDims = sc.dims.filter(d => d.score < 90).map(d => "- " + d.title + " scored " + d.score + " (" + dpGrade(d.score) + "): "
+    + (d.findings.find(f => f.id) || d.findings[0] || {}).t).join("\n") || "- None: every dimension clears 90.";
+  const stages = dpRolloutPlan().map(s => "- **Stage " + s.n + " · " + s.name + "** (" + s.days + "d): " + s.scope + " — exit: " + s.exit).join("\n");
+  const drivers = [
+    a.criticality === "critical" || a.criticality === "high"
+      ? "A wrong action at this criticality is not reversible by apology (" + a.criticality + " criticality)."
+      : "Mistakes cost time rather than safety (criticality: " + a.criticality + ").",
+    "Blast radius is " + a.blast + "; one bad action must not reach further than that.",
+    a.approvalGate
+      ? "Irreversible effects are held for human approval — the acting agent can never self-authorise."
+      : "No approval gate is configured, so controls must be preventive rather than detective.",
+    "Data ceiling is " + a.sensitivity + " with classes: " + ((a.dataClasses || []).join(", ") || "none declared") + ".",
+    regimes.length ? "Compliance regimes in scope: " + regimes.join(", ") + " — every control needs evidence." :
+      "No compliance regime declared; \"compliant\" is currently undefined for this system.",
+    "Team of " + dpLabel("team", a.team) + " with " + dpLabel("oncall", a.oncall) + " on-call shapes how fast an incident can be caught."
+  ].map(d => "- " + d).join("\n");
+
+  return [
+    "# ADR-001: " + (a.system || "Untitled system") + " — L" + cur + " autonomy in " + dpLabel("domain", a.domain),
+    "",
+    "- **Status:** " + dpAdrStatus().charAt(0).toUpperCase() + dpAdrStatus().slice(1),
+    "- **Date:** " + dpToday(),
+    "- **Deciders:** " + dpLabel("team", a.team) + " team · on-call: " + dpLabel("oncall", a.oncall),
+    "- **Grounded on:** this catalog (" + P + " patterns · " + S + " scenarios · " + C + " cascades)",
+    "",
+    "## Context",
+    "",
+    "`" + (a.system || "this system") + "` runs in the **" + dpLabel("domain", a.domain) + "** domain at **" +
+      dpLabel("criticality", a.criticality) + "** criticality, handling **" + dpLabel("volume", a.volume) +
+      "** throughput at **" + auto.label + "** with a **" + a.blast + "** blast radius.",
+    "",
+    "It may perform: `" + ((a.actions || []).join(", ") || "none") + "`. Data ceiling is `" + a.sensitivity +
+      "` covering `" + ((a.dataClasses || []).join(", ") || "no declared classes") + "`; hosting `" +
+      dpLabel("hosting", a.hosting) + "`, rollout `" + dpLabel("rollout", a.rollout) + "`.",
+    "",
+    "Readiness for this profile is **" + sc.overall + "/100 (" + sc.band[0] + ")**. The catalog holds " +
+      dd.scens.length + " scenarios and " + dd.casc.length + " cascades for " + dd.dom + ".",
+    "",
+    "## Decision drivers",
+    "",
+    drivers,
+    "",
+    "## Considered options",
+    "",
+    "**Option A — Deploy at L" + cur + " with the guardrail stack below** *(chosen)*",
+    "",
+    "- Keeps autonomy inside the entry ceiling (L" + ceil + "); every gate is met by design.",
+    "- Irreversible effects: " + (a.approvalGate ? "held for approval" : "unattended — accepted as a risk (see residual register)") + ".",
+    "",
+    "**Option B — Raise to L" + tgt + " immediately**",
+    "",
+    (missing.length
+      ? "- Blocked: " + missing.length + " entry gate(s) unmet (" + missing.join("; ") + ")."
+      : "- Gates are met; still rejected because it buys no capability this quarter and removes the human stop on a " + a.blast + " blast radius."),
+    "",
+    "**Option C — Stay manual (L0) until controls mature**",
+    "",
+    "- Safest, but forfeits the leverage the system exists to provide; " + sc.overall + "/100 already justifies L" + cur + ".",
+    "",
+    "## Decision",
+    "",
+    "Deploy **" + (a.system || "the system") + "** at **" + auto.label + "**, rolled out **" + dpLabel("rollout", a.rollout) +
+      "**, with these controls enforced in the runtime rather than in the prompt:",
+    "",
+    byLayer,
+    "",
+    "## Guardrail configuration",
+    "",
+    "```json\n" + JSON.stringify(cfg, null, 2) + "\n```",
+    "",
+    "## Consequences",
+    "",
+    "### Positive",
+    ...stack.slice(0, 5).map(x => "- " + x.name + " — " + x.why),
+    "",
+    "### Negative / accepted trade-offs",
+    badDims,
+    "",
+    "### Residual risks",
+    topRisks,
+    "",
+    "## Rollout",
+    "",
+    stages,
+    "",
+    "## Verification",
+    "",
+    "- Re-run the readiness scorecard after each rollout stage; a drop below the gate threshold stops the roll.",
+    (dd.systemic.length
+      ? "- Execute " + dd.systemic.length + " modeled derived/cascading chains (" + dd.dom + ") as failure drills before widening."
+      : "- Author derived/cascading chains for " + dd.dom + "; none are modeled today, so propagation is untested."),
+    "- Acknowledged risks in the register are decisions, not fixes — revisit them at each stage exit.",
+    "",
+    "## Related catalog items",
+    "",
+    "- **Patterns:** " + (patIds.length ? patIds.map(x => "`" + x + "`").join(", ") : "—"),
+    "- **Scenarios:** " + (scenIds.length ? scenIds.map(x => "`" + x + "`").join(", ") : "—"),
+    "- **Cascades:** " + (casIds.length ? casIds.map(x => "`" + x + "`").join(", ") : "—"),
+    "",
+    "## Compliance",
+    "",
+    regimes.length ? regimes.map(r => "- **" + r + "** — evidence: hash-chained audit trail, approval records, rollout gates.").join("\n")
+      : "- None declared. Decide what \"compliant\" means before this ADR is accepted.",
+    ""
+  ].join("\n");
+}
+
+function dpSectionAdr() {
+  const md = dpAdrMarkdown();
+  return `
+    <div class="dp-adrhead">
+      <div class="dp-adrstatus">
+        <span class="muted small">Status</span>
+        ${DP_ADR_STATUS.map(s => `<button class="dp-chip${dpAdrStatus() === s ? " on" : ""}" onclick="dpSetAdrStatus('${s}')">${s}</button>`).join("")}
+      </div>
+      <div class="dp-actions-row" style="margin-top:0">
+        <button class="iconbtn" onclick="dpCopyAdr()">Copy Markdown</button>
+        <button class="iconbtn" onclick="dpDownloadAdr()">Download .md</button>
+        <button class="iconbtn" onclick="dpAdrToCopilot()">Refine with Copilot</button>
+      </div>
+    </div>
+    <div class="dp-adr">${typeof cpMd === "function" ? cpMd(md) : "<pre>" + escHtml(md) + "</pre>"}</div>
+    <p class="muted small">${md.split("\n").length} lines · generated from the intake, scorecard, stack, rollout plan and register above. Regenerated every time any of them changes.</p>`;
+}
+
+function dpCopyAdr() {
+  const md = dpAdrMarkdown();
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(md).then(() => showNotif("ADR copied")).catch(() => showNotif("Clipboard blocked"));
+  } else showNotif("Clipboard unavailable");
+}
+function dpDownloadAdr() {
+  const slug = String(dpState.a.system || "adr").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const blob = new Blob([dpAdrMarkdown()], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "adr-001-" + slug + ".md"; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+function dpAdrToCopilot() {
+  /* Keep the message bounded — the copilot re-grounds on its own catalog
+     context, so a truncated ADR plus that context beats a context-stuffing
+     paste that pushes the prompt past what the local model can hold. */
+  let md = dpAdrMarkdown();
+  if (md.length > 7000) md = md.slice(0, 7000) + "\n\n_(truncated — full record is available via Copy Markdown)_";
+  const q = "Review this architecture decision record and challenge it. Focus on the weakest assumption and on what would have to be true for Option B to become the right call. Keep it short.\n\n" + md;
+  if (typeof copilotAsk === "function") copilotAsk(q); else showNotif("Copilot unavailable");
+}
+
+DP_SECTIONS.push({ id: "adr", title: "Architecture Decision Record", render: dpSectionAdr });
 
 tabLoaders.deploy = function () { initDeploy(); };
