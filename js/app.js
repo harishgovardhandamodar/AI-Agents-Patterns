@@ -223,16 +223,16 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeDetail(
 async function loadAll() {
   const get = async p => (await fetch(p)).json();
   try {
-    const [pats, scns, trcs, cass] = await Promise.all([
-      get("data/patterns.json"), get("data/scenarios.json"), get("data/traces.json"), get("data/cascades.json")
+    const [pats, scns, trcs, cass, cova] = await Promise.all([
+      get("data/patterns.json"), get("data/scenarios.json"), get("data/traces.json"), get("data/cascades.json"), get("data/coverage.json").catch(()=>null)
     ]);
-    DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: cass };
+    DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: cass, coverage: cova };
     el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces · ${cass.cascades.length} cascades`;
     el("patBadge").textContent = pats.patterns.length;
     el("scnBadge").textContent = scns.scenarios.length;
     el("traceBadge").textContent = trcs.traces.length;
     if (el("casBadge")) el("casBadge").textContent = cass.cascades.length;
-    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot(); initCascades();
+    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot(); initCascades(); if (typeof initCoverage==="function") initCoverage();
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {
