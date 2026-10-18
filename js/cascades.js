@@ -540,6 +540,7 @@ function openCascade(id) {
     casRefChips(c) +
     '<div class="d-actions" style="margin-top:14px">' +
     (typeof bpRefsBtnHtml === "function" && (c.patternRefs || []).length ? bpRefsBtnHtml(c.patternRefs, "from this cascade") : "") +
+    (typeof pinBtnHtml === "function" ? pinBtnHtml("cascades", c.id) : "") +
     '<button class="btn primary" onclick="askCopilotAbout(\'cascade: ' + escHtml(c.name) + '\')">🤖 Ask the Copilot about this</button></div>';
   openDetail(c.name, c.cls + " cascade", html);
 }

@@ -1350,6 +1350,18 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 }
 .fchip button:hover { color: #fff; background: var(--accent); }
 
+/* working-set pins (Overview) */
+.dash-pin {
+  border: 1px dashed var(--border); border-radius: 10px;
+  padding: 10px 14px; margin-bottom: 18px; font-size: 12px;
+}
+.dash-pin.dim { opacity: .75; }
+.dash-pin-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
+.pin-row { display: flex; align-items: center; gap: 9px; padding: 3px 0; }
+.pin-row a { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pin-x { margin-left: auto; flex: none; }
+.pin-btn.on { border-color: var(--accent); color: var(--accent); }
+
 /* cards-vs-list segmented control (patterns, scenarios) */
 .view-seg { display: inline-flex; border: 1px solid var(--border); border-radius: 7px; overflow: hidden; flex: none; }
 .view-seg button {

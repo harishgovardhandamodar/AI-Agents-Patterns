@@ -86,6 +86,7 @@ function dashRender() {
   root.innerHTML =
     `<div class="dash-next"><span class="dash-next-ico">➡</span><div><b>Next:</b> ${escHtml(nx.t)} <button class="btn sm accent" onclick="switchTab('${nx.tab}')">${escHtml(nx.cta)}</button></div></div>` +
     `<div class="dash-grid">${dpCard}${bpCard}${cpCard}${glCard}</div>` +
+    (typeof pinPanelHtml === "function" ? pinPanelHtml() : "") +
     `<div class="dash-export${anyWork ? "" : " dim"}">
       <b>Export architect report</b>
       <span class="muted small">Deployment plan + blueprint + threat model + copilot consult in one document</span>
@@ -98,3 +99,115 @@ function dashRender() {
 }
 
 tabLoaders.overview = function () { dashRender(); };
+
+/* ---------------- pinned working set --------------------
+   Pin patterns / scenarios / cascades from any drawer into one cross-tab
+   working set on the Overview, exportable as Markdown. */
+const PIN_STORE = "aap.pins.v1";
+const pinState = { patterns: [], scenarios: [], cascades: [] };
+
+function pinLoad() {
+  try {
+    const j = JSON.parse(localStorage.getItem(PIN_STORE) || "{}");
+    ["patterns", "scenarios", "cascades"].forEach(k => {
+      if (Array.isArray(j[k])) pinState[k] = j[k].filter(x => typeof x === "string").slice(0, 60);
+    });
+  } catch (e) {}
+}
+function pinSave() {
+  try { localStorage.setItem(PIN_STORE, JSON.stringify(pinState)); } catch (e) {}
+}
+function pinHas(kind, id) { return (pinState[kind] || []).indexOf(id) >= 0; }
+
+function pinItem(kind, id) {
+  try {
+    if (kind === "patterns") {
+      const p = (DATA.patterns.patterns || []).find(x => x.id === id);
+      return p ? { name: p.name, open: "openPattern" } : null;
+    }
+    if (kind === "scenarios") {
+      const s = (DATA.scenarios.scenarios || []).find(x => x.id === id);
+      return s ? { name: s.title, open: "openScenario" } : null;
+    }
+    if (kind === "cascades") {
+      const c = (DATA.cascades.cascades || []).find(x => x.id === id);
+      return c ? { name: c.name, open: "openCascade" } : null;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function pinToggle(kind, id, btn) {
+  const arr = pinState[kind];
+  if (!arr) return;
+  const i = arr.indexOf(id);
+  if (i >= 0) arr.splice(i, 1); else arr.push(id);
+  pinSave();
+  const pinned = i < 0;
+  document.querySelectorAll(`[data-pin="${kind}:${id}"]`).forEach(b => {
+    b.innerHTML = pinned ? "★ Pinned" : "☆ Pin to working set";
+    b.classList.toggle("on", pinned);
+    b.setAttribute("aria-pressed", pinned ? "true" : "false");
+  });
+  if (typeof dashRender === "function" && currentTab === "overview") dashRender();
+  else if (btn) showNotif((pinned ? "Pinned — " : "Unpinned — ") + ((pinItem(kind, id) || {}).name || id));
+}
+
+function pinBtnHtml(kind, id) {
+  if (!pinState[kind]) return "";
+  const pinned = pinHas(kind, id);
+  return `<button class="btn sm pin-btn${pinned ? " on" : ""}" data-pin="${kind}:${id}" aria-pressed="${pinned ? "true" : "false"}" ` +
+    `onclick="pinToggle('${kind}','${escJs(id)}',this)" title="Keep this in your Overview working set">${pinned ? "★ Pinned" : "☆ Pin to working set"}</button>`;
+}
+
+function pinCount() { return pinState.patterns.length + pinState.scenarios.length + pinState.cascades.length; }
+
+function pinPanelHtml() {
+  const n = pinCount();
+  if (!n) return `<div class="dash-pin dim"><b>📌 Working set</b> <span class="muted small">Pin patterns, scenarios and cascades from any drawer — they collect here for review and export.</span></div>`;
+  const group = (kind, label, chipCls) => pinState[kind].map(id => {
+    const it = pinItem(kind, id);
+    if (!it) return "";
+    return `<div class="pin-row"><span class="chip ${chipCls}">${label}</span>` +
+      `<a href="#" onclick="${it.open}('${escJs(id)}');return false;">${escHtml(it.name)}</a>` +
+      `<button class="btn sm ghost pin-x" onclick="pinToggle('${kind}','${escJs(id)}')" aria-label="Unpin ${escHtml(it.name)}">×</button></div>`;
+  }).join("");
+  return `<div class="dash-pin"><div class="dash-pin-head"><b>📌 Working set</b> <span class="muted small">${n} pinned</span>
+    <span style="flex:1"></span>
+    <button class="btn sm ghost" onclick="pinExport()">⬇ Export</button>
+    <button class="btn sm ghost" onclick="pinClear()">Clear</button></div>` +
+    group("patterns", "pattern", "") + group("scenarios", "scenario", "risk") + group("cascades", "cascade", "ok") + `</div>`;
+}
+
+function pinExport() {
+  const lines = ["# Working set", "", "_Pinned from the AI Agent Patterns catalog._", ""];
+  const group = (kind, label) => {
+    if (!pinState[kind].length) return;
+    lines.push("## " + label);
+    pinState[kind].forEach(id => {
+      const it = pinItem(kind, id);
+      lines.push("- " + (it ? it.name : id) + " `" + id + "`");
+    });
+    lines.push("");
+  };
+  group("patterns", "Patterns"); group("scenarios", "Scenarios"); group("cascades", "Cascades");
+  const md = lines.join("\n");
+  if (navigator.clipboard) navigator.clipboard.writeText(md).then(() => showNotif("Working set copied as Markdown")).catch(() => showNotif("Clipboard blocked", { kind: "warn" }));
+  else showNotif("Clipboard unavailable", { kind: "warn" });
+}
+
+function pinClear() {
+  if (!pinCount()) return;
+  const snap = JSON.parse(JSON.stringify(pinState));
+  pinState.patterns = []; pinState.scenarios = []; pinState.cascades = [];
+  pinSave();
+  if (typeof dashRender === "function" && currentTab === "overview") dashRender();
+  undoPush("clear working set", () => {
+    pinState.patterns = snap.patterns.slice(); pinState.scenarios = snap.scenarios.slice(); pinState.cascades = snap.cascades.slice();
+    pinSave();
+    if (typeof dashRender === "function" && currentTab === "overview") dashRender();
+  });
+  showNotif("Working set cleared", { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
+}
+
+pinLoad();
