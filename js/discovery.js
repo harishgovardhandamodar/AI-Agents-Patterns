@@ -202,6 +202,7 @@ function discRun(cfg) {
   const history = [];
   let winners = [], forgotten = 0, rounds = [];
   let seeds = discSeeds(cfg.domains, rng, cfg.perRound);
+  if (!seeds.length) return { cfg: Object.assign({}, cfg), winners: [], rounds: [], forgotten: 0, at: Date.now(), empty: true };
   for (let r = 0; r < cfg.rounds; r++) {
     const cands = seeds.map(s => discMake(s.domain, s.cls, s.vector, s.anchors, s.n));
     const refs = cfg.forget ? base.concat(winners.map(w => new Set(w.kw))) : base.concat(history.map(h => new Set(h.kw)));
@@ -351,15 +352,29 @@ function discSet(k, v) {
 
 function initDiscovery() {
   if (!el("discMain")) return;
-  discLoad();
-  discRender();
+  try {
+    discLoad();
+    discRender();
+  } catch (e) {
+    console.warn("discovery init failed", e);
+    el("discMain").innerHTML = emptyState("🧪", "Discovery Lab could not start",
+      "Something went wrong while loading (" + escHtml(String(e && e.message || e)).slice(0, 140) + "). Your catalog data is unaffected — reloading the page usually clears it.",
+      "Retry", "initDiscovery()");
+  }
 }
 
 let discAutoRan = false;
 tabLoaders.discovery = function () {
   if (!el("discMain")) return;
-  /* First visit with no saved run: run once so the tab opens alive instead
-     of an empty state. Deterministic, local, <1s. */
-  if (!discAutoRan && !discState.run) { discAutoRan = true; discRunAll(false, true); return; }
-  discRender();
+  try {
+    /* First visit with no saved run: run once so the tab opens alive instead
+       of an empty state. Deterministic, local, <1s. */
+    if (!discAutoRan && !discState.run) { discAutoRan = true; discRunAll(false, true); return; }
+    discRender();
+  } catch (e) {
+    console.warn("discovery render failed", e);
+    el("discMain").innerHTML = emptyState("🧪", "Discovery Lab hit a snag",
+      "Something went wrong while rendering (" + escHtml(String(e && e.message || e)).slice(0, 140) + "). Your catalog data is unaffected.",
+      "Retry", "discRender()");
+  }
 };
