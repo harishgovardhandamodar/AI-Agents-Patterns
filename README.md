@@ -93,7 +93,7 @@ Paste a request such as:
 7. **Mock run with data — a live replay** — the attack path (blocked) and the legitimate path (approved) played back through the same player as the Live View: control-flow highlighting, step tracker, gauges and streaming event log, driven by a **Play / step / back / reset** control bar. Outcome metrics are shown alongside.
 8. **Rollout plan** — instrument → shadow → ramp → continuous red-teaming, with success criteria.
 
-A **seeded example** (the corporate-card scenario above) ships in the collection so the flow is visible on first load. Nine one-click example requests are provided: card spend, prod-access coding agent, auto-emailing support, clinical triage, autonomous trading — plus a finance agent swarm, self-tuning spend controls, a clinical agent swarm, and a self-learning triage agent.
+A **seeded example** (the corporate-card scenario above) ships in the collection so the flow is visible on first load. Twelve one-click example requests are provided: card spend, prod-access coding agent, auto-emailing support, clinical triage, autonomous trading, finance and clinical agent swarms, self-tuning spend controls, self-learning triage, drug discovery, novelty-check research, and risk-landscape monitoring.
 
 ---
 

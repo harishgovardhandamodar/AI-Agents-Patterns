@@ -85,6 +85,9 @@ function showGuardIntro() {
         <span class="g-example" onclick="fillExample(6)">🔁 self-tuning spend controls</span>
         <span class="g-example" onclick="fillExample(7)">🏥 clinical agent swarm</span>
         <span class="g-example" onclick="fillExample(8)">🧠 self-learning triage agent</span>
+        <span class="g-example" onclick="fillExample(9)">💊 drug-discovery agent</span>
+        <span class="g-example" onclick="fillExample(10)">🔬 novelty-check research</span>
+        <span class="g-example" onclick="fillExample(11)">🗺 risk-landscape monitor</span>
       </div>
     </div>
     <div class="g-sec">
@@ -108,7 +111,10 @@ const EXAMPLES = [
   "A swarm of finance sub-agents that split work across subsidiaries: one reconciles each invoice, one issues each refund payment, one chases approvals — all delegating to each other automatically. How do I stop runaway delegation, duplicate payments and approval shopping?",
   "A finance assistant that must learn from past approvals and automatically tunes its own spend thresholds and vendor allowlist over time. How do I keep its self-improvement from silently loosening the controls?",
   "A swarm of clinical sub-agents — triage, scheduling and pharmacy — that hands each patient off between steps and escalates without human supervision. How do I keep handoffs safe and make sure urgent cases still reach a human?",
-  "A clinical documentation agent with long-term memory of physician edits that rewrites its own triage prompts to close cases faster, operating automatically between reviews. How do I stop it from gaming its metrics and hiding urgent patient referrals?"
+  "A clinical documentation agent with long-term memory of physician edits that rewrites its own triage prompts to close cases faster, operating automatically between reviews. How do I stop it from gaming its metrics and hiding urgent patient referrals?",
+  "An AI agent for designing new drugs that searches the web for prior art, reads research papers, proposes novel compounds, and places each synthesis order with external vendors. What guardrails keep bad compounds, leaked IP, and runaway orders in check?",
+  "A novelty-check agent that certifies a result as novel before we file a patent: it searches the web and preprint servers, combs citation records and internal reports, must remember every search so repeat checks are cheap, then writes the disclosure. How do I stop it from leaking the invention, caching a poisoned verdict, or hallucinating prior art?",
+  "A risk-landscape agent that continuously watches and analyzes markets, vendors and threat feeds from thousands of sources across the web, then briefs the board with a ranked risk register. How do I keep its monitoring honest and its briefings traceable?"
 ];
 function fillExample(i) { el("guardInput").value = EXAMPLES[i]; el("guardInput").focus(); }
 function submitGuard() {
