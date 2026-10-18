@@ -87,6 +87,8 @@ button { font: inherit; color: inherit; }
   padding: 4px 10px 0;
   background: var(--bg2);
   border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .app-tab {
   display: flex; align-items: center; gap: 6px;
