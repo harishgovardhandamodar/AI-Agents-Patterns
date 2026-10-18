@@ -579,4 +579,151 @@ function dpSectionScore() {
 
 DP_SECTIONS.push({ id: "scorecard", title: "Readiness scorecard", render: dpSectionScore });
 
+/* ---------------- section 3: recommended stack + guardrail config (17) ---- */
+const DP_LAYERS = [
+  ["identity", "Identity"], ["context", "Context"], ["policy", "Policy"],
+  ["process", "Human process"], ["infrastructure", "Infrastructure"],
+  ["data", "Data"], ["dlp", "Egress"], ["observability", "Observability"]
+];
+
+function dpStack() {
+  const a = dpState.a, dd = dpDomainData();
+  const rank = DP_BLAST.indexOf(a.blast);
+  const act = a.actions || [];
+  const irrev = ["transact", "delete", "publish"].filter(x => act.indexOf(x) >= 0);
+  const heavy = (a.dataClasses || []).filter(c => ["pii", "health", "credentials", "financial"].indexOf(c) >= 0);
+  const sensitive = ["confidential", "restricted"].indexOf(a.sensitivity) >= 0;
+  const R = [];
+  const add = (layer, name, pat, why) => R.push({ layer: layer, name: name, pat: pat, why: why });
+
+  add("identity", "Agent identity — scoped, short-lived credentials", "agent-identity",
+    "A named principal is what every audit line and policy rule hangs off.");
+  if (rank >= 2 || sensitive) add("identity", "Least-privilege scoping by task", "least-privilege",
+    `Blast radius is ${a.blast}: grant per task, never standing.`);
+
+  if (a.autonomy >= 1 || !sensitive) add("context", "Injection shield on untrusted content", "input-sanitization",
+    "Anything retrieved (web, mail, tickets) is data, never instructions.");
+
+  add("policy", "Deterministic policy engine at the tool gateway", "policy-engine",
+    "Allow/deny lives in runtime code, so a persuadable model cannot negotiate it.");
+  if (a.autonomy >= 2 || act.length >= 4) add("policy", "Quotas & rate limits per action class", "quota-rate-limit",
+    "Ceilings the model cannot raise, applied before any effect lands.");
+  if (a.autonomy >= 2 || irrev.length) add("policy", "Budget guardrails (steps / tokens / dollars)", "budget-guardrails",
+    "Turns 'how expensive can this get' into a hard stop instead of a hope.");
+
+  if (a.approvalGate && irrev.length) add("process", "Approval gates for " + irrev.join(", "), "approval-gates",
+    "Irreversible effects wait for a human who did not trigger them.");
+  if (a.criticality === "critical" && irrev.length) add("process", "Dual control / four-eyes above threshold", "dual-control",
+    "Criticality plus an irreversible effect means two independent humans.");
+  if (a.autonomy >= 3) add("process", "Human-in-the-loop on exceptions only", "human-in-the-loop",
+    "L3 routes what falls outside policy to a person instead of blocking everything.");
+
+  if (rank >= 2 || a.autonomy >= 3) add("infrastructure", "Tool sandbox / dry-run tier", "sandbox-execution",
+    "Effects are rehearsed and isolated before they are real.");
+  if (a.hosting === "serverless") add("infrastructure", "Egress allowlist at the runtime boundary", "tool-sandbox",
+    "Serverless egress is the easiest path to forget; make it default-deny.");
+
+  if (heavy.length || sensitive) add("data", "PII detection & redaction at the data boundary", "output-filtering-pii",
+    `Handles ${heavy.join(", ") || "sensitive"} data — redact before it enters the context window and again on the way out.`);
+  if (sensitive || heavy.length >= 2 || irrev.length) add("dlp", "Output shield (egress DLP)", "content-shielding",
+    "Scan what leaves: secrets, PII, and unauthorized disclosures.");
+
+  add("observability", "Audit trail with hash-chained decisions", "audit-trail",
+    "Inputs, policy decisions, approvals and effects — in one place, append-only.");
+  if (a.autonomy >= 2 || a.criticality === "critical") add("observability", "Drift & spend monitoring", "drift-monitoring",
+    "Behaviour that slowly changes is invisible without a baseline.");
+  if (a.criticality === "critical" || (a.compliance || []).indexOf("nist-ai-rmf") >= 0) add("observability", "Eval harness & continuous red-teaming", "eval-harness-redteam",
+    "Critical or NIST-scoped systems need regression evidence, not a launch test.");
+  if (a.rollout === "canary" || a.rollout === "staged" || a.rollout === "shadow") add("observability", "Shadow / canary parity", "shadow-agents",
+    `${dpLabel("rollout", a.rollout)} rollout only works if you can compare it against the old path.`);
+
+  if (dd.systemic.length) add("policy", "Cascade drills from " + dd.dom, null,
+    `${dd.systemic.length} derived/cascading chains are modeled for this domain — turn them into failure tests.`);
+
+  // de-duplicate by pattern id (keep first mention)
+  const seen = {};
+  return R.filter(x => { if (!x.pat) return true; if (seen[x.pat]) return false; seen[x.pat] = 1; return true; });
+}
+
+/* Deterministic guardrail configuration derived from the intake answers. */
+function dpConfig() {
+  const a = dpState.a;
+  const rank = Math.max(0, DP_BLAST.indexOf(a.blast));
+  const act = a.actions || [];
+  const irrev = ["transact", "delete", "publish"].filter(x => act.indexOf(x) >= 0);
+  const daily = { lt1k: 30, "1k": 300, "10k": 3000, "100k": 30000, "1m": 300000 }[a.volume] || 300;
+  const crit = { low: 1, medium: 1.5, high: 3, critical: 6 }[a.criticality] || 1;
+  const tight = 1 + a.autonomy * 0.5;               // more autonomy → smaller ceilings
+  const cap = (v, lo, hi) => Math.max(lo, Math.min(hi, Math.round(v)));
+  const perRun = [5, 20, 50, 200, 1000, 5000, 20000][rank];
+  const cfg = {
+    name: a.system || "agent",
+    model: { provider: "local", id: (typeof LLM !== "undefined" && LLM.state.defaultModel) || "quai-qwen3.8-27b:latest" },
+    autonomy: { level: a.autonomy, blast_radius_max: a.blast, approval_required: !!a.approvalGate },
+    limits: {
+      max_actions_per_run: cap(perRun / tight, 1, perRun),
+      max_concurrent_runs: cap(perRun / tight / 20, 1, 1000),
+      max_tool_calls_per_step: cap(8 / tight, 1, 8),
+      budget_usd_per_day: cap(daily * crit * 0.05 / tight, 5, 5000),
+      budget_usd_per_action: cap(daily * crit * 0.01 / tight, 1, 1000),
+      timeout_s: cap(30 + a.autonomy * 15, 30, 120)
+    },
+    actions: { allow: act, require_approval_for: a.approvalGate ? irrev : [], deny_default: a.autonomy >= 3 },
+    data: { ceiling: a.sensitivity, classes: a.dataClasses || [], redact_on_egress: true },
+    egress: { default: "deny", allowlist: [], scan: ["secrets", "pii", "credentials"] },
+    guardrails: {
+      kill_switch: a.autonomy >= 2,
+      rollback: a.autonomy >= 2 ? "checkpoint" : "none",
+      injection_shield: true,
+      audit: { hash_chain: true, retain_days: a.criticality === "critical" ? 365 : 90 }
+    },
+    rollout: { strategy: a.rollout, oncall: a.oncall },
+    regimes: a.compliance || []
+  };
+  return cfg;
+}
+
+function dpCopyConfig() {
+  const txt = JSON.stringify(dpConfig(), null, 2);
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(txt)
+      .then(() => showNotif("Guardrail config copied"))
+      .catch(() => showNotif("Clipboard blocked — select the block and copy manually"));
+  } else showNotif("Clipboard unavailable — select the block and copy manually");
+}
+
+function dpSectionStack() {
+  const stack = dpStack();
+  const cfg = dpConfig();
+  const groups = DP_LAYERS.map(([id, label]) => {
+    const items = stack.filter(x => x.layer === id);
+    if (!items.length) return "";
+    return `<div class="dp-layer">
+      <div class="dp-layerhead">${escHtml(label)}</div>
+      <div class="dp-layeritems">${items.map(x => `
+        <div class="dp-stackitem">
+          <b>${x.pat ? `<button class="dp-cite" onclick="dpOpenCite('pattern','${escHtml(x.pat)}')">${escHtml(x.pat)}</button> ` : ""}${escHtml(x.name)}</b>
+          <span>${escHtml(x.why)}</span>
+        </div>`).join("")}</div>
+    </div>`;
+  }).join("");
+
+  return `
+    <div class="dp-stack">
+      <p class="muted small">${stack.length} controls selected for this profile, grouped by the layer that enforces them. Citations open the catalog entry.</p>
+      ${groups}
+    </div>
+    <div class="dp-confighead">
+      <h4>Guardrail configuration</h4>
+      <div class="dp-actions-row" style="margin-top:0">
+        <button class="iconbtn" onclick="dpCopyConfig()">Copy JSON</button>
+        <button class="iconbtn" onclick="switchTab('guard')">Open Guardrail Lab →</button>
+      </div>
+    </div>
+    <pre class="dp-code">${escHtml(JSON.stringify(cfg, null, 2))}</pre>
+    <p class="muted small">Values are derived, not invented: ceilings scale with throughput and criticality and tighten as autonomy rises. Treat this as a starting point to argue with, not a policy decision you inherited.</p>`;
+}
+
+DP_SECTIONS.push({ id: "stack", title: "Recommended stack & guardrail config", render: dpSectionStack });
+
 tabLoaders.deploy = function () { initDeploy(); };
