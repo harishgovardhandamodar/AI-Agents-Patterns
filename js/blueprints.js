@@ -715,7 +715,120 @@ function bpAskCopilot() {
   copilotAsk(q);
 }
 
-/* ---------------- library ---------------- */
+/* ---------------- compare: current canvas vs a template/library baseline ----
+   The calculators read bpState.comps, so compare runs them with the baseline
+   swapped in and restores the canvas in a finally — the canvas never changes. */
+let bpCmpBase = ""; /* "t:<key>" | "l:<index>" | "" */
+
+function bpCmpBaselines() {
+  const out = [{ v: "", label: "Select a baseline to compare…" }];
+  BP_TEMPLATES.forEach(t => out.push({ v: "t:" + t.k, label: "Template: " + t.name }));
+  bpState.lib.forEach((e, i) => out.push({ v: "l:" + i, label: "Library: " + e.name }));
+  return out;
+}
+function bpCmpBaseComps() {
+  if (bpCmpBase.slice(0, 2) === "t:") {
+    const t = BP_TEMPLATES.find(x => x.k === bpCmpBase.slice(2));
+    return t ? { label: "Template: " + t.name, comps: t.comps.filter(id => bpPat(id)) } : null;
+  }
+  if (bpCmpBase.slice(0, 2) === "l:") {
+    const e = bpState.lib[Number(bpCmpBase.slice(2))];
+    return e ? { label: "Library: " + e.name, comps: (e.comps || []).filter(id => bpPat(id)) } : null;
+  }
+  return null;
+}
+function bpCmpStats(comps) {
+  const keep = bpState.comps;
+  bpState.comps = comps.slice();
+  try {
+    const c = bpCoverage(), e = bpEstimate(), tm = bpThreatModel();
+    return { cov: c.ok + "/" + c.total, covOk: c.ok, cost: e.cost.total, lat: e.lat.p50, risk: e.risk.score, exp: tm.idx, band: tm.band[0] };
+  } finally { bpState.comps = keep; }
+}
+function bpSetCmp(v) { bpCmpBase = v || ""; bpRender(); }
+function bpCmpRestore() {
+  if (bpCmpBase.slice(0, 2) === "t:") bpApplyTemplate(bpCmpBase.slice(2));
+  else if (bpCmpBase.slice(0, 2) === "l:") bpLoadLib(Number(bpCmpBase.slice(2)));
+}
+function bpCmpDiffMd(base, cur, added, removed) {
+  const f = (label, a, b, fmt, lower) => {
+    const d = b - a, arrow = d === 0 ? "=" : (d > 0 ? "▲ +" : "▼ ") + (fmt ? fmt(Math.abs(d)) : Math.abs(d));
+    return `| ${label} | ${fmt ? fmt(a) : a} | ${fmt ? fmt(b) : b} | ${arrow} |`;
+  };
+  const usd = v => "$" + Number(v).toFixed(0);
+  return ["# Blueprint comparison", "",
+    `Baseline: ${base.label} (${base.comps.length} components) vs current “${bpState.name || "Untitled"}” (${cur.comps.length} components).`, "",
+    "## Components",
+    added.length ? "Added: " + added.map(id => (bpPat(id) || {}).name || id).join(", ") : "Added: none",
+    removed.length ? "Removed: " + removed.map(id => (bpPat(id) || {}).name || id).join(", ") : "Removed: none", "",
+    "## Metrics",
+    "| Metric | Baseline | Current | Δ |",
+    "|---|---|---|---|",
+    f("Guardrail coverage (families)", base.covOk, cur.covOk),
+    f("Exposure index", base.exp, cur.exp),
+    f("Cost / mo", base.cost, cur.cost, usd),
+    f("Latency p50 (ms)", base.lat, cur.lat),
+    f("Risk score", base.risk, cur.risk)
+  ].join("\n");
+}
+function bpCmpCopy() {
+  if (!bpCmpBaseComps()) return;
+  bpCmpRenderInto(true);
+}
+function bpCmpRenderInto(toClipboard) {
+  const base = bpCmpBaseComps();
+  if (!base) return "";
+  const cur = bpCmpStats(bpState.comps), bs = bpCmpStats(base.comps);
+  const curSet = new Set(bpState.comps), baseSet = new Set(base.comps);
+  const added = bpState.comps.filter(id => !baseSet.has(id));
+  const removed = base.comps.filter(id => !curSet.has(id));
+  const md = bpCmpDiffMd(
+    { label: base.label, comps: base.comps, covOk: bs.covOk, exp: bs.exp, cost: bs.cost, lat: bs.lat, risk: bs.risk },
+    { covOk: cur.covOk, exp: cur.exp, cost: cur.cost, lat: cur.lat, risk: cur.risk, comps: bpState.comps },
+    added, removed);
+  if (toClipboard) {
+    if (navigator.clipboard) navigator.clipboard.writeText(md).then(() => showNotif("Comparison copied as Markdown")).catch(() => showNotif("Clipboard blocked", { kind: "warn" }));
+    else showNotif("Clipboard unavailable", { kind: "warn" });
+  }
+  return md;
+}
+function bpCmpHtml() {
+  const opts = bpCmpBaselines().map(o =>
+    `<option value="${o.v}"${o.v === bpCmpBase ? " selected" : ""}>${escHtml(o.label)}</option>`).join("");
+  let body = `<p class="muted small">Pick a template or saved blueprint — see exactly which components and metrics change before you restore it.</p>`;
+  const base = bpCmpBaseComps();
+  if (base) {
+    const cur = bpCmpStats(bpState.comps), bs = bpCmpStats(base.comps);
+    const curSet = new Set(bpState.comps), baseSet = new Set(base.comps);
+    const added = bpState.comps.filter(id => !baseSet.has(id));
+    const removed = base.comps.filter(id => !curSet.has(id));
+    const nm = id => escHtml((bpPat(id) || {}).name || id);
+    const drow = (label, a, b, fmt, invert) => {
+      const d = b - a, good = d === 0 ? "" : ((d < 0) !== !!invert ? "good" : "bad");
+      const txt = d === 0 ? "no change" : (d > 0 ? "+" : "") + (fmt ? fmt(d) : d);
+      return `<tr><td>${label}</td><td>${fmt ? fmt(a) : a}</td><td><b>${fmt ? fmt(b) : b}</b></td><td class="${good}">${txt}</td></tr>`;
+    };
+    const usd = v => "$" + Number(v).toFixed(0);
+    body =
+      `<div class="bp-cmp-cols">` +
+      `<div><h5>＋ Added vs baseline (${added.length})</h5>` +
+      (added.length ? `<ul>${added.map(id => `<li>${nm(id)}</li>`).join("")}</ul>` : `<p class="muted small">none</p>`) + `</div>` +
+      `<div><h5>－ Removed vs baseline (${removed.length})</h5>` +
+      (removed.length ? `<ul>${removed.map(id => `<li>${nm(id)}</li>`).join("")}</ul>` : `<p class="muted small">none</p>`) + `</div></div>` +
+      `<table class="tbl bp-cmp-tbl"><tr><th>Metric</th><th>Baseline</th><th>Current</th><th>Δ</th></tr>` +
+      drow("Guardrail coverage (families)", bs.covOk, cur.covOk) +
+      drow("Exposure index", bs.exp, cur.exp, null, true) +
+      drow("Cost / mo", Math.round(bs.cost), Math.round(cur.cost), usd, true) +
+      drow("Latency p50 (ms)", Math.round(bs.lat), Math.round(cur.lat), null, true) +
+      drow("Risk score", bs.risk, cur.risk, null, true) +
+      `</table>` +
+      `<div class="d-actions" style="margin-top:8px">` +
+      `<button class="btn sm" onclick="bpCmpRestore()">↩ Restore baseline (undoable)</button>` +
+      `<button class="btn sm ghost" onclick="bpCmpCopy()">⧉ Copy comparison</button></div>`;
+  }
+  return `<div class="bp-compare"><h4>Compare with baseline</h4>` +
+    `<select class="search" style="max-width:340px" onchange="bpSetCmp(this.value)">${opts}</select>${body}</div>`;
+}
 function bpSaveToLib() {
   if (!bpState.comps.length) { showNotif("Add components before saving"); return; }
   const name = (bpState.name || "").trim() || "Blueprint " + (bpState.lib.length + 1);
@@ -901,7 +1014,9 @@ function bpRender() {
               `</span>` +
             `</div>`).join("") + `</div>`
         : `<div class="muted small">Nothing saved yet. Save a blueprint to compare variants later.</div>`) +
-    `</div>`;
+    `</div>` +
+
+    bpCmpHtml();
 
   bpRenderEst();
   mmRenderAll(root);
