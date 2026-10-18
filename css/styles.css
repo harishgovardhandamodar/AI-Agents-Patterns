@@ -1279,6 +1279,13 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 .pal-item .pal-kind.k-scenario { color: var(--orange); }
 .pal-item .pal-kind.k-cascade { color: var(--red); }
 .pal-item .pal-kind.k-template { color: var(--green); }
+.pal-item .pal-kind.k-cmd { color: var(--purple); }
+.pal-item .pal-kind.k-recent { color: var(--teal); }
+.pal-item .pal-title mark { background: transparent; color: var(--accent); font-weight: 700; }
+.pal-grp {
+  font-size: 10px; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--text3); padding: 8px 10px 2px;
+}
 .pal-item .pal-title { font-weight: 600; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pal-item .pal-sub { color: var(--text3); font-size: 10.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pal-empty { padding: 22px; text-align: center; color: var(--text3); font-size: 12.5px; }

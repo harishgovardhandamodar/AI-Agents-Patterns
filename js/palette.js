@@ -10,8 +10,45 @@ const PAL_KINDS = {
   scenario: { label: "Scenario",    run: x => { switchTab("scenarios"); setTimeout(() => openScenario(x.id), 60); } },
   cascade:  { label: "Cascade",     run: x => { switchTab("cascades"); setTimeout(() => openCascade(x.id), 60); } },
   template: { label: "Blueprint",   run: x => { switchTab("blueprint"); setTimeout(() => bpApplyTemplate(x.id), 60); } },
-  library:  { label: "Saved bp",    run: x => { switchTab("blueprint"); setTimeout(() => bpLoadLib(Number(x.id)), 60); } }
+  library:  { label: "Saved bp",    run: x => { switchTab("blueprint"); setTimeout(() => bpLoadLib(Number(x.id)), 60); } },
+  cmd:      { label: "Command",     run: x => x.run() },
+  recent:   { label: "Recent",      run: x => { const i = el("palInput"); if (i) { i.value = x.id; palSel = 0; palRender(); i.focus(); } } }
 };
+
+/* One-shot commands: things users otherwise hunt through tabs to find. */
+const PAL_COMMANDS = [
+  { id: "cmd-theme",   title: "Toggle theme (dark / light)", run: () => toggleTheme() },
+  { id: "cmd-display", title: "Display preferences (density, text size)", run: () => uxPanelToggle(true) },
+  { id: "cmd-undo",    title: "Undo last change", run: () => undoOnce() },
+  { id: "cmd-redo",    title: "Redo", run: () => redoOnce() },
+  { id: "cmd-newchat", title: "New copilot chat", run: () => { switchTab("copilot"); copilotNew(); } },
+  { id: "cmd-expmd",   title: "Export architect report (Markdown)", run: () => rpDownload("md") },
+  { id: "cmd-expjson", title: "Export architect report (JSON)", run: () => rpDownload("json") },
+  { id: "cmd-guide",   title: "Open guide for this tab", run: () => helpOpen() },
+  { id: "cmd-tour",    title: "Replay the welcome tour", run: () => onbShow(true) },
+  { id: "cmd-bpcopy",  title: "Copy blueprint as Markdown", run: () => bpCopy("md", "Blueprint copied as Markdown") },
+  { id: "cmd-bpsave",  title: "Save blueprint to library", run: () => bpSaveToLib() }
+];
+
+/* Recents + usage learning (persisted; palette gets smarter the more it is used). */
+const PAL_STORE = "aap.pal.v1";
+const palMem = { recent: [], used: {} };
+(function palMemLoad() {
+  try {
+    const j = JSON.parse(localStorage.getItem(PAL_STORE) || "{}");
+    if (Array.isArray(j.recent)) palMem.recent = j.recent.filter(x => typeof x === "string").slice(0, 8);
+    if (j.used && typeof j.used === "object") palMem.used = j.used;
+  } catch (e) {}
+})();
+function palMemSave() {
+  try {
+    const used = {};
+    Object.keys(palMem.used).slice(-200).forEach(k => { used[k] = Math.min(9, palMem.used[k] || 0); });
+    palMem.used = used;
+    localStorage.setItem(PAL_STORE, JSON.stringify(palMem));
+  } catch (e) {}
+}
+function palUseKey(it) { return it.kind + ":" + it.id; }
 
 const PAL_TABS = [
   ["overview", "Overview"], ["copilot", "Architect Copilot"], ["patterns", "Patterns"],
@@ -58,11 +95,56 @@ function palScore(it, q) {
 function palSearch(q) {
   q = q.trim().toLowerCase();
   const items = palBuild();
-  if (!q) return items.filter(it => it.kind === "tab" || it.kind === "template").slice(0, 12).map(it => ({ it: it, sc: 0 }));
+  if (!q) {
+    const out = palMem.recent.slice(0, 5).map(r => ({ it: { kind: "recent", id: r, title: r, sub: "search again" }, sc: -1, grp: 0 }));
+    items.filter(it => it.kind === "tab" || it.kind === "template").slice(0, 12)
+      .forEach(it => out.push({ it: it, sc: 0, grp: 1 }));
+    return out;
+  }
+  /* kind prefixes: ">…" commands only, "pat:/scn:/cas:/tab:" scope to one kind */
+  let onlyCmd = false, onlyKind = null;
+  const m = q.match(/^(>|pat:|scn:|cas:|tab:)\s*(.*)$/);
+  if (m) {
+    if (m[1] === ">") onlyCmd = true;
+    else onlyKind = { "pat:": "pattern", "scn:": "scenario", "cas:": "cascade", "tab:": "tab" }[m[1]];
+    q = m[2];
+  }
   const hits = [];
-  items.forEach(it => { const sc = palScore(it, q); if (sc >= 0) hits.push({ it: it, sc: sc }); });
-  hits.sort((a, b) => a.sc - b.sc || a.it.title.length - b.it.title.length);
+  if (!onlyKind) {
+    PAL_COMMANDS.forEach(c => {
+      if (!q || c.title.toLowerCase().indexOf(q) >= 0 || c.id.toLowerCase().indexOf(q) >= 0)
+        hits.push({ it: { kind: "cmd", id: c.id, title: c.title, sub: "command", run: c.run }, sc: onlyCmd ? 0 : 2.5 });
+    });
+  }
+  if (!onlyCmd) {
+    items.forEach(it => {
+      if (onlyKind && it.kind !== onlyKind) return;
+      const sc = q ? palScore(it, q) : 0;
+      if (sc >= 0) hits.push({ it: it, sc: sc });
+    });
+  }
+  /* usage learning + pin boost: frequently used and pinned items float up */
+  hits.forEach(h => {
+    const u = palMem.used[palUseKey(h.it)] || 0;
+    h.boost = Math.min(3, u) * 0.3;
+    try {
+      if (typeof pinHas === "function" &&
+        ((h.it.kind === "pattern" && pinHas("patterns", h.it.id)) ||
+         (h.it.kind === "scenario" && pinHas("scenarios", h.it.id)) ||
+         (h.it.kind === "cascade" && pinHas("cascades", h.it.id)))) h.boost += 0.6;
+    } catch (e) {}
+  });
+  hits.sort((a, b) => (a.grp || 0) - (b.grp || 0) || (a.sc - (a.boost || 0)) - (b.sc - (b.boost || 0)) || a.it.title.length - b.it.title.length);
   return hits.slice(0, 30);
+}
+
+function palHi(title, q) {
+  const esc = escHtml(title);
+  q = (q || "").trim().replace(/^(>|pat:|scn:|cas:|tab:)\s*/, "");
+  if (q.length < 2) return esc;
+  const i = title.toLowerCase().indexOf(q.toLowerCase());
+  if (i < 0) return esc;
+  return escHtml(title.slice(0, i)) + "<mark>" + escHtml(title.slice(i, i + q.length)) + "</mark>" + escHtml(title.slice(i + q.length));
 }
 
 function palRender() {
@@ -71,13 +153,20 @@ function palRender() {
   palSel = Math.min(palSel, Math.max(0, palHits.length - 1));
   const list = el("palList");
   if (!list) return;
-  if (!palHits.length) { list.innerHTML = `<div class="pal-empty">No matches for "${escHtml(q)}"</div>`; return; }
-  list.innerHTML = palHits.map((h, i) =>
-    `<div class="pal-item ${i === palSel ? "sel" : ""}" data-i="${i}" onmousedown="event.preventDefault()" onclick="palPick(${i})">
+  if (!palHits.length) {
+    list.innerHTML = `<div class="pal-empty">No matches for "${escHtml(q)}" — try <b>pat:</b>, <b>scn:</b>, <b>cas:</b> to scope, or <b>&gt;</b> for commands.</div>`;
+    return;
+  }
+  let lastGrp = -1;
+  list.innerHTML = palHits.map((h, i) => {
+    const head = (h.grp != null && h.grp !== lastGrp) ? `<div class="pal-grp">${h.grp === 0 ? "Recent" : "Browse"}</div>` : "";
+    lastGrp = h.grp == null ? lastGrp : h.grp;
+    return head + `<div class="pal-item ${i === palSel ? "sel" : ""}" data-i="${i}" onmousedown="event.preventDefault()" onclick="palPick(${i})">
       <span class="pal-kind k-${h.it.kind}">${escHtml(PAL_KINDS[h.it.kind].label)}</span>
-      <span class="pal-title">${escHtml(h.it.title)}</span>
+      <span class="pal-title">${palHi(h.it.title, q)}</span>
       <span class="pal-sub">${escHtml(h.it.sub || "")}</span>
-    </div>`).join("");
+    </div>`;
+  }).join("");
   const sel = list.querySelector(".pal-item.sel");
   if (sel) sel.scrollIntoView({ block: "nearest" });
 }
@@ -85,6 +174,13 @@ function palRender() {
 function palPick(i) {
   const h = palHits[i != null ? i : palSel];
   if (!h) return;
+  const q = el("palInput") ? el("palInput").value.trim() : "";
+  if (h.it.kind !== "recent" && h.it.kind !== "cmd" && q) {
+    palMem.recent = [q].concat(palMem.recent.filter(r => r !== q)).slice(0, 8);
+  }
+  palMem.used[palUseKey(h.it)] = (palMem.used[palUseKey(h.it)] || 0) + 1;
+  palMemSave();
+  if (h.it.kind === "recent") { const inp = el("palInput"); if (inp) { inp.value = h.it.id; palSel = 0; palRender(); inp.focus(); } return; }
   palClose();
   PAL_KINDS[h.it.kind].run(h.it);
 }
@@ -124,7 +220,7 @@ function initPalette() {
   d.innerHTML = `<div class="pal-box">
     <input id="palInput" class="pal-input" aria-label="Search everything" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" oninput="palSel=0;palRender()" autocomplete="off">
     <div id="palList" class="pal-list"></div>
-    <div class="pal-foot"><span><b>Ctrl/⌘ K</b> open · <b>↑↓</b> move · <b>Enter</b> open · <b>Esc</b> close</span></div>
+    <div class="pal-foot"><span><b>↑↓</b> move · <b>Enter</b> open · <b>&gt;</b> commands · <b>pat: scn: cas:</b> scope · <b>Esc</b> close</span></div>
   </div>`;
   d.addEventListener("mousedown", e => { if (e.target === d) palClose(); });
   document.body.appendChild(d);
