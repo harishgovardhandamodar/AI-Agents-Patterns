@@ -29,9 +29,13 @@ function cpRestore() {
 function cpMd(text) {
   const blocks = [];
   let s = String(text == null ? "" : text).replace(/\r/g, "");
-  // pull fenced code out first so later rules cannot touch it
-  s = s.replace(/```[a-zA-Z0-9]*\n?([\s\S]*?)```/g, function (m, code) {
-    blocks.push("<pre>" + escHtml(code.replace(/\n$/, "")) + "</pre>");
+  // pull fenced code out first so later rules cannot touch it. Mermaid
+  // fences become real diagrams (rendered by mmRenderAll after insert);
+  // every other language stays a plain code block.
+  s = s.replace(/```([a-zA-Z0-9]*)\n?([\s\S]*?)```/g, function (m, lang, code) {
+    code = code.replace(/\n$/, "");
+    if (String(lang).toLowerCase() === "mermaid" && typeof diagramHtml === "function") blocks.push(diagramHtml(code));
+    else blocks.push("<pre>" + (lang ? '<span class="cp-code-lang">' + escHtml(lang) + "</span>" : "") + escHtml(code) + "</pre>");
     return "\u0000" + (blocks.length - 1) + "\u0000";
   });
   s = escHtml(s);
@@ -39,6 +43,23 @@ function cpMd(text) {
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
   s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // pipe tables -> .tbl (same styling as the catalog drawers)
+  s = s.replace(/^((?:\|[^\n]*\|\s*\n)+)/gm, function (block) {
+    const rows = block.trim().split("\n");
+    if (rows.length < 2) return block;
+    const isDelim = r => /^\|[\s:\-|]+\|\s*$/.test(r) && r.indexOf("-") >= 0;
+    if (!isDelim(rows[1])) return block;
+    const cells = r => r.trim().replace(/^\||\|$/g, "").split("|").map(c => c.trim());
+    const aligns = cells(rows[1]).map(c => /^:.*:$/.test(c) ? "center" : /:$/.test(c) ? "right" : /^:/.test(c) ? "left" : "");
+    const cell = (c, i, tag) => "<" + tag + (aligns[i] ? ' style="text-align:' + aligns[i] + '"' : "") + ">" + (c || "") + "</" + tag + ">";
+    let h = '<table class="tbl cp-table"><thead><tr>' +
+      cells(rows[0]).map((c, i) => cell(c, i, "th")).join("") + "</tr></thead><tbody>";
+    rows.slice(2).forEach(r => {
+      if (!r.trim() || isDelim(r)) return;
+      h += "<tr>" + cells(r).map((c, i) => cell(c, i, "td")).join("") + "</tr>";
+    });
+    return h + "</tbody></table>";
+  });
   // lists
   s = s.replace(/(?:^|\n)((?:[-*]\s+.*(?:\n|$))+)/g, function (m, block) {
     const items = block.trim().split(/\n/).map(function (l) {
@@ -50,7 +71,7 @@ function cpMd(text) {
   s = s.split(/\n{2,}/).map(function (p) {
     p = p.trim();
     if (!p) return "";
-    if (/^<(h4|ul|pre|ol|blockquote)/.test(p) || /^\u0000\d+\u0000$/.test(p)) return p;
+    if (/^<(h4|ul|pre|ol|blockquote|table)/.test(p) || /^\u0000\d+\u0000$/.test(p)) return p;
     return "<p>" + p.replace(/\n/g, "<br>") + "</p>";
   }).join("\n");
   s = s.replace(/\u0000(\d+)\u0000/g, function (m, i) { return blocks[+i] || ""; });
@@ -162,6 +183,9 @@ function cpRenderLog() {
     log.appendChild(cpMsgEl(m, cpBusy && m === last && m.role === "assistant", i, m === last));
   });
   cpScroll();
+  /* render any mermaid diagrams the answer included (message boundaries
+     only — mid-stream partial fences stay plain text until completion) */
+  if (typeof mmRenderAll === "function") { try { mmRenderAll(log); } catch (e) { console.warn("chat mermaid failed", e); } }
 }
 function cpScroll() { const log = el("cpLog"); if (log) log.scrollTop = log.scrollHeight; }
 
@@ -224,6 +248,7 @@ function cpBuildMessages(query) {
   let system = "You are Fox - Architect for an enterprise AI-agent design catalog. " +
     "Answer as a pragmatic, senior enterprise architect. Be concrete and structured: use short headings and bullet lists, name specific patterns and scenarios from the catalog, and always cover risk and mitigation. " +
     "Prefer the four cascade classes (inherent, emergent, derived, cascading) when analysing failure propagation. " +
+    "Format for readability: use Markdown tables when comparing options, controls or trade-offs, and include a ```mermaid diagram (flowchart, sequenceDiagram or quadrantChart, at most 10 nodes with short labels) whenever you explain a flow, an attack chain or how a failure propagates. " +
     "Never invent catalog items that are not in the provided context. If context is missing, say so and reason from first principles. Keep answers tight — no filler.";
   if (typeof AIContext !== "undefined") {
     const ctx = AIContext.build(query, cpScope);

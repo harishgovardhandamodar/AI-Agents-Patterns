@@ -1336,6 +1336,14 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 
 .cas-more { display: flex; gap: 8px; align-items: center; margin: 12px 0 4px; flex-wrap: wrap; }
 
+/* chat markdown extras: tables, code language tags, diagrams */
+.cp-bubble .tbl { margin: 8px 0; }
+.cp-bubble .diagram-wrap { margin: 10px 0; }
+.cp-code-lang {
+  display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--text3); margin-bottom: 5px;
+}
+
 /* copilot message actions + follow-ups */
 .cp-actions { display: flex; gap: 4px; margin-top: 6px; }
 .cp-msg.user .cp-actions { justify-content: flex-end; }
