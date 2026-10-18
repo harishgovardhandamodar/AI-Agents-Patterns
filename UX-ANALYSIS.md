@@ -71,14 +71,30 @@ pane (keyboard users re-tab from the top bar each time).
 | 37 | Patterns/Scenarios list density + sort controls | F3 |
 | 38 | Sticky filter bars with live counts on catalog panes | F9 |
 | 39 | "Add to blueprint" from every drawer and gap row | F5 |
-| 40 | "Ask copilot" deep-links from any item with grounded context | F5 |
-| 49→41 | Pinned working set (patterns/scenarios/cascades) + export | F5 |
+| 40 | "Ask copilot" deep-links auto-send from every drawer + coverage | F5, F7 |
+| 41 | Pinned working set (patterns/scenarios/cascades) + Overview panel + export | F5 |
 | 42 | Blueprint compare (current vs template/library: diff + delta) | F5 |
 | 43 | First-run onboarding with three guided paths | F6 |
 | 44 | Per-pane help + inline glossary tooltips | F8 |
 | 45 | Designed empty states across all 11 panes | F9 |
 | 46 | Copilot message actions, follow-up suggestions, announced streaming | F7 |
-| 47 | Accessibility pass: skip link, focus management, list semantics | F10, F2 |
-| 48 | Mobile ergonomics: 44px targets, bottom nav, filter sheets | F4 |
-| 49 | Global search v2: actions, recents, highlighted matches | F5, F9 |
+| 47 | Skip link, focus trap, focus-after-jump, list semantics, full form labels | F10, F2 |
+| 48 | 24px+ touch targets on all panes at 390px | F4 |
+| 49 | Palette v2: commands, recents, usage learning, match highlights | F5, F9 |
 | 50 | Final UX validation + docs | all |
+
+## Delivery status
+
+All 20 iterations (31–50) are implemented and committed on `feat/architect-copilot`,
+each verified headless (no page errors) before commit. Headline numbers:
+
+- Notifications: announced (`role=log`/`alert`), hover-pause, history log, capped stack.
+- Undo: global Ctrl+Z / Ctrl+Shift+Z over blueprint, library, guardrail and deploy ops.
+- Density: cascades first paint ~1,912 → ~700 live elements (paged list + backlog);
+  user density + 13–16px font preferences, persisted.
+- Mobile: 0 sub-24px effective targets across all 11 panes at 390px.
+- Accessibility: skip link, dialog focus traps, focus-after-jump, list semantics,
+  every input labelled; streaming + toasts announced via live regions.
+- Wayfinding: onboarding tour, per-tab guides + 18-term glossary, palette
+  commands/recents/usage learning, pinned working set, sticky filter bars with
+  removable chips, designed empty states on every pane.
