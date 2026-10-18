@@ -81,6 +81,10 @@ function showGuardIntro() {
         <span class="g-example" onclick="fillExample(2)">📨 auto-emailing support agent</span>
         <span class="g-example" onclick="fillExample(3)">🏥 clinical triage agent</span>
         <span class="g-example" onclick="fillExample(4)">📊 autonomous trading agent</span>
+        <span class="g-example" onclick="fillExample(5)">🌐 finance agent swarm</span>
+        <span class="g-example" onclick="fillExample(6)">🔁 self-tuning spend controls</span>
+        <span class="g-example" onclick="fillExample(7)">🏥 clinical agent swarm</span>
+        <span class="g-example" onclick="fillExample(8)">🧠 self-learning triage agent</span>
       </div>
     </div>
     <div class="g-sec">
@@ -100,7 +104,11 @@ const EXAMPLES = [
   "I want a coding agent with access to our production database and deploy pipeline so it can fix incidents autonomously. What guardrails does it need so one bad prompt can't wipe our data?",
   "Build an email-drafting support agent that can look up customer accounts and send replies automatically, including refunds. What can go wrong and how do I protect against it?",
   "A clinical triage agent that talks to patients, reads their records, and suggests next steps. Design the safety architecture.",
-  "An autonomous trading agent that adjusts strategy based on market news it reads from the web. Guardrails?"
+  "An autonomous trading agent that adjusts strategy based on market news it reads from the web. Guardrails?",
+  "A swarm of finance sub-agents that split work across subsidiaries: one reconciles each invoice, one issues each refund payment, one chases approvals — all delegating to each other automatically. How do I stop runaway delegation, duplicate payments and approval shopping?",
+  "A finance assistant that must learn from past approvals and automatically tunes its own spend thresholds and vendor allowlist over time. How do I keep its self-improvement from silently loosening the controls?",
+  "A swarm of clinical sub-agents — triage, scheduling and pharmacy — that hands each patient off between steps and escalates without human supervision. How do I keep handoffs safe and make sure urgent cases still reach a human?",
+  "A clinical documentation agent with long-term memory of physician edits that rewrites its own triage prompts to close cases faster, operating automatically between reviews. How do I stop it from gaming its metrics and hiding urgent patient referrals?"
 ];
 function fillExample(i) { el("guardInput").value = EXAMPLES[i]; el("guardInput").focus(); }
 function submitGuard() {
