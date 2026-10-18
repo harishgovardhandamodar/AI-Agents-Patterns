@@ -329,6 +329,67 @@ function paintSaveStamps() {
   });
 }
 
+/* ---------------- onboarding: first-run welcome tour --------------------
+   Three guided paths for the three real jobs. Shown once (flag in
+   localStorage); replayable from the shortcuts help overlay. */
+const ONB_STORE = "aap.onboard.v1";
+
+function onbSeen() {
+  try { return localStorage.getItem(ONB_STORE) === "seen"; } catch (e) { return true; }
+}
+function onbMarkSeen() {
+  try { localStorage.setItem(ONB_STORE, "seen"); } catch (e) {}
+}
+function onbShow(force) {
+  if (!force && onbSeen()) return;
+  let o = document.getElementById("onbOverlay");
+  if (!o) {
+    o = document.createElement("div");
+    o.id = "onbOverlay";
+    o.className = "onb-overlay";
+    o.setAttribute("role", "dialog");
+    o.setAttribute("aria-modal", "true");
+    o.setAttribute("aria-label", "Welcome — choose a starting path");
+    o.innerHTML =
+      `<div class="onb-box">` +
+      `<div class="onb-kicker">AI AGENT PATTERNS &amp; GUARDRAILS</div>` +
+      `<h2 class="onb-title">What are you designing today?</h2>` +
+      `<p class="onb-sub">This is an advisory workbench, not a dashboard. Pick the job — the app lines up the catalog, the planner and the copilot behind it.</p>` +
+      `<div class="onb-cards">` +
+      `<div class="onb-card"><div class="onb-ico">🧭</div><b>Ship an agent safely</b>` +
+      `<span>Answer 4 intake questions → readiness score, recommended stack, rollout plan, risks and ADR.</span>` +
+      `<button class="btn primary" onclick="onbGo('deploy')">Start the deployment plan</button></div>` +
+      `<div class="onb-card"><div class="onb-ico">🧩</div><b>Architect the system</b>` +
+      `<span>Compose stages and controls → live coverage, cost, threat exposure and cascade analysis.</span>` +
+      `<button class="btn primary" onclick="onbGo('blueprint')">Open the blueprint builder</button></div>` +
+      `<div class="onb-card"><div class="onb-ico">⧉</div><b>Study how agents fail</b>` +
+      `<span>107 patterns, 38 scenarios, 175 cascades — how small faults cross boundaries and amplify.</span>` +
+      `<button class="btn primary" onclick="onbGo('cascades')">Explore the cascade catalog</button></div>` +
+      `</div>` +
+      `<div class="onb-foot"><button class="btn sm ghost" onclick="onbGo('copilot')">Just ask the copilot instead →</button>` +
+      `<span style="flex:1"></span>` +
+      `<button class="btn sm" onclick="onbGo(null)">Skip — I'll explore</button></div>` +
+      `</div>`;
+    o.addEventListener("mousedown", e => { if (e.target === o) onbGo(null); });
+    document.body.appendChild(o);
+  }
+  o.classList.add("open");
+  const f = o.querySelector(".onb-card button");
+  if (f) f.focus();
+}
+function onbGo(tab) {
+  onbMarkSeen();
+  const o = document.getElementById("onbOverlay");
+  if (o) o.classList.remove("open");
+  if (tab) switchTab(tab);
+}
+document.addEventListener("keydown", function (e) {
+  if (e.key === "Escape") {
+    const o = document.getElementById("onbOverlay");
+    if (o && o.classList.contains("open")) onbGo(null);
+  }
+});
+
 /* ---------------- undo / redo (global, keyboard + topbar + toast actions) ----
    undoPush(label, undoFn, redoFn) snapshots a destructive action. Handlers for
    blueprint, library, guardrail and deploy ops call it, so every "Removed …"
@@ -582,7 +643,8 @@ async function loadAll() {
     if (typeof dashRender === "function") dashRender();
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     if (typeof paintSaveStamps === "function") paintSaveStamps();
-  if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
+    if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
+    if (typeof onbShow === "function") setTimeout(() => onbShow(false), 350);
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
   } catch (e) {

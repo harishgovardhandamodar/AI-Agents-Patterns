@@ -1361,6 +1361,33 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 .bp-cmp-tbl td.bad { color: var(--orange); }
 @media (max-width: 760px) { .bp-cmp-cols { grid-template-columns: 1fr; } }
 
+/* onboarding tour */
+.onb-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(0, 0, 0, .55);
+  display: none; align-items: center; justify-content: center; padding: 20px;
+}
+.onb-overlay.open { display: flex; }
+.onb-box {
+  width: min(720px, 94vw); max-height: calc(100vh - 60px); overflow-y: auto;
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 14px;
+  padding: 26px 28px; box-shadow: 0 24px 70px rgba(0, 0, 0, .6);
+}
+.onb-kicker { font-size: 10px; letter-spacing: .14em; color: var(--text3); margin-bottom: 6px; }
+.onb-title { margin: 0 0 6px; font-size: 22px; }
+.onb-sub { margin: 0 0 18px; color: var(--text2); font-size: 13px; max-width: 56ch; }
+.onb-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.onb-card {
+  border: 1px solid var(--border); border-radius: 10px; padding: 14px;
+  display: flex; flex-direction: column; gap: 8px; background: var(--bg);
+}
+.onb-card:hover { border-color: var(--accent); }
+.onb-card .onb-ico { font-size: 26px; }
+.onb-card b { font-size: 13.5px; }
+.onb-card span { font-size: 12px; color: var(--text2); flex: 1; }
+.onb-foot { display: flex; align-items: center; gap: 8px; margin-top: 18px; }
+@media (max-width: 760px) { .onb-cards { grid-template-columns: 1fr; } .onb-box { padding: 18px; } }
+
 /* working-set pins (Overview) */
 .dash-pin {
   border: 1px dashed var(--border); border-radius: 10px;
