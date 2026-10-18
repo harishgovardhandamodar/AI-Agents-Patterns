@@ -41,6 +41,7 @@
   <div class="app-tab" role="tab" aria-controls="livePane" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
   <div class="app-tab" role="tab" aria-controls="designPane" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
   <div class="app-tab" role="tab" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
+  <div class="app-tab" role="tab" aria-controls="discoveryPane" data-tab="discovery" onclick="switchTab('discovery')">🧪 Discovery Lab</div>
 </div>
 
 <!-- ======================= OVERVIEW ======================= -->
@@ -293,6 +294,20 @@
 </section>
 </div>
 
+<!-- ======================= DISCOVERY LAB ======================= -->
+<section class="pane" id="discoveryPane" role="tabpanel" aria-label="discovery">
+  <div class="split">
+    <aside class="side">
+      <h4 style="margin-top:0">Discovery runs</h4>
+      <p class="muted small" style="padding:0 6px">Gap-seeded ideation in forgetting rounds, after arXiv:2610.20563 — keep the winners, forget the rest.</p>
+      <div id="discControls"></div>
+    </aside>
+    <main class="main">
+      <div id="discMain"></div>
+    </main>
+  </div>
+</section>
+
 <!-- ======================= OVERLAYS ======================= -->
 <div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Detail" onclick="if(event.target===this)closeDetail()">
   <div class="drawer">
@@ -342,5 +357,6 @@
 <script src="js/live.js"></script>
 <script src="js/design.js"></script>
 <script src="js/guardrail.js"></script>
+<script src="js/discovery.js"></script>
 </body>
 </html>

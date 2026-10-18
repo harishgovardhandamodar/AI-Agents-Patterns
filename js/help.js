@@ -86,6 +86,11 @@ const HELP = {
     t: "Guardrail Lab",
     b: `<p>Turn catalog knowledge into <b>enforceable rules</b>: analyse a request, get cascade-aware control recommendations, save them to a collection, export as JSON.</p>
     <ul><li>Every analysis is stored locally and re-openable from the collection rail.</li><li>The report's 8 sections cite the exact cascades each rule defends against.</li></ul>`
+  },
+  discovery: {
+    t: "Discovery Lab",
+    b: `<p><b>Auto-discovery of novel scenarios</b>: gap-seeded candidates scored for novelty, iterated in forgetting rounds after arXiv:2610.20563 — winners are reseeded, near-duplicates are discarded each round.</p>
+    <ul><li>Run with forgetting off (compare mode) to watch novelty plateau on accumulated history.</li><li>Winners are review drafts, never catalog entries: ask Fox - Architect about one, copy it, or export JSON for curator review.</li></ul>`
   }
 };
 

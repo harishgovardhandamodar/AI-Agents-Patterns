@@ -690,6 +690,7 @@ async function loadAll() {
     if (typeof initBlueprint === "function") initBlueprint();
     if (typeof initPalette === "function") initPalette();
     if (typeof initShortcuts === "function") initShortcuts();
+    if (typeof initDiscovery === "function") initDiscovery();
     if (typeof dashRender === "function") dashRender();
     if (typeof initLanding === "function") initLanding();
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();

@@ -4,12 +4,12 @@
    palette's own input). The palette (js/palette.js) owns its own keys. */
 "use strict";
 
-const SK_TABS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard"];
+const SK_TABS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard", "discovery"];
 
 const SK_HELP = [
   ["Ctrl / ⌘ + K", "Open the command palette (search everything)"],
   ["/", "Open the command palette (same, one hand)"],
-  ["Alt + 1…9, 0, −", "Jump to tab 1–11 in top-bar order"],
+  ["Alt + 1…9, 0, −, =", "Jump to tab 1–12 in top-bar order"],
   ["?", "This help"],
   ["Esc", "Close palette, drawer, or this help"]
 ];
@@ -37,8 +37,8 @@ function skKey(e) {
 
   if (e.key === "?" && !skTyping(e)) { e.preventDefault(); helpOpen ? skHelpClose() : skHelpOpen(); return; }
   if (e.key === "/" && !skTyping(e)) { e.preventDefault(); palOpenFn(); return; }
-  if (e.altKey && !e.ctrlKey && !e.metaKey && /^[0-9-]$/.test(e.key)) {
-    const map = { "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9, "-": 10 };
+  if (e.altKey && !e.ctrlKey && !e.metaKey && /^[0-9-=]$/.test(e.key)) {
+    const map = { "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9, "-": 10, "=": 11 };
     const i = map[e.key];
     if (i != null && SK_TABS[i]) { e.preventDefault(); switchTab(SK_TABS[i]); }
   }
