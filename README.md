@@ -2,7 +2,7 @@
 
 An interactive dashboard for the full lifecycle of designing an AI agent: **design patterns → what can go wrong → how to protect → live control-flow simulation → architecture (UML) → a lab that turns your own agent idea into a guardrail design with a mock run.**
 
-It is a **no-build single-page app** — vanilla JS, CSS custom properties, and Mermaid diagrams rendered at view time. The only server piece is `serve.py`: a thin static host plus an optional **same-origin LLM proxy** (`/api/llm/*`) that fans out to tailnet model backends (axiom first, Fox-Services fallback). No data ever leaves your network for a third-party cloud.
+It is a **no-build single-page app** — vanilla JS, CSS custom properties, and Mermaid diagrams rendered at view time (Mermaid is vendored under `js/vendor/` and only falls back to a CDN if that file is missing, so diagrams work on a LAN-only or air-gapped host). The only server piece is `serve.py`: a thin static host plus an optional **same-origin LLM proxy** (`/api/llm/*`) that fans out to tailnet model backends (axiom first, Fox-Services fallback). No data ever leaves your network for a third-party cloud.
 
 The **Design & Architecture** tab follows the same pattern as the *Agentic Knowledge Mapper* classic GUI: markdown documents in `design/` are fetched and rendered live, with ` ```mermaid ` fenced blocks becoming interactive diagrams (with a pan/zoom "enlarge" viewer). Nothing is a screenshot.
 
@@ -137,6 +137,7 @@ js/guardrail.js            Guardrail Lab rule engine + collection + replay + cas
 js/dashboard.js            architect dashboard projection on Overview
 js/palette.js              Ctrl/⌘K command palette
 js/shortcuts.js            global keyboard shortcuts + help
+js/vendor/mermaid.min.js   Mermaid 10, vendored so diagrams work air-gapped (CDN only as fallback)
 js/report.js               full report export (Markdown / JSON / print)
 data/patterns.json         107 patterns, categories, category diagrams
 data/scenarios.json        43 scenarios (attack chains, protections, detection, response)

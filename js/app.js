@@ -281,7 +281,6 @@ const tabLoaders = {}; // filled by per-tab scripts
    once. */
 const paneInited = Object.create(null);   // tab -> true | "starting"
 const PANE_INIT = Object.create(null);    // tab -> init function
-const PANE_LABEL = Object.create(null);   // tab -> human name (for toasts)
 const PANE_SKEL = [                        /* panes whose body is JS-built */
   ["coverage", "#covMain"], ["deploy", "#dpRoot"], ["blueprint", "#bpPalette"],
   ["cascades", "#casList"], ["patterns", "#patGrid"], ["scenarios", "#scnGrid"], ["live", "#traceList"]
@@ -1483,6 +1482,9 @@ function openDetail(title, catLabel, html, share) {
   const shareBox = el("detailShare");
   if (shareBox) shareBox.innerHTML = dlShareRow();
   if (dlShare) dlSet(dlShare.tab, dlShare.id);
+  /* a drawer with no catalog target (tab guide, grounding preview) should not
+     leave a stale #tab/itemId in the address bar */
+  else { try { if (location.hash.indexOf("/") >= 0) history.replaceState(null, "", "#" + (currentTab || "overview")); } catch (e) {} }
   detailOpener = document.activeElement;
   el("detailOverlay").classList.add("open");
   mmRenderAll(el("detailBody"));
@@ -1559,7 +1561,7 @@ async function loadAll() {
       has("initBlueprint") && ["blueprint", "Blueprints", () => initBlueprint()],
       has("initDiscovery") && ["discovery", "Discovery Lab", () => initDiscovery()]
     ].filter(Boolean);
-    PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; PANE_LABEL[p[0]] = p[1]; });
+    PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; });
     const paneRun = async p => {
       if (paneInited[p[0]]) return;
       paneInited[p[0]] = "starting";

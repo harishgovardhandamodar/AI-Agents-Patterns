@@ -217,5 +217,53 @@ inline definition outside the Design docs.
 
 ## Delivery status
 
-Implemented and committed on `main`, each batch verified headless (no page
-errors, measured before/after) before commit.
+All twenty iterations shipped on `main` (commits `da817d0`, `8daace3`, `991f3c4`,
+`e86201a`, `dd0f5c6` + the final docs commit). Each batch was verified in
+headless Chrome against the user's own port (`:5190`) — measured before/after,
+zero page errors — before commit.
+
+| # | Iteration | What landed |
+|---|---|---|
+| 61 | Tab overflow | `.tabs-wrap` with ‹/› chevrons that appear only when the strip overflows, edge fades, `scroll-padding-inline` |
+| 62 | Keyboard tab cycling | `[` / `]` and Alt+←/→ cycle tabs; added to the shortcuts help |
+| 63 | Live region | Persistent `#appStatus` `role=status`; tab changes announce ("Patterns 107 tab") |
+| 64 | Topbar tiers | Tagline hides ≤1500px, `#dataStatus` ≤1150px; `aria-label`s on every icon-only button |
+| 65 | Card keyboard access | `tabindex=0` + Enter/Space + `aria-haspopup=dialog` + `aria-label` on pattern/scenario/cascade cards, with a visible focus ring |
+| 66 | Contrast | `--text3` raised in both themes: 3.77:1 → 4.64:1 on `--bg2` (AA) |
+| 67 | Offline diagrams | Mermaid 10 vendored at `js/vendor/mermaid.min.js`; verified with the CDN blocked (0 CDN requests, diagrams still render) |
+| 68 | Backup / restore | One "back up all" download of every `aap.*` key + a file-picker restore (confirm → replace → reload); also palette commands |
+| 69 | Storage health | Display panel shows item count + bytes per key, ~5 MB context, a blocked-storage warning and "Trim history" |
+| 70 | Deep links | `#tab/itemId` opens the item (patterns/scenarios/cascades/design); the drawer is reflected in the URL and Back closes it |
+| 71 | Share row | Drawer head gets Copy link / Copy id / Copy as Markdown, with a textarea fallback for non-secure (http LAN) origins |
+| 72 | Deferred boot | Shell + overview + catalog panes paint first; the other panes build one per idle slice, a tab visit runs its pane immediately |
+| 73 | Skeletons | Shimmer placeholders on panes whose body is JS-built and not yet rendered |
+| 74 | Busy chip | Top-bar spinner chip for copilot answers in flight and model-backend probes |
+| 75 | Toast hygiene | Identical toasts collapse to a single "×N" toast; Esc dismisses the newest; timers pause on hover/focus |
+| 76 | Filter memory | Patterns/scenarios remember search, filters and sort across reloads (`aap.uimem.v1`) |
+| 77 | Inline glossary | Known terms are `abbr`-wrapped with their definition on hover inside drawers |
+| 78 | Chart a11y | Every bar row becomes `role=img` with a spoken label; decorative tracks are `aria-hidden` (applied by a debounced observer) |
+| 79 | Degraded states | Retryable "Coverage data unavailable" empty state; top-bar ⚡ Offline chip on `offline`/`online` |
+| 80 | Validation | Full headless pass (9 widths 1600→390, 12 tabs, keyboard, deep links, contrast, offline Mermaid) + this refresh |
+
+### Measured effect (headless Chrome, 1440×900)
+
+- **First interactive content**: overview painted at ~350 ms, with cascades /
+  coverage / blueprint / discovery still un-built at 500 ms and finishing in
+  idle slices (previously all 12 panes blocked boot until ~1.39 s).
+- **Deep links**: `#patterns/chain-of-thought` boots straight into the drawer;
+  Back closes it and returns to `#patterns` without leaving the app.
+- **Contrast**: `--text3` 4.64:1, `--text2` 5.62:1, body text 12.4:1 on `--bg2`.
+- **Chart a11y**: 35/35 bar rows on Overview carry `role=img` + label.
+- **Offline**: with `cdn.jsdelivr.net` blocked, Mermaid still loads from
+  `js/vendor/` and 0 CDN requests are made.
+- **Zero page errors** across every width and every tab in the final pass.
+
+### Notes / deliberately out of scope
+
+- The deferred boot keeps the catalog panes (patterns, scenarios) eager because
+  the dashboard and command palette link straight into them.
+- Toast dedupe only collapses plain toasts — action toasts (with buttons) are
+  never merged, so a decision is never hidden behind a counter.
+- Storage bytes are computed as `(key + value) × 2` (localStorage is UTF-16),
+  which is an estimate, not a browser-reported quota.
+
