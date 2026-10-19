@@ -79,8 +79,8 @@ const HELP = {
   },
   design: {
     t: "Design & Architecture",
-    b: `<p>The <b>seven design documents</b> behind the app: system context, UML, control flow, the financial guardrail architecture, data model, threat model and the architect value map.</p>
-    <ul><li>Read 07 first if you want the “why” — it explains the cascade taxonomy the whole app is built on.</li><li>⤢ enlarges any diagram with zoom and pan.</li></ul>`
+    b: `<p>The <b>eight design documents</b> behind the app: system context, UML, control flow, the financial guardrail architecture, data model, threat model, the architect value map, and runtime/offline delivery.</p>
+    <ul><li>Read 07 for the “why” (the cascade taxonomy the app is built on) and 08 for how it boots, renders diagrams, works offline and is delivered.</li><li>⤢ enlarges any diagram with zoom and pan.</li></ul>`
   },
   guard: {
     t: "Guardrail Lab",

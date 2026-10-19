@@ -18,7 +18,6 @@ function groupHtml(docs) {
   const groups = uniq(docs.map(d => d.group));
   return groups.map(g => {
     const items = docs.filter(d => d.group === g);
-    const totalDiag = items.reduce((n, d) => n + (d.id === "01-system-context" ? 3 : d.id === "02-uml" ? 4 : d.id === "03-control-flow" ? 4 : d.id === "04-guardrails" ? 4 : d.id === "05-data-model" ? 1 : 3), 0);
     return `<div class="rail-group">${escHtml(g)}</div>` + items.map(d => `
       <div class="design-doc-item" id="dd-${d.id}" onclick="designShow('${d.id}')">
         <div class="t">${escHtml(d.title)}</div>
