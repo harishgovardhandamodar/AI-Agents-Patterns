@@ -187,7 +187,6 @@ function covOpenDomain(d) {
   const pats = (covView.by_domain[d].patterns || []);
   // jump to Patterns tab filtered by domain when patterns exist, else Cascades
   if (pats.length && typeof document !== "undefined") {
-    if (typeof state !== "undefined" && state && state.patterns) { /* existing filter state */ }
     if (typeof goPatternDomain === "function") { goPatternDomain(d); return; }
   }
   if (typeof casOpenDomain === "function" && (covView.by_domain[d].cascades_all || []).length) { casOpenDomain(d); return; }

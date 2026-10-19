@@ -1459,7 +1459,7 @@ function dlOpen(tab, id, fromHash) {
       else if (tab === "scenarios" && typeof openScenario === "function") openScenario(id);
       else if (tab === "cascades" && typeof openCascade === "function") openCascade(id);
       else if (tab === "design" && typeof designShow === "function") designShow(id);
-      else if (tab === "guard" && typeof guardOpenItem === "function") guardOpenItem(id);
+      else if (tab === "guard" && typeof openGuardItem === "function") openGuardItem(id);
     } catch (e) { console.warn("deep link failed", e); }
     finally { dlApplying = false; }
   });
