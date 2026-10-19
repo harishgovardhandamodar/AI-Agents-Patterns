@@ -131,7 +131,7 @@ button { font: inherit; color: inherit; }
 .bar-row { display: grid; grid-template-columns: 190px 1fr 34px; gap: 8px; align-items: center; margin-bottom: 6px; font-size: 12px; }
 .bar-row .lbl { color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bar-track { background: var(--bg3); height: 8px; border-radius: 4px; overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 4px; background: var(--accent); }
+.bar-fill { display: block; height: 100%; border-radius: 4px; background: var(--accent); }
 .bar-fill.inherent { background: var(--accent); }
 .bar-fill.emergent { background: var(--teal); }
 .bar-fill.derived { background: var(--orange); }
