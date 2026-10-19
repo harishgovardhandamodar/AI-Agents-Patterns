@@ -15,20 +15,21 @@
 <div class="topbar">
   <div class="logo">A</div>
   <h1>AI Agent Patterns &amp; Guardrails</h1>
-  <span class="sub">design catalog · threat scenarios · live control-flow traces · UML viewer</span>
+  <span class="sub tagline">design catalog · threat scenarios · live control-flow traces · UML viewer</span>
   <div class="spacer"></div>
-  <span class="sub mono" id="dataStatus">loading…</span>
-  <button class="iconbtn" id="undoBtn" onclick="undoOnce()" title="Undo (Ctrl+Z)" disabled>↶</button>
-  <button class="iconbtn" id="redoBtn" onclick="redoOnce()" title="Redo (Ctrl+Shift+Z)" disabled>↷</button>
-    <button class="iconbtn" id="uxBtn" onclick="uxPanelToggle()" title="Display: density and text size" aria-haspopup="dialog" aria-expanded="false">⛭ display</button>
-  <button class="iconbtn llm-pill" id="llmPill" onclick="LLM.infoToggle()" title="Model backend status" aria-haspopup="dialog" aria-expanded="false"><span class="dot wait"></span>checking…</button>
-<button class="iconbtn" id="notifBell" onclick="notifLogToggle()" title="Notification history" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
-  <button class="iconbtn" onclick="palOpen()" title="Search everything (Ctrl/⌘ K)">🔍 Search ⌘K</button>
-  <button class="iconbtn" onclick="skHelpOpen()" title="Keyboard shortcuts (?)">⌨</button>
-  <button class="iconbtn" onclick="helpOpen()" title="Guide for this tab">ⓘ guide</button>
-  <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme">◐ theme</button>
+  <span class="sub mono" id="dataStatus" title="Catalog size">loading…</span>
+  <button class="iconbtn" id="undoBtn" onclick="undoOnce()" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
+  <button class="iconbtn" id="redoBtn" onclick="redoOnce()" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
+    <button class="iconbtn" id="uxBtn" onclick="uxPanelToggle()" title="Display: density and text size" aria-label="Display preferences" aria-haspopup="dialog" aria-expanded="false">⛭ display</button>
+  <button class="iconbtn llm-pill" id="llmPill" onclick="LLM.infoToggle()" title="Model backend status" aria-label="Model backend status" aria-haspopup="dialog" aria-expanded="false"><span class="dot wait"></span>checking…</button>
+<button class="iconbtn" id="notifBell" onclick="notifLogToggle()" title="Notification history" aria-label="Notifications" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
+  <button class="iconbtn" onclick="palOpen()" title="Search everything (Ctrl/⌘ K)" aria-label="Search everything">🔍 Search ⌘K</button>
+  <button class="iconbtn" onclick="skHelpOpen()" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">⌨</button>
+  <button class="iconbtn" onclick="helpOpen()" title="Guide for this tab" aria-label="Guide for this tab">ⓘ guide</button>
+  <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle light or dark theme">◐ theme</button>
 </div>
 
+<div class="tabs-wrap">
 <div class="app-tabs" id="appTabs" role="tablist" aria-label="Main sections">
   <div class="app-tab active" role="tab" aria-controls="overviewPane" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
   <div class="app-tab" role="tab" aria-controls="copilotPane" data-tab="copilot" onclick="switchTab('copilot')">🤖 Fox - Architect</div>
@@ -42,6 +43,7 @@
   <div class="app-tab" role="tab" aria-controls="designPane" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
   <div class="app-tab" role="tab" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
   <div class="app-tab" role="tab" aria-controls="discoveryPane" data-tab="discovery" onclick="switchTab('discovery')">🧪 Discovery Lab</div>
+</div>
 </div>
 
 <!-- ======================= OVERVIEW ======================= -->

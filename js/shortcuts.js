@@ -9,6 +9,8 @@ const SK_TABS = ["overview", "copilot", "patterns", "scenarios", "cascades", "co
 const SK_HELP = [
   ["Ctrl / ⌘ + K", "Open the command palette (search everything)"],
   ["/", "Open the command palette (same, one hand)"],
+  ["[ / ]", "Previous / next tab"],
+  ["Alt + ← / →", "Previous / next tab (same)"],
   ["Alt + 1…9, 0, −, =", "Jump to tab 1–12 in top-bar order"],
   ["?", "This help"],
   ["Esc", "Close palette, drawer, or this help"]
@@ -37,6 +39,25 @@ function skKey(e) {
 
   if (e.key === "?" && !skTyping(e)) { e.preventDefault(); helpOpen ? skHelpClose() : skHelpOpen(); return; }
   if (e.key === "/" && !skTyping(e)) { e.preventDefault(); palOpenFn(); return; }
+  /* cycle tabs: [ / ] and Alt+←/→ — the strip overflows, so reaching the
+     last panes should never depend on a trackpad */
+  if ((e.key === "[" || e.key === "]") && !skTyping(e) && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    e.preventDefault();
+    const i = SK_TABS.indexOf(typeof currentTab === "string" ? currentTab : "overview");
+    const d = e.key === "]" ? 1 : -1;
+    const j = (i + d + SK_TABS.length) % SK_TABS.length;
+    switchTab(SK_TABS[j]);
+    const at = document.querySelector(".app-tab.active");
+    if (at) at.focus();
+    return;
+  }
+  if (e.altKey && !e.ctrlKey && !e.metaKey && (e.key === "ArrowRight" || e.key === "ArrowLeft")) {
+    e.preventDefault();
+    const i = SK_TABS.indexOf(typeof currentTab === "string" ? currentTab : "overview");
+    const j = (i + (e.key === "ArrowRight" ? 1 : -1) + SK_TABS.length) % SK_TABS.length;
+    switchTab(SK_TABS[j]);
+    return;
+  }
   if (e.altKey && !e.ctrlKey && !e.metaKey && /^[0-9-=]$/.test(e.key)) {
     const map = { "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9, "-": 10, "=": 11 };
     const i = map[e.key];

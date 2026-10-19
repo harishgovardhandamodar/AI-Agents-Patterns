@@ -239,6 +239,7 @@ let currentTab = "overview";
 const tabLoaders = {}; // filled by per-tab scripts
 
 function switchTab(tab) {
+  const prev = currentTab;
   currentTab = tab;
   document.querySelectorAll(".app-tab").forEach(t => {
     const on = t.dataset.tab === tab;
@@ -258,6 +259,16 @@ function switchTab(tab) {
   }
   pane.classList.add("visible");
   if (tabLoaders[tab]) tabLoaders[tab]();
+  /* keep the active tab on screen in the overflowing strip */
+  const active = document.querySelector(".app-tab.active");
+  if (active && typeof active.scrollIntoView === "function") {
+    try { active.scrollIntoView({ inline: "nearest", block: "nearest" }); } catch (e) {}
+  }
+  if (typeof updateTabNav === "function") setTimeout(updateTabNav, 240);
+  if (tab !== prev) {
+    const label = active ? active.textContent.replace(/\s+/g, " ").replace(/^[^\w(]+/, "").trim() : tab;
+    announce(label + " tab");
+  }
   if (typeof window.__diagDiscWatch === "function") window.__diagDiscWatch(tab === "discovery");
   if (tab === "discovery" && typeof window.__diagDisc === "function") setTimeout(window.__diagDisc, 600);
   try { location.hash = tab; } catch (e) {}
@@ -283,11 +294,83 @@ function tabKeyNav(e) {
 
 document.addEventListener("keydown", e => { if (e.target.closest && e.target.closest(".app-tabs")) tabKeyNav(e); });
 
+/* ---------------- tab bar: active tab in view + overflow chevrons ----------------
+   With 12 tabs the strip overflows on every common laptop width; without an
+   affordance whole panes (Coverage … Discovery) are unreachable by mouse.
+   The wrapper (.tabs-wrap) holds two chevrons outside the scroller so they
+   stay put, and switchTab() scrolls the active tab into view. */
+function tabScrollBy(dir) {
+  const bar = el("appTabs");
+  if (!bar) return;
+  bar.scrollBy({ left: dir * Math.max(180, bar.clientWidth * 0.6), behavior: "smooth" });
+  setTimeout(updateTabNav, 300);
+}
+function updateTabNav() {
+  const bar = el("appTabs");
+  const wrap = bar && bar.parentElement;
+  if (!bar || !wrap) return;
+  const left = wrap.querySelector(".tabnav.left");
+  const right = wrap.querySelector(".tabnav.right");
+  if (!left || !right) return;
+  const over = bar.scrollWidth - bar.clientWidth > 4;
+  left.classList.toggle("show", over && bar.scrollLeft > 4);
+  right.classList.toggle("show", over && bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 4);
+}
+function initTabBar() {
+  const bar = el("appTabs");
+  if (!bar || bar.dataset.nav) return;
+  const wrap = bar.parentElement;
+  if (!wrap) return;
+  bar.dataset.nav = "1";
+  const mk = (cls, label, glyph, dir) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tabnav " + cls;
+    b.setAttribute("aria-label", label);
+    b.title = label;
+    b.textContent = glyph;
+    b.addEventListener("click", () => tabScrollBy(dir));
+    return b;
+  };
+  wrap.appendChild(mk("left", "Scroll tabs left", "‹", -1));
+  wrap.appendChild(mk("right", "Scroll tabs right", "›", 1));
+  bar.addEventListener("scroll", debounce(updateTabNav, 60));
+  window.addEventListener("resize", debounce(updateTabNav, 120));
+  updateTabNav();
+}
+
 /* ---------------- helpers ---------------- */
 function escHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function el(id) { return document.getElementById(id); }
+
+/* ---------------- screen-reader announcements ----------------
+   One persistent live region for things that happen outside a dialog: tab
+   changes, result counts, saved/restored state. Toasts keep their own
+   role=log/alert box; this covers navigation and progress. */
+function appStatus() {
+  let s = el("appStatus");
+  if (!s) {
+    s = document.createElement("div");
+    s.id = "appStatus";
+    s.className = "sr-only";
+    s.setAttribute("role", "status");
+    s.setAttribute("aria-live", "polite");
+    s.setAttribute("aria-atomic", "true");
+    document.body.appendChild(s);
+  }
+  return s;
+}
+let announceTimer = null;
+function announce(msg) {
+  try {
+    const s = appStatus();
+    s.textContent = "";               /* clear first so repeats re-announce */
+    clearTimeout(announceTimer);
+    announceTimer = setTimeout(function () { s.textContent = String(msg == null ? "" : msg); }, 80);
+  } catch (e) { /* never break an action for an announcement */ }
+}
 /* Stale-shell detector: if the cached index.html predates the JS (or vice
    versa), tabs and panes disagree — e.g. a tab button with no pane, or a
    first-run tour looping over an app the user already knows. Banner offers
@@ -963,6 +1046,7 @@ async function loadAll() {
     if (typeof initBlueprint === "function") await safeInit("Blueprints", async () => initBlueprint());
     if (typeof initPalette === "function") await safeInit("palette", async () => initPalette());
     if (typeof initShortcuts === "function") await safeInit("shortcuts", async () => initShortcuts());
+    if (typeof initTabBar === "function") await safeInit("tab bar", async () => initTabBar());
     if (typeof initDiscovery === "function") await safeInit("Discovery Lab", async () => initDiscovery());
     if (typeof dashRender === "function") await safeInit("dashboard", async () => dashRender());
     if (typeof initLanding === "function") await safeInit("landing", async () => initLanding());

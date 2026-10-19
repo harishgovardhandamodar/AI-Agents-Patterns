@@ -118,3 +118,104 @@ Field notes in the landing page cite real Oct-2026 research (SEABench, SAVER
 survey, APEX/ClawGuard/ActGuard, FIDES/Janus); each note links into the catalog
 items that cover it. The `X-Fox-Backend: axiom` header on every proxied chat
 call is the ground truth for which backend served an answer.
+---
+
+# Iterations 61–80 — deep UI/UX audit (measured)
+
+Audit method: headless-Chrome instrumentation of the live app at
+1600/1440/1366/1280/1152/1024/900/820 px plus DOM, computed-style, contrast and
+offline probes; each finding cross-checked against the code path behind it.
+Numbers below are measured, not estimated.
+
+## Findings (severity ordered)
+
+### G1 — 12 tabs, but ~4 are invisible with no way to reach them (High)
+At every width ≤ 1440 px the tab bar scrolls horizontally and the last tab is
+off-screen (`lastTabOffscreen: true` at 1440/1366/1280/1152/1024/900/820).
+Switching to Discovery leaves it at `left: 1409 / barRight: 1440` — i.e. the
+active tab is **not scrolled into view** (`visible: false`). A mouse-only
+desktop user has no horizontal-scroll affordance, so whole panes are
+effectively undiscoverable.
+
+### G2 — Catalog cards cannot be opened by keyboard (High)
+`.pat-card` (patterns.js:157, scenarios.js:71) and `.cas-card`
+(cascades.js:490) are clickable `<div role="listitem" onclick=…>` with **no
+`tabindex` and no key handler**. Keyboard users can browse the catalog but
+cannot open a single item. The compact mini-rows already do this correctly
+(patterns.js:181), which makes the card view a silent trap.
+
+### G3 — `--text3` fails WCAG AA wherever it is used (High)
+Measured contrast `--text3` on `--bg2`: **3.77:1** (dark) and ~3.0:1 (light) —
+below the 4.5:1 AA floor for normal text. It is the colour of every rail
+section label (`h4`), kicker and muted hint, i.e. the app's navigation
+signage. `--text2` (5.62:1) and `--accent` (6.85:1) pass.
+
+### G4 — No persistent live region; navigation is silent to screen readers (Medium-High)
+`[aria-live]` regions present at load: **0**. Toasts create an announced
+`role=log` on first use, and copilot streams into its own — but *tab changes,
+filter result counts and pane loads are never announced*. A screen-reader user
+gets no confirmation that anything happened.
+
+### G5 — Diagrams depend on a public CDN in a "nothing leaves your network" app (Medium-High)
+`index.html:9` loads Mermaid from `cdn.jsdelivr.net`. The README promises a
+LAN/Tailscale/air-gapped deployment, but with the CDN blocked the design docs,
+copilot diagrams and zoom viewer lose every diagram. This is the only
+third-party runtime dependency in the product.
+
+### G6 — User state has no backup or restore (High)
+Blueprints, the pattern library, guardrail analyses, the deployment plan, the
+copilot chat, pins and preferences live only in `localStorage`. Each tool can
+export its own JSON, but there is **no single "back up everything / restore
+everything"**, and no visible storage-health signal. A cleared profile or a
+quota trim silently destroys work.
+
+### G7 — No deep links to items (Medium)
+Only `#tab` (and `#design/<doc>`) are addressable. A pattern, scenario,
+cascade or guardrail result cannot be linked, bookmarked or shared, and the
+browser Back button does not close an open drawer.
+
+### G8 — Every pane renders at boot, no first-visit feedback (Medium)
+`loadAll` initialises all 12 panes eagerly (~4,900 nodes at t=1.39 s) even
+though only one is visible. The heavy panes (patterns 979, cascades 782,
+coverage 744) are built for tabs the user may never open, and there is no
+skeleton when they first appear.
+
+### G9 — Long operations have no global affordance (Low-Medium)
+Discovery runs/compare, copilot streaming and the model probe all take time;
+the only signal is local to the pane (or a disabled button). Nothing in the
+shell says "working…".
+
+### G10 — Toast noise and jargon (Low-Medium)
+Identical consecutive toasts stack (up to 4) and cannot be dismissed from the
+keyboard; load-bearing terms (blast radius, emergent, autonomy tier) have no
+inline definition outside the Design docs.
+
+## Iteration plan (61–80)
+
+| # | Iteration | Findings |
+|---|---|---|
+| 61 | Tab bar: scroll active tab into view + overflow chevrons + edge fades | G1 |
+| 62 | Keyboard tab cycling (`[`/`]`, Alt+←/→) + shortcuts help | G1 |
+| 63 | Persistent app live region; announce tab change + filter counts | G4 |
+| 64 | Topbar responsive tiers + accessible names on icon-only buttons | G4 |
+| 65 | Keyboard-operable cards (patterns/scenarios/cascades/domains) | G2 |
+| 66 | Contrast: raise `--text3` (both themes) to AA | G3 |
+| 67 | Vendor Mermaid locally (offline-safe) with CDN fallback | G5 |
+| 68 | Backup / restore all user state (download + file picker) | G6 |
+| 69 | Storage health + one-click trim in the display panel | G6 |
+| 70 | Deep links `#kind/id` open the item; drawer reflected in the hash (Back closes) | G7 |
+| 71 | Copy link / copy id / copy summary in the detail drawer | G7 |
+| 72 | Lazy pane init on first visit | G8 |
+| 73 | Skeleton placeholders while a pane first loads | G8 |
+| 74 | Global busy pill for long operations (discovery, copilot, probe) | G9 |
+| 75 | Toast dedupe with ×N counter; Esc dismisses the newest | G10 |
+| 76 | Per-pane filter/query/sort memory across reloads | G8 |
+| 77 | Inline glossary tooltips for load-bearing jargon | G10 |
+| 78 | Chart accessibility: `role=img` + textual summaries | G3 |
+| 79 | Empty-state actions everywhere; "clear search" from a zero-result grid | G7 |
+| 80 | Final headless validation pass + docs refresh | all |
+
+## Delivery status
+
+Implemented and committed on `main`, each batch verified headless (no page
+errors, measured before/after) before commit.

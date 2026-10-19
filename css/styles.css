@@ -11,7 +11,7 @@
   --border: #30363d;
   --text: #f0f6fc;
   --text2: #8b949e;
-  --text3: #6e7681;
+  --text3: #7d8590;
   --accent: #58a6ff;
   --teal: #39c5cf;
   --green: #3fb950;
@@ -28,7 +28,7 @@ html.light {
   --border: #d0d7de;
   --text: #1f2328;
   --text2: #656d76;
-  --text3: #8b949e;
+  --text3: #6a737d;
   --accent: #0969da;
   --teal: #116b6b;
   --green: #1a7f37;
@@ -80,8 +80,28 @@ button { font: inherit; color: inherit; }
 .iconbtn:hover { color: var(--text); border-color: var(--text3); }
 .iconbtn:disabled { opacity: .38; cursor: default; }
 .iconbtn:disabled:hover { color: var(--text2); border-color: var(--border); }
+/* progressive topbar compaction: drop the decorative tagline first, then the
+   catalog counts (still reachable via the title tooltip) as width shrinks */
+@media (max-width: 1500px) { .topbar .tagline { display: none; } }
+@media (max-width: 1150px) { .topbar #dataStatus { display: none; } }
 
 /* ---------- app tabs ---------- */
+/* wrapper stays put while the strip scrolls: it owns the overflow chevrons */
+.tabs-wrap {
+  position: relative; min-width: 0; display: flex;
+  background: var(--bg2); border-bottom: 1px solid var(--border);
+}
+.tabs-wrap .app-tabs { flex: 1 1 auto; min-width: 0; border-bottom: none; background: transparent; scroll-padding-inline: 38px; }
+.tabnav {
+  position: absolute; top: 0; bottom: 0; width: 34px; z-index: 2;
+  display: none; align-items: center; justify-content: center;
+  border: none; background: none; cursor: pointer; padding: 0;
+  color: var(--text2); font-size: 18px; line-height: 1;
+}
+.tabnav.show { display: flex; }
+.tabnav:hover { color: var(--text); }
+.tabnav.left { left: 0; background: linear-gradient(90deg, var(--bg2) 64%, transparent); justify-content: flex-start; padding-left: 6px; }
+.tabnav.right { right: 0; background: linear-gradient(270deg, var(--bg2) 64%, transparent); justify-content: flex-end; padding-right: 6px; }
 .app-tabs {
   display: flex; gap: 4px; align-items: stretch;
   padding: 4px 10px 0;
