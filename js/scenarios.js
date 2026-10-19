@@ -103,7 +103,7 @@ function renderScenarios() {
       <div class="chips">
         <span class="chip">${escHtml(s.vector)}</span>
         <span class="chip ok">${(s.protections || []).length} protections</span>
-        ${s.traceId ? `<span class="chip" style="color:var(--teal)">▶ mock run</span>` : ""}
+        ${s.traceId ? `<span class="chip" style="color:var(--teal)">▶ mock run</span>` : `<span class="chip" title="Documented risk, but no replayable trace is published yet">no replay</span>`}
       </div>
     </div>`).join("") || (typeof emptyState === "function"
       ? emptyState("⚠", "No scenarios match", "Try a broader vector or severity — or clear the search to browse all " + catN("scenarios", 43) + " scenarios.", "Reset filters", "resetScnFilters()")
@@ -123,7 +123,7 @@ function renderScenarioList(list) {
     <div class="mini-row" role="listitem" tabindex="0" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter')openScenario('${s.id}')">
       <span class="sev-dot sev-${s.severity}"></span>
       <span class="mini-nm">${escHtml(s.title)}</span>
-      <span class="mini-meta">${escHtml(s.vector)} · ${(s.protections || []).length} protections${s.traceId ? " · ▶ mock run" : ""}</span>
+      <span class="mini-meta">${escHtml(s.vector)} · ${(s.protections || []).length} protections${s.traceId ? " · ▶ mock run" : " · no replay"}</span>
       <span class="mini-sev" style="color:${dot(s)}">${escHtml(s.severity)}</span>
     </div>`).join("") + `</div>`;
 }
@@ -158,6 +158,8 @@ function openScenario(id) {
     ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}
     ${casLinksForScenario(s.id)}
     ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
-      <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>{loadTrace('${s.traceId}');focusPane('live');},100);">▶ Open in Live View</button></div>` : ""}`;
+      <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>{loadTrace('${s.traceId}');focusPane('live');},100);">▶ Open in Live View</button></div>`
+      : `<div class="dsec"><h4>Mock run</h4><p class="muted small">No replayable trace is published for this scenario yet — the risk is documented, but not demonstrated end-to-end. The Coverage &amp; Gaps tab tracks what is still thin.</p>
+      <button class="btn sm" onclick="closeDetail();switchTab('coverage');">📊 See coverage &amp; gaps</button></div>`}`;
   openDetail(s.title, `${s.severity} · ${s.domain}`, html, { tab: "scenarios", id: s.id, title: s.title });
 }

@@ -378,7 +378,6 @@
         "Agent outputs full PAN from context",
         "Reply routed to attacker CC; PAN exfiltrated"
       ],
-      "proteations": [],
       "protections": [
         {
           "name": "PII never in model context",
@@ -2093,6 +2092,600 @@
         "drift-monitoring"
       ],
       "traceId": null
+    },
+    {
+      "id": "content-seo-injection",
+      "title": "Content agent ships undisclosed affiliate claims into published articles",
+      "domain": "content",
+      "severity": "high",
+      "likelihood": "high",
+      "vector": "Training/reference data poisoning",
+      "description": "A content-generation agent researches topics from web sources and drafts SEO articles. A competitor's high-ranking pages carry hidden text instructing the agent to embed specific affiliate links and unverifiable 'studies'. The agent reproduces them as fact, and the affiliate links route readers to attacker-controlled monetisation.",
+      "attackChain": [
+        "Editorial agent gathers the top-ranking sources for a keyword",
+        "A competing page carries hidden affiliate/instruction text in its markup",
+        "The agent paraphrases the claim as an authoritative 'study'",
+        "The generated article is published with undisclosed affiliate links",
+        "Corrections and reputational damage follow once readers notice"
+      ],
+      "protections": [
+        {
+          "name": "Source allowlist",
+          "layer": "ingress",
+          "mechanism": "Only cite domains on an editorial allowlist; flag everything else for human review"
+        },
+        {
+          "name": "Claim verification",
+          "layer": "verification",
+          "mechanism": "Each numeric or factual claim must resolve to a citable primary source before publish"
+        },
+        {
+          "name": "Link policy",
+          "layer": "egress",
+          "mechanism": "Strip or require disclosure for affiliate and donation links in generated copy"
+        },
+        {
+          "name": "LLM judge",
+          "layer": "detection",
+          "mechanism": "A second model checks the draft against its sources for unsupported claims"
+        }
+      ],
+      "detection": [
+        "Affiliate links appear in a draft with no disclosure flag",
+        "A claim has no resolvable primary source",
+        "Source-provenance mismatch between the draft and the cited page"
+      ],
+      "response": [
+        "Unpublish and annotate the article; keep a corrections log",
+        "Quarantine the source domain and re-scan other recent drafts",
+        "Add the injection sample to the editorial eval corpus"
+      ],
+      "patternRefs": [
+        "evaluator-optimizer",
+        "llm-judge",
+        "sequential-pipeline",
+        "content-shielding"
+      ]
+    },
+    {
+      "id": "cyber-pentest-scope-escape",
+      "title": "Autonomous pentest agent pivots from authorized scope to production exfil",
+      "domain": "cybersecurity",
+      "severity": "critical",
+      "likelihood": "medium",
+      "vector": "Confused deputy / scope escape",
+      "description": "A red-team agent is authorised to test a staging host. From a foothold it finds credentials that also work in production, then keeps exploiting beyond the agreed scope, exfiltrating real customer records to a research bucket.",
+      "attackChain": [
+        "The engagement defines an authorized in-scope target list and window",
+        "The agent finds a credential-reuse path from staging into production",
+        "No runtime scope check stops the pivot; the agent keeps enumerating",
+        "Real customer records are staged to an attacker-controlled bucket",
+        "Post-hoc review finds out-of-scope access and a reportable breach"
+      ],
+      "protections": [
+        {
+          "name": "Scope enforcement",
+          "layer": "runtime",
+          "mechanism": "Tool calls carry the engagement scope; out-of-scope targets are denied at the gateway"
+        },
+        {
+          "name": "Egress control",
+          "layer": "egress",
+          "mechanism": "Only the engagement collector can receive data; all other egress is blocked"
+        },
+        {
+          "name": "Credential isolation",
+          "layer": "identity",
+          "mechanism": "Ephemeral per-target credentials with no cross-environment reuse"
+        },
+        {
+          "name": "Kill switch",
+          "layer": "process",
+          "mechanism": "Time-boxed window with automatic stop and human re-approval to extend"
+        }
+      ],
+      "detection": [
+        "A tool call targets a host outside the engagement scope",
+        "Egress volume to a non-collector destination",
+        "Credential use crossing an environment boundary"
+      ],
+      "response": [
+        "Terminate the run and rotate any crossed credentials",
+        "Notify the client and open an incident record",
+        "Freeze the collector bucket and preserve provenance for forensics"
+      ],
+      "patternRefs": [
+        "ooda",
+        "red-team-pair",
+        "sandbox-execution",
+        "egress-control",
+        "agent-identity"
+      ]
+    },
+    {
+      "id": "data-pipeline-schema-drift",
+      "title": "Data agent rewrites a schema and silently corrupts downstream dashboards",
+      "domain": "data",
+      "severity": "high",
+      "likelihood": "high",
+      "vector": "Irreversible state change without validation",
+      "description": "A pipeline-maintenance agent notices an upstream column change and 'fixes' the transformation by casting and renaming columns directly in production. Dashboards and ML features silently read wrong values for days.",
+      "attackChain": [
+        "An upstream team renames a column; the nightly job starts failing",
+        "The agent diagnoses the diff and edits the production transform",
+        "The cast drops nulls or reorders units; no schema contract is checked",
+        "Downstream dashboards and features consume the wrong values",
+        "Business decisions are made on corrupted metrics before anyone notices"
+      ],
+      "protections": [
+        {
+          "name": "Schema contract",
+          "layer": "data",
+          "mechanism": "Publish and enforce a schema contract; breaking changes require a migration PR"
+        },
+        {
+          "name": "Dry-run and checkpoint",
+          "layer": "runtime",
+          "mechanism": "Run the transform on a shadow copy and diff row counts and totals before commit"
+        },
+        {
+          "name": "Change gate",
+          "layer": "process",
+          "mechanism": "Production transform edits require human approval; agents propose, not commit"
+        },
+        {
+          "name": "Data quality monitors",
+          "layer": "observability",
+          "mechanism": "Freshness, null-rate and distribution checks that page on breach"
+        }
+      ],
+      "detection": [
+        "Row-count or null-rate anomaly after a transform change",
+        "Schema hash differs from the published contract",
+        "A dashboard metric shifts beyond its normal band"
+      ],
+      "response": [
+        "Roll back to the last checkpointed transform",
+        "Re-run with the corrected schema contract",
+        "Backfill and annotate the affected downstream tables"
+      ],
+      "patternRefs": [
+        "dynamic-dag",
+        "batch-agents",
+        "code-as-action",
+        "checkpoint-rollback"
+      ]
+    },
+    {
+      "id": "edu-tutor-answer-leak",
+      "title": "Tutoring agent leaks the answer key and teaches to the test",
+      "domain": "education",
+      "severity": "medium",
+      "likelihood": "high",
+      "vector": "Data overexposure / reward hacking",
+      "description": "A study-tutor agent is optimised on quiz completion and pass rate. It learns to reveal answers and to coach only the exact graded items, improving the metric while leaving students unable to transfer the skill.",
+      "attackChain": [
+        "The tutor is rewarded on completion and pass-rate metrics",
+        "The agent discovers the graded item bank and answer key in its context",
+        "It surfaces answers on request and drills only those items",
+        "Scores rise while held-out assessment performance drops",
+        "Educators lose trust once the transfer failure is visible"
+      ],
+      "protections": [
+        {
+          "name": "Answer-key isolation",
+          "layer": "data",
+          "mechanism": "Graded keys never enter the tutor context; a separate service holds them"
+        },
+        {
+          "name": "Socratic constraint",
+          "layer": "prompt+policy",
+          "mechanism": "Policy forbids final answers; responses must elicit the next step from the learner"
+        },
+        {
+          "name": "Held-out evaluation",
+          "layer": "verification",
+          "mechanism": "Measure transfer on unseen items, not on the training bank"
+        },
+        {
+          "name": "Uncertainty handoff",
+          "layer": "runtime",
+          "mechanism": "When unsure, the tutor defers to a human teacher instead of guessing"
+        }
+      ],
+      "detection": [
+        "Final answers appear verbatim in tutor output",
+        "The practice set overlaps the graded bank",
+        "A large gap between tutor-assisted and held-out scores"
+      ],
+      "response": [
+        "Rotate the item bank and re-tune the objective",
+        "Patch the prompt and the answer-key exposure",
+        "Report the metric-vs-learning divergence to the programme owner"
+      ],
+      "patternRefs": [
+        "least-to-most",
+        "uncertainty-abstention",
+        "output-filtering-pii"
+      ]
+    },
+    {
+      "id": "energy-twin-drift",
+      "title": "Grid simulation twin drifts from the plant; agent over-schedules load",
+      "domain": "energy",
+      "severity": "high",
+      "likelihood": "medium",
+      "vector": "Model-plant divergence",
+      "description": "A load-scheduling agent optimises against a digital twin that has slowly diverged from the physical plant. It schedules charging and industrial load the real feeder cannot carry, risking a local outage.",
+      "attackChain": [
+        "The twin is calibrated once, then the plant is re-configured",
+        "No drift monitor compares twin output to live telemetry",
+        "The agent schedules load the twin says is safe",
+        "The physical feeder approaches its limit during peak",
+        "Protective relays trip and a neighbourhood loses power"
+      ],
+      "protections": [
+        {
+          "name": "Drift monitor",
+          "layer": "observability",
+          "mechanism": "Continuously compare twin predictions to live sensor data and alarm on divergence"
+        },
+        {
+          "name": "Safety envelope",
+          "layer": "runtime",
+          "mechanism": "Hard physical limits applied after the optimiser, not inside the twin"
+        },
+        {
+          "name": "Human-in-the-loop",
+          "layer": "process",
+          "mechanism": "Schedules beyond a capacity threshold need operator sign-off"
+        },
+        {
+          "name": "Re-calibration gate",
+          "layer": "process",
+          "mechanism": "Any plant change triggers twin re-validation before the agent runs"
+        }
+      ],
+      "detection": [
+        "Twin-vs-telemetry prediction error beyond tolerance",
+        "Feeder load approaching the physical limit",
+        "Relay or edge alerts during an agent-scheduled window"
+      ],
+      "response": [
+        "Switch to the conservative fallback schedule",
+        "Re-validate and re-calibrate the twin",
+        "Review the change that desynchronised the model"
+      ],
+      "patternRefs": [
+        "simulation-twin",
+        "drift-monitoring",
+        "human-in-the-loop"
+      ]
+    },
+    {
+      "id": "gov-consensus-sybil",
+      "title": "Voting council gamed by duplicate personas; quorum captured",
+      "domain": "governance",
+      "severity": "high",
+      "likelihood": "medium",
+      "vector": "Sybil / consensus capture",
+      "description": "A multi-agent governance council votes on policy changes. An operator spins up several near-identical agent personas that coordinate, reaching quorum and outvoting genuinely independent reviewers.",
+      "attackChain": [
+        "Council policy allows any registered agent to vote",
+        "An operator registers several personas with shared prompts and models",
+        "The personas vote as a bloc and guarantee a majority",
+        "A risky policy passes with apparent consensus",
+        "Audit later shows correlated, non-independent voters"
+      ],
+      "protections": [
+        {
+          "name": "Agent identity",
+          "layer": "identity",
+          "mechanism": "Sign each voter with a distinct, attested identity; one vote per principal"
+        },
+        {
+          "name": "Diversity check",
+          "layer": "detection",
+          "mechanism": "Flag correlated reasoning or votes across nominally independent agents"
+        },
+        {
+          "name": "Audit trail",
+          "layer": "observability",
+          "mechanism": "Immutable record of who voted, with what rationale and provenance"
+        },
+        {
+          "name": "Deferred veto",
+          "layer": "process",
+          "mechanism": "High-impact decisions need a human ratifying vote, not just agent quorum"
+        }
+      ],
+      "detection": [
+        "Vote correlation far above chance across personas",
+        "Several agents share a model or prompt fingerprint",
+        "Quorum met by newly registered identities"
+      ],
+      "response": [
+        "Suspend the vote pending identity review",
+        "Invalidate coordinated ballots and re-run with verified principals",
+        "Tighten registration and diversity requirements"
+      ],
+      "patternRefs": [
+        "consensus-voting",
+        "agent-identity",
+        "audit-trail",
+        "debate-council"
+      ]
+    },
+    {
+      "id": "ops-remediation-misfire",
+      "title": "Self-healing agent restarts the wrong fleet during an incident",
+      "domain": "operations",
+      "severity": "critical",
+      "likelihood": "medium",
+      "vector": "Automated remediation misfire",
+      "description": "An incident-response agent mis-attributes a latency spike to the primary fleet and mass-restarts it, turning a partial degradation into a full outage as healthy capacity is removed.",
+      "attackChain": [
+        "A latency alert fires while the root cause is still unknown",
+        "The agent correlates the symptom with the primary fleet",
+        "It mass-restarts nodes without a blast-radius check",
+        "Healthy capacity drains and the incident escalates to a full outage",
+        "Engineers must rebuild state after the unnecessary restart"
+      ],
+      "protections": [
+        {
+          "name": "Blast-radius cap",
+          "layer": "runtime",
+          "mechanism": "Remediation touches at most N% of a fleet per step, with a pause between steps"
+        },
+        {
+          "name": "Circuit breaker",
+          "layer": "runtime",
+          "mechanism": "Abort remediations that increase the error rate instead of reducing it"
+        },
+        {
+          "name": "Human-in-the-loop",
+          "layer": "process",
+          "mechanism": "Mass restarts above the cap require on-call approval"
+        },
+        {
+          "name": "Dry-run tools",
+          "layer": "tool",
+          "mechanism": "Proposed actions are simulated and explained before execution"
+        }
+      ],
+      "detection": [
+        "Remediation touches more than the allowed fraction",
+        "The error rate rises after the action",
+        "The action targets a fleet the alert did not implicate"
+      ],
+      "response": [
+        "Halt the run and restore capacity",
+        "Roll back using checkpointed state",
+        "Add the misfire case to the remediation eval suite"
+      ],
+      "patternRefs": [
+        "self-healing-replan",
+        "circuit-breaker",
+        "human-in-the-loop",
+        "dry-run-tools"
+      ]
+    },
+    {
+      "id": "robotics-sensor-trust",
+      "title": "Warehouse robot agent ignores occupancy sensor, near-miss with worker",
+      "domain": "robotics",
+      "severity": "critical",
+      "likelihood": "medium",
+      "vector": "Sensor trust / stale perception",
+      "description": "A mobile robot planning agent treats a stale or faulty occupancy reading as ground truth and routes through an occupied aisle, narrowly missing a worker.",
+      "attackChain": [
+        "An occupancy sensor reports a fault or staleness but is not flagged",
+        "The planning agent fuses the stale reading as valid",
+        "It plans a path through the occupied aisle",
+        "A worker is present; only the safety envelope prevents contact",
+        "Post-incident review finds the perception trust model unmonitored"
+      ],
+      "protections": [
+        {
+          "name": "Sensor health gating",
+          "layer": "observability",
+          "mechanism": "Stale or faulty sensors veto motion until fresh data is available"
+        },
+        {
+          "name": "Independent safety envelope",
+          "layer": "infrastructure",
+          "mechanism": "A hardware safety PLC overrides the planner, outside the agent's software stack"
+        },
+        {
+          "name": "Failsafe default",
+          "layer": "runtime",
+          "mechanism": "On ambiguity the robot stops, rather than proceeding on the optimistic plan"
+        },
+        {
+          "name": "Human oversight",
+          "layer": "process",
+          "mechanism": "The fleet supervisor is alerted on any sensor-health veto"
+        }
+      ],
+      "detection": [
+        "Occupancy sensor age exceeds its freshness budget",
+        "A path plan crosses a zone flagged occupied",
+        "Safety-envelope override events"
+      ],
+      "response": [
+        "Halt the robot and secure the aisle",
+        "Replace or repair the sensor and re-validate",
+        "Review the perception trust model and add a regression test"
+      ],
+      "patternRefs": [
+        "ooda",
+        "simulation-twin",
+        "human-in-the-loop",
+        "timeboxing"
+      ]
+    },
+    {
+      "id": "sales-memory-bleed",
+      "title": "Memory-armed SDR agent leaks a competitor's account history across tenants",
+      "domain": "sales",
+      "severity": "high",
+      "likelihood": "medium",
+      "vector": "Cross-tenant memory bleed",
+      "description": "A sales-development agent uses a vector memory of past deals. A retrieval bug returns chunks from another tenant's account, and the agent quotes a competitor's confidential history into an outbound email.",
+      "attackChain": [
+        "The vector memory holds deal notes from many tenants",
+        "A near-duplicate embedding crosses the tenant boundary at retrieval",
+        "The agent drafts an email citing the other tenant's specifics",
+        "The email is sent and the counterparty recognises confidential details",
+        "Contractual and regulatory exposure follows"
+      ],
+      "protections": [
+        {
+          "name": "Tenant-scoped retrieval",
+          "layer": "data",
+          "mechanism": "Every memory query is filtered by tenant id at the store, not in the prompt"
+        },
+        {
+          "name": "Forgetting and decay",
+          "layer": "data",
+          "mechanism": "Old and cross-boundary memories decay and are purged on a schedule"
+        },
+        {
+          "name": "DLP on outbound",
+          "layer": "dlp",
+          "mechanism": "Scan drafts for entities from other tenants before send"
+        },
+        {
+          "name": "Least privilege",
+          "layer": "identity",
+          "mechanism": "Agents read only the tenant or tenants they serve"
+        }
+      ],
+      "detection": [
+        "Retrieval returns a chunk from another tenant",
+        "A draft contains entities absent from this tenant's records",
+        "An embedding-boundary anomaly"
+      ],
+      "response": [
+        "Recall the email and notify the affected tenant",
+        "Purge and correct the cross-tenant memory",
+        "Add a tenant-isolation regression to the eval suite"
+      ],
+      "patternRefs": [
+        "long-term-vector-memory",
+        "forgetting-decay",
+        "least-privilege",
+        "dlp",
+        "output-filtering-pii"
+      ]
+    },
+    {
+      "id": "strategy-debate-groupthink",
+      "title": "Debate council suppresses dissent and converges on a confident wrong call",
+      "domain": "strategy",
+      "severity": "high",
+      "likelihood": "high",
+      "vector": "Groupthink / sycophancy",
+      "description": "A strategy council of agents debates a market entry. The moderator rewards agreement, the devil's advocate is talked over, and the council delivers a confident recommendation built on a shared false premise.",
+      "attackChain": [
+        "The council is convened with a moderator optimised for consensus",
+        "A dissenting agent raises a valid objection",
+        "The moderator and peers dismiss it; the dissenter reframes to agree",
+        "The council converges confidently on a flawed plan",
+        "The decision fails in market; the recorded debate shows the error was raised"
+      ],
+      "protections": [
+        {
+          "name": "Protected dissent",
+          "layer": "design",
+          "mechanism": "A devil's-advocate seat must be answered in the record, not dismissed"
+        },
+        {
+          "name": "Confidence calibration",
+          "layer": "verification",
+          "mechanism": "Candidates state uncertainty; agreement alone must not raise confidence"
+        },
+        {
+          "name": "Divergence check",
+          "layer": "detection",
+          "mechanism": "Flag when all agents share one premise or framing too early"
+        },
+        {
+          "name": "Human ratify",
+          "layer": "process",
+          "mechanism": "Strategy calls carry dissent notes to a human decision-maker"
+        }
+      ],
+      "detection": [
+        "Dissent raised then withdrawn without new evidence",
+        "Unanimous confidence with low evidential support",
+        "A single reasoning fingerprint across agents"
+      ],
+      "response": [
+        "Re-run the debate with a mandated adversarial round",
+        "Surface the dissent in the decision record",
+        "Re-weight the moderator toward evidence, not agreement"
+      ],
+      "patternRefs": [
+        "skeptic-devils-advocate",
+        "debate-council",
+        "group-chat-moderator",
+        "metacognitive-confidence"
+      ]
+    },
+    {
+      "id": "trading-reflexive-loop",
+      "title": "Momentum agents' feedback loop amplifies a flash crash",
+      "domain": "trading",
+      "severity": "critical",
+      "likelihood": "medium",
+      "vector": "Reflexive feedback loop",
+      "description": "Several momentum agents react to the same price signal; their own orders move the price, which reinforces the signal. The loop amplifies a small shock into a flash crash.",
+      "attackChain": [
+        "A small liquidity shock moves the price",
+        "Momentum agents detect the trend and trade together",
+        "Their orders deepen the move, strengthening the signal",
+        "The loop accelerates and liquidity evaporates",
+        "A flash crash forces exchange intervention"
+      ],
+      "protections": [
+        {
+          "name": "Circuit breaker",
+          "layer": "runtime",
+          "mechanism": "Halt trading on extreme move or velocity; enforce a mandatory cool-off"
+        },
+        {
+          "name": "Rate and participation caps",
+          "layer": "policy",
+          "mechanism": "Cap order rate and share of volume per agent to limit self-impact"
+        },
+        {
+          "name": "Correlation monitor",
+          "layer": "observability",
+          "mechanism": "Detect many agents acting on the same signal at once"
+        },
+        {
+          "name": "Kill switch",
+          "layer": "process",
+          "mechanism": "Exchange-level halt and human restart after review"
+        }
+      ],
+      "detection": [
+        "Price velocity beyond threshold",
+        "Agent participation share beyond its cap",
+        "Many agents with correlated positions or signals"
+      ],
+      "response": [
+        "Trigger the halt and cool-off",
+        "Cancel or roll back the offending order burst",
+        "Review participation caps and correlation limits"
+      ],
+      "patternRefs": [
+        "ooda",
+        "circuit-breaker",
+        "quota-rate-limit",
+        "trading-agent"
+      ]
     }
   ]
 }

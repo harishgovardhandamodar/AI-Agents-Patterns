@@ -155,6 +155,8 @@ function renderCoverage() {
       <button class="iconbtn${covSort === "name" ? " on" : ""}" onclick="covSetSort('name')">by volume</button>
       <button class="iconbtn${covSort === "alpha" ? " on" : ""}" onclick="covSetSort('alpha')">A–Z</button>
       <span class="spacer"></span>
+      <button class="iconbtn" onclick="covDownloadBacklog('md')" title="Download the gap list as a Markdown checklist">⬇ backlog .md</button>
+      <button class="iconbtn" onclick="covDownloadBacklog('csv')" title="Download the gap list as CSV">⬇ .csv</button>
       <span class="cov-legend muted small">low <i class="heat heat-0"></i><i class="heat heat-1"></i><i class="heat heat-2"></i><i class="heat heat-3"></i><i class="heat heat-4"></i> high</span>
     </div>
     <div class="panel cov-heatpanel">
@@ -164,6 +166,7 @@ function renderCoverage() {
         <tbody>${body}</tbody></table>
       </div>
     </div>
+    ${covBudget(rows)}
     <h3 class="cov-sub">Gap cards <span class="muted small">(${gapDomains.length})</span></h3>
     <div class="ov-grid cov-gaps">${gapCards}</div>`;
 }
@@ -204,5 +207,79 @@ function navDomain(d) {
 }
 
 function escAttr(s) { return String(s == null ? "" : s).replace(/['"\\]/g, ""); }
+
+/* --- scenario budget: is every domain pulling its weight? ------------ */
+function covBudget(rows) {
+  const target = COV_TARGETS.scenarios;
+  const ordered = rows.slice().sort((a, b) => b.scenarios.length - a.scenarios.length || a.d.localeCompare(b.d));
+  const max = Math.max(target, ...ordered.map(r => r.scenarios.length), 1);
+  const met = ordered.filter(r => r.scenarios.length >= target).length;
+  const bars = ordered.map(r => {
+    const n = r.scenarios.length;
+    const pct = Math.max(n ? 2 : 0, Math.round((n / max) * 100));
+    const tpct = Math.round((target / max) * 100);
+    const cls = n >= target ? "ok" : n ? "warn" : "bad";
+    return `<div class="bud-row" title="${escHtml(r.d)}: ${n} scenario(s), target ≥ ${target}">
+      <span class="bud-dom">${navDomain(r.d)}</span>
+      <span class="bud-track"><span class="bud-fill ${cls}" style="width:${pct}%"></span><span class="bud-target" style="left:${tpct}%"></span></span>
+      <span class="bud-n">${n}</span></div>`;
+  }).join("");
+  return `<div class="panel cov-budget">
+    <h3>Scenario budget <span class="muted small">(target ≥ ${target} per domain · ${met}/${ordered.length} domains meet it)</span></h3>
+    <div class="bud-legend muted small"><i class="bud-swatch ok"></i>met <i class="bud-swatch warn"></i>below target <i class="bud-swatch bad"></i>none <span class="bud-tk">▏target</span></div>
+    <div class="bud-bars">${bars}</div>
+  </div>`;
+}
+
+/* --- exportable gap backlog (89) ------------------------------------- */
+/* Turn the advisory gap cards into a work list a team can pick up. */
+function covBacklogRows() {
+  return covRows().filter(r => r.gaps.length).map(r => ({
+    domain: r.d, penalty: r.penalty,
+    band: r.penalty >= 5 ? "critical" : r.penalty >= 3 ? "thin" : "watch",
+    gaps: r.gaps
+  })).sort((a, b) => b.penalty - a.penalty || a.domain.localeCompare(b.domain));
+}
+
+function covBacklogMd() {
+  const rows = covBacklogRows();
+  const when = new Date().toISOString().slice(0, 10);
+  const t = (covView && covView.totals) || {};
+  const gapCount = rows.reduce((n, r) => n + r.gaps.length, 0);
+  let md = `# Coverage backlog — ${when}\n\n`;
+  md += `Generated from \`data/coverage.json\` (Coverage & Gaps tab). Heuristic targets per domain: `;
+  md += `patterns ≥ ${COV_TARGETS.patterns}, scenarios ≥ ${COV_TARGETS.scenarios}, derived cascades ≥ ${COV_TARGETS.derived}, cascading cascades ≥ ${COV_TARGETS.cascading}.\n\n`;
+  md += `Catalog: ${t.patterns || 0} patterns · ${t.scenarios || 0} scenarios · ${t.cascades || 0} cascades · ${t.domains || 0} domains. `;
+  md += `${rows.length} domain(s) with open gaps, ${gapCount} gap(s).\n\n`;
+  if (!rows.length) return md + `No gaps flagged — every domain meets its targets.\n`;
+  rows.forEach(r => {
+    md += `## ${r.domain} — ${r.band} (risk ${r.penalty})\n\n`;
+    r.gaps.forEach(g => { md += `- [ ] ${g.text}\n      → ${g.fix}\n`; });
+    md += "\n";
+  });
+  md += `---\n_Each checklist item maps 1:1 to a gap card in the app._\n`;
+  return md;
+}
+
+function covBacklogCsv() {
+  const q = s => '"' + String(s == null ? "" : s).replace(/"/g, '""') + '"';
+  let csv = "domain,band,risk,gap,fix\n";
+  covBacklogRows().forEach(r => r.gaps.forEach(g => {
+    csv += [q(r.domain), q(r.band), r.penalty, q(g.text), q(g.fix)].join(",") + "\n";
+  }));
+  return csv;
+}
+
+function covDownloadBacklog(kind) {
+  const isMd = kind === "md";
+  const txt = isMd ? covBacklogMd() : covBacklogCsv();
+  const blob = new Blob([txt], { type: isMd ? "text/markdown" : "text/csv" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "coverage-backlog-" + new Date().toISOString().slice(0, 10) + (isMd ? ".md" : ".csv");
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  showNotif(`Coverage backlog downloaded (${isMd ? "Markdown" : "CSV"})`);
+}
 
 tabLoaders.coverage = () => initCoverage();

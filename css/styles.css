@@ -727,6 +727,26 @@ td.heat-0 { color: var(--red); }
 .cov-gaplist { margin: 6px 0 10px; padding-left: 16px; display: flex; flex-direction: column; gap: 5px; }
 .cov-gaplist li { font-size: 12px; }
 .cov-fix { display: block; color: var(--text3); font-size: 11px; margin-top: 1px; }
+
+/* scenario budget bars (91) */
+.cov-budget { margin: 14px 0; }
+.bud-legend { display: flex; align-items: center; gap: 10px; margin: 2px 0 10px; }
+.bud-swatch { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-right: 4px; vertical-align: middle; }
+.bud-swatch.ok { background: color-mix(in srgb, var(--green) 55%, transparent); }
+.bud-swatch.warn { background: color-mix(in srgb, var(--orange) 45%, transparent); }
+.bud-swatch.bad { background: color-mix(in srgb, var(--red) 42%, transparent); }
+.bud-tk { color: var(--text3); margin-left: 6px; }
+.bud-bars { display: flex; flex-direction: column; gap: 3px; }
+.bud-row { display: grid; grid-template-columns: 150px 1fr 34px; align-items: center; gap: 8px; font-size: 11.5px; }
+.bud-dom { color: var(--text2); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bud-track { position: relative; height: 12px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+.bud-fill { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; }
+.bud-fill.ok { background: color-mix(in srgb, var(--green) 55%, transparent); }
+.bud-fill.warn { background: color-mix(in srgb, var(--orange) 45%, transparent); }
+.bud-fill.bad { background: transparent; }
+.bud-target { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--text2); opacity: .65; }
+.bud-n { color: var(--text3); text-align: right; font-family: var(--mono); }
+@media (max-width: 620px) { .bud-row { grid-template-columns: 92px 1fr 27px; } }
 .cov-actions { display: flex; gap: 6px; margin-top: auto; }
 .cov-gaps { grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); }
 

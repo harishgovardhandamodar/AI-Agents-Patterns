@@ -34,15 +34,20 @@
     "sequential-pipeline",
     "llm-judge"
    ],
-   "scenarios": [],
+   "scenarios": [
+    "content-seo-injection"
+   ],
    "cascades_all": [
-    "cas-inh-sequential-pipeline"
+    "cas-inh-sequential-pipeline",
+    "cas-der-content-seo-injection"
    ],
    "cascades_inherent": [
     "cas-inh-sequential-pipeline"
    ],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-content-seo-injection"
+   ],
    "cascades_cascading": []
   },
   "cybersecurity": {
@@ -50,17 +55,22 @@
     "ooda",
     "red-team-pair"
    ],
-   "scenarios": [],
+   "scenarios": [
+    "cyber-pentest-scope-escape"
+   ],
    "cascades_all": [
     "cas-inh-ooda",
-    "cas-inh-red-team-pair"
+    "cas-inh-red-team-pair",
+    "cas-der-cyber-pentest-scope-escape"
    ],
    "cascades_inherent": [
     "cas-inh-ooda",
     "cas-inh-red-team-pair"
    ],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-cyber-pentest-scope-escape"
+   ],
    "cascades_cascading": []
   },
   "data": {
@@ -69,15 +79,20 @@
     "batch-agents",
     "code-as-action"
    ],
-   "scenarios": [],
+   "scenarios": [
+    "data-pipeline-schema-drift"
+   ],
    "cascades_all": [
-    "cas-inh-batch-agents"
+    "cas-inh-batch-agents",
+    "cas-der-data-pipeline-schema-drift"
    ],
    "cascades_inherent": [
     "cas-inh-batch-agents"
    ],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-data-pipeline-schema-drift"
+   ],
    "cascades_cascading": []
   },
   "devops": {
@@ -144,22 +159,34 @@
    "patterns": [
     "least-to-most"
    ],
-   "scenarios": [],
-   "cascades_all": [],
+   "scenarios": [
+    "edu-tutor-answer-leak"
+   ],
+   "cascades_all": [
+    "cas-der-edu-tutor-answer-leak"
+   ],
    "cascades_inherent": [],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-edu-tutor-answer-leak"
+   ],
    "cascades_cascading": []
   },
   "energy": {
    "patterns": [
     "simulation-twin"
    ],
-   "scenarios": [],
-   "cascades_all": [],
+   "scenarios": [
+    "energy-twin-drift"
+   ],
+   "cascades_all": [
+    "cas-der-energy-twin-drift"
+   ],
    "cascades_inherent": [],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-energy-twin-drift"
+   ],
    "cascades_cascading": []
   },
   "engineering": {
@@ -646,11 +673,17 @@
    "patterns": [
     "consensus-voting"
    ],
-   "scenarios": [],
-   "cascades_all": [],
+   "scenarios": [
+    "gov-consensus-sybil"
+   ],
+   "cascades_all": [
+    "cas-der-gov-consensus-sybil"
+   ],
    "cascades_inherent": [],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-gov-consensus-sybil"
+   ],
    "cascades_cascading": []
   },
   "healthcare": {
@@ -820,15 +853,20 @@
     "computer-use",
     "self-healing-replan"
    ],
-   "scenarios": [],
+   "scenarios": [
+    "ops-remediation-misfire"
+   ],
    "cascades_all": [
-    "cas-inh-computer-use"
+    "cas-inh-computer-use",
+    "cas-der-ops-remediation-misfire"
    ],
    "cascades_inherent": [
     "cas-inh-computer-use"
    ],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-ops-remediation-misfire"
+   ],
    "cascades_cascading": []
   },
   "procurement": {
@@ -921,26 +959,37 @@
     "ooda",
     "simulation-twin"
    ],
-   "scenarios": [],
+   "scenarios": [
+    "robotics-sensor-trust"
+   ],
    "cascades_all": [
-    "cas-inh-simulation-twin"
+    "cas-inh-simulation-twin",
+    "cas-der-robotics-sensor-trust"
    ],
    "cascades_inherent": [
     "cas-inh-simulation-twin"
    ],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-robotics-sensor-trust"
+   ],
    "cascades_cascading": []
   },
   "sales": {
    "patterns": [
     "long-term-vector-memory"
    ],
-   "scenarios": [],
-   "cascades_all": [],
+   "scenarios": [
+    "sales-memory-bleed"
+   ],
+   "cascades_all": [
+    "cas-der-sales-memory-bleed"
+   ],
    "cascades_inherent": [],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-sales-memory-bleed"
+   ],
    "cascades_cascading": []
   },
   "strategy": {
@@ -949,11 +998,17 @@
     "debate-council",
     "group-chat-moderator"
    ],
-   "scenarios": [],
-   "cascades_all": [],
+   "scenarios": [
+    "strategy-debate-groupthink"
+   ],
+   "cascades_all": [
+    "cas-der-strategy-debate-groupthink"
+   ],
    "cascades_inherent": [],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-strategy-debate-groupthink"
+   ],
    "cascades_cascading": []
   },
   "support": {
@@ -1006,18 +1061,24 @@
    "patterns": [
     "ooda"
    ],
-   "scenarios": [],
-   "cascades_all": [],
+   "scenarios": [
+    "trading-reflexive-loop"
+   ],
+   "cascades_all": [
+    "cas-der-trading-reflexive-loop"
+   ],
    "cascades_inherent": [],
    "cascades_emergent": [],
-   "cascades_derived": [],
+   "cascades_derived": [
+    "cas-der-trading-reflexive-loop"
+   ],
    "cascades_cascading": []
   }
  },
  "totals": {
   "patterns": 107,
-  "scenarios": 43,
-  "cascades": 180,
+  "scenarios": 54,
+  "cascades": 191,
   "domains": 26
  }
 }
