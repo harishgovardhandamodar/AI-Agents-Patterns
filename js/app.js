@@ -172,7 +172,23 @@ document.addEventListener("keydown", function (e) {
       const cards = document.querySelectorAll("#discMain .disc-card").length;
       const railLen = rail ? rail.innerHTML.length : -1;
       const style = cs ? cs.visibility + "/" + cs.opacity : "?";
-      const sig = html + "|" + cards + "|" + railLen + "|" + style + "|" + top;
+      /* what full-screen overlays are open right now, and which pane is active */
+      const openOv = ["onbOverlay", "zoomOverlay", "detailOverlay", "palOverlay", "notifBox"].filter(function (id) {
+        const e = document.getElementById(id);
+        if (!e) return false;
+        const ocs = getComputedStyle(e);
+        const orr = e.getBoundingClientRect();
+        return ocs.display !== "none" && ocs.visibility !== "hidden" && (+ocs.opacity || 0) > 0.05 && orr.width > 300 && orr.height > 200;
+      }).join(",") || "none";
+      const visPanes = Array.prototype.map.call(document.querySelectorAll(".pane.visible"), function (p) { return p.id.replace(/Pane$/, ""); }).join(",") || "NONE";
+      /* theme + the chart title's actual painted colors — catches the last
+         branch: content present and visible but text colored like the
+         background (invisible to the eye, fine in the DOM). */
+      const h3 = main ? main.querySelector(".panel h3, .dash-h") : null;
+      const h3cs = h3 ? getComputedStyle(h3) : null;
+      const theme = (document.documentElement.className || "dark");
+      const colors = h3cs ? (h3cs.color + " on " + h3cs.backgroundColor) : "n/a";
+      const sig = html + "|" + cards + "|" + railLen + "|" + style + "|" + top + "|" + openOv + "|" + visPanes + "|" + theme + "|" + colors;
       if (sig !== window.__diagDiscSig) {
         window.__diagDiscSig = sig;
         send("discpane",
@@ -182,9 +198,13 @@ document.addEventListener("keydown", function (e) {
           " cards=" + cards +
           " rail=" + railLen +
           " vis=" + (pane ? (pane.classList.contains("visible") ? "visible" : "HIDDEN") : "noPane") +
+          " visPane=" + visPanes +
           " style=" + style +
           " h=" + (r ? Math.round(r.height) : -1) +
           " top=" + top +
+          " ov=" + openOv +
+          " theme=" + theme +
+          " colors=" + JSON.stringify(colors) +
           " txt=" + JSON.stringify((main && main.innerText || "").slice(0, 60)) +
           " loader=" + (typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function" ? "fn" : "??") +
           " run=" + (typeof discState === "object" && discState ? (discState.run ? "set" : "null") : "??") +
