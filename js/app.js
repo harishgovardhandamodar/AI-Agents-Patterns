@@ -281,9 +281,13 @@ const tabLoaders = {}; // filled by per-tab scripts
    once. */
 const paneInited = Object.create(null);   // tab -> true | "starting"
 const PANE_INIT = Object.create(null);    // tab -> init function
+/* Resolves once the full catalog (incl. the deferred cascades dataset) is in
+   DATA. On-demand pane inits wait on it so a very fast tab click can't render
+   an empty Cascades/Deploy/Blueprint pane before the data lands. */
+let catalogReady = Promise.resolve();
 const PANE_SKEL = [                        /* panes whose body is JS-built */
   ["coverage", "#covMain"], ["deploy", "#dpRoot"], ["blueprint", "#bpPalette"],
-  ["cascades", "#casList"], ["patterns", "#patGrid"], ["scenarios", "#scnGrid"], ["live", "#traceList"]
+  ["cascades", "#casGrid"], ["patterns", "#patGrid"], ["scenarios", "#scnGrid"], ["live", "#traceList"]
 ];
 function paneSkeletonOn(tab) {
   const pane = el(tab + "Pane");
@@ -308,7 +312,7 @@ function paneSkeletonOff(tab) {
 function paneRunNow(tab) {
   if (paneInited[tab] || !PANE_INIT[tab]) return;
   paneInited[tab] = "starting";
-  Promise.resolve()
+  catalogReady
     .then(() => PANE_INIT[tab]())
     .catch(e => console.warn("pane init failed: " + tab, e))
     .then(() => { paneInited[tab] = true; paneSkeletonOff(tab); });
@@ -1192,7 +1196,29 @@ document.addEventListener("keydown", e => {
 
 /* ---------------- mermaid engine (sequential queue) ---------------- */
 let mmQueue = Promise.resolve();
-let mmLoaded = false;
+let mmLibPromise = null;
+
+/* Lazy-load Mermaid the first time a diagram is needed. The vendored copy is
+   authoritative (works LAN-only / air-gapped); the CDN is a last-resort
+   fallback only if the local file is unavailable. Keeps 3.3 MB off first paint. */
+function mmEnsure() {
+  if (window.mermaid) return Promise.resolve(window.mermaid);
+  if (mmLibPromise) return mmLibPromise;
+  mmLibPromise = new Promise((resolve, reject) => {
+    const load = (src, onFail) => {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = src;
+      s.onload = () => (window.mermaid ? resolve(window.mermaid) : onFail());
+      s.onerror = onFail;
+      document.head.appendChild(s);
+    };
+    const cdn = () => load("https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js",
+      () => reject(new Error("mermaid unavailable (offline?)")));
+    load("js/vendor/mermaid.min.js", cdn);
+  });
+  return mmLibPromise;
+}
 
 function mmTheme() {
   const light = document.documentElement.classList.contains("light");
@@ -1218,7 +1244,8 @@ function mmRender(nodes) {
      replay) used to interleave initialize + run and corrupt each other into
      spurious "Syntax error in text" diagrams. */
   const job = mmQueue.then(async () => {
-    if (!window.mermaid) { list.forEach(n => noteMmErr(n, "mermaid library not loaded (offline?)")); return; }
+    try { await mmEnsure(); }
+    catch (e) { list.forEach(n => noteMmErr(n, "mermaid library not loaded (offline?)")); return; }
     try {
       window.mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "base", themeVariables: mmTheme(), flowchart: { htmlLabels: true, curve: "basis" } });
     } catch (e) { console.warn("mermaid init failed", e); }
@@ -1534,15 +1561,30 @@ async function loadAll() {
     }
   }
   try {
-    const [pats, scns, trcs, cass, cova] = await Promise.all([
-      get("data/patterns.json"), get("data/scenarios.json"), get("data/traces.json"), get("data/cascades.json"), get("data/coverage.json").catch(()=>null)
+    /* Phase 1 — only what the first paint and the first panes read. The two
+       remaining datasets load in parallel; cascades (the largest, ~423 KB) is
+       awaited only by the panes that need it, keeping it off the first-pane
+       path. Traces stay eager because the Overview stat cards read its count. */
+    const [pats, scns, trcs, cova] = await Promise.all([
+      get("data/patterns.json"), get("data/scenarios.json"),
+      get("data/traces.json"), get("data/coverage.json").catch(() => null)
     ]);
-    DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: cass, coverage: cova };
-    el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces · ${cass.cascades.length} cascades`;
-    el("patBadge").textContent = pats.patterns.length;
-    el("scnBadge").textContent = scns.scenarios.length;
-    el("traceBadge").textContent = trcs.traces.length;
-    if (el("casBadge")) el("casBadge").textContent = cass.cascades.length;
+    DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: null, coverage: cova };
+    const paintCounts = () => {
+      el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces · ${DATA.cascades ? DATA.cascades.cascades.length : "…"} cascades`;
+      el("patBadge").textContent = pats.patterns.length;
+      el("scnBadge").textContent = scns.scenarios.length;
+      el("traceBadge").textContent = trcs.traces.length;
+      if (el("casBadge")) el("casBadge").textContent = DATA.cascades ? DATA.cascades.cascades.length : "…";
+    };
+    paintCounts();
+    /* Phase 2 — kick off cascades now so it downloads while the first panes
+       render; the boot awaits it before the panes/dashboard/landing that read
+       it, so ordering stays correct. */
+    const cascadesP = get("data/cascades.json").then(c => {
+      DATA.cascades = c; paintCounts(); return c;
+    }).catch(e => { console.warn("cascades failed to load", e); return null; });
+    catalogReady = cascadesP.then(() => {}, () => {});
     /* ---- boot order ---------------------------------------------------
        Registry first: PANE_INIT lets switchTab() run a pane's init on demand,
        so a tab visit never waits for the idle queue. */
@@ -1582,6 +1624,10 @@ async function loadAll() {
 
     PANES.forEach(p => paneSkeletonOn(p[0]));
     for (const p of first) await paneRun(p);
+
+    /* First panes are on screen; the catalog-wide pieces below (palette index,
+       dashboard, landing) read cascades, so make sure phase 2 has landed. */
+    await cascadesP;
 
     if (typeof initPalette === "function") await safeInit("palette", async () => initPalette());
     if (typeof initShortcuts === "function") await safeInit("shortcuts", async () => initShortcuts());

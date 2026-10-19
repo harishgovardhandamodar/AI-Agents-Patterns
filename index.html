@@ -6,19 +6,10 @@
 <title>AI Agent Patterns &amp; Guardrails</title>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
-<script src="js/vendor/mermaid.min.js" id="mermaid-lib"></script>
-<script>
-  /* Offline-first diagrams: the vendored copy above is authoritative, so a
-     LAN-only or air-gapped deployment never talks to a public CDN. Only if
-     that file is missing/blocked do we fall back to the CDN — and then we
-     re-render any diagram that already showed a placeholder. */
-  if (typeof mermaid === "undefined") {
-    var mms = document.createElement("script");
-    mms.src = "https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js";
-    mms.onload = function () { if (typeof mmRenderAll === "function") mmRenderAll(); };
-    document.head.appendChild(mms);
-  }
-</script>
+<!-- Mermaid is loaded lazily on the first diagram need (see mmEnsure in
+     js/app.js): the vendored copy is authoritative, the CDN is only a
+     last-resort fallback. Keeping it out of <head> removes a 3.3 MB
+     render-blocking script from the critical path. -->
 </head>
 <body>
 
