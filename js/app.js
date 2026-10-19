@@ -143,26 +143,69 @@ document.addEventListener("keydown", function (e) {
     /* If the user landed on discovery, describe what the pane actually holds
        at this moment — distinguishes "render never ran" from "rendered but
        invisible". Reports innerHTML length + first 60 chars + visibility. */
-    try { if (typeof currentTab === "string" && currentTab === "discovery") window.__diagDisc(); }
+    try {
+      if (typeof currentTab === "string" && currentTab === "discovery") {
+        window.__diagDisc();
+        if (typeof window.__diagDiscWatch === "function") window.__diagDiscWatch(true);
+      }
+    }
     catch (e) { /* ignore */ }
   }, 3000);
+  /* Watcher: while the discovery tab is active, report the pane's real state
+     whenever it CHANGES (so a wipe seconds after first paint is caught, not
+     just the initial render), name whatever sits on top of the pane, and
+     self-heal an unexpectedly emptied pane by re-running the loader. */
+  let discHeal = 0;
   window.__diagDisc = function () {
     try {
       const pane = document.getElementById("discoveryPane");
       const main = document.getElementById("discMain");
+      const rail = document.getElementById("discControls");
       const r = main ? main.getBoundingClientRect() : null;
-      send("discpane",
-        "main=" + (main ? "present" : "MISSING") +
-        " html=" + (main ? main.innerHTML.length : -1) +
-        " kids=" + (main ? main.children.length : -1) +
-        " cards=" + document.querySelectorAll("#discMain .disc-card").length +
-        " vis=" + (pane ? (pane.classList.contains("visible") ? "visible" : "HIDDEN") : "noPane") +
-        " h=" + (r ? Math.round(r.height) : -1) +
-        " txt=" + JSON.stringify((main && main.innerText || "").slice(0, 60)) +
-        " loader=" + (typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function" ? "fn" : "??") +
-        " run=" + (typeof discState === "object" && discState ? (discState.run ? "set" : "null") : "??") +
-        " init=" + (typeof initDiscovery === "function" ? "fn" : "??") +
-        " win=" + window.innerWidth + "x" + window.innerHeight);
+      const cs = main ? getComputedStyle(main) : null;
+      let top = "?";
+      if (r && r.width > 0 && r.height > 0) {
+        const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + Math.min(r.height, 400) / 2));
+        top = hit ? ((hit.id ? "#" + hit.id : hit.tagName.toLowerCase()) + (hit.className ? "." + String(hit.className).split(" ")[0] : "")) : "none";
+      }
+      const html = main ? main.innerHTML.length : -1;
+      const cards = document.querySelectorAll("#discMain .disc-card").length;
+      const railLen = rail ? rail.innerHTML.length : -1;
+      const style = cs ? cs.visibility + "/" + cs.opacity : "?";
+      const sig = html + "|" + cards + "|" + railLen + "|" + style + "|" + top;
+      if (sig !== window.__diagDiscSig) {
+        window.__diagDiscSig = sig;
+        send("discpane",
+          "main=" + (main ? "present" : "MISSING") +
+          " html=" + html +
+          " kids=" + (main ? main.children.length : -1) +
+          " cards=" + cards +
+          " rail=" + railLen +
+          " vis=" + (pane ? (pane.classList.contains("visible") ? "visible" : "HIDDEN") : "noPane") +
+          " style=" + style +
+          " h=" + (r ? Math.round(r.height) : -1) +
+          " top=" + top +
+          " txt=" + JSON.stringify((main && main.innerText || "").slice(0, 60)) +
+          " loader=" + (typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function" ? "fn" : "??") +
+          " run=" + (typeof discState === "object" && discState ? (discState.run ? "set" : "null") : "??") +
+          " init=" + (typeof initDiscovery === "function" ? "fn" : "??") +
+          " win=" + window.innerWidth + "x" + window.innerHeight);
+      }
+      /* self-heal: tab active but pane empty or still on the static marker */
+      const stuckMarker = !!(main && main.querySelector("[data-discboot]"));
+      if ((stuckMarker || (html >= 0 && html < 40)) && discHeal < 3 &&
+          typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function") {
+        discHeal++;
+        send("discpane", "HEAL#" + discHeal + " pane was empty (html=" + html + " marker=" + stuckMarker + ") — re-running discovery loader");
+        tabLoaders.discovery();
+      }
+    } catch (e) { /* ignore */ }
+  };
+  let discWatch = null;
+  window.__diagDiscWatch = function (on) {
+    try {
+      if (discWatch) { clearInterval(discWatch); discWatch = null; }
+      if (on) discWatch = setInterval(function () { try { window.__diagDisc(); } catch (e) {} }, 2000);
     } catch (e) { /* ignore */ }
   };
 })();
@@ -191,6 +234,7 @@ function switchTab(tab) {
   }
   pane.classList.add("visible");
   if (tabLoaders[tab]) tabLoaders[tab]();
+  if (typeof window.__diagDiscWatch === "function") window.__diagDiscWatch(tab === "discovery");
   if (tab === "discovery" && typeof window.__diagDisc === "function") setTimeout(window.__diagDisc, 600);
   try { location.hash = tab; } catch (e) {}
 }
