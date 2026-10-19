@@ -27,7 +27,9 @@ const PAL_COMMANDS = [
   { id: "cmd-guide",   title: "Open guide for this tab", run: () => helpOpen() },
   { id: "cmd-tour",    title: "Replay the welcome tour", run: () => onbShow(true) },
   { id: "cmd-bpcopy",  title: "Copy blueprint as Markdown", run: () => bpCopy("md", "Blueprint copied as Markdown") },
-  { id: "cmd-bpsave",  title: "Save blueprint to library", run: () => bpSaveToLib() }
+  { id: "cmd-bpsave",  title: "Save blueprint to library", run: () => bpSaveToLib() },
+  { id: "cmd-backup",  title: "Back up all saved data (download JSON)", run: () => backupAll() },
+  { id: "cmd-restore", title: "Restore saved data from a backup file", run: () => restoreAll() }
 ];
 
 /* Recents + usage learning (persisted; palette gets smarter the more it is used). */

@@ -95,7 +95,27 @@ function uxPaintPanel() {
     '<button class="iconbtn" type="button" onclick="uxPanelToggle(false)" aria-label="Close display preferences">✕</button></div>' +
     '<div class="ux-sec">Density</div>' + dens +
     '<div class="ux-sec">Text size</div>' + fss +
+    uxDataSection() +
     '<div class="muted small" style="margin-top:8px">Saved in this browser; applies to every tab.</div>';
+}
+
+/* Storage health + whole-app backup/restore, shown in the display panel. */
+function uxDataSection() {
+  const u = stateUsage();
+  const rows = u.rows.slice(0, 4).map(r =>
+    '<div class="ux-usage-row"><span>' + escHtml(r.key.replace("aap.", "").replace(/\.v\d+$/, "")) + '</span><b>' + fmtBytes(r.bytes) + "</b></div>").join("");
+  return '<div class="ux-sec">Data &amp; backup</div>' +
+    '<div class="ux-usage">' +
+    '<div class="ux-usage-head"><span>' + (u.count ? u.count + " item" + (u.count === 1 ? "" : "s") + " stored" : "Nothing stored yet") + '</span><b>' + fmtBytes(u.bytes) + '</b></div>' +
+    rows +
+    '<div class="muted small">Browser storage holds about 5 MB. Back up before clearing site data.</div>' +
+    (storeOk() ? "" : '<div class="ux-warn">Storage is blocked in this browser — work will not persist after reload.</div>') +
+    "</div>" +
+    '<div class="ux-btns">' +
+    '<button class="btn sm" type="button" onclick="backupAll()"' + (u.count ? "" : " disabled") + ">⤓ Back up all</button>" +
+    '<button class="btn sm" type="button" onclick="restoreAll()">⤒ Restore…</button>' +
+    '<button class="btn sm" type="button" onclick="trimState()">Trim history</button>' +
+    "</div>";
 }
 document.addEventListener("mousedown", function (e) {
   const p = document.getElementById("uxPanel");
@@ -640,6 +660,138 @@ function storeOk() {
     storeOkCache = true;
   } catch (e) { storeOkCache = false; }
   return storeOkCache;
+}
+
+/* ---------------- backup / restore & storage health --------------------
+   Everything the user creates lives in localStorage under aap.*: blueprints,
+   the saved library, guardrail analyses, the deployment plan, the copilot
+   chat, mitigations, discovery runs, pins, filters and display prefs. This
+   block gives one place to see how much is stored, download it all as a
+   single JSON file, and load it back (replacing matching keys, then reload). */
+const BACKUP_PREFIX = "aap.";
+const BACKUP_SKIP = { "aap.probe": 1 };
+let pendingRestore = null;
+
+function userStateKeys() {
+  const keys = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(BACKUP_PREFIX) === 0 && !BACKUP_SKIP[k]) keys.push(k);
+    }
+  } catch (e) {}
+  return keys.sort();
+}
+function stateUsage() {
+  let bytes = 0;
+  const rows = [];
+  userStateKeys().forEach(k => {
+    const v = storeGet(k) || "";
+    const b = (k.length + v.length) * 2;   /* localStorage counts UTF-16 units */
+    bytes += b;
+    rows.push({ key: k, bytes: b });
+  });
+  rows.sort((a, b) => b.bytes - a.bytes);
+  return { bytes: bytes, count: rows.length, rows: rows };
+}
+function fmtBytes(b) {
+  if (b >= 1048576) return (b / 1048576).toFixed(1) + " MB";
+  if (b >= 1024) return Math.round(b / 1024) + " KB";
+  return b + " B";
+}
+function backupAll() {
+  const keys = userStateKeys();
+  const data = { app: "ai-agent-patterns", kind: "aap-backup", version: 1, exportedAt: new Date().toISOString(), keys: {} };
+  keys.forEach(k => { data.keys[k] = storeGet(k); });
+  try {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "aap-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    showNotif("Backed up " + keys.length + " saved item" + (keys.length === 1 ? "" : "s") + " (" + fmtBytes(stateUsage().bytes) + ") to a JSON file.", { kind: "ok" });
+    announce("Backup downloaded, " + keys.length + " items");
+  } catch (e) {
+    showNotif("Could not build a backup in this browser.", { kind: "error" });
+  }
+  uxPaintPanel();
+}
+function restoreAll() {
+  let inp = el("aapRestoreFile");
+  if (!inp) {
+    inp = document.createElement("input");
+    inp.type = "file";
+    inp.id = "aapRestoreFile";
+    inp.accept = "application/json,.json";
+    inp.style.display = "none";
+    inp.addEventListener("change", restoreApply);
+    document.body.appendChild(inp);
+  }
+  inp.value = "";
+  inp.click();
+}
+function restoreApply(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = function () {
+    let data = null;
+    try { data = JSON.parse(String(r.result)); } catch (err) { data = null; }
+    const keys = data && data.keys && typeof data.keys === "object"
+      ? Object.keys(data.keys).filter(k => k.indexOf(BACKUP_PREFIX) === 0 && !BACKUP_SKIP[k]) : null;
+    if (!data || !keys || (!keys.length && data.kind !== "aap-backup")) {
+      showNotif("That file doesn't look like an app backup.", { kind: "error" });
+      return;
+    }
+    pendingRestore = data;
+    const when = data.exportedAt ? new Date(data.exportedAt).toLocaleString() : "an unknown date";
+    showNotif("Restore " + keys.length + " saved item" + (keys.length === 1 ? "" : "s") + " from " + when + "? This replaces matching data in this browser and reloads.", {
+      kind: "warn", ttl: 20000, actions: [
+        { label: "Restore & reload", primary: true, fn: restoreCommit },
+        { label: "Cancel", fn: function () { pendingRestore = null; showNotif("Restore cancelled."); } }
+      ]
+    });
+  };
+  r.readAsText(f);
+}
+function restoreCommit() {
+  const data = pendingRestore;
+  pendingRestore = null;
+  if (!data || !data.keys) return;
+  let n = 0;
+  Object.keys(data.keys).forEach(function (k) {
+    if (k.indexOf(BACKUP_PREFIX) === 0 && !BACKUP_SKIP[k] && data.keys[k] != null) { if (storeSet(k, data.keys[k])) n++; }
+  });
+  showNotif("Restored " + n + " item" + (n === 1 ? "" : "s") + " — reloading to apply.", { kind: "ok", ttl: 1400 });
+  setTimeout(() => { try { location.reload(); } catch (e) {} }, 900);
+}
+/* Trim regenerable history first when storage is tight — chat is the usual
+   culprit. Mirrors the trim into memory so a later autosave can't undo it. */
+function trimState() {
+  let freed = 0;
+  const cp = storeGet("aap.copilot");
+  if (cp) {
+    try {
+      const o = JSON.parse(cp);
+      if (o && Array.isArray(o.messages) && o.messages.length > 12) {
+        const before = cp.length;
+        o.messages = o.messages.slice(-12);
+        const after = JSON.stringify(o);
+        if (storeSet("aap.copilot", after)) {
+          freed += (before - after.length) * 2;
+          if (typeof cpMessages !== "undefined" && Array.isArray(cpMessages) && cpMessages.length > 12) cpMessages = o.messages;
+          if (typeof cpRenderLog === "function") { try { cpRenderLog(); } catch (e) {} }
+        }
+      }
+    } catch (e) {}
+  }
+  const u = stateUsage();
+  if (freed > 0) showNotif("Trimmed chat history — freed about " + fmtBytes(freed) + ". Now using " + fmtBytes(u.bytes) + ".", { kind: "ok" });
+  else showNotif("Nothing to trim — no oversized history found (" + fmtBytes(u.bytes) + " in use).", { kind: "info" });
+  uxPaintPanel();
 }
 
 /* ---------------- onboarding: first-run welcome tour --------------------

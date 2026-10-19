@@ -68,7 +68,7 @@ function renderScenarios() {
   if (typeof paintActiveChips === "function") paintActiveChips("scnActive", scnActiveChips(q));
   if ((uxPrefs.scnView || "cards") === "list") return renderScenarioList(list);
   el("scnGrid").innerHTML = list.map(s => `
-    <div class="pat-card" role="listitem" onclick="openScenario('${s.id}')">
+    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open scenario: ${escHtml(s.title)}" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScenario('${s.id}');}">
       <div class="cat" style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${escHtml(s.severity.toUpperCase())} · ${escHtml(s.domain)}</div>
       <div class="nm">${escHtml(s.title)}</div>
       <div class="sm">${escHtml(s.description.slice(0, 180))}…</div>

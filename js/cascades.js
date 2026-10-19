@@ -487,7 +487,7 @@ function casCardHtml(c) {
   const hi = casBlastRank(c) >= 4 ? " hi" : "";
   const mit = c.mitigations || {};
   const mc = ["prevent", "detect", "contain", "recover"].reduce(function (n, k) { return n + ((mit[k] || []).length); }, 0);
-  return '<div class="cas-card" role="listitem" onclick="openCascade(\'' + c.id + '\')">' +
+  return '<div class="cas-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open cascade: ' + escHtml(c.name) + '" onclick="openCascade(\'' + c.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCascade(\'' + c.id + '\')}">' +
     '<div class="t"><span class="cls-chip ' + c.cls + '">' + c.cls + '</span> ' + escHtml(c.name) + "</div>" +
     '<div class="m"><span class="blast-chip' + hi + '">blast: ' + escHtml(c.blastRadius) + "</span>" +
     '<span class="blast-chip">' + escHtml(c.impact) + " impact</span>" +

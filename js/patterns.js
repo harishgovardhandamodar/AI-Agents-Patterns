@@ -154,7 +154,7 @@ function renderPatterns() {
   if ((uxPrefs.patView || "cards") === "list") return renderPatternList(list, P);
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   el("patGrid").innerHTML = list.map(p => `
-    <div class="pat-card" role="listitem" onclick="openPattern('${p.id}')">
+    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open pattern: ${escHtml(p.name)}" onclick="openPattern('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPattern('${p.id}');}">
       <div class="cat">${escHtml(catName(p.cat))}</div>
       <div class="nm">${escHtml(p.name)}</div>
       <div class="sm">${escHtml(p.summary)}</div>
