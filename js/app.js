@@ -140,7 +140,31 @@ document.addEventListener("keydown", function (e) {
         " panes=" + document.querySelectorAll(".pane").length +
         " disc=" + (!!document.getElementById("discMain")));
     } catch (e) { /* ignore */ }
+    /* If the user landed on discovery, describe what the pane actually holds
+       at this moment — distinguishes "render never ran" from "rendered but
+       invisible". Reports innerHTML length + first 60 chars + visibility. */
+    try { if (typeof currentTab === "string" && currentTab === "discovery") window.__diagDisc(); }
+    catch (e) { /* ignore */ }
   }, 3000);
+  window.__diagDisc = function () {
+    try {
+      const pane = document.getElementById("discoveryPane");
+      const main = document.getElementById("discMain");
+      const r = main ? main.getBoundingClientRect() : null;
+      send("discpane",
+        "main=" + (main ? "present" : "MISSING") +
+        " html=" + (main ? main.innerHTML.length : -1) +
+        " kids=" + (main ? main.children.length : -1) +
+        " cards=" + document.querySelectorAll("#discMain .disc-card").length +
+        " vis=" + (pane ? (pane.classList.contains("visible") ? "visible" : "HIDDEN") : "noPane") +
+        " h=" + (r ? Math.round(r.height) : -1) +
+        " txt=" + JSON.stringify((main && main.innerText || "").slice(0, 60)) +
+        " loader=" + (typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function" ? "fn" : "??") +
+        " run=" + (typeof discState === "object" && discState ? (discState.run ? "set" : "null") : "??") +
+        " init=" + (typeof initDiscovery === "function" ? "fn" : "??") +
+        " win=" + window.innerWidth + "x" + window.innerHeight);
+    } catch (e) { /* ignore */ }
+  };
 })();
 
 /* ---------------- tabs ---------------- */
@@ -167,6 +191,7 @@ function switchTab(tab) {
   }
   pane.classList.add("visible");
   if (tabLoaders[tab]) tabLoaders[tab]();
+  if (tab === "discovery" && typeof window.__diagDisc === "function") setTimeout(window.__diagDisc, 600);
   try { location.hash = tab; } catch (e) {}
 }
 
