@@ -81,7 +81,7 @@ function showGuardIntro() {
   el("guardMain").innerHTML = `
     <div class="g-input-box">
       <h3 style="margin:0 0 8px;font-size:13px">Describe the agent you're building (or the risk you're worried about)</h3>
-      <textarea id="guardInput" placeholder="e.g. Think of an AI agent that can spend money using company cards to complete tasks. One prompt injection may trigger a $50,000 purchase of unnecessary services. How do I design financial guardrails for autonomous agents?"></textarea>
+      <textarea id="guardInput" aria-label="Describe the agent, tools and task to analyze" placeholder="e.g. Think of an AI agent that can spend money using company cards to complete tasks. One prompt injection may trigger a $50,000 purchase of unnecessary services. How do I design financial guardrails for autonomous agents?"></textarea>
       <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
         <button class="btn primary" onclick="submitGuard()">⚡ Analyze & design guardrails</button>
         <span class="muted small">The analyzer detects domain, action classes, risk signals — and produces advice, proposals, architecture, and a mock run.</span>

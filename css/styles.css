@@ -48,6 +48,9 @@ body {
   overflow: hidden;
 }
 #main { display: grid; grid-template-rows: 44px 40px 1fr; height: 100vh; }
+/* the single <main> landmark wraps only the panes, and must stretch to fill
+   the 1fr row so each pane keeps its full-height scroll container */
+#main > main { min-height: 0; display: grid; }
 .skip-link {
   position: fixed; top: -48px; left: 12px; z-index: 500;
   background: var(--accent); color: #fff; font-size: 13px; font-weight: 600;

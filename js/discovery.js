@@ -349,10 +349,10 @@ function paintDiscControls() {
   const domOpts = ["all"].concat(discDomains()).map(d =>
     `<option value="${escHtml(d)}"${cfg.domains[0] === d ? " selected" : ""}>${d === "all" ? "All domains (gap-ranked)" : escHtml(d)}</option>`).join("");
   box.innerHTML =
-    `<h4>Seed scope</h4><select class="search" id="discDom" onchange="discSet('domains',[this.value])">${domOpts}</select>` +
-    `<h4>Rounds</h4><select class="search" id="discRounds" onchange="discSet('rounds',Number(this.value))">${[2, 3, 4, 6, 8].map(r => `<option value="${r}"${cfg.rounds === r ? " selected" : ""}>${r} rounds</option>`).join("")}</select>` +
-    `<h4>Candidates / round</h4><select class="search" id="discPer" onchange="discSet('perRound',Number(this.value))">${[12, 24, 40].map(r => `<option value="${r}"${cfg.perRound === r ? " selected" : ""}>${r} candidates</option>`).join("")}</select>` +
-    `<h4>Keep per round</h4><select class="search" id="discKeep" onchange="discSet('keep',Number(this.value))">${[3, 6, 10].map(r => `<option value="${r}"${cfg.keep === r ? " selected" : ""}>top ${r}</option>`).join("")}</select>` +
+    `<h4>Seed scope</h4><select class="search" id="discDom" aria-label="Seed scope domain" onchange="discSet('domains',[this.value])">${domOpts}</select>` +
+    `<h4>Rounds</h4><select class="search" id="discRounds" aria-label="Forgetting rounds" onchange="discSet('rounds',Number(this.value))">${[2, 3, 4, 6, 8].map(r => `<option value="${r}"${cfg.rounds === r ? " selected" : ""}>${r} rounds</option>`).join("")}</select>` +
+    `<h4>Candidates / round</h4><select class="search" id="discPer" aria-label="Candidates per round" onchange="discSet('perRound',Number(this.value))">${[12, 24, 40].map(r => `<option value="${r}"${cfg.perRound === r ? " selected" : ""}>${r} candidates</option>`).join("")}</select>` +
+    `<h4>Keep per round</h4><select class="search" id="discKeep" aria-label="Keep per round" onchange="discSet('keep',Number(this.value))">${[3, 6, 10].map(r => `<option value="${r}"${cfg.keep === r ? " selected" : ""}>top ${r}</option>`).join("")}</select>` +
     `<label class="filter-item" style="margin-top:10px"><input type="checkbox" ${cfg.forget ? "checked" : ""} onchange="discSet('forget',this.checked)"> Forgetting on <span class="muted small">discard losers each round</span></label>` +
     `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" style="flex:1" onclick="discRunAll(false)">▶ Run discovery</button></div>` +
     `<div style="margin-top:6px"><button class="btn sm ghost" style="width:100%" onclick="discRunAll(true)">Run + compare (forgetting off)</button></div>` +

@@ -827,7 +827,7 @@ function bpCmpHtml() {
       `<button class="btn sm ghost" onclick="bpCmpCopy()">⧉ Copy comparison</button></div>`;
   }
   return `<div class="bp-compare"><h4>Compare with baseline</h4>` +
-    `<select class="search" style="max-width:340px" onchange="bpSetCmp(this.value)">${opts}</select>${body}</div>`;
+    `<select class="search" style="max-width:340px" aria-label="Compare blueprint against" onchange="bpSetCmp(this.value)">${opts}</select>${body}</div>`;
 }
 function bpSaveToLib() {
   if (!bpState.comps.length) { showNotif("Add components before saving"); return; }
@@ -983,7 +983,7 @@ function bpRender() {
             `</div></div>`) +
         `<div class="bp-notes">` +
           `<h4>Notes</h4>` +
-          `<textarea class="bp-noteta" placeholder="Assumptions, data classes, known constraints…" ` +
+          `<textarea class="bp-noteta" aria-label="Blueprint notes" placeholder="Assumptions, data classes, known constraints…" ` +
             `oninput="bpSetField('notes', this.value)">${escHtml(bpState.notes)}</textarea>` +
         `</div>` +
       `</div>` +

@@ -19,14 +19,19 @@ const DESIGN_DOCS = [
 /* ---------------- theme ---------------- */
 function toggleTheme() {
   const light = document.documentElement.classList.toggle("light");
+  document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
   try { localStorage.setItem("aap.theme", light ? "light" : "dark"); } catch (e) {}
   // re-render every diagram with the new theme palette
   mmRenderAll();
 }
 (function initTheme() {
-  let t = "dark";
-  try { t = localStorage.getItem("aap.theme") || "dark"; } catch (e) {}
+  let t = null;
+  try { t = localStorage.getItem("aap.theme"); } catch (e) {}
+  /* No explicit choice yet -> follow the OS. Once the user clicks ◐ theme the
+     stored value wins, so the preference is never fought over. */
+  if (!t) t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
   if (t === "light") document.documentElement.classList.add("light");
+  document.documentElement.setAttribute("data-theme", t);
 })();
 
 /* ---------------- reading preferences: density + font size ----------------
@@ -425,6 +430,14 @@ function initTabBar() {
   };
   wrap.appendChild(mk("left", "Scroll tabs left", "‹", -1));
   wrap.appendChild(mk("right", "Scroll tabs right", "›", 1));
+  /* roving tabindex + aria-selected at rest: the active tab is the one Tab stop,
+     the rest are reachable with the arrow keys (tabKeyNav) — the standard
+     WAI-ARIA tabs pattern, so the strip is keyboard-reachable on first paint. */
+  bar.querySelectorAll(".app-tab").forEach(t => {
+    const on = t.classList.contains("active");
+    t.setAttribute("aria-selected", on ? "true" : "false");
+    t.tabIndex = on ? 0 : -1;
+  });
   bar.addEventListener("scroll", debounce(updateTabNav, 60));
   window.addEventListener("resize", debounce(updateTabNav, 120));
   updateTabNav();
