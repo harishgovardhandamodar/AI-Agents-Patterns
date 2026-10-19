@@ -39,6 +39,21 @@ const uxPrefs = (function () {
   catch (e) { return Object.assign({}, dflt); }
 })();
 
+/* ---------------- per-pane UI memory ----------------
+   Remembers the filters, search text and sort a user left each catalog pane
+   in, so coming back to a tab (or reloading) does not mean re-applying the
+   same narrowing. Kept separate from uxPrefs: it is working state, not taste. */
+const UIMEM_STORE = "aap.uimem.v1";
+const uiMem = (function () {
+  try { return JSON.parse(localStorage.getItem(UIMEM_STORE) || "{}") || {}; }
+  catch (e) { return {}; }
+})();
+function uiMemGet(key, dflt) { return uiMem[key] === undefined ? dflt : uiMem[key]; }
+function uiMemSet(key, val) {
+  uiMem[key] = val;
+  try { localStorage.setItem(UIMEM_STORE, JSON.stringify(uiMem)); } catch (e) {}
+}
+
 function uxApply() {
   const root = document.documentElement;
   root.dataset.uxdensity = uxPrefs.density === "compact" ? "compact" : "comfortable";
@@ -416,6 +431,34 @@ function initTabBar() {
 function escHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+/* ---------------- inline glossary (jargon) ----------------
+   Wrap known terms in <abbr title="…"> so a reader can hover any piece of
+   jargon for the definition without leaving the drawer. Operates on a plain
+   string and escapes as it goes, so it is safe on user/data text. */
+let JARGON_RE = null, JARGON_DEFS = null;
+function jargon(text) {
+  const raw = String(text == null ? "" : text);
+  if (typeof GLOSSARY === "undefined" || !GLOSSARY.length) return escHtml(raw);
+  if (!JARGON_RE) {
+    JARGON_DEFS = {};
+    GLOSSARY.forEach(g => { JARGON_DEFS[String(g[0]).toLowerCase()] = g[1]; });
+    const terms = GLOSSARY.map(g => String(g[0])).filter(Boolean)
+      .sort((a, b) => b.length - a.length)
+      .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    JARGON_RE = new RegExp("\\b(" + terms.join("|") + ")\\b", "gi");
+  }
+  let html = "", last = 0, m;
+  JARGON_RE.lastIndex = 0;
+  while ((m = JARGON_RE.exec(raw)) !== null) {
+    if (m[0].length === 0) { JARGON_RE.lastIndex++; continue; }
+    html += escHtml(raw.slice(last, m.index));
+    const def = JARGON_DEFS[m[0].toLowerCase()] || "";
+    html += '<abbr class="jargon" title="' + escHtml(def) + '">' + escHtml(m[0]) + "</abbr>";
+    last = m.index + m[0].length;
+  }
+  return html + escHtml(raw.slice(last));
+}
 function el(id) { return document.getElementById(id); }
 
 /* ---------------- screen-reader announcements ----------------
@@ -476,6 +519,74 @@ function busyPaint() {
   const txt = el("busyChipTxt");
   if (txt) txt.textContent = on ? [...busySet][busySet.size - 1] : "";
 }
+
+/* ---------------- chart accessibility ----------------
+   Every bar chart here encodes value by colour and width only. Give each row
+   an image role with a spoken label built from its own text and hide the
+   decorative track, so a screen reader hears "Orchestration: 14" instead of
+   nothing. Applied post-render by a debounced observer, so every current and
+   future chart path is covered without touching each render function. */
+function a11yBars(root) {
+  const scope = (root && root.querySelectorAll) ? root : document;
+  scope.querySelectorAll(".bar-row:not([role])").forEach(row => {
+    const track = row.querySelector(".bar-track");
+    const lbl = row.querySelector(".lbl"), n = row.querySelector(".n");
+    const label = ((lbl && lbl.textContent) || "").trim();
+    const val = ((n && n.textContent) || "").trim();
+    if (track) track.setAttribute("aria-hidden", "true");
+    if (!label && !val) return;
+    row.setAttribute("role", "img");
+    row.setAttribute("aria-label", label + (val ? ": " + val : ""));
+  });
+  scope.querySelectorAll(".dp-bar:not([role])").forEach(bar => {
+    const dim = bar.closest(".dp-dim");
+    const head = dim && dim.querySelector(".dp-dimhead");
+    const txt = head ? head.textContent.replace(/\s+/g, " ").trim() : "";
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", txt ? "Dimension score — " + txt : "Dimension score");
+  });
+  scope.querySelectorAll(".dp-scorebar:not([role])").forEach(bar => {
+    const score = bar.closest(".dp-score");
+    const big = score && score.querySelector(".dp-scorebig");
+    const txt = big ? big.textContent.replace(/\s+/g, " ").trim() : "";
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", txt ? "Overall readiness — " + txt : "Overall readiness score");
+  });
+}
+let a11yObs = null;
+function a11yBarsInit() {
+  try { a11yBars(document); } catch (e) {}
+  if (a11yObs || !window.MutationObserver || !document.body) return;
+  let t = null;
+  a11yObs = new MutationObserver(function () {
+    if (t) return;
+    t = setTimeout(function () { t = null; try { a11yBars(document); } catch (e) {} }, 150);
+  });
+  a11yObs.observe(document.body, { childList: true, subtree: true });
+}
+
+/* ---------------- offline indicator ----------------
+   This app is built to run on a LAN or air-gapped host: the catalog, filters,
+   diagrams (vendored) and saved work all run locally. When the browser reports
+   no network, say so plainly instead of letting a failing model call look like
+   a broken app. */
+function netPaint() {
+  const off = (typeof navigator !== "undefined" && navigator.onLine === false);
+  let c = el("netChip");
+  if (!off) { if (c) c.remove(); return; }
+  if (!c) {
+    c = document.createElement("span");
+    c.id = "netChip";
+    c.className = "net-chip";
+    c.setAttribute("role", "status");
+    c.textContent = "⚡ Offline";
+    c.title = "No network connection. The catalog, filters, diagrams and saved work all run locally; model answers fall back to the deterministic catalog voice.";
+    const bar = document.querySelector(".topbar");
+    if (bar) bar.insertBefore(c, el("dataStatus") || null);
+  }
+}
+window.addEventListener("online", netPaint);
+window.addEventListener("offline", netPaint);
 /* Stale-shell detector: if the cached index.html predates the JS (or vice
    versa), tabs and panes disagree — e.g. a tab button with no pane, or a
    first-run tour looping over an app the user already knows. Banner offers
@@ -560,6 +671,16 @@ function notifBox() {
   return n;
 }
 
+let lastToast = null;                 /* newest toast, for "×N" collapsing */
+const liveToasts = [];                /* { el, dismiss } newest last */
+function dismissNewestToast() {
+  for (let i = liveToasts.length - 1; i >= 0; i--) {
+    const t = liveToasts[i];
+    if (t && document.contains(t.el)) { t.dismiss(); return true; }
+  }
+  return false;
+}
+
 function showNotif(msg, opts) {
   opts = opts || {};
   const kind = opts.kind || "info";
@@ -569,6 +690,19 @@ function showNotif(msg, opts) {
     : acts.length ? 7000 : 4200;
 
   const n = notifBox();
+
+  /* Collapse an identical toast that is still on screen into a "×N" counter
+     instead of stacking duplicates (repeated saves, repeated filter misses). */
+  if (lastToast && lastToast.msg === msg && lastToast.kind === kind &&
+      document.contains(lastToast.el) && !acts.length && !(opts.actions || []).length) {
+    lastToast.n++;
+    const c = lastToast.el.querySelector(".notif-count");
+    if (c) { c.hidden = false; c.textContent = "×" + lastToast.n; }
+    lastToast.el.classList.remove("out");
+    if (lastToast.rearm) lastToast.rearm();
+    return;
+  }
+
   while (n.children.length >= 4) n.firstChild.remove(); /* cap the stack */
 
   const d = document.createElement("div");
@@ -579,6 +713,11 @@ function showNotif(msg, opts) {
   m.className = "notif-msg";
   m.textContent = msg;
   d.appendChild(m);
+
+  const cnt = document.createElement("span");
+  cnt.className = "notif-count";
+  cnt.hidden = true;
+  d.appendChild(cnt);
 
   acts.forEach(a => {
     const b = document.createElement("button");
@@ -604,16 +743,27 @@ function showNotif(msg, opts) {
   function dismiss() {
     if (timer) clearTimeout(timer);
     timer = null; remain = 0;
+    const i = liveToasts.indexOf(entry);
+    if (i >= 0) liveToasts.splice(i, 1);
+    if (lastToast && lastToast.el === d) lastToast = null;
     d.classList.add("out");
     setTimeout(() => d.remove(), 160);
     if (d.contains(document.activeElement)) x.focus();
   }
+  const entry = { el: d, dismiss: dismiss };
   d.addEventListener("mouseenter", pause);
   d.addEventListener("mouseleave", arm);
   d.addEventListener("focusin", pause);
   d.addEventListener("focusout", arm);
 
   n.appendChild(d);
+  liveToasts.push(entry);
+  if (liveToasts.length > 8) liveToasts.splice(0, liveToasts.length - 8);
+  lastToast = { el: d, msg: msg, kind: kind, n: 1, rearm: function () {
+    /* restart the countdown from a full ttl so the collapsed toast lingers */
+    if (timer) { clearTimeout(timer); timer = null; }
+    remain = ttl; arm();
+  } };
   arm();
 
   /* history + topbar badge */
@@ -1356,7 +1506,9 @@ document.addEventListener("keydown", e => {
     if (log && log.classList.contains("open")) { notifLogToggle(); return; }
     const pal = document.getElementById("palOverlay");
     if (pal && pal.classList.contains("open")) return; /* palette handles its own Esc */
-    closeDetail();
+    const ov = document.getElementById("detailOverlay");
+    if (ov && ov.classList.contains("open")) { closeDetail(); return; }
+    dismissNewestToast();   /* last resort: clear the newest toast */
   }
 });
 /* click outside closes the notification log */
@@ -1438,6 +1590,8 @@ async function loadAll() {
     if (typeof paintSaveStamps === "function") paintSaveStamps();
     if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
     if (typeof shellFreshCheck === "function") shellFreshCheck();
+    if (typeof a11yBarsInit === "function") a11yBarsInit();
+    if (typeof netPaint === "function") netPaint();
     if (typeof onbShow === "function") setTimeout(() => onbShow(false), 350);
     const hash = (location.hash || "").replace("#", "");
     const dl = dlParse(location.hash);

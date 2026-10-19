@@ -533,7 +533,7 @@ function openCascade(id) {
     '<span>likelihood <b>' + escHtml(c.likelihood) + "</b></span>" +
     '<span>impact <b>' + escHtml(c.impact) + "</b></span>" +
     '<span>speed <b>' + escHtml(c.speed) + "</b></span></div>" +
-    "<p>" + escHtml(c.summary) + "</p>" +
+    "<p>" + (typeof jargon === "function" ? jargon(c.summary) : escHtml(c.summary)) + "</p>" +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Trigger</h4>' +
     "<p>" + escHtml(c.trigger) + "</p>" +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Propagation</h4>' +

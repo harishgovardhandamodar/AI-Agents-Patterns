@@ -13,7 +13,34 @@ function initScenarios() {
   const vecs = uniq(S.scenarios.map(s => s.vector)).sort();
   el("scnVectors").innerHTML = vecs.map(v =>
     `<label class="filter-item"><input type="checkbox" data-vec="${escHtml(v)}" onchange="onScnFilter(this,'vectors')"> ${escHtml(v)}<span class="cnt">${S.scenarios.filter(s => s.vector === v).length}</span></label>`).join("");
+  scnMemRestore();
   renderScenarios();
+}
+/* Restore / persist the filter state this pane was left in (iteration 76). */
+function scnMemRestore() {
+  const m = typeof uiMemGet === "function" ? uiMemGet("scn", null) : null;
+  if (!m || typeof m !== "object") return;
+  if (m.q && el("scnSearch")) el("scnSearch").value = m.q;
+  [["domains", "#scnDomains", "data-dom"], ["sevs", "#scnSev", "data-sev"], ["vectors", "#scnVectors", "data-vec"]].forEach(function (t) {
+    const saved = Array.isArray(m[t[0]]) ? m[t[0]] : [];
+    scnState[t[0]].clear();
+    document.querySelectorAll(t[1] + " input").forEach(i => {
+      const on = saved.indexOf(i.getAttribute(t[2])) >= 0;
+      i.checked = on;
+      if (on) scnState[t[0]].add(i.getAttribute(t[2]));
+    });
+  });
+  if (m.sort && el("scnSort")) el("scnSort").value = m.sort;
+}
+function scnMemSave() {
+  if (typeof uiMemSet !== "function" || !el("scnSearch")) return;
+  uiMemSet("scn", {
+    q: el("scnSearch").value,
+    domains: [...scnState.domains],
+    sevs: [...scnState.sevs],
+    vectors: [...scnState.vectors],
+    sort: el("scnSort") ? el("scnSort").value : ""
+  });
 }
 function onScnFilter(inp, key) {
   const val = inp.dataset.dom || inp.dataset.sev || inp.dataset.vec;
@@ -66,6 +93,7 @@ function renderScenarios() {
 
   el("scnCount").textContent = `${list.length} of ${S.scenarios.length} scenarios — click for attack chain, protections, and mock run`;
   if (typeof paintActiveChips === "function") paintActiveChips("scnActive", scnActiveChips(q));
+  scnMemSave();
   if ((uxPrefs.scnView || "cards") === "list") return renderScenarioList(list);
   el("scnGrid").innerHTML = list.map(s => `
     <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open scenario: ${escHtml(s.title)}" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScenario('${s.id}');}">
@@ -117,7 +145,7 @@ function openScenario(id) {
     <div class="dsec">
       <p><span class="sev-dot sev-${s.severity}"></span><b style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${s.severity.toUpperCase()}</b>
       &nbsp; likelihood: <b>${escHtml(s.likelihood)}</b> &nbsp; vector: <b>${escHtml(s.vector)}</b> &nbsp; domain: <b>${escHtml(s.domain)}</b></p>
-      <p>${escHtml(s.description)}</p>
+      <p>${typeof jargon === "function" ? jargon(s.description) : escHtml(s.description)}</p>
     </div>
     <div class="dsec"><h4>Attack chain (how it unfolds)</h4>
       <ol style="padding-left:20px;margin:0">${s.attackChain.map(a => `<li style="color:var(--text2);margin-bottom:5px">${escHtml(a)}</li>`).join("")}</ol></div>

@@ -87,7 +87,46 @@ function initPatterns() {
   el("patDomains").innerHTML = doms.map(d =>
     `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" onchange="onPatDomain(this)"> ${escHtml(d)}<span class="cnt">${P.patterns.filter(p => p.domains.includes(d)).length}</span></label>`).join("");
   P.categories.forEach(c => patState.cats.add(c.id));
+  patMemRestore();
   renderPatterns();
+}
+/* Restore / persist the filter state this pane was left in (iteration 76). */
+function patMemRestore() {
+  const m = typeof uiMemGet === "function" ? uiMemGet("pat", null) : null;
+  if (!m || typeof m !== "object") return;
+  if (m.q && el("patSearch")) el("patSearch").value = m.q;
+  if (Array.isArray(m.cats) && el("patCats").children.length) {
+    patState.cats.clear();
+    document.querySelectorAll("#patCats input").forEach(i => {
+      const on = m.cats.indexOf(i.dataset.cat) >= 0;
+      i.checked = on;
+      if (on) patState.cats.add(i.dataset.cat);
+    });
+    if (!patState.cats.size) patCatsAll();
+  }
+  if (Array.isArray(m.domains)) {
+    patState.domains.clear();
+    document.querySelectorAll("#patDomains input").forEach(i => {
+      const on = m.domains.indexOf(i.dataset.dom) >= 0;
+      i.checked = on;
+      if (on) patState.domains.add(i.dataset.dom);
+    });
+  }
+  if (el("patHasDiagram")) el("patHasDiagram").checked = !!m.dia;
+  if (el("patHasFailures")) el("patHasFailures").checked = !!m.fail;
+  if (m.sort && el("patSort")) el("patSort").value = m.sort;
+}
+function patCatsAll() { DATA.patterns.categories.forEach(c => patState.cats.add(c.id)); }
+function patMemSave() {
+  if (typeof uiMemSet !== "function" || !el("patSearch")) return;
+  uiMemSet("pat", {
+    q: el("patSearch").value,
+    cats: [...patState.cats],
+    domains: [...patState.domains],
+    dia: !!(el("patHasDiagram") && el("patHasDiagram").checked),
+    fail: !!(el("patHasFailures") && el("patHasFailures").checked),
+    sort: el("patSort") ? el("patSort").value : ""
+  });
 }
 function onPatCat(inp) { inp.checked ? patState.cats.add(inp.dataset.cat) : patState.cats.delete(inp.dataset.cat); renderPatterns(); }
 function onPatDomain(inp) { inp.checked ? patState.domains.add(inp.dataset.dom) : patState.domains.delete(inp.dataset.dom); renderPatterns(); }
@@ -151,6 +190,7 @@ function renderPatterns() {
 
   el("patCount").textContent = `${list.length} of ${P.patterns.length} patterns`;
   if (typeof paintActiveChips === "function") paintActiveChips("patActive", patActiveChips(q, needDia, needFail));
+  patMemSave();
   if ((uxPrefs.patView || "cards") === "list") return renderPatternList(list, P);
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   el("patGrid").innerHTML = list.map(p => `
@@ -197,7 +237,7 @@ function openPattern(id) {
 
   const html = `
     <div class="dsec d-actions">${typeof bpDrawerBtnHtml === "function" ? bpDrawerBtnHtml(p.id) : ""}<button class="btn sm" onclick="askCopilotAbout('pattern: ${escHtml(p.name)}')">🤖 Ask Fox - Architect</button>${typeof pinBtnHtml === "function" ? pinBtnHtml("patterns", p.id) : ""}</div>
-    <div class="dsec"><p>${escHtml(p.summary)}</p>
+    <div class="dsec"><p>${typeof jargon === "function" ? jargon(p.summary) : escHtml(p.summary)}</p>
       <p class="small muted">Domains: ${p.domains.map(escHtml).join(", ")} · Pattern ID: <code>${escHtml(p.id)}</code></p></div>
     ${p.diagram ? `<div class="dsec"><h4>Control flow</h4>${diagramHtml(p.diagram, p.name)}</div>` : ""}
     <div class="dsec"><h4>How it works</h4><ul>${p.how.map(h => `<li>${escHtml(h)}</li>`).join("")}</ul></div>

@@ -10,24 +10,34 @@ let covSort = "risk";   // risk | alpha | name
 /* --- heuristic targets: what "good" looks like per domain ------------- */
 const COV_TARGETS = { patterns: 3, scenarios: 2, derived: 3, cascading: 2 };
 
+let covForce = false;
 function initCoverage() {
   if (!el("coveragePane")) return;
-  if (typeof DATA !== "undefined" && DATA.coverage) {
+  if (typeof DATA !== "undefined" && DATA.coverage && !covForce) {
     covView = DATA.coverage;
     renderCoverage();
     return;
   }
   covView = null;
-  fetch("data/coverage.json", { cache: "no-store" })
-    .then(r => r.json())
-    .then(j => { covView = j; if (typeof DATA !== "undefined") DATA.coverage = j; renderCoverage(); })
-    .catch(() => renderCoverageStub("Could not load data/coverage.json"));
   renderCoverageStub("Loading coverage…");
+  fetch("data/coverage.json" + (covForce ? "?v=" + Date.now() : ""), { cache: "no-store" })
+    .then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    .then(j => { covForce = false; covView = j; if (typeof DATA !== "undefined") DATA.coverage = j; renderCoverage(); })
+    .catch(() => { covForce = false; renderCoverageStub("Could not load data/coverage.json"); });
+}
+function covRetry() {
+  covForce = true;
+  if (typeof DATA !== "undefined") DATA.coverage = null;
+  initCoverage();
 }
 
 function renderCoverageStub(msg) {
   const main = el("covMain");
-  if (main) main.innerHTML = `<div class="muted small">${escHtml(msg || "Loading coverage…")}</div>`;
+  if (!main) return;
+  const loading = /loading/i.test(msg || "");
+  main.innerHTML = (!loading && typeof emptyState === "function")
+    ? emptyState("◔", "Coverage data unavailable", "The coverage index did not load, so the scorecards are missing. Everything else still works — Patterns and Cascades browse the same records.", "Retry", "covRetry()")
+    : `<div class="muted small">${escHtml(msg || "Loading coverage…")}</div>`;
 }
 
 /* --- build a normalized row model from the raw coverage index -------- */
