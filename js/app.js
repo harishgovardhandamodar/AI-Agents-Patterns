@@ -115,8 +115,70 @@ function uxPaintPanel() {
     '<button class="iconbtn" type="button" onclick="uxPanelToggle(false)" aria-label="Close display preferences">✕</button></div>' +
     '<div class="ux-sec">Density</div>' + dens +
     '<div class="ux-sec">Text size</div>' + fss +
+    uxPerfSection() +
     uxDataSection() +
     '<div class="muted small" style="margin-top:8px">Saved in this browser; applies to every tab.</div>';
+  perfCacheStats().then((s) => {
+    const row = document.getElementById("uxPerfCache");
+    if (!row) return;
+    row.innerHTML = "<span>Offline cache</span><b>" +
+      (s.files ? s.files + " files · " + fmtBytes(s.bytes) : "not installed") + "</b>";
+  });
+}
+
+/* ---------------- repeat-visit perf budget (iteration 99) ----------------
+   Makes the P1/F1 wins self-documenting: what this session actually pulled
+   over the wire, how much the cache answered, and how much the offline shell
+   holds. Numbers come from the Resource Timing API (transferSize 0 +
+   decodedBodySize > 0 means the browser disk cache or the service worker
+   answered) and the Cache Storage API. */
+function perfBudget() {
+  const out = { requests: 0, fromCache: 0, wireBytes: 0, decodedBytes: 0 };
+  try {
+    for (const r of performance.getEntriesByType("resource")) {
+      const wire = r.transferSize || 0;
+      const dec = r.decodedBodySize || 0;
+      out.requests += 1;
+      out.wireBytes += wire;
+      out.decodedBytes += dec;
+      if (r.deliveryType === "cache" || (wire === 0 && dec > 0)) out.fromCache += 1;
+    }
+  } catch (e) { /* Resource Timing unavailable — leave zeros */ }
+  return out;
+}
+
+async function perfCacheStats() {
+  try {
+    if (!("caches" in window)) return { files: 0, bytes: 0, version: null };
+    const names = await caches.keys();
+    let files = 0, bytes = 0;
+    for (const n of names) {
+      const c = await caches.open(n);
+      for (const req of await c.keys()) {
+        files += 1;
+        const res = await c.match(req);
+        const len = res && Number(res.headers.get("x-aap-len"));
+        if (len) { bytes += len; continue; }
+        if (res) { try { bytes += (await res.clone().blob()).size; } catch (e) {} }
+      }
+    }
+    return { files, bytes, version: names[0] || null };
+  } catch (e) {
+    return { files: 0, bytes: 0, version: null };
+  }
+}
+
+function uxPerfSection() {
+  const b = perfBudget();
+  const savedPct = b.requests ? Math.round((b.fromCache / b.requests) * 100) : 0;
+  return '<div class="ux-sec">Performance</div>' +
+    '<div class="ux-usage">' +
+    '<div class="ux-usage-row"><span>Requests this session</span><b>' + b.requests + '</b></div>' +
+    '<div class="ux-usage-row"><span>Served from cache</span><b>' + b.fromCache + (b.requests ? " (" + savedPct + "%)" : "") + '</b></div>' +
+    '<div class="ux-usage-row"><span>Bytes over the wire</span><b>' + fmtBytes(b.wireBytes) + '</b></div>' +
+    '<div class="ux-usage-row" id="uxPerfCache"><span>Offline cache</span><b>…</b></div>' +
+    '<div class="muted small">Repeat visits revalidate instead of re-downloading; the offline shell keeps the whole app available with no network.</div>' +
+    "</div>";
 }
 
 /* Storage health + whole-app backup/restore, shown in the display panel. */

@@ -14,7 +14,7 @@
  * Bump VERSION whenever the shell changes; activate() drops older caches.
  * The precache list is kept in sync by test/data.test.mjs.
  */
-const VERSION = "aap-v1";
+const VERSION = "aap-v2";
 
 const PRECACHE = [
   "index.html",
@@ -64,6 +64,7 @@ async function stash(cache, req, res) {
   headers.delete("content-encoding");
   headers.delete("content-length");
   const body = await res.blob();
+  headers.set("x-aap-len", String(body.size));   // size for the perf panel (cheap read)
   await cache.put(req, new Response(body, { status: res.status, statusText: res.statusText, headers }));
 }
 
