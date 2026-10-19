@@ -282,3 +282,63 @@ Ordered by (impact ÷ effort). Each is a real, testable increment.
   stays (module/ESM conversion is *optional*, item M1).
 - No real agent execution; datasets stay synthetic and labelled.
 - No auth / multi-user — it remains a single-user LAN/Tailscale advisor.
+
+---
+
+## 7. Delivery status — iterations 81–100 (all shipped)
+
+Every item below is implemented, committed and verified headless against both
+`:5190` (disk) and `:5175` (docker). Evidence is measured, not estimated.
+
+| # | What shipped | Commit |
+|---|---|---|
+| 81 | gzip (cached on mtime/size) + conditional caching in `serve.py`; vendored assets `immutable` | `7b3e9bd` |
+| 87 | Security headers (CSP, nosniff, XFO, Referrer-Policy) + `Server:` suppression | `7b3e9bd` |
+| 82 | Mermaid moved off the render-blocking critical path; vendored-first lazy loader with CDN fallback | `14c1168` |
+| 83 | Phased boot: catalogs first, cascades fetched in parallel and only awaited by catalog-wide panes | `14c1168` |
+| 84 | Single `<main id="maincontent">`; topbar is `<header>`; 7 nested `<main>` demoted | `ccc0e3a` |
+| 85 | WAI-ARIA tablist: roving `tabindex`, `aria-selected`, Home/End + Arrow keys | `ccc0e3a` |
+| 86 | `aria-label` on every dynamic control (guard input, discovery dials, blueprint compare/notes) | `ccc0e3a` |
+| 98 | Initial theme follows `prefers-color-scheme`, with `color-scheme` meta + `data-theme` sync | `ccc0e3a` |
+| 88 | Trace-less scenarios badged **no replay** on card, list and drawer, with a route to Coverage | `fcb6927` |
+| 89 | Exportable coverage backlog — Markdown checklist + CSV (`covBacklogMd/Csv/DownloadBacklog`) | `fcb6927` |
+| 90 | 11 new grounded scenarios close the 11 patterns-only domains | `fcb6927` |
+| 91 | Scenario-budget bars per domain with a ≥ 2 target line (7/26 meet it) | `fcb6927` |
+| 92 | `package.json` + dependency-light headless smoke test (`npm run test:e2e`) | `bf6429f` |
+| 93 | Referential-integrity suite over `data/` + fixed the `proteations` typo | `bf6429f` |
+| 94 | GitHub Action: lint + data integrity (blocking), headless smoke (non-blocking) | `bf6429f` |
+| 95 | ESLint `no-undef` over the shared global namespace | `bf6429f` |
+| 97 | Schema guard (required/unexpected keys, id uniqueness, coverage freshness) in the same suite | `bf6429f` |
+| 96 | Service worker precaches the whole shell (36 entries); network-first, cache fallback, `/api` never cached | `61a810a` |
+| 99 | Repeat-visit perf budget in the Display panel (requests, local hits, wire bytes, cache size) | `ed0ccbe` |
+| 100 | Final validation pass + docs refresh | this commit |
+
+### Measured outcomes
+
+- **First load: 4.93 MB → 1.37 MB** (cold, network-level across the page *and*
+  the service-worker precache). The theoretical gzip payload of the whole shell
+  is 1.33 MB, so this is the true cold cost; a repeat visit transfers **0.02 MB**
+  (revalidations only). Baseline 4.93 MB was the pre-81 no-gzip/`no-store` figure.
+- **Offline:** after one visit, going fully offline and reloading still renders
+  all 12 tabs, 107 patterns, the vendored diagram and correct data — the only
+  failed requests are the 3 expected `/api` probes.
+- **Accessibility:** exactly 1 `<main>`, 1 `<header>`, 0 nested `<main>`,
+  12 `role="tab"` with one roving tab stop, 0 unlabelled controls; keyboard
+  Arrow/Home/End verified to move and activate tabs.
+- **Coverage:** scenarios 43 → 54 (11 formerly patterns-only domains now have
+  scenarios), cascades 180 → 191 (derived cascades follow), referential
+  integrity 0 dangling refs, no unexpected keys.
+- **Process:** `npm test` = 8 passing data/coverage/SW-precache tests; `npm run
+  lint` clean; 12-tab headless smoke 0 errors; CI gates on all of it. No build
+  step or framework was introduced.
+
+### Bugs the new guardrails caught (and we fixed)
+
+- **`95` lint** found the Guardrail deep link calling a nonexistent
+  `guardOpenItem` (the function is `openGuardItem`), so `#guard/<id>` silently
+  did nothing — fixed.
+- **`100` validation** found a horizontal overflow at exactly 768 px: the app
+  grid column sized to the tab strip's min-content. Fixed with
+  `grid-template-columns: minmax(0, 1fr)`; all widths 360–1920 px are now clean.
+- **`93`** removed the misspelled `proteations` key (the schema guard now fails
+  the build on any such key).

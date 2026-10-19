@@ -49,21 +49,22 @@ A server is needed because the Design tab fetches `design/*.md` (`file://` would
 
 ---
 
-## The eleven tabs
+## The twelve tabs
 
 | Tab | What it does |
 |---|---|
 | **Overview** | Landing page (hero, new-in-catalog spotlight, dated field notes mapped to the catalog, incident-anatomy diagram, cascade-class chart) plus the architect dashboard (planner readiness, blueprint coverage/risk/exposure, Fox - Architect and rule-lab state, a deterministic "Next:" suggestion, pinned working set and report export), totals, patterns-per-category, scenarios-by-severity, domain coverage, and a "how defenses stack" view of protection layers. |
 | **Fox - Architect** | Chat with Qwen 3.8-27B (`quai-qwen3.8-27b`, served via **axiom first**, Fox-Services fallback, `LLM_PRIMARY` to flip) grounded in the catalog through the server-side proxy; streaming, citations, scope toggles, tables and Mermaid diagrams in answers, message actions (copy/regenerate), follow-ups, and a deterministic offline fallback. |
 | **Patterns** | The catalog: **107 design patterns** across 9 categories, each with how it works, components, failure modes, protections, related patterns, and a control-flow diagram (32 diagrams; every pattern also gets its category diagram). Filter by category, domain, or "has diagram / has failures"; card or compact-list layout; least-protected-first sort. |
-| **Scenarios** | **43 failure scenarios** across 15 domains (14 critical / 21 high / 8 medium) — including five on **self-improving agents** (reward hacking, self-distillation collapse, prompt self-editing, spawn-fleet runaway, metric gaming). Each opens to the attack chain, protection table, detection signals, incident response, and links to a replayable mock run. |
-| **Cascades** | **180 catalogued composition cascades** in four classes (inherent, derived, emergent, cascading) with propagation paths, amplifiers, blast radius, detection and mitigation columns, plus a simulator and bidirectional links to the patterns/scenarios they involve. Paged explorer + ranked mitigation backlog (leverage-scored, owner/status tracked). |
-| **Coverage** | Gap view: heatmap of patterns/scenarios/cascade-classes per domain, ranked gap cards with concrete authoring suggestions, domain drill-downs into the catalog. |
+| **Scenarios** | **54 failure scenarios** across 26 domains (18 critical / 27 high / 9 medium) — including five on **self-improving agents** (reward hacking, self-distillation collapse, prompt self-editing, spawn-fleet runaway, metric gaming) and a pack covering the formerly patterns-only domains (content, cybersecurity, data, education, energy, governance, operations, robotics, sales, strategy, trading). Each opens to the attack chain, protection table, detection signals, incident response, and — where a replay is published — a mock run; scenarios without one are badged **no replay** and route you to Coverage & Gaps. |
+| **Cascades** | **191 catalogued composition cascades** in four classes (inherent, derived, emergent, cascading) with propagation paths, amplifiers, blast radius, detection and mitigation columns, plus a simulator and bidirectional links to the patterns/scenarios they involve. Paged explorer + ranked mitigation backlog (leverage-scored, owner/status tracked). |
+| **Coverage** | Gap view: heatmap of patterns/scenarios/cascade-classes per domain, a **scenario-budget** bar chart (target ≥ 2 per domain, 7/26 meet it), ranked gap cards with concrete authoring suggestions, an **exportable backlog** (Markdown checklist / CSV) for a team to pick up, and domain drill-downs into the catalog. |
 | **Deployment Plan** | Four-step intake → readiness scorecard across weighted dimensions → recommended stack + guardrail config → autonomy/rollout dial → residual-risk register → ADR generator (citations validated against the catalog). |
 | **Blueprints** | Reference-architecture builder: compose patterns from templates or the palette into a pipeline + control overlay, with Mermaid export, deterministic warnings, a cost/latency/risk estimator, a per-blueprint **threat model** (exposure index vs. the catalog ceiling, matched scenarios/cascades/failure modes, one-click add of missing defenses) and **baseline compare** (template/library diff with metric deltas, undoable restore). |
 | **Live View** | An exhaustive, filterable library of **39 mock execution traces**, linked from the scenarios that have replays. The control-flow diagram highlights the active node while the step tracker, budget/cost/token gauges, guardrail counters, and event log advance in sync. Play / step / back / reset with adjustable speed; filter by domain, severity, verdict or free text. |
 | **Design & Architecture** | UML & architecture documents with live Mermaid: system context, component/class UML, control flow & runtime, financial guardrail architecture, data model (ER), threat model, and the architect value map. Rail + scroll-spy outline + source toggle + zoom viewer (wheel zoom, drag pan, ←/→ step). Loaded lazily on first visit. |
 | **Guardrail Lab** | Type any agent idea and it is analyzed into a full design (see below). Every analysis is saved to a collection in `localStorage` and exportable as JSON. |
+| **Discovery Lab** | Deterministic, grounded *ideation* of novel scenarios (after "Scaling Discovery Requires Forgetting"): each round generates parallel candidates, keeps only the winners and forgets the rest, reseeding the next round from the winners alone — with a compare mode that runs the same budget with forgetting off to show the plateau on this catalog. Winners are drafts only (never auto-added): review, ask Fox - Architect, or export as JSON. |
 
 **Global**: `Ctrl/⌘ K` (or `/`) opens a command palette over everything — patterns,
 scenarios, cascades, tabs, templates, saved blueprints — plus one-shot **commands**
@@ -140,19 +141,25 @@ js/shortcuts.js            global keyboard shortcuts + help
 js/vendor/mermaid.min.js   Mermaid 10, vendored so diagrams work air-gapped (CDN only as fallback)
 js/report.js               full report export (Markdown / JSON / print)
 data/patterns.json         107 patterns, categories, category diagrams
-data/scenarios.json        43 scenarios (attack chains, protections, detection, response)
-data/cascades.json         180 composition cascades (four classes)
+data/scenarios.json        54 scenarios (attack chains, protections, detection, response)
+data/cascades.json         191 composition cascades (four classes)
 data/traces.json           39 mock execution traces (scenarios link a replay where one exists)
 data/coverage.json         control-family coverage index (26 domains)
 tools/gen_cascades.py      cascade dataset generator
 tools/gen_coverage.py      coverage-index generator (byte-identical on unchanged data)
 design/*.md                7 UML/architecture docs (30 Mermaid diagrams total)
+sw.js                      service worker: precaches the whole shell for offline / air-gapped use
 serve.py                   thin static server + /api/llm/* proxy (axiom-first failover, watchdog, LLM_PRIMARY)
 Dockerfile                 image: python:3.12-slim, non-root, read-only, healthcheck
 docker-compose.yml         default deployment (LAN + host Tailscale)
 docker-compose.tailscale.yml   dedicated Tailscale node (+ HTTPS URL)
 tailscale/serve.json       Tailscale Serve config for the sidecar deployment
 .env.example               APP_PORT, TS_AUTHKEY, TS_HOSTNAME
+package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / check
+eslint.config.mjs          flat ESLint config; no-undef over the app's shared global namespace
+test/data.test.mjs         catalog integrity, schema guard, coverage freshness, SW precache sync
+test/smoke.mjs             headless smoke (boots the server, walks all 12 tabs, asserts 0 errors)
+.github/workflows/ci.yml   CI: lint + data integrity (blocking), headless smoke (non-blocking)
 ```
 
 Load order matters and is fixed in `index.html`: `app.js` defines the shell (`switchTab`, `mmRender`, `openDetail`, `openZoom`, the `tabLoaders` registry), `player.js` defines the reusable `LivePlayer` widget, then each tab module registers its `init*` and `tabLoaders` entry. Cross-module calls are guarded with `typeof … === "function"` so a module can fail without taking the shell down.
@@ -164,12 +171,21 @@ Load order matters and is fixed in `index.html`: `app.js` defines the shell (`sw
 - **Theme** is a single CSS class on `<html>`; Mermaid theme variables are derived from it, and toggling re-renders every diagram with the new palette.
 - **Live View joins steps to the diagram via node ids** (`step.node` ↔ Mermaid node id), which is what drives the active-node highlight.
 
+## Testing, offline & performance
+
+- **First load is ~1.37 MB, not ~4.9 MB.** `serve.py` gzips compressible types and caches each compression on `(mtime, size)`, sends the vendored Mermaid with `immutable` caching, and revalidates everything else with `Last-Modified`/`If-Modified-Since` (cheap 304s). Repeat visits transfer ~0.02 MB.
+- **Offline shell.** `sw.js` precaches the whole app (html, css, the 21 scripts, the vendored Mermaid, all `data/*.json` and `design/*.md` — 36 entries) and serves same-origin GETs network-first with a cache fallback. It never touches `/api/*` (the LLM proxy and the diagnostics beacon). After one visit the app works with no network at all; the offline chip reads *Offline · cached*. Bump `VERSION` in `sw.js` to force every client to re-precache.
+- **Perf budget** is printed in the Display panel (⛭ display): requests this session, how many were answered locally, bytes actually pulled over the wire, and the size of the offline cache — so the wins above are visible, not claims.
+- **Tests & lint (no build step added):** `npm test` runs a dependency-free `node:test` suite over the catalog — id uniqueness, full referential integrity, a required/unexpected-key schema guard (it catches typos like the historical `proteations`), coverage.json freshness (recomputed from the catalogs), and that `sw.js`'s precache list matches the files on disk. `npm run lint` runs ESLint with `no-undef` across every `js/*.js`, treating the app's own top-level declarations as shared globals so genuine typos fail and cross-file calls don't. `npm run test:e2e` boots the real server and walks all 12 tabs headlessly (skips cleanly when no browser is present). `npm run check` runs lint + tests. CI (`.github/workflows/ci.yml`) gates on lint + data integrity, with the headless smoke as a non-blocking job.
+
 ## Extending it
 
 - **Add a pattern:** append to `data/patterns.json` `patterns[]` with a `cat` from `categories[]`; optional `diagram` is Mermaid source (use `"double quotes"` around labels containing parentheses).
 - **Add a scenario:** append to `data/scenarios.json`; set `traceId` to link a mock run.
 - **Add a trace:** append to `data/traces.json`; give each step a `node` matching a node id in `flow`, and keep node ids non-overlapping (zero-pad numeric ids, e.g. `N01`, `N02`, so `N1` never matches inside `N10`).
 - **Add a design doc:** add the file under `design/` and register it in `DESIGN_DOCS` at the top of `js/app.js`.
+- **Add any served file:** add it to the `PRECACHE` list in `sw.js` too — `npm test` fails if the offline shell misses a file under `js/`, `data/`, `design/` or `css/`.
+- **Regenerate derived data:** after editing scenarios, run `npm run gen` (`tools/gen_cascades.py && tools/gen_coverage.py`); the integrity test fails if `data/coverage.json` is stale.
 
 All datasets are plain JSON, versioned, and diffable. There are no hidden defaults — a missing field renders as absent, never as a silently-chosen value.
 
@@ -177,6 +193,6 @@ All datasets are plain JSON, versioned, and diffable. There are no hidden defaul
 
 ## Scope
 
-107 design patterns · 207 documented failure modes · 43 failure scenarios (14 critical / 21 high / 8 medium) · 180 composition cascades · 15 scenario domains · 39 replayable mock traces · 7 architecture documents · 30 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox - Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · command palette (commands, recents) and keyboard shortcuts · full report export.
+107 design patterns · 207 documented failure modes · 54 failure scenarios (18 critical / 27 high / 9 medium) · 191 composition cascades · 26 scenario domains · 39 replayable mock traces · 7 architecture documents · 30 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox - Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · command palette (commands, recents) and keyboard shortcuts · full report export · offline service worker + perf budget · linted, tested, CI-gated (no build step).
 
 **Caveats, honestly:** the exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like blueprints. The copilot's grounding is deterministic retrieval, not RAG fine-tuning; when both LLM backends are down it degrades to a deterministic catalog answer rather than failing. Cost/latency figures are estimates from stated assumptions, not benchmarks.

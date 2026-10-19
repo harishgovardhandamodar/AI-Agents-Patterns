@@ -19,6 +19,7 @@ WORKDIR /app
 # Copy only what the server actually serves.
 COPY serve.py    ./serve.py
 COPY index.html  ./index.html
+COPY sw.js       ./sw.js
 COPY css         ./css
 COPY js          ./js
 COPY data        ./data

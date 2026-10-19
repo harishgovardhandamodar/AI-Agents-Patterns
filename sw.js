@@ -71,7 +71,10 @@ async function stash(cache, req, res) {
 async function precache() {
   const cache = await caches.open(VERSION);
   await Promise.all(PRECACHE.map(async (url) => {
-    const res = await fetch(new Request(url, { cache: "reload" }));
+    // Default cache mode: on a first visit these were just fetched by the page,
+    // so this revalidates (or reads the immutable vendor copy) instead of
+    // re-downloading the whole shell a second time.
+    const res = await fetch(url);
     if (!res.ok) throw new Error(`precache failed: ${url} (${res.status})`);
     await stash(cache, url, res);
   }));
