@@ -210,5 +210,5 @@ function openPattern(id) {
     ${rel ? `<div class="dsec"><h4>Related patterns</h4><p>${rel}</p></div>` : ""}
     ${typeof casLinksForPattern === "function" ? casLinksForPattern(p.id) : ""}
     <div class="dsec"><h4>Category context</h4>${diagramHtml(P.categoryDiagrams[p.cat] || "", cat.name)}<p class="small muted">${escHtml(cat.desc || "")}</p></div>`;
-  openDetail(p.name, cat.name || p.cat, html);
+  openDetail(p.name, cat.name || p.cat, html, { tab: "patterns", id: p.id, title: p.name });
 }

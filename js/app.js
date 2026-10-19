@@ -340,7 +340,11 @@ function switchTab(tab) {
   }
   if (typeof window.__diagDiscWatch === "function") window.__diagDiscWatch(tab === "discovery");
   if (tab === "discovery" && typeof window.__diagDisc === "function") setTimeout(window.__diagDisc, 600);
-  try { location.hash = tab; } catch (e) {}
+  /* keep the address bar in sync without stacking history entries; a drawer
+     deep link for the tab already on screen is left untouched */
+  try {
+    if (tab !== prev) history.replaceState(null, "", "#" + tab);
+  } catch (e) {}
 }
 
 /* keyboard navigation inside the tab bar (role=tablist): arrows move,
@@ -1210,10 +1214,125 @@ function zoomKeys(e) {
 
 /* ---------------- detail drawer (patterns & scenarios) ---------------- */
 let detailOpener = null; /* element to restore focus to on close */
-function openDetail(title, catLabel, html) {
+/* ---------------- deep links & share row: #tab/itemId ----------------
+   The hash addresses a tab and, once a drawer is open, the item in it — so a
+   view can be shared, bookmarked, and the browser Back button closes the
+   drawer instead of leaving the app. */
+let dlApplying = false;   /* true while applying a hash change */
+let dlBooted = false;     /* after first paint, opens push instead of replace */
+let dlShare = null;       /* { tab, id, title } for the open drawer */
+
+function dlParse(h) {
+  const raw = String(h || "").replace(/^#/, "");
+  const i = raw.indexOf("/");
+  const tab = (i < 0 ? raw : raw.slice(0, i)).trim();
+  const id = i < 0 ? "" : raw.slice(i + 1);
+  return { tab: tab, id: decodeURIComponent(id) };
+}
+function dlSet(tab, id) {
+  if (dlApplying || !tab || !id) return;
+  const target = "#" + tab + "/" + encodeURIComponent(id);
+  try {
+    if (location.hash === target) return;
+    if (!dlBooted) history.replaceState(null, "", target);
+    else history.pushState({ dl: id }, "", target);
+  } catch (e) {}
+}
+/* Close = leave the item. If this entry was pushed by us, step back so the
+   browser Back button and the app stay in agreement; otherwise just rewrite
+   the hash (never navigate away from the app). */
+function dlClear() {
+  const tab = currentTab || "overview";
+  try {
+    if (!dlApplying && history.state && history.state.dl != null) { history.back(); return; }
+    if (location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
+  } catch (e) {}
+}
+function dlWhenReady(tab, fn) {
+  let tries = 0;
+  (function poll() {
+    if (paneInited[tab] === true || tries++ > 40) { setTimeout(fn, 60); return; }
+    setTimeout(poll, 80);
+  })();
+}
+function dlOpen(tab, id, fromHash) {
+  if (!tab || !id || !document.getElementById(tab + "Pane")) return false;
+  const target = "#" + tab + "/" + encodeURIComponent(id);
+  switchTab(tab);
+  /* switchTab may have rewritten the hash to the bare tab — restore the item */
+  if (fromHash && location.hash !== target) {
+    try { history.replaceState(null, "", target); } catch (e) {}
+  }
+  dlWhenReady(tab, function () {
+    try {
+      if (fromHash) dlApplying = true;
+      if (tab === "patterns" && typeof openPattern === "function") openPattern(id);
+      else if (tab === "scenarios" && typeof openScenario === "function") openScenario(id);
+      else if (tab === "cascades" && typeof openCascade === "function") openCascade(id);
+      else if (tab === "design" && typeof designShow === "function") designShow(id);
+      else if (tab === "guard" && typeof guardOpenItem === "function") guardOpenItem(id);
+    } catch (e) { console.warn("deep link failed", e); }
+    finally { dlApplying = false; }
+  });
+  return true;
+}
+
+/* Robust copy: the clipboard API needs a secure context, and a LAN host on
+   plain http:// does not have one — fall back to a hidden textarea. */
+function copyText(text, label) {
+  const ok = () => showNotif((label || "Copied") + " to clipboard", { kind: "ok" });
+  const bad = () => showNotif("Clipboard blocked — select the text and copy manually", { kind: "warn" });
+  const fallback = () => {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = String(text == null ? "" : text);
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const done = document.execCommand("copy");
+      ta.remove();
+      done ? ok() : bad();
+    } catch (e) { bad(); }
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+      navigator.clipboard.writeText(String(text == null ? "" : text)).then(ok).catch(fallback);
+      return;
+    }
+  } catch (e) {}
+  fallback();
+}
+function dlShareRow() {
+  if (!dlShare) return "";
+  return '<button class="btn sm ghost" type="button" onclick="dlCopyLink()" title="Copy a link that opens this item directly">🔗 Copy link</button>' +
+    '<button class="btn sm ghost" type="button" onclick="dlCopyId()" title="Copy the catalog id">⧉ Copy id</button>' +
+    '<button class="btn sm ghost" type="button" onclick="dlCopySummary()" title="Copy this drawer as Markdown">⧉ Copy as Markdown</button>';
+}
+function dlCopyLink() {
+  if (!dlShare) return;
+  copyText(location.origin + location.pathname + "#" + dlShare.tab + "/" + encodeURIComponent(dlShare.id), "Link");
+}
+function dlCopyId() { if (dlShare) copyText(dlShare.id, "Id"); }
+function dlCopySummary() {
+  if (!dlShare) return;
+  const body = el("detailBody");
+  const cat = el("detailCat");
+  const txt = "# " + dlShare.title + "\n\n" +
+    (cat && cat.textContent ? "_" + cat.textContent + "_\n\n" : "") +
+    (body ? body.innerText.replace(/\n{3,}/g, "\n\n").trim() : "");
+  copyText(txt, "Summary");
+}
+
+function openDetail(title, catLabel, html, share) {
+  dlShare = share || null;
   el("detailTitle").textContent = title;
   el("detailCat").textContent = catLabel;
   el("detailBody").innerHTML = html;
+  const shareBox = el("detailShare");
+  if (shareBox) shareBox.innerHTML = dlShareRow();
+  if (dlShare) dlSet(dlShare.tab, dlShare.id);
   detailOpener = document.activeElement;
   el("detailOverlay").classList.add("open");
   mmRenderAll(el("detailBody"));
@@ -1224,8 +1343,12 @@ function closeDetail() {
   const ov = el("detailOverlay");
   if (!ov.classList.contains("open")) return;
   ov.classList.remove("open");
+  const shareBox = el("detailShare");
+  if (shareBox) shareBox.innerHTML = "";
+  dlShare = null;
   if (detailOpener && document.contains(detailOpener)) { try { detailOpener.focus(); } catch (e) {} }
   detailOpener = null;
+  if (typeof dlClear === "function") dlClear();
 }
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
@@ -1317,7 +1440,10 @@ async function loadAll() {
     if (typeof shellFreshCheck === "function") shellFreshCheck();
     if (typeof onbShow === "function") setTimeout(() => onbShow(false), 350);
     const hash = (location.hash || "").replace("#", "");
-    if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
+    const dl = dlParse(location.hash);
+    if (dl.id) dlOpen(dl.tab, dl.id, false);
+    else if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
+    dlBooted = true;
 
     /* the rest, one pane per idle slice — never on the first-paint path */
     const queue = rest.slice();
@@ -1336,7 +1462,12 @@ async function loadAll() {
   }
 }
 window.addEventListener("hashchange", () => {
-  const h = (location.hash || "").replace("#", "");
-  if (h && h !== currentTab && document.getElementById(h + "Pane")) switchTab(h);
+  const dl = dlParse(location.hash);
+  if (dl.id) { dlOpen(dl.tab, dl.id, true); return; }
+  /* bare tab hash: closing an open drawer (browser Back) lands here */
+  dlApplying = true;
+  try { closeDetail(); } catch (e) {}
+  dlApplying = false;
+  if (dl.tab && dl.tab !== currentTab && document.getElementById(dl.tab + "Pane")) switchTab(dl.tab);
 });
 loadAll();

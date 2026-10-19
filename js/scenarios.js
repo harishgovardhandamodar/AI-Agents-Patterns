@@ -131,5 +131,5 @@ function openScenario(id) {
     ${casLinksForScenario(s.id)}
     ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
       <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>{loadTrace('${s.traceId}');focusPane('live');},100);">▶ Open in Live View</button></div>` : ""}`;
-  openDetail(s.title, `${s.severity} · ${s.domain}`, html);
+  openDetail(s.title, `${s.severity} · ${s.domain}`, html, { tab: "scenarios", id: s.id, title: s.title });
 }

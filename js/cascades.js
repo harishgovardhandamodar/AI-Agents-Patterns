@@ -556,7 +556,7 @@ function openCascade(id) {
     (typeof bpRefsBtnHtml === "function" && (c.patternRefs || []).length ? bpRefsBtnHtml(c.patternRefs, "from this cascade") : "") +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("cascades", c.id) : "") +
     '<button class="btn primary" onclick="askCopilotAbout(\'cascade: ' + escHtml(c.name) + '\')">🤖 Ask Fox - Architect about this</button></div>';
-  openDetail(c.name, c.cls + " cascade", html);
+  openDetail(c.name, c.cls + " cascade", html, { tab: "cascades", id: c.id, title: c.name });
 }
 
 /* Feed a cascade (or any item) into the copilot and switch to it. */
