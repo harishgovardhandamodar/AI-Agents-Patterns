@@ -521,6 +521,9 @@ function cpSetBusyUI(busy) {
   const send = el("cpSend"), stop = el("cpStop");
   if (send) send.disabled = busy;
   if (stop) stop.style.display = busy ? "" : "none";
+  /* mirror into the shell so an answer in flight is visible from any tab */
+  if (busy) { if (typeof setBusy === "function") setBusy("Fox - Architect is answering…"); }
+  else if (typeof clearBusy === "function") clearBusy("Fox - Architect is answering…");
 }
 function copilotStop() { if (cpAbort) cpAbort.abort(); }
 

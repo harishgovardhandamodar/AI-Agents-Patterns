@@ -258,6 +258,54 @@ document.addEventListener("keydown", function (e) {
 let currentTab = "overview";
 const tabLoaders = {}; // filled by per-tab scripts
 
+/* ---------------- pane boot bookkeeping ----------------
+   loadAll() paints the shell and the two catalog panes first, then builds the
+   remaining panes one per idle slice, so a heavy pane (cascades ~780 nodes,
+   coverage ~740) can never delay first paint. paneEnsure() lets a tab visit
+   jump the queue and run a not-yet-built pane's init immediately, exactly
+   once. */
+const paneInited = Object.create(null);   // tab -> true | "starting"
+const PANE_INIT = Object.create(null);    // tab -> init function
+const PANE_LABEL = Object.create(null);   // tab -> human name (for toasts)
+const PANE_SKEL = [                        /* panes whose body is JS-built */
+  ["coverage", "#covMain"], ["deploy", "#dpRoot"], ["blueprint", "#bpPalette"],
+  ["cascades", "#casList"], ["patterns", "#patGrid"], ["scenarios", "#scnGrid"], ["live", "#traceList"]
+];
+function paneSkeletonOn(tab) {
+  const pane = el(tab + "Pane");
+  if (!pane || pane.querySelector(".pane-skel")) return;
+  const target = (PANE_SKEL.find(s => s[0] === tab) || [null, null])[1];
+  const box = target ? pane.querySelector(target) : null;
+  /* only stand in for content that is genuinely not there yet */
+  const host = (box && !box.children.length && !(box.innerText || "").trim()) ? box
+    : ((pane.innerText || "").trim().length ? null : pane);
+  if (!host) return;
+  const s = document.createElement("div");
+  s.className = "pane-skel";
+  s.setAttribute("aria-hidden", "true");
+  s.innerHTML = '<div class="skel-row w70"></div><div class="skel-row w95"></div>' +
+    '<div class="skel-row w55"></div><div class="skel-row w85"></div><div class="skel-row w40"></div>';
+  host.appendChild(s);
+}
+function paneSkeletonOff(tab) {
+  const pane = el(tab + "Pane");
+  if (pane) pane.querySelectorAll(".pane-skel").forEach(s => s.remove());
+}
+function paneRunNow(tab) {
+  if (paneInited[tab] || !PANE_INIT[tab]) return;
+  paneInited[tab] = "starting";
+  Promise.resolve()
+    .then(() => PANE_INIT[tab]())
+    .catch(e => console.warn("pane init failed: " + tab, e))
+    .then(() => { paneInited[tab] = true; paneSkeletonOff(tab); });
+}
+function paneEnsure(tab) {
+  const s = paneInited[tab];
+  if (!s && PANE_INIT[tab]) { paneRunNow(tab); paneSkeletonOff(tab); return; }
+  if (s === "starting") return;
+  if (tabLoaders[tab]) tabLoaders[tab]();
+}
+
 function switchTab(tab) {
   const prev = currentTab;
   currentTab = tab;
@@ -278,7 +326,8 @@ function switchTab(tab) {
     return;
   }
   pane.classList.add("visible");
-  if (tabLoaders[tab]) tabLoaders[tab]();
+  if (typeof paneEnsure === "function") paneEnsure(tab);
+  else if (tabLoaders[tab]) tabLoaders[tab]();
   /* keep the active tab on screen in the overflowing strip */
   const active = document.querySelector(".app-tab.active");
   if (active && typeof active.scrollIntoView === "function") {
@@ -390,6 +439,38 @@ function announce(msg) {
     clearTimeout(announceTimer);
     announceTimer = setTimeout(function () { s.textContent = String(msg == null ? "" : msg); }, 80);
   } catch (e) { /* never break an action for an announcement */ }
+}
+
+/* ---------------- global busy indicator ----------------
+   Long, non-blocking work (a copilot answer in flight, a model-backend probe)
+   reports here so the shell always says "working…" even when the busy thing
+   lives in a different pane than the one on screen. Ref-counted by label. */
+const busySet = new Set();
+function setBusy(label) {
+  busySet.add(label || "working…");
+  busyPaint();
+}
+function clearBusy(label) {
+  busySet.delete(label || "working…");
+  busyPaint();
+}
+function busyPaint() {
+  const on = busySet.size > 0;
+  let c = el("busyChip");
+  if (!c) {
+    if (!on) return;
+    c = document.createElement("span");
+    c.id = "busyChip";
+    c.className = "busy-chip";
+    c.setAttribute("role", "status");
+    c.setAttribute("aria-live", "polite");
+    c.innerHTML = '<span class="spin" aria-hidden="true"></span><span id="busyChipTxt"></span>';
+    const bar = document.querySelector(".topbar");
+    if (bar) bar.insertBefore(c, el("dataStatus") || null);
+  }
+  c.hidden = !on;
+  const txt = el("busyChipTxt");
+  if (txt) txt.textContent = on ? [...busySet][busySet.size - 1] : "";
 }
 /* Stale-shell detector: if the cached index.html predates the JS (or vice
    versa), tabs and panes disagree — e.g. a tab button with no pane, or a
@@ -1185,21 +1266,49 @@ async function loadAll() {
     el("scnBadge").textContent = scns.scenarios.length;
     el("traceBadge").textContent = trcs.traces.length;
     if (el("casBadge")) el("casBadge").textContent = cass.cascades.length;
-    await safeInit("Overview", async () => initOverview());
-    await safeInit("Patterns", async () => initPatterns());
-    await safeInit("Scenarios", async () => initScenarios());
-    await safeInit("Live View", async () => initLive());
-    await safeInit("Design docs", async () => initDesign());
-    await safeInit("Guardrail Lab", async () => initGuardrail());
-    await safeInit("Fox - Architect", async () => initCopilot());
-    await safeInit("Cascades", async () => initCascades());
-    if (typeof initCoverage === "function") await safeInit("Coverage", async () => initCoverage());
-    if (typeof initDeploy === "function") await safeInit("Deployment Plan", async () => initDeploy());
-    if (typeof initBlueprint === "function") await safeInit("Blueprints", async () => initBlueprint());
+    /* ---- boot order ---------------------------------------------------
+       Registry first: PANE_INIT lets switchTab() run a pane's init on demand,
+       so a tab visit never waits for the idle queue. */
+    const has = n => typeof window[n] === "function";
+    const PANES = [
+      has("initOverview") && ["overview", "Overview", () => initOverview()],
+      has("initPatterns") && ["patterns", "Patterns", () => initPatterns()],
+      has("initScenarios") && ["scenarios", "Scenarios", () => initScenarios()],
+      has("initLive") && ["live", "Live View", () => initLive()],
+      has("initDesign") && ["design", "Design docs", () => initDesign()],
+      has("initGuardrail") && ["guard", "Guardrail Lab", () => initGuardrail()],
+      has("initCopilot") && ["copilot", "Fox - Architect", () => initCopilot()],
+      has("initCascades") && ["cascades", "Cascades", () => initCascades()],
+      has("initCoverage") && ["coverage", "Coverage", () => initCoverage()],
+      has("initDeploy") && ["deploy", "Deployment Plan", () => initDeploy()],
+      has("initBlueprint") && ["blueprint", "Blueprints", () => initBlueprint()],
+      has("initDiscovery") && ["discovery", "Discovery Lab", () => initDiscovery()]
+    ].filter(Boolean);
+    PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; PANE_LABEL[p[0]] = p[1]; });
+    const paneRun = async p => {
+      if (paneInited[p[0]]) return;
+      paneInited[p[0]] = "starting";
+      await safeInit(p[1], p[2]);
+      paneInited[p[0]] = true;
+      paneSkeletonOff(p[0]);
+    };
+
+    /* First paint path: overview, the pane you asked for, and the catalog
+       panes the dashboard and palette link into. */
+    const bootTab = (function () {
+      const h = (location.hash || "").replace("#", "");
+      return document.getElementById(h + "Pane") ? h : "overview";
+    })();
+    const EARLY = ["overview", "patterns", "scenarios"];
+    const first = PANES.filter(p => EARLY.indexOf(p[0]) >= 0 || p[0] === bootTab);
+    const rest = PANES.filter(p => first.indexOf(p) < 0);
+
+    PANES.forEach(p => paneSkeletonOn(p[0]));
+    for (const p of first) await paneRun(p);
+
     if (typeof initPalette === "function") await safeInit("palette", async () => initPalette());
     if (typeof initShortcuts === "function") await safeInit("shortcuts", async () => initShortcuts());
     if (typeof initTabBar === "function") await safeInit("tab bar", async () => initTabBar());
-    if (typeof initDiscovery === "function") await safeInit("Discovery Lab", async () => initDiscovery());
     if (typeof dashRender === "function") await safeInit("dashboard", async () => dashRender());
     if (typeof initLanding === "function") await safeInit("landing", async () => initLanding());
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
@@ -1209,6 +1318,18 @@ async function loadAll() {
     if (typeof onbShow === "function") setTimeout(() => onbShow(false), 350);
     const hash = (location.hash || "").replace("#", "");
     if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
+
+    /* the rest, one pane per idle slice — never on the first-paint path */
+    const queue = rest.slice();
+    const idle = window.requestIdleCallback
+      ? (fn) => window.requestIdleCallback(fn, { timeout: 900 })
+      : (fn) => setTimeout(fn, 40);
+    const pump = () => {
+      const p = queue.shift();
+      if (!p) return;
+      Promise.resolve(paneRun(p)).catch(() => {}).then(() => { if (queue.length) idle(pump); });
+    };
+    idle(pump);
   } catch (e) {
     el("dataStatus").textContent = "failed to load data — serve via `python3 serve.py`";
     console.error(e);

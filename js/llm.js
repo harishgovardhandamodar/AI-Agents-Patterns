@@ -24,6 +24,7 @@ const LLM = (function () {
     if (state.probing) return state;
     if (state.probed && !force) return state;
     state.probing = true;
+    if (typeof setBusy === "function") setBusy("Checking model backends…");
     try {
       const r = await fetch("api/llm/health", { cache: "no-store" });
       const j = await r.json();
@@ -39,6 +40,7 @@ const LLM = (function () {
     } finally {
       state.probing = false;
       state.probed = true;
+      if (typeof clearBusy === "function") clearBusy("Checking model backends…");
     }
     return state;
   }

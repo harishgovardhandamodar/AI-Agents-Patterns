@@ -129,8 +129,7 @@ button { font: inherit; color: inherit; }
 }
 .app-tab.active .badge { color: var(--accent); border-color: var(--accent); }
 
-/* ---------- panes ---------- */
-.pane { display: none; min-height: 0; overflow: hidden; }
+/* ---------- panes ---------- */.pane { display: none; min-height: 0; overflow: hidden; }
 .pane.visible { display: grid; }
 
 /* ============ OVERVIEW ============ */
@@ -499,6 +498,21 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
   border-radius: 50%; animation: spin .8s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+
+/* global busy chip in the top bar */
+.busy-chip {
+  display: inline-flex; align-items: center; gap: 6px; max-width: 230px;
+  font-size: 11px; color: var(--text2); border: 1px solid var(--border);
+  border-radius: 999px; padding: 3px 9px; background: var(--bg2); white-space: nowrap;
+}
+.busy-chip[hidden] { display: none; }
+.busy-chip #busyChipTxt { overflow: hidden; text-overflow: ellipsis; }
+.busy-chip .spin {
+  width: 10px; height: 10px; flex: none; border-radius: 50%;
+  border: 2px solid var(--bg3); border-top-color: var(--accent);
+  animation: spin .8s linear infinite;
+}
+@media (max-width: 1150px) { .busy-chip { max-width: 120px; } }
 
 /* misc */
 .mono { font-family: var(--mono); }
@@ -1755,3 +1769,17 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
   .cp-rail { max-height: 190px; border-right: none; border-bottom: 1px solid var(--border); } /* copilot: rail stacks above chat */
   .ov-cards { grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); }
 }
+
+/* ---------------- pane skeletons (first-visit placeholders) ----------------
+   Shown only where a pane's body is built by JS and has not been rendered yet,
+   so a fast tab switch never lands on an empty white area. */
+.pane-skel { padding: 22px 24px; display: flex; flex-direction: column; gap: 12px; }
+.pane-skel .skel-row {
+  height: 15px; border-radius: 6px;
+  background: linear-gradient(90deg, var(--bg3) 25%, var(--bg2) 37%, var(--bg3) 63%);
+  background-size: 400% 100%;
+  animation: skel 1.3s ease-in-out infinite;
+}
+.pane-skel .w95 { width: 95%; } .pane-skel .w85 { width: 85%; } .pane-skel .w70 { width: 70%; }
+.pane-skel .w55 { width: 55%; } .pane-skel .w40 { width: 40%; }
+@keyframes skel { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
