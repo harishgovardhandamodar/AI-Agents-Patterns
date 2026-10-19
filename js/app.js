@@ -188,7 +188,10 @@ document.addEventListener("keydown", function (e) {
       const h3cs = h3 ? getComputedStyle(h3) : null;
       const theme = (document.documentElement.className || "dark");
       const colors = h3cs ? (h3cs.color + " on " + h3cs.backgroundColor) : "n/a";
-      const sig = html + "|" + cards + "|" + railLen + "|" + style + "|" + top + "|" + openOv + "|" + visPanes + "|" + theme + "|" + colors;
+      const pr = pane ? pane.getBoundingClientRect() : null;
+      const pos = (pr ? (Math.round(pr.left) + "," + Math.round(pr.top) + " " + Math.round(pr.width) + "x" + Math.round(pr.height)) : "?") +
+        " scrollY=" + Math.round(window.scrollY || window.pageYOffset || 0);
+      const sig = html + "|" + cards + "|" + railLen + "|" + style + "|" + top + "|" + openOv + "|" + visPanes + "|" + theme + "|" + colors + "|" + pos;
       if (sig !== window.__diagDiscSig) {
         window.__diagDiscSig = sig;
         send("discpane",
@@ -205,6 +208,7 @@ document.addEventListener("keydown", function (e) {
           " ov=" + openOv +
           " theme=" + theme +
           " colors=" + JSON.stringify(colors) +
+          " pos=" + pos +
           " txt=" + JSON.stringify((main && main.innerText || "").slice(0, 60)) +
           " loader=" + (typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function" ? "fn" : "??") +
           " run=" + (typeof discState === "object" && discState ? (discState.run ? "set" : "null") : "??") +

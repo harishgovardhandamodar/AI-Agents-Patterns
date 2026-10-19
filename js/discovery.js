@@ -314,6 +314,7 @@ function discRender() {
   const run = discState.run;
   if (!run) {
     main.innerHTML = emptyState("🧪", "No discovery run yet", "The lab generates candidate scenarios from catalog gaps — domain/class/vector combinations nothing covers yet — scores their novelty, and iterates in forgetting rounds. Nothing is added to the catalog automatically.", "Run discovery", "discRunAll(false)");
+    discNudgePaint();
     return;
   }
   main.innerHTML = discRoundChart(run, discState.compare) +
@@ -323,6 +324,22 @@ function discRender() {
     (discState.compare ? "" : `<button class="btn sm ghost" onclick="discRunAll(true)">Run compare (forgetting off)</button>`) +
     `</span></div>` +
     run.winners.map(discCard).join("");
+  discNudgePaint();
+}
+
+/* Some GPU compositors (reproduced on one Mac across Chrome, Firefox AND
+   Safari, while software-rasterized headless stays healthy) fail to raster a
+   freshly-shown pane's layer: the DOM and computed styles are correct but the
+   region paints black. Reader Mode works because it is a separate renderer.
+   A one-shot opacity micro-animation forces a fresh composite of the pane's
+   layer without touching layout — the standard remedy for a stale layer. */
+function discNudgePaint() {
+  try {
+    const pane = document.getElementById("discoveryPane");
+    if (pane && typeof pane.animate === "function") {
+      pane.animate([{ opacity: 0.985 }, { opacity: 1 }], { duration: 140, easing: "linear" });
+    }
+  } catch (e) { /* never break render for a repaint nudge */ }
 }
 
 function paintDiscControls() {
