@@ -590,16 +590,19 @@ function netPaint() {
   const off = (typeof navigator !== "undefined" && navigator.onLine === false);
   let c = el("netChip");
   if (!off) { if (c) c.remove(); return; }
+  const ready = document.documentElement.hasAttribute("data-offline-ready");
   if (!c) {
     c = document.createElement("span");
     c.id = "netChip";
     c.className = "net-chip";
     c.setAttribute("role", "status");
-    c.textContent = "⚡ Offline";
-    c.title = "No network connection. The catalog, filters, diagrams and saved work all run locally; model answers fall back to the deterministic catalog voice.";
     const bar = document.querySelector(".topbar");
     if (bar) bar.insertBefore(c, el("dataStatus") || null);
   }
+  c.textContent = ready ? "⚡ Offline · cached" : "⚡ Offline";
+  c.title = ready
+    ? "No network. The full app is being served from the offline cache; model answers fall back to the deterministic catalog voice."
+    : "No network connection. The catalog, filters, diagrams and saved work all run locally; model answers fall back to the deterministic catalog voice.";
 }
 window.addEventListener("online", netPaint);
 window.addEventListener("offline", netPaint);
@@ -1686,3 +1689,22 @@ window.addEventListener("hashchange", () => {
   if (dl.tab && dl.tab !== currentTab && document.getElementById(dl.tab + "Pane")) switchTab(dl.tab);
 });
 loadAll();
+
+/* ---------------- offline app shell ----------------
+   Register the service worker so a LAN/air-gapped visit keeps working with no
+   network. Fails silently where SW is unavailable (file://, old browsers) —
+   the app then behaves exactly as before, online only. */
+(function registerOfflineShell() {
+  if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      const mark = () => document.documentElement.setAttribute("data-offline-ready", "1");
+      if (navigator.serviceWorker.controller || reg.active) mark();
+      navigator.serviceWorker.addEventListener("controllerchange", mark);
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing;
+        if (sw) sw.addEventListener("statechange", () => { if (sw.state === "activated") mark(); });
+      });
+    }).catch(() => { /* offline shell unavailable; the app still works online */ });
+  });
+})();

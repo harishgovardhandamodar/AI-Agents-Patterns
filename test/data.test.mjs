@@ -5,7 +5,7 @@
 // bug. This suite is the CI gate that catches it before the browser does.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
@@ -161,4 +161,31 @@ test("cascades.json class counts match the records", () => {
   const expected = { inherent: 0, emergent: 0, derived: 0, cascading: 0 };
   for (const c of cascades) expected[c.cls] = (expected[c.cls] || 0) + 1;
   assert.deepEqual(cascadesMeta.counts, expected, "cascades.json counts are stale — run `python3 tools/gen_cascades.py`");
+});
+
+// The offline shell is only as good as its precache list: a new js/data/design
+// file that nobody added to sw.js silently breaks the offline promise. Keep
+// the list and the files on disk in lockstep.
+test("service worker precaches exactly the app shell", () => {
+  const sw = readFileSync(join(ROOT, "sw.js"), "utf8");
+  const start = sw.indexOf("const PRECACHE = [");
+  assert.ok(start !== -1, "sw.js must declare a PRECACHE array");
+  const body = sw.slice(start, sw.indexOf("];", start));
+  const listed = [...body.matchAll(/"([^"]+)"/g)].map((m) => m[1]);
+
+  assert.equal(new Set(listed).size, listed.length, "PRECACHE has duplicate entries");
+  const missing = listed.filter((p) => !existsSync(join(ROOT, p)));
+  assert.deepEqual(missing, [], `sw.js precaches files that do not exist:\n  ${missing.join("\n  ")}`);
+
+  const nonEmpty = (dir) => readdirSync(join(ROOT, dir)).filter((f) => !f.startsWith("."));
+  const expected = [
+    "index.html",
+    ...nonEmpty("css").map((f) => `css/${f}`),
+    ...nonEmpty("js").filter((f) => f.endsWith(".js")).map((f) => `js/${f}`),
+    ...nonEmpty("js/vendor").map((f) => `js/vendor/${f}`),
+    ...nonEmpty("data").map((f) => `data/${f}`),
+    ...nonEmpty("design").map((f) => `design/${f}`),
+  ];
+  const absent = expected.filter((p) => !listed.includes(p));
+  assert.deepEqual(absent, [], `these files are not precached (add them to sw.js PRECACHE):\n  ${absent.join("\n  ")}`);
 });
