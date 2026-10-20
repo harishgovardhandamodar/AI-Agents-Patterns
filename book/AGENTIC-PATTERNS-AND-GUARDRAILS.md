@@ -11697,12 +11697,12 @@ flowchart TB
 | Field | Value |
 |---|---|
 | Form | Static single-page app; no build step, no account |
-| Tabs | 12 tabs over one shell and 21 modules |
+| Tabs | 12 tabs over one shell and 24 modules |
 | Catalog | 107 patterns · 9 categories · 207 failure modes · 289 protections |
 | Evidence | 54 scenarios · 191 cascades · 39 traces · 26 domains |
 | Diagrams | Vendored Mermaid in one queue; CDN only as a fallback |
 | Server | `serve.py` — static host plus same-origin model proxy |
-| Offline | Service worker precaches the shell (37 entries) |
+| Offline | Service worker precaches the shell (40 entries) |
 | Persistence | `localStorage`; exports are user-initiated |
 | Model | Optional; local backend first, deterministic fallback |
 | Gate | ESLint · node:test · headless smoke · CI |
@@ -11907,7 +11907,7 @@ And claims about speed and offline behaviour are worthless unless they are measu
 - **The shell** — `index.html` plus `js/app.js`: one namespace, two registries, and `typeof`-guarded edges between them.
 - **The gate** — lint, the `node:test` suite, the headless smoke test, and CI wiring that makes lint and data integrity blocking.
 - **The queue** — one promise chain around Mermaid, preserving each block's `data-src` so a re-render never feeds the engine its own generated CSS.
-- **The worker** — `sw.js`, with a `VERSION`, a 37-entry precache list, network-first fetches and `/api/*` excluded.
+- **The worker** — `sw.js`, with a `VERSION`, a 40-entry precache list, network-first fetches and `/api/*` excluded.
 - **The store** — plain JSON on disk, `localStorage` in the browser, exports on the way out.
 - **The budget** — the Display panel, reading the worker's own size records instead of a hard-coded number.
 
@@ -11999,7 +11999,7 @@ Principles are only worth writing down if you can point at where they are enforc
 
 ## Overview
 
-The deployed shape is static files plus one small server process: a delivery layer that serves and hardens those files, a shell that owns the tab switcher and its registries, 21 feature modules that register into it, five JSON datasets loaded in phases, 8 markdown documents fetched live, a service worker that caches the shell, and an optional same-origin model proxy.
+The deployed shape is static files plus one small server process: a delivery layer that serves and hardens those files, a shell that owns the tab switcher and its registries, 24 feature modules that register into it, five JSON datasets loaded in phases, 8 markdown documents fetched live, a service worker that caches the shell, and an optional same-origin model proxy.
 
 Nothing is compiled, so the architecture you read in the source is the architecture that runs: no bundle to unwind, no generated code to trace back, and no build output that can drift away from the repository.
 
@@ -12013,10 +12013,10 @@ It also explains the deployment story. The image copies exactly what the server 
 
 1. **Delivery.** `serve.py` serves the files with gzip, conditional revalidation for a cheap 304, immutable caching for the vendored engine, and the same header block on every single response.
 2. **Shell.** `index.html` and `js/app.js` own the tab switcher, theme, data load, Mermaid queue, zoom viewer and the registries every module plugs into.
-3. **Feature modules.** 21 plain scripts: one per pane — overview, catalog, scenarios, cascades, coverage, deployment planner, blueprints, copilot, live view, design, guardrail lab and discovery — plus the shared playback widget, LLM client, grounding context, report, dashboard, help, command palette and shortcuts.
+3. **Feature modules.** 24 plain scripts: one per pane — overview, catalog, scenarios, cascades, coverage, deployment planner, blueprints, copilot, live view, design, guardrail lab and discovery — plus the shared playback widget, LLM client, grounding context, report, dashboard, help, command palette and shortcuts.
 4. **Data.** Five JSON datasets. Phase one (patterns, scenarios, traces, coverage) is awaited for first paint; `cascades.json` streams in beside it and is awaited only by the panes that read it.
 5. **Documents.** `design/*.md` — 8 of them — are fetched live and rendered, which is the one reason a server is needed at all beyond hosting the optional model proxy.
-6. **Offline.** `sw.js` precaches 37 entries, answers same-origin GETs network-first with a cache fallback, and never touches `/api/*`.
+6. **Offline.** `sw.js` precaches 40 entries, answers same-origin GETs network-first with a cache fallback, and never touches `/api/*`.
 7. **Model.** `/api/llm/*` relays to a configured backend in failover order with watchdog timeouts, streaming the reply back chunked so the interface can render it as it arrives.
 
 ## Components
@@ -12025,10 +12025,10 @@ It also explains the deployment story. The image copies exactly what the server 
 |---|---|---|
 | Delivery | `serve.py` | Static host: gzip, ETag and Last-Modified revalidation, immutable vendor cache, security headers, CSP. |
 | Shell | `index.html` · `js/app.js` | Tab switcher, theme, data load, Mermaid queue, zoom viewer, `tabLoaders` and `PANE_INIT` registries. |
-| Feature modules | `js/*.js` — 21 files | One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, copilot, live view, design, guardrail lab, discovery — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts. |
+| Feature modules | `js/*.js` — 24 files | One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, copilot, live view, design, guardrail lab, discovery — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts. |
 | Data | `data/*.json` — 5 datasets | Patterns, scenarios, cascades, traces and coverage; plain, versioned, diffable. |
 | Documents | `design/*.md` — 8 docs | Architecture documents fetched at view time and rendered with live Mermaid. |
-| Offline | `sw.js` | 37 precache entries; network-first with cache fallback; `/api/*` exempt. |
+| Offline | `sw.js` | 40 precache entries; network-first with cache fallback; `/api/*` exempt. |
 | Model | `serve.py` → `/api/llm/*` | Same-origin proxy: failover list, watchdogs, chunked relay, deterministic fallback. |
 
 ## Component Diagram
@@ -12128,10 +12128,10 @@ flowchart TB
 |---|---|
 | Delivery | `serve.py` — gzip, 304 revalidation, immutable vendor |
 | Shell | `index.html` + `js/app.js`, one global namespace |
-| Modules | 21 scripts, one pane each, `typeof`-guarded |
+| Modules | 24 scripts, one pane each, `typeof`-guarded |
 | Data | 5 JSON datasets, phased load with cascades deferred |
 | Documents | 8 `design/*.md`, fetched live |
-| Offline | `sw.js`, 37 entries, network-first |
+| Offline | `sw.js`, 40 entries, network-first |
 | Model | `/api/llm/*` — failover, watchdogs, chunked relay |
 | Container | python:3.12-slim, non-root, read-only, about 42 MB |
 | Health | urllib healthcheck on `/`, 3s interval, 1s timeout |
@@ -12307,7 +12307,7 @@ And a LAN or air-gapped deployment is only honest if it keeps working with the c
 | Privilege | Read-only rootfs · `cap_drop: ALL` · `no-new-privileges` · tmpfs `/tmp` | The process cannot write, escalate or hold a capability |
 | Exposure | Published on your LAN, tailnet or CIDR; loopback behind `tailscale serve` | The port exists exactly where you put it |
 | Model path | Same-origin proxy, no secrets, `/api/*` never cached, watchdogs, truncated beacon | The one outbound path is bounded and auditable |
-| Time | `sw.js` precaches 37 entries; network-first; `VERSION` invalidation | After one visit, no network is needed |
+| Time | `sw.js` precaches 40 entries; network-first; `VERSION` invalidation | After one visit, no network is needed |
 
 ## The App's Own Threat Model
 
@@ -12360,7 +12360,7 @@ flowchart TB
 | Container | slim image, non-root uid, read-only rootfs, `cap_drop: ALL`, health check |
 | Network | LAN / tailnet / CIDR scope; loopback only behind `tailscale serve` |
 | Model path | same-origin proxy, no secrets, `/api/*` never cached |
-| Offline | 37 precached entries, network-first with cache fallback |
+| Offline | 40 precached entries, network-first with cache fallback |
 | Invalidation | `VERSION` bump drops every older cache on activate |
 | Retention | no server-side store; exports are how data leaves |
 | Scope | a team tool on infrastructure you control — not an internet service |
