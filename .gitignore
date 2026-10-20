@@ -14,8 +14,11 @@ graft/
 Agentic_Design_Patterns.pdf
 
 # book build — `npm run book` regenerates these. The Markdown and the PDF ship;
-# this HTML is the intermediate the PDF is printed from.
+# the HTML and the renderer's scratch files (pass-1 PDF, bookmark spec) are
+# intermediates — page numbers and bookmarks are folded into the shipped PDF.
 book/agent-patterns-and-guardrails.html
+book/.pass1.pdf
+book/.outline-spec.json
 
 # local social/draft copy — personal, not part of the project.
 LINKEDIN-POST.md

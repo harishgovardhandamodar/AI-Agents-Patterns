@@ -32,6 +32,18 @@ SUBTITLE = "A Hands-On Guide to Designing, Hardening and Operating AI Agents"
 AUTHOR = "Harish Govardhan Damodar"
 EDITION = "First edition — October 2026"
 
+# h1 headings that live outside the nine parts and are listed in Contents too.
+# write_book() fails the build if any of these (or a part, or a chapter) does
+# not resolve to exactly one heading id — so renaming one side of the pair can
+# never ship a Contents page that jumps nowhere.
+FRONT_MATTER = [
+    "Preface",
+    "Acknowledgment",
+    "Introduction",
+    'What Makes an AI System an "Agent"?',
+]
+BACK_MATTER = ["Glossary", "Index of Terms", "Conclusion", "Colophon"]
+
 SEV_ORDER = {"critical": 0, "high": 1, "medium": 2, "low": 3}
 SEV_RANK = {"critical": "Critical", "high": "High", "medium": "Medium", "low": "Low"}
 
@@ -135,6 +147,12 @@ class Doc:
     def __init__(self):
         self.md = []
         self.html = []
+        # When set (by write_chapter), every heading id is prefixed with it.
+        # ~11 section titles repeat in all 107 chapters, so without scoping the
+        # document would carry 10 duplicate-id groups and a link to
+        # `#conclusion` would resolve to chapter 1's section instead of the
+        # back-matter heading of the same name.
+        self.id_base = ""
 
     # -- primitives -------------------------------------------------------- #
     def m(self, text=""):
@@ -144,10 +162,11 @@ class Doc:
         self.html.append(text)
 
     def heading(self, level, text, cls=""):
-        aid = slug(text)
+        aid = slug(f"{self.id_base} {text}")
         self.m("#" * level + " " + text)
         self.m()
         self.h(f'<h{level} id="{aid}" class="{cls}">{inline_html(text)}</h{level}>')
+        return aid
 
     def title_page(self, title, subtitle, author, edition):
         self.m(f"# {title}")
@@ -249,7 +268,10 @@ def write_chapter(doc, ctx, cat):
     has_own = bool(p.get("diagram"))
 
     doc.chapter_break()
+    doc.id_base = ""  # the chapter's own h1 is top-level; sections below are not
     doc.heading(1, f"Chapter {num}: {p['name']}", cls="chapter")
+    # Scope the section ids that follow to this chapter (see Doc.id_base).
+    doc.id_base = slug(f"Chapter {num}: {p['name']}")
     doc.p(f"**Part {part['n']} — {part['name']}**")
     doc.heading(2, f"{p['name']} Pattern Overview")
 
@@ -388,6 +410,7 @@ def write_chapter(doc, ctx, cat):
 
 
 def write_part(doc, part, cat):
+    doc.id_base = ""  # part and chapter ids are top-level, never scoped
     doc.chapter_break()
     doc.heading(1, f"Part {part['n']}: {part['name']}", cls="part")
     doc.p(part["desc"])
@@ -561,25 +584,61 @@ def write_book(cat):
     # ------------------------------------------------------------- contents
     doc.pagebreak()
     doc.heading(1, "Contents")
+
+    toc_targets = []
+
+    def toc_line(label, target):
+        """One contents line: label, dotted leader, right-aligned page number.
+
+        `data-pg` carries the anchor id and is filled with the real page number
+        during the second rendering pass (tools/render_pdf.mjs) — Chrome has no
+        `target-counter`, so a page number can only be read back off a rendered
+        PDF, never computed in the first pass.
+        """
+        toc_targets.append(target)
+        doc.raw_html(
+            f'<li><a href="#{target}"><span class="t">{esc(label)}</span>'
+            f'<span class="dots"></span>'
+            f'<span class="pg" data-pg="{target}">000</span></a></li>'
+        )
+
     doc.raw_html('<nav class="toc">')
+    doc.raw_html("<ul>")
+    for label in FRONT_MATTER:
+        toc_line(label, slug(label))
+    doc.raw_html("</ul>")
     for part in parts:
-        doc.raw_html(f'<div class="toc-part">Part {part["n"]} — {esc(part["name"])}</div>')
+        part_target = slug(f"Part {part['n']}: {part['name']}")
+        toc_targets.append(part_target)
+        doc.raw_html(
+            f'<div class="toc-part"><a href="#{part_target}">'
+            f'<span class="t">Part {part["n"]} — {esc(part["name"])}</span>'
+            f'<span class="dots"></span>'
+            f'<span class="pg" data-pg="{part_target}">000</span></a></div>'
+        )
         doc.raw_html("<ul>")
         for ctx in part["contexts"]:
-            doc.raw_html(
-                f'<li><a class="toc-ch" href="#chapter-{ctx["num"]}-{slug(ctx["pattern"]["name"])}">'
-                f'Chapter {ctx["num"]} &middot; {esc(ctx["pattern"]["name"])}</a></li>'
+            toc_line(
+                f"Chapter {ctx['num']} · {ctx['pattern']['name']}",
+                slug(f"Chapter {ctx['num']}: {ctx['pattern']['name']}"),
             )
         doc.raw_html("</ul>")
+    doc.raw_html("<ul>")
+    for label in BACK_MATTER:
+        toc_line(label, slug(label))
+    doc.raw_html("</ul>")
     doc.raw_html("</nav>")
+
     doc.m("**Contents**")
+    doc.m()
+    doc.m("\n".join(f"- {t}" for t in FRONT_MATTER))
     doc.m()
     for part in parts:
         doc.m(f"**Part {part['n']} — {part['name']}**")
         doc.m()
         doc.m("\n".join(f"- Chapter {c['num']}: {c['pattern']['name']}" for c in part["contexts"]))
         doc.m()
-    doc.m("Glossary · Index of Terms · Conclusion · Colophon")
+    doc.m("\n".join(f"- {t}" for t in BACK_MATTER))
     doc.m()
 
     # --------------------------------------------------------------- parts
@@ -589,6 +648,7 @@ def write_book(cat):
             write_chapter(doc, ctx, cat)
 
     # ------------------------------------------------------------- back matter
+    doc.id_base = ""
     doc.pagebreak()
     doc.heading(1, "Glossary")
     doc.p(
@@ -654,6 +714,16 @@ def write_book(cat):
     )
     doc.p(f"© {AUTHOR}. Generated artifact — regenerate with `npm run book`.")
 
+    # Contents links must each resolve to exactly one heading (see FRONT_MATTER).
+    rendered = "".join(doc.html)
+    for target in toc_targets:
+        n = rendered.count(f'id="{target}"')
+        if n != 1:
+            sys.exit(
+                f"tools/build_book.py: Contents target #{target} matches {n} headings "
+                "in the generated HTML (expected exactly 1)"
+            )
+
     return doc, total_chapters
 
 
@@ -696,7 +766,13 @@ h1.chapter + .pb { display: none; }
 .toc-part { font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 700; margin: 12pt 0 4pt; color: #0b2545; }
 .toc ul { list-style: none; margin: 0 0 6pt 0; }
 .toc li { margin: 1.5pt 0; font-size: 9.6pt; }
-.toc a { color: #1a1a1a; text-decoration: none; }
+.toc a { display: flex; align-items: baseline; text-decoration: none; color: inherit; }
+.toc li a { color: #1a1a1a; }
+.toc-part a { color: #0b2545; }
+.toc .t { flex: 0 1 auto; }
+.toc .dots { flex: 1 1 8pt; min-width: 8pt; border-bottom: .7pt dotted #9aa3ad; margin: 0 4pt; }
+.toc .pg { flex: 0 0 auto; min-width: 2.6em; text-align: right;
+           font-variant-numeric: tabular-nums; color: #55606c; }
 """
 
 HTML_SHELL = """<!DOCTYPE html>

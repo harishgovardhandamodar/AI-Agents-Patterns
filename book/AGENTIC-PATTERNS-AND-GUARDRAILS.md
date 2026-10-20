@@ -81,6 +81,11 @@ Everything else in the catalog follows from it. Memory exists so the loop can ca
 
 **Contents**
 
+- Preface
+- Acknowledgment
+- Introduction
+- What Makes an AI System an "Agent"?
+
 **Part I — Planning & Reasoning**
 
 - Chapter 1: Chain-of-Thought (CoT)
@@ -215,7 +220,10 @@ Everything else in the catalog follows from it. Memory exists so the loop can ca
 - Chapter 106: Research Agent with Citation Enforcement
 - Chapter 107: Procurement / Purchasing Agent Playbook
 
-Glossary · Index of Terms · Conclusion · Colophon
+- Glossary
+- Index of Terms
+- Conclusion
+- Colophon
 
 ---
 
