@@ -163,6 +163,43 @@ test("cascades.json class counts match the records", () => {
   assert.deepEqual(cascadesMeta.counts, expected, "cascades.json counts are stale — run `python3 tools/gen_cascades.py`");
 });
 
+// A battle bench can only test what it can run. A scenario with no trace is
+// a scenario that cannot be replayed, so the corpus is not fully covered.
+// This is the guard that keeps it that way: the 16 scenarios that shipped
+// without traces (the self-improving-agent risks and one per newly-added
+// domain) are exactly the ones a tester most wants to probe.
+test("every scenario is replayable (no scenario lacks a trace)", () => {
+  const traceIds = new Set(traces.map((t) => t.id));
+  const noTrace = scenarios.filter((s) => !s.traceId);
+  assert.deepEqual(
+    noTrace.map((s) => s.id), [],
+    `these scenarios cannot be replayed — run \`python3 tools/gen_traces.py\`: ${noTrace.map((s) => s.id).join(", ")}`
+  );
+  const dangling = scenarios
+    .filter((s) => s.traceId && !traceIds.has(s.traceId))
+    .map((s) => `${s.id} -> ${s.traceId}`);
+  assert.deepEqual(dangling, [], `these scenarios point at a trace that does not exist: ${dangling.join(", ")}`);
+});
+
+test("every trace is well-formed and reachable from its scenario", () => {
+  const scenarioIds = new Set(scenarios.map((s) => s.id));
+  for (const t of traces) {
+    assert.ok(t.id, "a trace has no id");
+    assert.ok(t.steps && t.steps.length, `${t.id} has no steps`);
+    assert.ok(t.flow && t.flow.includes("flowchart"), `${t.id} has no flow diagram`);
+    assert.ok(t.metrics, `${t.id} has no metrics`);
+    // every step's node id must appear in the flow, or the player cannot
+    // highlight the active step
+    for (const s of t.steps) {
+      assert.ok(t.flow.includes(s.node), `${t.id}: step ${s.n} node ${s.node} is not in the flow`);
+    }
+    if (t.scenarioId) {
+      assert.ok(scenarioIds.has(t.scenarioId), `${t.id} references an unknown scenario ${t.scenarioId}`);
+    }
+  }
+});
+
+
 // The offline shell is only as good as its precache list: a new js/data/design
 // file that nobody added to sw.js silently breaks the offline promise. Keep
 // the list and the files on disk in lockstep.
