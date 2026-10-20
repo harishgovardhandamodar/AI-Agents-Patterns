@@ -147,6 +147,10 @@ data/traces.json           39 mock execution traces (scenarios link a replay whe
 data/coverage.json         control-family coverage index (26 domains)
 tools/gen_cascades.py      cascade dataset generator
 tools/gen_coverage.py      coverage-index generator (byte-identical on unchanged data)
+tools/build_book.py        book generator: catalog JSON -> book Markdown + print HTML (stdlib only)
+tools/render_pdf.mjs       book typesetter: headless Chrome + vendored Mermaid -> PDF
+book/AGENTIC-PATTERNS-AND-GUARDRAILS.md   generated book (107 chapters, 9 parts)
+book/Agentic-Design-Patterns-and-Guardrails.pdf   rendered book (359 pp, 116 diagrams)
 design/*.md                8 UML/architecture docs (38 Mermaid diagrams total)
 sw.js                      service worker: precaches the whole shell for offline / air-gapped use
 serve.py                   thin static server + /api/llm/* proxy (axiom-first failover, watchdog, LLM_PRIMARY)
@@ -155,7 +159,7 @@ docker-compose.yml         default deployment (LAN + host Tailscale)
 docker-compose.tailscale.yml   dedicated Tailscale node (+ HTTPS URL)
 tailscale/serve.json       Tailscale Serve config for the sidecar deployment
 .env.example               APP_PORT, TS_AUTHKEY, TS_HOSTNAME
-package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / check
+package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / book / check
 eslint.config.mjs          flat ESLint config; no-undef over the app's shared global namespace
 test/data.test.mjs         catalog integrity, schema guard, coverage freshness, SW precache sync
 test/smoke.mjs             headless smoke (boots the server, walks all 12 tabs, asserts 0 errors)
@@ -170,6 +174,17 @@ Load order matters and is fixed in `index.html`: `app.js` defines the shell (`sw
 - **The zoom viewer clones the rendered SVG** — it never re-runs Mermaid — so the "enlarge" view can never disagree with the inline diagram.
 - **Theme** is a single CSS class on `<html>`; Mermaid theme variables are derived from it, and toggling re-renders every diagram with the new palette.
 - **Live View joins steps to the diagram via node ids** (`step.node` ↔ Mermaid node id), which is what drives the active-node highlight.
+
+## The book
+
+`book/` holds *Agentic Design Patterns & Guardrails — A Hands-On Guide to Designing, Hardening and Operating AI Agents* (Harish Govardhan Damodar), generated from the catalog:
+
+- **`book/AGENTIC-PATTERNS-AND-GUARDRAILS.md`** — 107 chapters across 9 parts (one per pattern, in catalog order), each chapter: *Pattern Overview → Practical Applications & Use Cases → How It Works → Components → Control-Flow Diagram → Failure Modes and Risks → Protections → At a Glance → Key Takeaways → References and Related Patterns → Conclusion*. Full front matter (title page with byline, edition page, preface, acknowledgment, introduction, "What makes an AI system an agent?", contents) and back matter (glossary from `js/help.js`, index of terms, conclusion, colophon).
+- **`book/Agentic-Design-Patterns-and-Guardrails.pdf`** — the rendered book (359 pp, 116 diagrams), typeset by headless Chrome with the vendored Mermaid, so every figure is the catalog's own Mermaid source — same engine, same diagrams as the app.
+
+Regenerate both with **`npm run book`** (`tools/build_book.py` → Markdown + print HTML, then `tools/render_pdf.mjs` → PDF). The generator is stdlib-only Python and deterministic: chapter text comes from `data/*.json` plus the glossary in `js/help.js`, so the book cannot drift from the catalog it describes. `book/agent-patterns-and-guardrails.html` is an ignored intermediate (the PDF is printed from it).
+
+The reference book's chapter template was matched section-for-section; where it runs a *Hands-On Code Example*, this book runs the catalog's real `how`/`components`/`failures`/`protections` records — no per-pattern code was invented.
 
 ## Testing, offline & performance
 
