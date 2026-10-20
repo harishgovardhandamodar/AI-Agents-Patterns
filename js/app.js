@@ -1793,7 +1793,8 @@ async function loadAll() {
       has("initCoverage") && ["coverage", "Coverage", () => initCoverage()],
       has("initDeploy") && ["deploy", "Deployment Plan", () => initDeploy()],
       has("initBlueprint") && ["blueprint", "Blueprints", () => initBlueprint()],
-      has("initDiscovery") && ["discovery", "Discovery Lab", () => initDiscovery()]
+      has("initDiscovery") && ["discovery", "Discovery Lab", () => initDiscovery()],
+      has("initBench") && ["bench", "Battle Bench", () => initBench()]
     ].filter(Boolean);
     PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; });
     const paneRun = async p => {

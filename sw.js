@@ -43,6 +43,8 @@ const PRECACHE = [
   "js/design.js",
   "js/guardrail.js",
   "js/discovery.js",
+  "js/bench.js",
+  "js/benchui.js",
   "js/vendor/mermaid.min.js",
   "data/patterns.json",
   "data/scenarios.json",

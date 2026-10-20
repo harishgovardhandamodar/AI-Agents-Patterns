@@ -400,6 +400,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                    "Accept-Encoding": "identity"}
 
         backends = _backend_list()
+        # A client may pin a backend with X-Fox-Backend. The bench uses this
+        # to force a specific node (e.g. fox-services) instead of taking
+        # whichever answers first — a failover is right for a chat, wrong
+        # for a measurement you intend to compare against a later run.
+        pinned = (self.headers.get("X-Fox-Backend") or "").strip().lower()
+        if pinned:
+            chosen = [b for b in backends if b["name"].lower() == pinned]
+            if not chosen:
+                return self._json({"ok": False, "error": "unknown backend: %s" % pinned,
+                                   "available": [b["name"] for b in backends]})
+            backends = chosen + [b for b in backends if b["name"].lower() != pinned]
         errors = []
         for b in backends:
             try:

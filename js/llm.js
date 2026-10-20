@@ -123,9 +123,13 @@ const LLM = (function () {
     let res;
     arm(firstMs);
     try {
+      /* An optional backend pin. A chat wants failover; a *measurement*
+         wants a fixed node, so two runs can be compared. */
+      const hdrs = { "Content-Type": "application/json" };
+      if (opts.backend) hdrs["X-Fox-Backend"] = opts.backend;
       res = await fetch("api/llm/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: hdrs,
         body: JSON.stringify(body),
         signal: ctrl.signal
       });

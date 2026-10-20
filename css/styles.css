@@ -1968,3 +1968,82 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
   background: color-mix(in srgb, var(--orange) 12%, transparent);
   border-radius: 999px; padding: 3px 9px; white-space: nowrap;
 }
+
+/* ==================== BATTLE BENCH (agent-battlefield) ====================
+   The bench surface: configurations, run controls, and the results matrix.
+   The matrix is the point — scenarios down, configurations across, one
+   cell per case — because "17 failed" is a number and "these four
+   configurations fail on these nine scenarios" is a result. */
+#benchPane .ov-wrap { overflow: auto; max-width: 1500px; }
+.bt-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.bt-head h2 { margin: 0 0 3px; font-size: 17px; }
+.bt-head-btns { margin-left: auto; display: flex; gap: 6px; }
+
+.bt-runbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+.bt-runbar select { width: auto; }
+.bt-runbar label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+
+.bt-progress {
+  height: 5px; border-radius: 3px; background: var(--bg3);
+  overflow: hidden; margin: 10px 0 4px;
+}
+.bt-progress-fill { height: 100%; background: var(--accent); transition: width .2s linear; }
+
+.bt-summary { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.bt-sum-cell {
+  flex: 1; min-width: 88px; padding: 8px 10px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+}
+.bt-sum-cell span { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--text3); }
+.bt-sum-cell b { font-size: 19px; font-weight: 600; }
+.bt-ok { color: var(--green); }
+.bt-bad { color: var(--red); }
+
+.bt-fail-sum { cursor: pointer; font-size: 12px; color: var(--orange); margin: 10px 0 4px; }
+.bt-fails { margin: 6px 0 0; }
+.bt-fail {
+  display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
+  padding: 5px 8px; border-left: 2px solid var(--orange);
+  background: var(--bg); border-radius: 0 6px 6px 0; margin-bottom: 4px; font-size: 12px;
+}
+
+.bt-cfgs { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.bt-cfg {
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg); padding: 9px 11px;
+}
+.bt-cfg-h { display: flex; align-items: baseline; gap: 8px; margin-bottom: 5px; }
+.bt-cfg-h b { font-size: 12.5px; }
+.bt-cfg-h .mono { margin-left: auto; }
+.bt-cfg-axes { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 4px; }
+.bt-cfg-axes .chip.ok { color: var(--green); border-color: var(--green); }
+.bt-cfg-axes .chip.bad { color: var(--red); border-color: var(--red); }
+.bt-cfg-btns { display: flex; gap: 5px; margin-top: 7px; }
+
+.bt-matrix { width: 100%; border-collapse: collapse; font-size: 12px; }
+.bt-matrix th, .bt-matrix td { border: 1px solid var(--border); padding: 3px 6px; }
+.bt-mh { text-align: left; font-weight: 500; color: var(--text2); background: var(--bg2); position: sticky; left: 0; z-index: 1; }
+.bt-mh-l { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.bt-mh-l:hover { color: var(--accent); }
+.bt-cell { text-align: center; cursor: pointer; font-weight: 600; width: 30px; }
+.bt-pass { color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent); }
+.bt-fail { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
+.bt-err  { color: var(--orange); background: color-mix(in srgb, var(--orange) 14%, transparent); }
+.bt-skip { color: var(--text3); }
+.bt-none { color: var(--text3); }
+.bt-cell:hover { outline: 1px solid var(--accent); }
+
+.bt-runs { display: flex; flex-direction: column; gap: 5px; }
+.bt-run {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  padding: 6px 9px; border: 1px solid var(--border); border-radius: 7px; background: var(--bg); font-size: 12px;
+}
+.bt-run-sum { font-weight: 600; }
+.bt-out {
+  white-space: pre-wrap; font-family: var(--mono); font-size: 11.5px;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+  padding: 10px; max-height: 340px; overflow: auto;
+}
+@media (max-width: 720px) {
+  .bt-cfgs { grid-template-columns: 1fr; }
+  .bt-mh-l { max-width: 160px; }
+}

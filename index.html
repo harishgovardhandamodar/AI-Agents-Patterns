@@ -48,6 +48,7 @@
   <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="designPane" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
   <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
   <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="discoveryPane" data-tab="discovery" onclick="switchTab('discovery')">🧪 Discovery Lab</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="benchPane" data-tab="bench" onclick="switchTab('bench')">⚔ Battle Bench</div>
 </div>
 </div>
 
@@ -320,6 +321,12 @@
     </div>
   </div>
 </section>
+<!-- ======================= BATTLE BENCH ======================= -->
+<section class="pane" id="benchPane" role="tabpanel" aria-label="bench">
+  <div class="ov-wrap">
+    <div id="benchMain"></div>
+  </div>
+</section>
 </main><!-- /#maincontent: every .pane must live inside this grid — outside it the
      pane renders below the 100vh app shell, i.e. off-screen -->
 </div><!-- /#main -->
@@ -378,6 +385,8 @@
 <script src="js/design.js"></script>
 <script src="js/guardrail.js"></script>
 <script src="js/discovery.js"></script>
+<script src="js/bench.js"></script>
+<script src="js/benchui.js"></script>
 <script>
 /* Inline boot check (runs from index.html itself, so it works even when a
    module file is stale, blocked or 404s): every expected entry point must

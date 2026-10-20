@@ -4,14 +4,14 @@
    palette's own input). The palette (js/palette.js) owns its own keys. */
 "use strict";
 
-const SK_TABS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard", "discovery"];
+const SK_TABS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard", "discovery", "bench"];
 
 const SK_HELP = [
   ["Ctrl / ⌘ + K", "Open the command palette (search everything)"],
   ["/", "Open the command palette (same, one hand)"],
   ["[ / ]", "Previous / next tab"],
   ["Alt + ← / →", "Previous / next tab (same)"],
-  ["Alt + 1…9, 0, −, =", "Jump to tab 1–12 in top-bar order"],
+  ["Alt + 1…9, 0, −, =", "Jump to tab 1–13 in top-bar order"],
   ["?", "This help"],
   ["Esc", "Close palette, drawer, or this help"]
 ];
