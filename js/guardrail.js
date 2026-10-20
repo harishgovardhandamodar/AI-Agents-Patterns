@@ -10,7 +10,15 @@ function initGuardrail() {
   try { guardState.items = JSON.parse(localStorage.getItem(GUARD_STORE) || "[]"); } catch (e) { guardState.items = []; }
   if (!guardState.items.length) { guardState.items = [seedExample()]; persistGuard(); }
   renderGuardCollection();
-  showGuardIntro();
+  /* Re-open the analysis you were last looking at (iteration 104): the pane
+     used to always land on the intro, so returning to the tab threw away
+     your place in the collection. */
+  const last = (function () {
+    try { return localStorage.getItem("aap.guardrail.last.v1"); } catch (e) { return null; }
+  })();
+  const it = last ? guardState.items.find(x => x.id === last) : null;
+  if (it) { guardState.currentId = it.id; renderGuardReport(it); }
+  else showGuardIntro();
 }
 
 function persistGuard() {
@@ -51,6 +59,7 @@ function newGuardAnalysis() {
 }
 function openGuardItem(id) {
   guardState.currentId = id;
+  try { localStorage.setItem("aap.guardrail.last.v1", id); } catch (e) {}
   renderGuardCollection();
   const it = guardState.items.find(x => x.id === id);
   if (it) renderGuardReport(it);
@@ -245,6 +254,184 @@ function buildCascadeRules(domainId, text) {
       then: then.length ? then : ["halt the interaction and isolate the diverging stage"],
       prevent: (mit.prevent || []).slice(0, 2)
     };
+  });
+}
+
+/* ---------------- reference control -> catalog pattern map (iteration 104)
+   The Guardrail Lab names nine concrete controls. Each one is an
+   *implementation* of a control family, and every control family already
+   exists in the catalog as a design pattern. This table is the bridge: it
+   turns the lab's prose controls into ids the Blueprint canvas accepts, so
+   an analysis can become an architecture instead of staying a document.
+
+   Matching is deliberately narrow. It runs against the control's **name**
+   first (the name is the control's identity), then against its rationale
+   with word-boundary patterns, and it takes the **first** rule that fires.
+   A loose match here would silently add patterns the user never chose to
+   the canvas — the same class of mistake the "add all" button makes.
+
+   Every candidate id is verified against the catalog before it is used, so
+   a mapping can never put a ghost component on the blueprint. */
+const GUARD_CONTROL_MAP = [
+  /* --- most specific first: a rule that has already fired wins, so the
+         generic "approval" rule must not shadow "dual control" --- */
+  { name: /\bdual control|\bfour-eyes/i,
+    why: /\bnot its own approver|\btwo independent/i,
+    ids: ["dual-control"] },
+  { name: /\bin-depth|\bprocessor/i,
+    why: /\boutside the agent runtime|\bprocessor-level/i,
+    ids: ["sandbox-execution", "tool-sandbox"] },
+  { name: /\ballowlist|\bpayee/i,
+    why: /\bnew payees|\bfirst-seen/i,
+    ids: ["egress-control", "policy-engine"] },
+  { name: /\bper-transaction|\brolling-window/i,
+    why: /\bthreshold-splitting/i,
+    ids: ["budget-guardrails", "quota-rate-limit"] },
+  { name: /\bapproval|\bhuman\b/i,
+    why: /\brequire-human|\b2-human-approval|\bevidence pack/i,
+    ids: ["approval-gates", "human-in-the-loop"] },
+  { name: /\bbudget|\bcap(s|ping)?\b|\bceiling/i,
+    why: /\bhard-stop|\bthe model cannot raise/i,
+    ids: ["budget-guardrails", "quota-rate-limit"] },
+  { name: /\baudit|\bhash-chain|\btrail\b/i,
+    why: /\breconstruct|\bappend-only/i,
+    ids: ["audit-trail"] },
+  { name: /\binjection|\buntrusted/i,
+    why: /\bnever instructions|\bquarantine/i,
+    ids: ["input-sanitization", "content-shielding"] },
+  { name: /\bpolicy engine/i,
+    why: /\bdefault-deny|\ballow\/deny/i,
+    ids: ["policy-engine"] },
+  { name: /\bsandbox|\bdry-run/i,
+    why: /\brehearsed/i,
+    ids: ["sandbox-execution", "tool-sandbox"] },
+  { name: /\begress|\boutbound/i,
+    why: /\bleaving|\bdisclosure/i,
+    ids: ["egress-control", "output-filtering-pii"] },
+  { name: /\bpii|\bredact/i,
+    why: /\bsensitive data/i,
+    ids: ["output-filtering-pii"] },
+  { name: /\bscoped|\bcredential|\bleast privilege/i,
+    why: /\bper task/i,
+    ids: ["least-privilege", "agent-identity"] },
+  { name: /\bdrift|\bmonitor/i,
+    why: /\bbaseline/i,
+    ids: ["drift-monitoring"] },
+  { name: /\beval|\bred-team|\bregression/i,
+    why: /\bcontinuous/i,
+    ids: ["eval-harness-redteam"] },
+  { name: /\bkill switch|\brevocation|\bfreeze/i,
+    why: /\bcannot self-reset/i,
+    ids: ["circuit-breaker", "checkpoint-rollback"] },
+  { name: /\bmemory|\bretrieval|\bprovenance/i,
+    why: /\bpersists/i,
+    ids: ["provenance-citation"] },
+  { name: /\bfan-out|\bconcurren|\bdelegat/i,
+    why: /\bdescendant/i,
+    ids: ["fan-out-caps"] },
+  { name: /\bvalid|\bverif/i,
+    why: /\bstep\b/i,
+    ids: ["validation-loop", "chain-of-verification"] },
+  { name: /\bcanary|\bshadow|\bstaged|\brollout/i,
+    why: /\bcompare it against/i,
+    ids: ["canary-shadow", "shadow-agents"] },
+  { name: /\bescalat|\bexception|\bfallback/i,
+    why: /\bfalls outside policy/i,
+    ids: ["fallback-chain"] }
+];
+
+/* Map one control to the catalog pattern ids that implement it. */
+function guardControlPatternIds(c) {
+  const name = String(c.name || "");
+  const why = String(c.why || "");
+  const known = (typeof DATA !== "undefined" && DATA.patterns)
+    ? (DATA.patterns.patterns || []).map(p => p.id) : [];
+  for (const m of GUARD_CONTROL_MAP) {
+    const hit = m.name.test(name) || (m.why && m.why.test(why));
+    if (!hit) continue;
+    return m.ids.filter(id => known.indexOf(id) >= 0);
+  }
+  return [];
+}
+
+/* Every control of an analysis, mapped — the payload the "add to blueprint"
+   button uses. */
+function guardAnalysisPatternIds(item) {
+  const out = [];
+  ((item && item.controls) || []).forEach(c => {
+    guardControlPatternIds(c).forEach(id => { if (out.indexOf(id) < 0) out.push(id); });
+  });
+  return out;
+}
+
+/* Add an analysis's controls to the blueprint as real components. */
+function guardAddToBlueprint(item, mode) {
+  if (!item) return;
+  if (typeof bpAddMany !== "function") { showNotif("Blueprint builder unavailable"); return; }
+  const ids = guardAnalysisPatternIds(item);
+  if (!ids.length) {
+    showNotif("No catalog pattern matches these controls yet", { kind: "warn" });
+    return;
+  }
+  if (mode === "replace" && bpState.comps.length) {
+    const had = bpState.comps.slice();
+    const hadName = bpState.name;
+    bpState.comps = [];
+    if (!bpState.name) bpState.name = item.title || "";
+    bpAddMany(ids);
+    undoPush("replace blueprint with the guardrail analysis",
+      () => { bpState.comps = had; bpState.name = hadName; bpSave(); bpRender(); bpRenderPalette(); },
+      () => { bpState.comps = ids.slice(); bpSave(); bpRender(); bpRenderPalette(); });
+    showNotif("Blueprint replaced from the guardrail analysis — " + ids.length + " patterns", {
+      kind: "ok",
+      actions: [{ label: "Undo", primary: true, fn: undoOnce },
+                { label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }]
+    });
+    switchTab("blueprint"); focusPane("blueprint");
+    return;
+  }
+  if (!bpState.name) bpState.name = item.title || "";
+  const added = bpAddMany(ids);
+  showNotif(added
+    ? "Added " + added + " pattern" + (added === 1 ? "" : "s") + " from the guardrail analysis"
+    : "Those controls are already on the blueprint", {
+    kind: "ok",
+    actions: [{ label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }]
+  });
+  switchTab("blueprint");
+  focusPane("blueprint");
+}
+
+/* ---------------- promote the mock run into the trace library (iteration 105)
+   The Guardrail Lab's section 7 already *is* a replayable trace — a flow
+   diagram, steps, events and metrics — it just lives inside the analysis
+   instead of the Live View. Promoting it puts it in the same player, under
+   the same filters, next to the 39 catalog traces, so "show me the run" is
+   one click instead of a re-read of the report. */
+function guardPromoteToTrace(item) {
+  if (!item || !item.mockRun) { showNotif("This analysis has no mock run", { kind: "warn" }); return; }
+  const m = item.mockRun;
+  const id = "trace-local-" + item.id;
+  const trace = {
+    id: id,
+    name: item.title + " — synthetic replay",
+    scenarioId: null,
+    local: true,
+    guardId: item.id,
+    domain: (item.meta && item.meta.domain ? String(item.meta.domain).toLowerCase() : "local"),
+    severity: (item.meta && item.meta.tier === "CRITICAL" ? "critical" : item.meta && item.meta.tier === "HIGH" ? "high" : "medium"),
+    verdict: "blocked",
+    summary: item.request,
+    metrics: m.metrics || { durationMs: 0, steps: (m.steps || []).length, tokensIn: 0, tokensOut: 0, costUsd: 0, budgetUsd: 25, toolCalls: 0, guardrailHits: 0 },
+    flow: m.flow, steps: m.steps, events: m.events
+  };
+  const list = liveLocal().filter(t => t.id !== id);
+  list.push(trace);
+  liveLocalSave(list);
+  if (typeof renderTraceList === "function") renderTraceList();
+  showNotif("Mock run added to the Live View trace library", {
+    kind: "ok",
+    actions: [{ label: "Open", fn: function () { switchTab("live"); setTimeout(function () { loadTrace(id); focusPane("live"); }, 90); } }]
   });
 }
 
@@ -495,6 +682,10 @@ function renderGuardReport(it) {
   const m = it.meta;
   const sevColor = m.tier === "CRITICAL" ? "var(--red)" : m.tier === "HIGH" ? "var(--orange)" : m.tier === "MEDIUM" ? "var(--accent)" : "var(--green)";
   const badge = it.proposals.some(p => p.recommended) ? "" : "";
+  /* how many of this analysis's controls are real catalog patterns */
+  const mappedIds = guardAnalysisPatternIds(it);
+  const mapped = mappedIds.length;
+  const ctrlMapped = (it.controls || []).filter(c => guardControlPatternIds(c).length).length;
   el("guardMain").innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <h2 style="margin:0;font-size:16px">${escHtml(it.title)}</h2>
@@ -502,6 +693,16 @@ function renderGuardReport(it) {
       <div style="flex:1"></div>
       <span class="muted small mono">${escHtml(it.meta.domain)} · ${escHtml(it.createdAt.slice(0, 16).replace("T", " "))}</span>
       <button class="btn" onclick="deleteGuardItem('${it.id}', event)">🗑</button>
+    </div>
+
+    <div class="g-handoff">
+      <b>Take this further</b>
+      <button class="btn sm primary" onclick="guardAddToBlueprint(guardState.items.find(function(x){return x.id==='${it.id}'}), 'add')" ${mapped ? "" : "disabled"}>🧩 Add ${mapped || "no"} pattern${mapped === 1 ? "" : "s"} to blueprint</button>
+      <button class="btn sm" onclick="guardAddToBlueprint(guardState.items.find(function(x){return x.id==='${it.id}'}), 'replace')" ${mapped ? "" : "disabled"}>↺ Replace canvas</button>
+      <button class="btn sm" onclick="askCopilotAbout('guardrail analysis: ${escHtml(it.title)} (risk ${m.riskScore}/100, ${escHtml(m.tier)} tier). Controls: ${escHtml((it.controls || []).map(c => c.name).join("; ")).slice(0, 400)}')">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" onclick="copyText(JSON.stringify(guardState.items.find(function(x){return x.id==='${it.id}'}), null, 2), 'Analysis JSON')">⧉ Copy JSON</button>
+      <button class="btn sm" onclick="guardPromoteToTrace(guardState.items.find(function(x){return x.id==='${it.id}'}))">▶ Promote mock run to Live View</button>
+      <span class="muted small">${mapped ? ctrlMapped + " of " + (it.controls || []).length + " controls map to " + mapped + " catalog patterns" : "No control maps to a catalog pattern yet"}</span>
     </div>
 
     <div class="g-input-box" style="margin-bottom:14px">

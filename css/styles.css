@@ -1668,6 +1668,22 @@ html:not(.light) .diagram-wrap .label {
 .proj-row.active .proj-name b { color: var(--accent); }
 .proj-row .iconbtn { min-height: 26px; padding: 2px 6px; }
 
+/* ---------------- cross-tool handoff bar (iteration 103-105) -------------
+   A strip under a tool's heading that says "take this further" and offers
+   the exits into the other tools. Without it the authoring tools are
+   terminal nodes: the work ends in the pane it was done in. */
+.g-handoff {
+  display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+  margin: 0 0 14px; padding: 9px 12px;
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 8px; background: var(--bg);
+}
+.g-handoff > b { font-size: 12px; color: var(--text2); margin-right: 2px; }
+.g-handoff .muted.small { margin-left: auto; text-align: right; }
+@media (max-width: 720px) {
+  .g-handoff .muted.small { margin-left: 0; text-align: left; width: 100%; }
+}
+
 /* text-size preference: scales everything set in px off body */
 html[data-uxfs="14"] body { font-size: 14px; }
 html[data-uxfs="15"] body { font-size: 15px; }
