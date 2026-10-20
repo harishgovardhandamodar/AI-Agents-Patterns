@@ -1513,26 +1513,96 @@ function dlWhenReady(tab, fn) {
     setTimeout(poll, 80);
   })();
 }
+
+/* ---------------- one navigation primitive (iteration 108) ----------------
+   The app had 13 hand-rolled cross-pane navigations, each of them a race:
+
+       switchTab('patterns'); setTimeout(() => openPattern(id), 80);
+
+   The delay was a guess: it worked only because the target pane happened
+   to finish initialising inside the window. On a slow boot, a cold pane or
+   a slow disk, the item simply did not open — and the user was left on the
+   right tab with nothing selected and no error.
+
+   goTo() replaces all of them with one call that:
+     - switches the tab,
+     - waits for the pane to actually be ready (the same poll the deep-link
+       router already used),
+     - runs the open action,
+     - and keeps the deep link (#tab/item) intact, so the destination is
+       shareable and the Back button still closes it.
+
+   goTo('patterns', 'chain-of-thought') is the whole thing. */
+function goTo(tab, id, opts) {
+  opts = opts || {};
+  if (!tab) return false;
+  if (!document.getElementById(tab + "Pane")) { switchTab(tab); return false; }
+
+  const closeFirst = opts.close !== false;
+  if (closeFirst && typeof closeDetail === "function") {
+    try { closeDetail(); } catch (e) { /* no drawer open */ }
+  }
+  switchTab(tab);
+
+  const action = opts.action || (id ? goToActionFor(tab, id) : null);
+  if (!action) {
+    if (id) goToHash(tab, id);
+    return true;
+  }
+  dlWhenReady(tab, function () {
+    try { action(); } catch (e) { console.warn("goTo failed", e); }
+    /* If the action opened a drawer, openDetail -> dlSet already pushed the
+       #tab/item history entry — leave it alone, so Back closes the drawer
+       instead of leaving the app. If it did not (a trace, a template),
+       write the item hash ourselves so the destination is still shareable. */
+    if (id) goToHash(tab, id);
+  });
+  return true;
+}
+
+/* Write the #tab/item hash for a destination that did not open a drawer. */
+function goToHash(tab, id) {
+  const target = "#" + tab + "/" + encodeURIComponent(id);
+  if (location.hash === target) return;
+  try { history.replaceState(null, "", target); } catch (e) {}
+}
+/* The default "open this item" action for a tab. */
+function goToActionFor(tab, id) {
+  if (tab === "patterns" && typeof openPattern === "function") return function () { openPattern(id); };
+  if (tab === "scenarios" && typeof openScenario === "function") return function () { openScenario(id); };
+  if (tab === "cascades" && typeof openCascade === "function") return function () { openCascade(id); };
+  if (tab === "design" && typeof designShow === "function") return function () { designShow(id); };
+  if (tab === "guard" && typeof openGuardItem === "function") return function () { openGuardItem(id); };
+  if (tab === "live" && typeof loadTrace === "function") return function () { loadTrace(id); focusPane("live"); };
+  if (tab === "blueprint" && typeof bpApplyTemplate === "function" && id && id.indexOf("tpl:") === 0) {
+    return function () { bpApplyTemplate(id.slice(4)); };
+  }
+  if (tab === "blueprint" && typeof bpLoadLib === "function" && id && id.indexOf("lib:") === 0) {
+    return function () { bpLoadLib(Number(id.slice(4))); };
+  }
+  return null;
+}
 function dlOpen(tab, id, fromHash) {
   if (!tab || !id || !document.getElementById(tab + "Pane")) return false;
   const target = "#" + tab + "/" + encodeURIComponent(id);
-  switchTab(tab);
+  /* goTo() does the tab switch, waits for the pane to be ready and opens the
+     item — one navigation primitive instead of a second, hand-rolled copy
+     of the same logic. The hash is restored afterwards, because switchTab
+     rewrites it to the bare tab. */
+  const ok = goTo(tab, id, { close: false, action: function () {
+    try {
+      if (fromHash) dlApplying = true;
+      const fn = goToActionFor(tab, id);
+      if (fn) fn();
+      else console.warn("deep link target not found:", tab, id);
+    } catch (e) { console.warn("deep link failed", e); }
+    finally { dlApplying = false; }
+  } });
   /* switchTab may have rewritten the hash to the bare tab — restore the item */
   if (fromHash && location.hash !== target) {
     try { history.replaceState(null, "", target); } catch (e) {}
   }
-  dlWhenReady(tab, function () {
-    try {
-      if (fromHash) dlApplying = true;
-      if (tab === "patterns" && typeof openPattern === "function") openPattern(id);
-      else if (tab === "scenarios" && typeof openScenario === "function") openScenario(id);
-      else if (tab === "cascades" && typeof openCascade === "function") openCascade(id);
-      else if (tab === "design" && typeof designShow === "function") designShow(id);
-      else if (tab === "guard" && typeof openGuardItem === "function") openGuardItem(id);
-    } catch (e) { console.warn("deep link failed", e); }
-    finally { dlApplying = false; }
-  });
-  return true;
+  return ok;
 }
 
 /* Robust copy: the clipboard API needs a secure context, and a LAN host on

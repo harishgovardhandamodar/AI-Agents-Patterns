@@ -424,7 +424,7 @@ function buildCasFilters() {
 /* Jump to Cascades tab filtered to one domain (used by Coverage view). */
 function casOpenDomain(dom) {
   switchTab("cascades");
-  setTimeout(function () {
+  dlWhenReady("cascades", function () {
     casState.q = ""; casState.cls.clear(); casState.domain.clear(); casState.blast.clear();
     const s = el("casSearch"); if (s) s.value = "";
     const box = el("casDomains");
@@ -433,7 +433,7 @@ function casOpenDomain(dom) {
       casState.domain.add(dom);
     }
     renderCascadeList();
-  }, 40);
+  });
 }
 
 function casShowMore() { casState.limit += CAS_LIST_STEP; renderCascadeList(); casScrollKeep(); }
@@ -511,7 +511,7 @@ function casRefChips(c) {
   });
   (c.traceRefs || []).forEach(function (id) {
     const t = DATA.traces && DATA.traces.traces.find(function (x) { return x.id === id; });
-    parts.push('<span class="cp-cite t" onclick="switchTab(\'live\');setTimeout(function(){loadTrace(\'' + id + '\')},90)" title="Trace">▶ ' + escHtml(t ? String(t.name).split(" — ").slice(1).join(" — ") || t.name : id) + "</span>");
+    parts.push('<span class="cp-cite t" onclick="goTo(\'live\',\'' + id + '\')" title="Trace">▶ ' + escHtml(t ? String(t.name).split(" — ").slice(1).join(" — ") || t.name : id) + "</span>");
   });
   return parts.length ? '<div class="ref-chips">' + parts.join("") + "</div>" : '<span class="muted small">no direct catalog links</span>';
 }

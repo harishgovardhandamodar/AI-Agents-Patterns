@@ -431,7 +431,7 @@ function guardPromoteToTrace(item) {
   if (typeof renderTraceList === "function") renderTraceList();
   showNotif("Mock run added to the Live View trace library", {
     kind: "ok",
-    actions: [{ label: "Open", fn: function () { switchTab("live"); setTimeout(function () { loadTrace(id); focusPane("live"); }, 90); } }]
+    actions: [{ label: "Open", fn: function () { goTo("live", id); } }]
   });
 }
 

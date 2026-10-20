@@ -226,6 +226,14 @@ function wfGoAction(g) {
   }
 }
 
+/* Jump to the Cascades tab, on the Mitigation planner view. */
+function wfGoMitigation() {
+  switchTab("cascades");
+  dlWhenReady("cascades", function () {
+    if (typeof setCasView === "function") setCasView("mitigation");
+  });
+}
+
 /* Repaint the rail wherever it is mounted. */
 function wfPaintRail() {
   const host = document.getElementById("wfRail");

@@ -445,8 +445,8 @@ function dpFinding(t, kind, id) { return { t: t, kind: kind, id: dpHas(kind, id)
 function dpOpenCite(kind, id) {
   try {
     if (kind === "pattern" && typeof openPattern === "function") openPattern(id);
-    else if (kind === "scenario") { switchTab("scenarios"); setTimeout(() => openScenario(id), 70); }
-    else if (kind === "cascade") { switchTab("cascades"); setTimeout(() => openCascade(id), 70); }
+    else if (kind === "scenario") { goTo("scenarios", id); }
+    else if (kind === "cascade") { goTo("cascades", id); }
     else showNotif("Reference: " + id);
   } catch (e) { showNotif("Couldn't open " + id); }
 }

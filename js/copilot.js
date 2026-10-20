@@ -181,7 +181,7 @@ function cpCiteEl(cites) {
 function cpOpenCite(c) {
   if (c.kind === "pattern" && typeof openPattern === "function") openPattern(c.id);
   else if (c.kind === "scenario" && typeof openScenario === "function") openScenario(c.id);
-  else if (c.kind === "trace" && typeof loadTrace === "function") { switchTab("live"); setTimeout(function () { loadTrace(c.id); }, 90); }
+  else if (c.kind === "trace" && typeof loadTrace === "function") { goTo("live", c.id); }
   else if (c.kind === "cascade" && typeof openCascade === "function") openCascade(c.id);
   else showNotif("Open from the catalog tab");
 }

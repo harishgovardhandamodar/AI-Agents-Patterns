@@ -96,8 +96,7 @@ function dashRender() {
     <div class="dash-h">⛨ Mitigation backlog</div>
     <div class="dash-v">${mitOwned}<i> owned</i></div>
     <div class="dash-m">${mitCount ? mitCount + " de-duplicated controls across every cascade — " + (mitOwned ? mitOwned + " have an owner" : "none have an owner yet") : "Open the Mitigation planner to aggregate the controls behind every cascade."}</div>
-    <button class="btn sm ghost" onclick="switchTab('cascades');setTimeout(function(){setCasView('mitigation')},120);">Open planner</button>
-  </div>`;
+    <button class="btn sm ghost" onclick="wfGoMitigation()">Open planner</button>  </div>`;
 
   /* — discovery (iteration 107) — */
   const run = (typeof discState !== "undefined" && discState.run) ? discState.run : null;

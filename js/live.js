@@ -113,12 +113,12 @@ function loadTrace(id) {
     if (cl.length) {
       links.push({ text: "Cascades: " + cl.length, onClick: function () {
         switchTab("cascades");
-        setTimeout(function () {
+        dlWhenReady("cascades", function () {
           document.querySelectorAll("#casClasses input, #casDomains input").forEach(function (i) { i.checked = false; });
           const i = document.querySelector('#casDomains input[data-v="' + s.domain + '"]');
           if (i) { i.checked = true; i.dispatchEvent(new Event("change")); }
           if (typeof renderCascadeList === "function") renderCascadeList();
-        }, 80);
+        });
       }});
     }
   }

@@ -134,7 +134,7 @@ function openScenario(id) {
   if (!s) return;
   const patLinks = (s.patternRefs || []).map(pid => {
     const p = P.patterns.find(x => x.id === pid);
-    return p ? `<a href="#" onclick="closeDetail();switchTab('patterns');setTimeout(()=>openPattern('${pid}'),80);return false;">${escHtml(p.name)}</a>` : escHtml(pid);
+    return p ? `<a href="#" onclick="goTo('patterns','${pid}');return false;">${escHtml(p.name)}</a>` : escHtml(pid);
   }).join(" · ");
 
   const scnActions = ((typeof bpRefsBtnHtml === "function" && (s.patternRefs || []).length) ? bpRefsBtnHtml(s.patternRefs, "from this scenario") : "") +
@@ -158,7 +158,7 @@ function openScenario(id) {
     ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}
     ${casLinksForScenario(s.id)}
     ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
-      <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>{loadTrace('${s.traceId}');focusPane('live');},100);">▶ Open in Live View</button></div>`
+      <button class="btn primary" onclick="goTo('live','${s.traceId}');">▶ Open in Live View</button></div>`
       : `<div class="dsec"><h4>Mock run</h4><p class="muted small">No replayable trace is published for this scenario yet — the risk is documented, but not demonstrated end-to-end. The Coverage &amp; Gaps tab tracks what is still thin.</p>
       <button class="btn sm" onclick="closeDetail();switchTab('coverage');">📊 See coverage &amp; gaps</button></div>`}`;
   openDetail(s.title, `${s.severity} · ${s.domain}`, html, { tab: "scenarios", id: s.id, title: s.title });

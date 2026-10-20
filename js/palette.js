@@ -6,11 +6,11 @@
 
 const PAL_KINDS = {
   tab:      { label: "Go to",       run: x => switchTab(x.id) },
-  pattern:  { label: "Pattern",     run: x => { switchTab("patterns"); setTimeout(() => openPattern(x.id), 60); } },
-  scenario: { label: "Scenario",    run: x => { switchTab("scenarios"); setTimeout(() => openScenario(x.id), 60); } },
-  cascade:  { label: "Cascade",     run: x => { switchTab("cascades"); setTimeout(() => openCascade(x.id), 60); } },
-  template: { label: "Blueprint",   run: x => { switchTab("blueprint"); setTimeout(() => bpApplyTemplate(x.id), 60); } },
-  library:  { label: "Saved bp",    run: x => { switchTab("blueprint"); setTimeout(() => bpLoadLib(Number(x.id)), 60); } },
+  pattern:  { label: "Pattern",     run: x => goTo("patterns", x.id) },
+  scenario: { label: "Scenario",    run: x => goTo("scenarios", x.id) },
+  cascade:  { label: "Cascade",     run: x => goTo("cascades", x.id) },
+  template: { label: "Blueprint",   run: x => goTo("blueprint", "tpl:" + x.id) },
+  library:  { label: "Saved bp",    run: x => goTo("blueprint", "lib:" + x.id) },
   cmd:      { label: "Command",     run: x => x.run() },
   recent:   { label: "Recent",      run: x => { const i = el("palInput"); if (i) { i.value = x.id; palSel = 0; palRender(); i.focus(); } } }
 };

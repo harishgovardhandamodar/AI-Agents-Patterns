@@ -56,24 +56,27 @@ function initOverview() {
 }
 
 function jumpToScenarioDomain(dom) {
+  /* The target pane may not be built yet — wait for it rather than
+     guessing a delay (iteration 108). */
   switchTab("scenarios");
-  setTimeout(() => {
+  dlWhenReady("scenarios", () => {
     const box = el("scnDomains");
+    if (!box) return;
     const input = box.querySelector(`input[data-dom="${CSS.escape(dom)}"]`);
     if (input) { box.querySelectorAll("input").forEach(i => i.checked = false); input.checked = true; renderScenarios(); }
-  }, 30);
+  });
 }
 
 /* Jump to Patterns tab filtered to a single domain (used by Coverage view). */
 function goPatternDomain(dom) {
   switchTab("patterns");
-  setTimeout(() => {
+  dlWhenReady("patterns", () => {
     const box = el("patDomains");
     if (!box) return;
     box.querySelectorAll("input").forEach(i => i.checked = false);
     const input = box.querySelector(`input[data-dom="${CSS.escape(dom)}"]`);
     if (input) { patState.domains.clear(); input.checked = true; onPatDomain(input); }
-  }, 40);
+  });
 }
 
 /* =============== PATTERNS =============== */
