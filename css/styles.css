@@ -1668,8 +1668,47 @@ html:not(.light) .diagram-wrap .label {
 .proj-row.active .proj-name b { color: var(--accent); }
 .proj-row .iconbtn { min-height: 26px; padding: 2px 6px; }
 
-/* ---------------- cross-tool handoff bar (iteration 103-105) -------------
-   A strip under a tool's heading that says "take this further" and offers
+/* ---------------- workflow rail (iteration 107, 117) ----------------------
+   The five stages of the work, each with its state. Rendered on the
+   Overview above the "Next:" box so the user can see where they are in
+   the whole job, not just the next click. */
+.dash-rail { margin-bottom: 10px; }
+.wf-rail {
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px; margin: 0 0 10px;
+}
+.wf-stage {
+  display: flex; align-items: center; gap: 8px; min-width: 0;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg2);
+  padding: 7px 9px; cursor: pointer; text-align: left; color: var(--text);
+  font: inherit; transition: border-color .12s, background .12s;
+}
+.wf-stage:hover { border-color: var(--accent); background: var(--bg3); }
+.wf-ico {
+  flex: none; width: 20px; height: 20px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 11px;
+  border: 1px solid var(--border); color: var(--text3); background: var(--bg);
+}
+.wf-txt { min-width: 0; }
+.wf-txt b { display: block; font-size: 12px; font-weight: 600; }
+.wf-txt i {
+  display: block; font-style: normal; font-size: 10.5px; color: var(--text3);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.wf-done .wf-ico { color: var(--green); border-color: var(--green); }
+.wf-done .wf-txt b { color: var(--green); }
+.wf-active { border-color: var(--accent); }
+.wf-active .wf-ico { color: var(--accent); border-color: var(--accent); }
+.wf-active .wf-txt b { color: var(--accent); }
+.wf-next { box-shadow: 0 0 0 1px var(--accent) inset; }
+@media (max-width: 900px) {
+  .wf-rail { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .wf-rail { grid-template-columns: 1fr; }
+}
+
+/* ---------------- cross-tool handoff bar (iteration 103-105) -------------   A strip under a tool's heading that says "take this further" and offers
    the exits into the other tools. Without it the authoring tools are
    terminal nodes: the work ends in the pane it was done in. */
 .g-handoff {

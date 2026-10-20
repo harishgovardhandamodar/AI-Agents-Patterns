@@ -21,6 +21,7 @@ const PRECACHE = [
   "css/styles.css",
   "js/app.js",
   "js/project.js",
+  "js/workflow.js",
   "js/player.js",
   "js/llm.js",
   "js/context.js",

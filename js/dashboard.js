@@ -6,6 +6,11 @@
 "use strict";
 
 function dashNext() {
+  /* The workflow engine owns the "what next?" question (iteration 107) —
+     it reads every tool, not just the three this function used to know
+     about. Kept as a thin wrapper so the dashboard and the command
+     palette share one answer. */
+  if (typeof wfNext === "function") return wfNext();
   /* Deterministic suggestion: the first unfinished step wins. */
   if (!dpState.done) return { t: "Complete the deployment intake — the planner scores readiness and picks a recommended stack from your answers.", tab: "deploy", cta: "Open Deployment Planner" };
   if (!bpState.comps.length) {
@@ -81,15 +86,40 @@ function dashRender() {
     <button class="btn sm ghost" onclick="switchTab('guard')">Open lab</button>
   </div>`;
 
+  /* — mitigation backlog (iteration 107) — */
+  let mitCount = 0, mitOwned = 0;
+  try {
+    if (typeof buildMitigationBacklog === "function") mitCount = buildMitigationBacklog().length;
+    if (typeof mitLoad === "function") mitOwned = Object.keys(mitLoad()).length;
+  } catch (e) { /* cascades not ready */ }
+  const mitCard = `<div class="dash-card ${mitOwned ? "" : "dim"}">
+    <div class="dash-h">⛨ Mitigation backlog</div>
+    <div class="dash-v">${mitOwned}<i> owned</i></div>
+    <div class="dash-m">${mitCount ? mitCount + " de-duplicated controls across every cascade — " + (mitOwned ? mitOwned + " have an owner" : "none have an owner yet") : "Open the Mitigation planner to aggregate the controls behind every cascade."}</div>
+    <button class="btn sm ghost" onclick="switchTab('cascades');setTimeout(function(){setCasView('mitigation')},120);">Open planner</button>
+  </div>`;
+
+  /* — discovery (iteration 107) — */
+  const run = (typeof discState !== "undefined" && discState.run) ? discState.run : null;
+  const winN = run && run.winners ? run.winners.length : 0;
+  const discCard = `<div class="dash-card ${winN ? "" : "dim"}">
+    <div class="dash-h">🧪 Discovery Lab</div>
+    <div class="dash-v">${winN}<i> drafts</i></div>
+    <div class="dash-m">${winN ? winN + " novel scenario drafts kept from the last run — review, then export for curation." : "Gap-seeded ideation: find scenarios the catalog does not have yet."}</div>
+    <button class="btn sm ghost" onclick="switchTab('discovery')">Open Discovery Lab</button>
+  </div>`;
+
   const nx = dashNext();
-  const anyWork = dpState.done || bpState.comps.length || cpMessages.length;
+  const anyWork = dpState.done || bpState.comps.length || cpMessages.length ||
+    (typeof guardState !== "undefined" && guardState.items.length) || mitOwned || winN;
   root.innerHTML =
+    (typeof wfRailHtml === "function" ? `<div class="dash-rail">${wfRailHtml()}</div>` : "") +
     `<div class="dash-next"><span class="dash-next-ico">➡</span><div><b>Next:</b> ${escHtml(nx.t)} <button class="btn sm accent" onclick="switchTab('${nx.tab}')">${escHtml(nx.cta)}</button></div></div>` +
-    `<div class="dash-grid">${dpCard}${bpCard}${cpCard}${glCard}</div>` +
+    `<div class="dash-grid">${dpCard}${bpCard}${cpCard}${glCard}${mitCard}${discCard}</div>` +
     (typeof pinPanelHtml === "function" ? pinPanelHtml() : "") +
-    `<div class="dash-export${anyWork ? "" : " dim"}">
+    `<div class="dash-export${anyWork ? "" : " dim"}" id="dashExportBtns">
       <b>Export architect report</b>
-      <span class="muted small">Deployment plan + blueprint + threat model + Fox - Architect consult in one document</span>
+      <span class="muted small">Deployment plan + blueprint + threat model + guardrail analyses + mitigation backlog + working set + Fox - Architect consult in one document</span>
       <span class="dash-export-btns">
         <button class="btn sm" onclick="rpDownload('md')" ${anyWork ? "" : "disabled"}>⬇ Markdown</button>
         <button class="btn sm" onclick="rpDownload('json')" ${anyWork ? "" : "disabled"}>⬇ JSON</button>

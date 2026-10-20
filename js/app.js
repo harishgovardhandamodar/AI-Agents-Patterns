@@ -915,6 +915,9 @@ function markSaved(key) {
   saveTimes[key] = Date.now();
   try { localStorage.setItem("aap.saved.v1", JSON.stringify(saveTimes)); } catch (e) {}
   paintSaveStamps();
+  /* A tool just changed state, so the workflow rail and the "Next:" box
+     may now be wrong. Repaint them (iteration 107). */
+  if (typeof wfPaintRail === "function") wfPaintRail();
 }
 
 /* ---------------- active-filter chips (catalog panes) --------------------
