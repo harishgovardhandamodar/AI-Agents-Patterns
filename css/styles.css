@@ -2047,3 +2047,13 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
   .bt-cfgs { grid-template-columns: 1fr; }
   .bt-mh-l { max-width: 160px; }
 }
+
+/* --- the adversary panel (probe / mutate / attack) --- */
+.bt-adv-btns { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 4px; }
+.bt-adv-btns select { width: auto; max-width: 320px; }
+.bt-adv-btns label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
+.bt-adv-tables { display: grid; grid-template-columns: 1fr; gap: 4px; }
+.bt-adv-tables .tbl { width: 100%; border-collapse: collapse; font-size: 11.5px; }
+.bt-adv-tables .tbl th, .bt-adv-tables .tbl td { border: 1px solid var(--border); padding: 4px 7px; text-align: left; }
+.bt-adv-tables .tbl th { color: var(--text3); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
+.bt-adv-tables .tbl td:first-child { width: 34%; }

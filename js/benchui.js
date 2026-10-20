@@ -21,7 +21,13 @@ const btState = {
   running: false,
   cancel: null,
   selected: null,       /* the case under inspection */
-  diffAgainst: null     /* a stored run id to diff against */
+  diffAgainst: null,    /* a stored run id to diff against */
+  adversaryConfig: null,/* the configuration the adversary points at */
+  sweep: null,          /* the last mutation sweep */
+  attacks: [],          /* the last red-team findings */
+  compare: null,        /* the last model comparison */
+  compareModels: [],    /* the two model ids */
+  compareLimit: 8
 };
 
 /* Build a quoted argument list for an inline handler. JSON.stringify
@@ -38,7 +44,12 @@ function btInit() {
      adopt the user's saved ones if they have any. */
   const saved = btConfigs();
   btState.configs = saved.length ? saved : btDefaultConfigs();
-  if (!saved.length) btConfigsSave(btState.configs);
+  if (!saved.length) {
+    /* The hardened baseline is the subject the mutation sweep erodes, so
+       it belongs in the default panel. */
+    btState.configs.push(btHardenedConfig());
+    btConfigsSave(btState.configs);
+  }
   renderBench();
 }
 
@@ -228,7 +239,9 @@ function renderBench() {
       "</p></div>" +
       '<div class="bt-head-btns">' +
         '<button class="btn" onclick="btAddConfig()">＋ Configuration</button>' +
-        '<button class="btn" onclick="btSweep()">⛓ Sweep</button>' +
+        '<button class="btn" onclick="btSweepConfigs()">⛓ Sweep configs</button>' +
+        '<button class="btn" onclick="btExport(\'md\')" ' + (btState.run ? "" : "disabled") + ">⬇ Report</button>" +
+        '<button class="btn" onclick="btExport(\'json\')" ' + (btState.run ? "" : "disabled") + ">⬇ JSON</button>" +
       "</div>" +
     "</div>" +
 
@@ -279,7 +292,217 @@ function renderBench() {
       (btState.results.length ? btMatrixHtml() : '<p class="muted small">Run the bench to fill the matrix.</p>') +
     "</div>" +
 
+    '<div class="panel" style="margin-bottom:12px"><h3>Adversary <span class="muted small">probe · mutate · attack</span></h3>' +
+      btAdversaryHtml() +
+    "</div>" +
+
+    '<div class="panel" style="margin-bottom:12px"><h3>Model comparison <span class="muted small">same cases, two models</span></h3>' +
+      btCompareHtml() +
+    "</div>" +
+
     '<div class="panel"><h3>Stored runs</h3>' + btRunsHtml() + "</div>";
+}
+
+/* ---------------- the model comparison panel ---------------- */
+
+function btCompareHtml() {
+  const cmp = btState.compare;
+  const opts = btState.compareModels || [];
+  const body = cmp
+    ? (function () {
+        const d = cmp.diff;
+        const rows = d.changed.map(function (c) {
+          return '<tr><td>' + escHtml(c.after.scenarioTitle.slice(0, 40)) + "</td>" +
+            '<td class="mono small">' + escHtml(c.before.configName.split(" · ")[0]) + "</td>" +
+            '<td class="' + (c.before.verdict === "pass" ? "bt-ok" : "bt-bad") + '">' + escHtml(c.before.verdict) + "</td>" +
+            '<td class="' + (c.after.verdict === "pass" ? "bt-ok" : "bt-bad") + '">' + escHtml(c.after.verdict) + "</td></tr>";
+        }).join("");
+        return '<div class="bt-adv-btns">' +
+          '<span class="muted small">' + escHtml(cmp.a.model) + " → " + escHtml(cmp.b.model) + "</span>" +
+          '<span class="chip ' + (cmp.regressions.length ? "bad" : "ok") + '">' + cmp.regressions.length + " regression" + (cmp.regressions.length === 1 ? "" : "s") + "</span>" +
+          '<span class="chip ok">' + cmp.improvements.length + " improvement" + (cmp.improvements.length === 1 ? "" : "s") + "</span>" +
+          '<span class="muted small">' + d.same + " unchanged</span></div>" +
+          (rows ? '<table class="tbl"><tr><th>Scenario</th><th>Config</th><th>' + escHtml(cmp.a.model) + "</th><th>" + escHtml(cmp.b.model) + "</th></tr>" + rows + "</table>"
+            : '<p class="muted small">No verdict changed between the two models.</p>');
+      })()
+    : '<p class="muted small">Run the same cases against two models and diff the verdicts. A model swap is the most common change a team makes — this is how you see whether anything regressed.</p>';
+
+  return '<div class="bt-runbar">' +
+    '<label class="muted small">Model A</label>' +
+    '<input class="search" id="btModelA" style="width:auto" placeholder="e.g. quai-qwen3.8-27b:latest" value="' + escHtml(opts[0] || "") + '">' +
+    '<label class="muted small">Model B</label>' +
+    '<input class="search" id="btModelB" style="width:auto" placeholder="e.g. qwen3.8:27b" value="' + escHtml(opts[1] || "") + '">' +
+    '<label class="muted small">cases</label>' +
+    '<input class="search" id="btCompareN" style="width:70px" type="number" min="1" max="54" value="' + (btState.compareLimit || 8) + '">' +
+    '<button class="btn primary" onclick="btRunCompare()">⇄ Compare</button>' +
+    '<button class="btn ghost" onclick="btListModels()">list models</button>' +
+    "</div>" + body;
+}
+
+/* Ask the backend which models it serves. */
+async function btListModels() {
+  const list = await btAvailableModels();
+  if (!list.length) { showNotif("No model list available", { kind: "warn" }); return; }
+  const html = '<div class="dsec"><h4>Available models</h4><ul>' +
+    list.map(function (m) { return "<li><code>" + escHtml(m) + "</code></li>"; }).join("") + "</ul></div>";
+  openDetail("Models", String(list.length), html);
+}
+
+/* Run the comparison. */
+async function btRunCompare() {
+  const a = el("btModelA") ? el("btModelA").value.trim() : "";
+  const b = el("btModelB") ? el("btModelB").value.trim() : "";
+  if (!a || !b) { showNotif("Name two models to compare", { kind: "warn" }); return; }
+  const n = Math.max(1, Math.min(54, parseInt(el("btCompareN").value, 10) || 8));
+  btState.compareModels = [a, b];
+  btState.compareLimit = n;
+  const cases = btCases(btState.configs.slice(0, 1), { context: btState.context }).slice(0, n);
+  showNotif("Comparing " + a + " against " + b + " over " + cases.length + " cases…", { ttl: 8000 });
+  try { await LLM.probe(true); } catch (e) { /* the adapter reports the error */ }
+  btState.compare = await btCompareModels(cases, a, b, { context: btState.context, adapter: "live" });
+  renderBench();
+  const d = btState.compare;
+  showNotif("Compared — " + d.regressions.length + " regression" + (d.regressions.length === 1 ? "" : "s") +
+    ", " + d.improvements.length + " improvement" + (d.improvements.length === 1 ? "" : "s"), {
+    kind: d.regressions.length ? "warn" : "ok", ttl: 8000
+  });
+}
+
+/* ---------------- the adversary panel ---------------- */
+
+/* Which configuration the adversary is pointed at. */
+function btAdversaryConfig() {
+  return btState.adversaryConfig
+    ? btConfigByHash(btState.adversaryConfig)
+    : (btState.configs[0] || null);
+}
+
+function btAdversaryHtml() {
+  const cfg = btAdversaryConfig();
+  if (!cfg) return '<p class="muted small">Add a configuration to run the adversary against it.</p>';
+  const probe = btProbe(cfg, 6);
+  const rows = probe.map(function (e) {
+    return '<tr><td><span class="sev-dot sev-' + e.severity + '"></span>' + escHtml(e.title.slice(0, 46)) + "</td>" +
+      '<td class="mono small">' + Math.round(e.exposure * 100) / 100 + "</td>" +
+      '<td class="mono small">' + e.coverage + "%</td>" +
+      '<td class="muted small">' + escHtml(e.missing.slice(0, 3).join(", ") || "—") + "</td>" +
+      '<td><button class="btn sm" onclick="btAdversaryAttack(' + btArgs(e.scenarioId) + ')">⚔ attack</button></td></tr>';
+  }).join("");
+  const sweep = btState.sweep ? btSweepHtml(btState.sweep) : "";
+  const attacks = btState.attacks ? btAttackHtml(btState.attacks) : "";
+  return '<p class="muted small">The probe ranks every scenario by how exposed <b>' + escHtml(cfg.name) +
+    "</b> is to it — severity × likelihood × blast reach × autonomy, discounted by the defense set the subject actually carries. " +
+    "The mutation sweep changes one setting at a time and re-runs; the attack asks a model to break the subject outright.</p>" +
+    '<div class="bt-adv-btns">' +
+      '<label class="muted small">Subject</label>' +
+      '<select class="search" id="btAdvCfg" aria-label="Adversary subject" onchange="btSetAdversaryConfig(this.value)">' +
+        btState.configs.map(function (c) {
+          return '<option value="' + btConfigHash(c) + '"' + (btConfigHash(c) === btConfigHash(cfg) ? " selected" : "") + ">" + escHtml(c.name) + "</option>";
+        }).join("") +
+      "</select>" +
+      '<button class="btn sm" onclick="btRunSweep()">⛓ Mutation sweep</button>' +
+      '<button class="btn sm" onclick="btRunRedTeam()">⚔ Red-team (needs a model)</button>' +
+    "</div>" +
+    '<div class="bt-adv-tables">' +
+      '<div><h4 style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 5px">Probe — most exposed scenarios</h4>' +
+      '<table class="tbl"><tr><th>Scenario</th><th>exposure</th><th>covered</th><th>missing controls</th><th></th></tr>' + rows + "</table></div>" +
+    "</div>" +
+    sweep + attacks;
+}
+
+function btSetAdversaryConfig(h) { btState.adversaryConfig = h; renderBench(); }
+
+/* The mutation sweep result: which setting costs the most. */
+function btSweepHtml(sweep) {
+  if (!sweep || !sweep.rows.length) {
+    if (sweep && sweep.note) return '<div><p class="muted small">' + escHtml(sweep.note) + "</p></div>";
+    return "";
+  }
+  const rows = sweep.rows.map(function (r) {
+    const cls = r.delta < 0 ? "bt-bad" : r.delta === 0 ? "" : "bt-ok";
+    return '<tr><td><b>' + escHtml(r.label) + "</b><br><span class=\"muted small\">" + escHtml(r.why) + "</span></td>" +
+      '<td class="' + cls + '">' + (r.delta > 0 ? "+" : "") + r.delta + "</td>" +
+      '<td class="mono small">' + r.pass + " pass / " + r.fail + " fail</td></tr>";
+  }).join("");
+  return '<div><h4 style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px">' +
+    "Mutation sweep — " + sweep.cases + " passing baseline cases</h4>" +
+    '<table class="tbl"><tr><th>Mutation</th><th>Δ pass</th><th>result</th></tr>' + rows + "</table></div>";
+}
+
+/* The red-team findings. */
+function btAttackHtml(attacks) {
+  if (!attacks.length) return "";
+  const rows = attacks.map(function (a) {
+    return '<tr><td><span class="sev-dot sev-' + (a.severity === "high" ? "critical" : a.severity === "medium" ? "high" : "medium") + '"></span>' +
+      escHtml(a.title.slice(0, 40)) + "</td>" +
+      '<td class="muted small">' + escHtml(a.finding) + "</td>" +
+      '<td class="muted small">' + (a.error ? escHtml(a.error) : (a.ms / 1000).toFixed(1) + "s") + "</td>" +
+      '<td><button class="btn sm" onclick="btShowAttack(' + btArgs(a.scenarioId) + ')">view</button></td></tr>';
+  }).join("");
+  return '<div><h4 style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px">' +
+    "Red-team findings</h4>" +
+    '<table class="tbl"><tr><th>Scenario</th><th>finding</th><th>time</th><th></th></tr>' + rows + "</table></div>";
+}
+
+/* Attack one scenario against the adversary's subject. */
+async function btAdversaryAttack(scenarioId) {
+  const cfg = btAdversaryConfig();
+  if (!cfg) return;
+  const scn = btCorpus().find(function (x) { return x.id === scenarioId; });
+  if (!scn) return;
+  showNotif("Attacking " + cfg.name + " with " + scn.title.slice(0, 30) + "…", { ttl: 6000 });
+  const r = await btAttack(cfg, scn, btState.context);
+  btState.attacks = [r].concat(btState.attacks || []).slice(0, 12);
+  renderBench();
+  showNotif(r.error ? ("Attack failed: " + r.error) : ("Attack written — " + r.finding), {
+    kind: r.severity === "high" ? "warn" : r.error ? "error" : "ok", ttl: 8000
+  });
+}
+
+/* Show one attack in the drawer. */
+function btShowAttack(scenarioId) {
+  const a = (btState.attacks || []).find(function (x) { return x.scenarioId === scenarioId; });
+  if (!a) return;
+  const html =
+    '<div class="dsec"><p class="muted small">Exposure <b>' + a.exposure + "</b> · defense coverage " + a.coverage +
+    "% · missing " + escHtml(a.missing.join(", ") || "—") + "</p></div>" +
+    '<div class="dsec"><h4>Finding</h4><p>' + escHtml(a.finding) + "</p></div>" +
+    (a.error ? '<div class="dsec"><p style="color:var(--orange)">' + escHtml(a.error) + "</p></div>" : "") +
+    (a.attack ? '<div class="dsec"><h4>The attack</h4><pre class="bt-out">' + escHtml(a.attack) + "</pre></div>" : "");
+  openDetail("Attack — " + a.title, "red team", html);
+}
+
+/* Run the mutation sweep. */
+async function btRunSweep() {
+  const cfg = btAdversaryConfig();
+  if (!cfg) return;
+  showNotif("Sweeping " + BT_MUTATIONS.length + " mutations of " + cfg.name + "…", { ttl: 5000 });
+  const sweep = await btSweep(cfg, {
+    adapter: btState.adapter,
+    context: btState.context,
+    probeLimit: 10
+  });
+  btState.sweep = sweep;
+  renderBench();
+  const worst = sweep.rows[0];
+  showNotif(worst
+    ? "Sweep done — the worst mutation is “" + worst.label + "” (" + (worst.delta > 0 ? "+" : "") + worst.delta + " passing)"
+    : "Sweep done", { kind: worst && worst.delta < 0 ? "warn" : "ok", ttl: 7000 });
+}
+
+/* Run the full red-team loop. */
+async function btRunRedTeam() {
+  const cfg = btAdversaryConfig();
+  if (!cfg) return;
+  showNotif("Red-teaming " + cfg.name + " — this needs a model and takes a while…", { ttl: 6000 });
+  try { await LLM.probe(true); } catch (e) { /* the adapter reports the error */ }
+  const out = await btRedTeam(cfg, { context: btState.context, probeLimit: 3 });
+  btState.attacks = out.findings;
+  renderBench();
+  const high = out.findings.filter(function (f) { return f.severity === "high"; }).length;
+  showNotif("Red team done — " + out.findings.length + " attacks, " + high + " naming a missing control", {
+    kind: high ? "warn" : "ok", ttl: 8000
+  });
 }
 
 function btSummaryHtml(sum) {
@@ -447,7 +670,10 @@ function btLoadRun(runId) {
 
 /* Sweep one dimension across its values, holding the rest — the cheapest
    way to find where a design breaks. */
-function btSweep() {
+/* Sweep the *configuration space*: one configuration per value of each
+   dimension. (The adversary's mutation sweep — change one setting of one
+   configuration and re-run — is btSweep in js/adversary.js.) */
+function btSweepConfigs() {
   const dims = ["autonomy", "blast", "criticality", "approvalGate", "sensitivity", "hosting", "rollout"];
   const base = btState.configs[0] || btDefaultConfigs()[0];
   const out = [];

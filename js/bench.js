@@ -151,6 +151,20 @@ function btDefaultConfigs() {
   ];
 }
 
+/* A configuration hardened with every control the catalog says defends the
+   most-exposed scenarios. It is the *baseline* the mutation sweep erodes:
+   a sweep needs a subject that passes something, or every row reads zero
+   and teaches nothing. */
+function btHardenedConfig() {
+  const base = btDefaultConfigs()[0];
+  const refs = [];
+  btProbe(base, 10).forEach(function (e) {
+    const s = btCorpus().find(function (x) { return x.id === e.scenarioId; });
+    (s.patternRefs || []).forEach(function (r) { if (refs.indexOf(r) < 0) refs.push(r); });
+  });
+  return btConfig(Object.assign({}, base, { name: "hardened baseline", controls: refs }));
+}
+
 /* Enumerate a configuration space: every combination of the given
    dimension values, capped. This is the "full coverage" knob. */
 function btConfigSpace(dims, cap) {
@@ -482,6 +496,7 @@ btRegisterAdapter({
     const t0 = Date.now();
     let output = "", meta = null, error = null, attempts = 0;
     const maxAttempts = x.retries == null ? 2 : x.retries;
+    let tokens = x.maxTokens;
     while (attempts < maxAttempts) {
       attempts++;
       try {
@@ -492,7 +507,7 @@ btRegisterAdapter({
             model: x.model || (LLM.state && LLM.state.defaultModel) || "",
             messages: payload,
             temperature: x.temperature,
-            max_tokens: x.maxTokens,
+            max_tokens: tokens,
             /* Pin the backend so a measurement is comparable: a failover is
                right for a chat, wrong for a run you intend to diff later. */
             backend: x.backend || "axiom",
@@ -501,11 +516,18 @@ btRegisterAdapter({
           });
         });
         error = null;
-        /* An empty completion means the model was still loading. Retry
-           once — but never record it as a pass. */
+        /* An empty completion means one of two things: the model was still
+           loading, or its reasoning ate the whole token budget (Qwen 3.8
+           spends tokens on hidden reasoning before any content appears).
+           Wait, double the budget, and retry — never record it as a pass. */
         if (!String(output || "").trim()) {
-          error = "empty completion (the model may still be loading)";
-          continue;
+          error = "empty completion (the model may still be loading, or reasoning consumed the token budget)";
+          if (attempts < maxAttempts) {
+            await new Promise(function (r) { setTimeout(r, 5000); });
+            tokens = Math.min(tokens * 2, 16000);
+            continue;
+          }
+          break;
         }
         break;
       } catch (e) {
@@ -861,6 +883,25 @@ async function btRun(cases, adapterId, opts) {
      answer has no replay verdict, a replay has no prose. */
   const evalOpts = Object.assign({}, opts, { adapter: adapterId });
 
+  /* Warm the model first. A cold model's first call returns an empty
+     completion (the weights are still loading) — burning that call on a
+     throwaway keeps it from poisoning the first real case, which would
+     otherwise show up as a spurious error in every fresh run. */
+  if (adapter.needsModel && cases.length) {
+    const x = (opts.context || cases[0].context || btContext());
+    try {
+      await btLiveSerial(function () {
+        return LLM.chat({
+          model: x.model || (LLM.state && LLM.state.defaultModel) || "",
+          messages: [{ role: "user", content: "Reply with the single word: ready" }],
+          max_tokens: 200,
+          backend: x.backend || "axiom",
+          firstTokenTimeout: x.firstTokenTimeout || 180000
+        });
+      });
+    } catch (e) { /* warm-up is best-effort; per-case retry still guards */ }
+  }
+
   for (let i = 0; i < cases.length; i++) {
     if (cancelled) break;
     const kase = cases[i];
@@ -959,4 +1000,47 @@ function btDiffRuns(a, b) {
   });
   Object.keys(ma).forEach(function (k) { if (!mb[k]) removed.push(ma[k]); });
   return { added: added, removed: removed, changed: changed, same: same };
+}
+
+/* ---------------- model comparison (iteration 12) ----------------
+   Run the same cases against two models and diff the verdicts. A model
+   swap is the most common change a team makes, and it is the one change
+   a bench has to be able to answer a question about: "did anything
+   regress?" */
+async function btCompareModels(cases, modelA, modelB, opts) {
+  opts = opts || {};
+  /* Pin the model into EACH case's own context (cases carry contexts — the
+     context sweep varies them — so we clone rather than override the run).
+     We also keep every other field the run context carries that the case
+     context lacks (e.g. a raised maxTokens from the caller). */
+  const base = opts.context || {};
+  function withModel(m) {
+    return cases.map(function (k) {
+      const ctx = Object.assign({}, k.context, base, { model: m });
+      return Object.assign({}, k, { context: ctx,
+        contextHash: btContextHash(ctx) });
+    });
+  }
+  const a = await btRun(withModel(modelA), opts.adapter || "live", {});
+  const b = await btRun(withModel(modelB), opts.adapter || "live", {});
+  const d = btDiffRuns(a, b);
+  return {
+    a: { model: modelA, run: a.run, results: a.results },
+    b: { model: modelB, run: b.run, results: b.results },
+    diff: d,
+    /* A model is better on this corpus if it passes more cases — but the
+       interesting number is the *regressions*: cases model B failed that
+       model A passed. */
+    regressions: d.changed.filter(function (c) { return c.before.verdict === "pass" && c.after.verdict !== "pass"; }),
+    improvements: d.changed.filter(function (c) { return c.before.verdict !== "pass" && c.after.verdict === "pass"; })
+  };
+}
+
+/* The models the bench can compare, read from the backend. */
+async function btAvailableModels() {
+  try {
+    const list = await LLM.models();
+    if (list && list.length) return list;
+  } catch (e) { /* fall through */ }
+  return [];
 }
