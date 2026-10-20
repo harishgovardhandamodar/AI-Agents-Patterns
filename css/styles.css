@@ -599,6 +599,26 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 .cp-cite.c { border-color: color-mix(in srgb, var(--purple) 45%, transparent); }
 .cp-cite.t { border-color: color-mix(in srgb, var(--teal) 45%, transparent); }
 
+/* ---------------- saved research sets (iteration 114) ------------------ */
+.res-bar { display: inline-flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.res-sets { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+.res-set {
+  display: inline-flex; align-items: center; gap: 0;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg3); overflow: hidden; padding: 0;
+}
+.res-set-btn {
+  border: 0; background: none; color: var(--text2); font: inherit; font-size: 11px;
+  padding: 3px 4px 3px 9px; cursor: pointer;
+}
+.res-set-btn:hover { color: var(--accent); }
+.res-set-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+.res-set-x {
+  border: 0; background: none; color: var(--text3); font-size: 13px; line-height: 1;
+  padding: 2px 7px 4px 3px; cursor: pointer;
+}
+.res-set-x:hover { color: var(--red); }
+
 /* ---------------- mitigation backlog progress (iteration 112) ----------- */
 .mit-progress {
   margin: 10px 0; padding: 10px 12px;
@@ -1083,6 +1103,24 @@ html.light .btn.accent { color: #fff; }
 .bp-pal.on .bp-palmark { color: var(--accent); border-color: var(--accent); }
 .bp-palname { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .bp-palcat { flex: 0 0 auto; font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: .04em; }
+
+/* multi-select palette + preview (iteration 116) */
+.bp-palrow { display: flex; align-items: stretch; gap: 2px; }
+.bp-palrow .bp-pal { flex: 1; min-width: 0; }
+.bp-pal.selected { background: color-mix(in srgb, var(--accent) 12%, var(--bg)); border-color: var(--accent); }
+.bp-pal.selected .bp-palmark { color: var(--accent); border-color: var(--accent); }
+.bp-paltoggle {
+  flex: 0 0 auto; width: 24px; border: 1px solid transparent; border-radius: 6px;
+  background: none; color: var(--text3); cursor: pointer; font-size: 12px; line-height: 1;
+}
+.bp-paltoggle:hover { border-color: var(--accent); color: var(--accent); }
+.bp-paltoggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.bp-selbar {
+  margin-top: 8px; padding: 9px 10px; font-size: 11.5px;
+  border: 1px solid var(--accent); border-radius: 8px; background: var(--bg);
+}
+.bp-selbar b { color: var(--accent); font-size: 13px; }
+.bp-selbar-btns { display: flex; gap: 6px; margin-top: 7px; }
 
 .bp-head { display: flex; flex-direction: column; gap: 9px; margin-bottom: 12px; }
 .bp-titlerow { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }

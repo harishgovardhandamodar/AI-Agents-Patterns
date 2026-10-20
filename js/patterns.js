@@ -92,6 +92,7 @@ function initPatterns() {
   P.categories.forEach(c => patState.cats.add(c.id));
   patMemRestore();
   renderPatterns();
+  if (typeof resPaint === "function") resPaint();
 }
 /* Restore / persist the filter state this pane was left in (iteration 76). */
 function patMemRestore() {

@@ -883,6 +883,81 @@ function bpRenderCats() {
   const cats = (DATA.patterns.categories || []);
   box.innerHTML = cats.map(c => `<button class="bp-catchip${bpState.cat === c.id ? " on" : ""}" onclick="bpSetCat('${c.id}')">${escHtml(c.name)}</button>`).join("");
 }
+/* ---------------- multi-select with a preview (iteration 116) ------------
+   "Add 6 linked patterns" and "materialise the stack" both add everything
+   at once, with no way to choose 3 of 6, no way to see what is already on
+   the canvas first, and no way to know what the addition will *do* to the
+   coverage before committing it.
+
+   The palette can now multi-select: tick patterns, and a live preview
+   shows exactly which components will be added, which are already there,
+   and which control families the addition closes. */
+const bpSel = { ids: new Set(), open: false };
+
+function bpSelToggle(id) {
+  if (bpSel.ids.has(id)) bpSel.ids.delete(id); else bpSel.ids.add(id);
+  bpRenderPalette();
+  bpRenderSelBar();
+}
+
+function bpSelClear() { bpSel.ids.clear(); bpRenderPalette(); bpRenderSelBar(); }
+
+/* The preview: what would adding the selection do? */
+function bpSelPreview() {
+  const ids = [...bpSel.ids];
+  const fresh = ids.filter(function (id) { return !bpHas(id); });
+  const already = ids.length - fresh.length;
+  /* which control families does the selection close? */
+  const covered = new Set();
+  (typeof bpCoverage === "function" ? bpCoverage().rows : []).forEach(function (r) {
+    if (r.ok) covered.add(r.k);
+  });
+  const closes = [];
+  fresh.forEach(function (id) {
+    const p = bpPat(id);
+    if (!p) return;
+    BP_FAMILIES.forEach(function (f) {
+      if (f.ids.indexOf(id) >= 0 && !covered.has(f.k)) closes.push(f.label);
+    });
+  });
+  return { ids: ids, fresh: fresh, already: already, closes: [...new Set(closes)] };
+}
+
+/* The selection bar, rendered under the palette. */
+function bpRenderSelBar() {
+  const host = el("bpSelBar");
+  if (!host) return;
+  const p = bpSelPreview();
+  if (!p.ids.length) { host.innerHTML = ""; host.style.display = "none"; return; }
+  host.style.display = "block";
+  host.innerHTML =
+    '<div class="bp-selbar">' +
+      "<b>" + p.fresh.length + "</b> to add" + (p.already ? " · <span class=\"muted small\">" + p.already + " already on the canvas</span>" : "") +
+      (p.closes.length
+        ? ' <span class="muted small">· closes: ' + escHtml(p.closes.slice(0, 3).join(", ")) + (p.closes.length > 3 ? " +" + (p.closes.length - 3) : "") + "</span>"
+        : ' <span class="muted small">· closes no new control family</span>') +
+      '<div class="bp-selbar-btns">' +
+        '<button class="btn sm primary" onclick="bpSelAdd()">＋ Add to blueprint</button>' +
+        '<button class="btn sm ghost" onclick="bpSelClear()">Clear</button>' +
+      "</div>" +
+    "</div>";
+}
+
+/* Commit the selection. */
+function bpSelAdd() {
+  const p = bpSelPreview();
+  if (!p.fresh.length) {
+    showNotif(p.already ? "Those patterns are already on the blueprint" : "Nothing selected");
+    return;
+  }
+  const added = bpAddMany(p.fresh);
+  bpSelClear();
+  showNotif(added
+    ? "Added " + added + " pattern" + (added === 1 ? "" : "s") + " to the blueprint"
+    : "Those patterns are already on the blueprint", { kind: "ok" });
+}
+
+/* Turn a pattern's tile into a multi-select checkbox. */
 function bpRenderPalette() {
   const box = el("bpPalette"), cnt = el("bpPalCount");
   if (!box) return;
@@ -896,11 +971,18 @@ function bpRenderPalette() {
   if (!list.length) { box.innerHTML = `<div class="muted small">No pattern matches.</div>`; return; }
   box.innerHTML = list.map(p => {
     const on = bpHas(p.id);
-    return `<button class="bp-pal${on ? " on" : ""}" onclick="bpToggle('${p.id}')" title="${escHtml(p.summary || "")}">` +
-      `<span class="bp-palmark">${on ? "✓" : "+"}</span>` +
+    const sel = bpSel.ids.has(p.id);
+    return `<div class="bp-palrow${sel ? " sel" : ""}">` +
+      `<button class="bp-pal${on ? " on" : ""}${sel ? " selected" : ""}" onclick="bpSelToggle('${p.id}')" ` +
+      `title="${escHtml(p.summary || "")}${on ? " — already on the canvas" : " — click to select"}">` +
+      `<span class="bp-palmark">${sel ? "☑" : on ? "✓" : "+"}</span>` +
       `<span class="bp-palname">${escHtml(p.name)}</span>` +
-      `<span class="bp-palcat">${p.cat}</span></button>`;
+      `<span class="bp-palcat">${p.cat}</span></button>` +
+      `<button class="bp-paltoggle" onclick="bpToggle('${p.id}')" title="${on ? "Remove from the canvas" : "Add to the canvas directly"}" ` +
+      `aria-label="${on ? "Remove" : "Add"} ${escHtml(p.name)} ${on ? "from" : "to"} the canvas">${on ? "✓" : "+"}</button>` +
+      "</div>";
   }).join("");
+  if (typeof bpRenderSelBar === "function") bpRenderSelBar();
 }
 
 /* ---------------- main pane ---------------- */

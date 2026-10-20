@@ -147,6 +147,7 @@
           <option value="gap">sort: least protected first</option>
         </select>
         <div class="fchip-row" id="patActive" style="display:none"></div>
+        <span id="patResSets"></span>
       </div>
       <div class="card-grid" id="patGrid" role="list"></div>
     </div>
@@ -180,6 +181,7 @@
           <option value="vector">sort: attack vector</option>
         </select>
         <div class="fchip-row" id="scnActive" style="display:none"></div>
+        <span id="scnResSets"></span>
       </div>
       <div class="card-grid" id="scnGrid" role="list"></div>
     </div>
@@ -248,6 +250,7 @@
     <div id="bpCats" class="bp-cats"></div>
     <h4>Palette <span class="muted small" id="bpPalCount"></span></h4>
     <div id="bpPalette" class="bp-palette"></div>
+    <div id="bpSelBar" style="display:none"></div>
   </aside>
   <div class="main" id="bpMain"></div>
 </section>
@@ -354,6 +357,7 @@
 <script src="js/app.js"></script>
 <script src="js/project.js"></script>
 <script src="js/workflow.js"></script>
+<script src="js/ressets.js"></script>
 <script src="js/player.js"></script>
 <script src="js/llm.js"></script>
 <script src="js/context.js"></script>

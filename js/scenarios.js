@@ -15,6 +15,7 @@ function initScenarios() {
     `<label class="filter-item"><input type="checkbox" data-vec="${escHtml(v)}" onchange="onScnFilter(this,'vectors')"> ${escHtml(v)}<span class="cnt">${S.scenarios.filter(s => s.vector === v).length}</span></label>`).join("");
   scnMemRestore();
   renderScenarios();
+  if (typeof resPaint === "function") resPaint();
 }
 /* Restore / persist the filter state this pane was left in (iteration 76). */
 function scnMemRestore() {
