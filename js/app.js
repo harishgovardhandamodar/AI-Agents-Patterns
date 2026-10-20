@@ -1580,7 +1580,47 @@ function goToActionFor(tab, id) {
   if (tab === "blueprint" && typeof bpLoadLib === "function" && id && id.indexOf("lib:") === 0) {
     return function () { bpLoadLib(Number(id.slice(4))); };
   }
+  /* the current blueprint, as a shareable destination (iteration 109) */
+  if (tab === "blueprint" && id === "current" && typeof bpRender === "function") {
+    return function () { bpRender(); };
+  }
+  /* the deployment plan (iteration 109) */
+  if (tab === "deploy" && id === "plan" && typeof dpRender === "function") {
+    return function () { dpRender(); };
+  }
+  /* a discovery run (iteration 109) */
+  if (tab === "discovery" && id === "run" && typeof discRender === "function") {
+    return function () { discRender(); };
+  }
+  /* a project (iteration 109) */
+  if (tab === "overview" && id && id.indexOf("proj:") === 0 && typeof projSwitch === "function") {
+    return function () { projSwitch(id.slice(5)); };
+  }
   return null;
+}
+
+/* ---------------- shareable destinations (iteration 109) ---------------
+   The catalog was addressable (#patterns/chain-of-thought) but the *work*
+   was not: a blueprint, a deployment plan, a guardrail analysis, a
+   discovery run and a project could not be linked, bookmarked or shared.
+   These are the ids that make them addressable, and the share rows that
+   put them in front of the user. */
+function dlWorkShareHtml() {
+  try {
+    if (typeof projGet === "function") {
+      const p = projGet();
+      if (p && p.id) {
+        return '<button class="btn sm ghost" type="button" onclick="dlCopyWorkLink(\'overview\',\'proj:' + p.id + '\')" title="Link to this project">🔗 Copy project link</button>';
+      }
+    }
+  } catch (e) { /* project module unavailable */ }
+  return "";
+}
+
+/* Copy a link to any addressable destination, not just the open drawer. */
+function dlCopyWorkLink(tab, id) {
+  if (!tab || !id) return;
+  copyText(location.origin + location.pathname + "#" + tab + "/" + encodeURIComponent(id), "Link");
 }
 function dlOpen(tab, id, fromHash) {
   if (!tab || !id || !document.getElementById(tab + "Pane")) return false;

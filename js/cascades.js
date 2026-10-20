@@ -498,20 +498,28 @@ function casCardHtml(c) {
     '<div class="d">' + escHtml(c.summary) + "</div></div>";
 }
 
-/* ---------------- detail ---------------- */
+/* ---------------- detail ----------------
+   Reference chips are real links (iteration 111): focusable, copyable and
+   openable in a new tab, with the destination in the address bar. */
 function casRefChips(c) {
   const parts = [];
   (c.patternRefs || []).forEach(function (id) {
     const p = DATA.patterns && DATA.patterns.patterns.find(function (x) { return x.id === id; });
-    parts.push('<span class="cp-cite p" onclick="openPattern(\'' + id + '\')" title="Pattern">◆ ' + escHtml(p ? p.name : id) + "</span>");
+    parts.push('<a class="cp-cite p" href="#patterns/' + encodeURIComponent(id) + '" title="Pattern" ' +
+      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'patterns\',\'' + id + '\');return false;">◆ ' +
+      escHtml(p ? p.name : id) + "</a>");
   });
   (c.scenarioRefs || []).forEach(function (id) {
     const s = DATA.scenarios && DATA.scenarios.scenarios.find(function (x) { return x.id === id; });
-    parts.push('<span class="cp-cite s" onclick="openScenario(\'' + id + '\')" title="Scenario">⚠ ' + escHtml(s ? s.title : id) + "</span>");
+    parts.push('<a class="cp-cite s" href="#scenarios/' + encodeURIComponent(id) + '" title="Scenario" ' +
+      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'scenarios\',\'' + id + '\');return false;">⚠ ' +
+      escHtml(s ? s.title : id) + "</a>");
   });
   (c.traceRefs || []).forEach(function (id) {
     const t = DATA.traces && DATA.traces.traces.find(function (x) { return x.id === id; });
-    parts.push('<span class="cp-cite t" onclick="goTo(\'live\',\'' + id + '\')" title="Trace">▶ ' + escHtml(t ? String(t.name).split(" — ").slice(1).join(" — ") || t.name : id) + "</span>");
+    parts.push('<a class="cp-cite t" href="#live/' + encodeURIComponent(id) + '" title="Trace" ' +
+      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'live\',\'' + id + '\');return false;">▶ ' +
+      escHtml(t ? String(t.name).split(" — ").slice(1).join(" — ") || t.name : id) + "</a>");
   });
   return parts.length ? '<div class="ref-chips">' + parts.join("") + "</div>" : '<span class="muted small">no direct catalog links</span>';
 }
@@ -555,7 +563,7 @@ function openCascade(id) {
     '<div class="d-actions" style="margin-top:14px">' +
     (typeof bpRefsBtnHtml === "function" && (c.patternRefs || []).length ? bpRefsBtnHtml(c.patternRefs, "from this cascade") : "") +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("cascades", c.id) : "") +
-    '<button class="btn primary" onclick="askCopilotAbout(\'cascade: ' + escHtml(c.name) + '\')">🤖 Ask Fox - Architect about this</button></div>';
+    '<button class="btn primary" onclick="askAbout(\'cascade\',' + JSON.stringify(c.id) + ')">🤖 Ask Fox - Architect about this</button></div>';
   openDetail(c.name, c.cls + " cascade", html, { tab: "cascades", id: c.id, title: c.name });
 }
 
@@ -568,5 +576,53 @@ function askCopilotAbout(text) {
     const i = el("cpInput");
     if (i) { i.value = text; i.focus(); }
   }, 90);
+}
+
+/* ---------------- ask about the *artifact*, not its title (iteration 110)
+   "Ask Fox - Architect" in a drawer used to send the item's name — so the
+   copilot had to re-derive what the user was looking at from a title, and
+   a title like "escalation-bypass" or "ReAct (Reason + Act)" is a poor
+   retrieval key.
+
+   askAbout(kind, id) sends the item's own record: its summary, failure
+   modes, protections, attack chain, propagation path. The copilot's
+   deterministic retrieval then matches on the substance, and the answer
+   cites the real catalog ids. */
+function askAbout(kind, id) {
+  let q = "";
+  try {
+    if (kind === "pattern") {
+      const p = (DATA.patterns.patterns || []).find(x => x.id === id);
+      if (!p) return;
+      q = "Pattern: " + p.name + " (id " + p.id + ", category " + p.cat + "). " +
+        p.summary + " How it works: " + (p.how || []).slice(0, 3).join("; ") + ". " +
+        "Failure modes: " + (p.failures || []).slice(0, 3).map(f => f.n + " (" + f.sev + ")").join("; ") + ". " +
+        "Protections: " + (p.protections || []).slice(0, 3).join("; ") + ". " +
+        "What should I watch for when I use this pattern in a production agent?";
+    } else if (kind === "scenario") {
+      const s = (DATA.scenarios.scenarios || []).find(x => x.id === id);
+      if (!s) return;
+      q = "Failure scenario: " + s.title + " (id " + s.id + ", " + s.domain + ", " + s.severity + ", vector " + s.vector + "). " +
+        s.description + " Attack chain: " + (s.attackChain || []).join(" → ") + ". " +
+        "Protections that stop it: " + (s.protections || []).slice(0, 3).map(p => p.name + " (" + p.layer + ")").join("; ") + ". " +
+        "Which catalog patterns and cascades should I combine to stop this end to end?";
+    } else if (kind === "cascade") {
+      const c = (DATA.cascades.cascades || []).find(x => x.id === id);
+      if (!c) return;
+      q = "Composition cascade: " + c.name + " (id " + c.id + ", class " + c.cls + ", " + c.domain + ", impact " + c.impact + "). " +
+        "Propagation path: " + (c.path || "").join(" → ") + ". " +
+        "Amplifiers: " + (c.amplifiers || []).slice(0, 3).join("; ") + ". " +
+        "Mitigations: " + Object.keys(c.mitigations || {}).slice(0, 3).flatMap(k => (c.mitigations[k] || []).slice(0, 1)).join("; ") + ". " +
+        "How do I break this cascade, and which control families does it need?";
+    } else if (kind === "trace") {
+      const t = (DATA.traces.traces || []).find(x => x.id === id);
+      if (!t) return;
+      q = "Execution trace: " + t.name + " (id " + t.id + ", verdict " + t.verdict + "). " +
+        (t.summary || "") + " Which guardrails fired, and what would have happened without them?";
+    } else {
+      return;
+    }
+  } catch (e) { return; }
+  askCopilotAbout(q);
 }
 tabLoaders.cascades = function () { initCascades(); };

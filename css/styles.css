@@ -590,8 +590,10 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 .cp-cite {
   font-size: 10.5px; padding: 2px 8px; border-radius: 10px; cursor: pointer;
   border: 1px solid var(--border); background: var(--bg3); color: var(--text2);
+  text-decoration: none; display: inline-block;
 }
 .cp-cite:hover { border-color: var(--accent); color: var(--text); }
+.cp-cite:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .cp-cite.p { border-color: color-mix(in srgb, var(--accent) 45%, transparent); }
 .cp-cite.s { border-color: color-mix(in srgb, var(--orange) 45%, transparent); }
 .cp-cite.c { border-color: color-mix(in srgb, var(--purple) 45%, transparent); }

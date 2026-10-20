@@ -48,24 +48,28 @@ const LANDING_NOTES = [
 ];
 
 function landLink(kind, id) {
-  let label = id, fn = null, cls = "";
+  let label = id, tab = null, cls = "";
   try {
     if (kind === "pattern") {
       const p = (DATA.patterns.patterns || []).find(x => x.id === id);
       if (!p) return "";
-      label = p.name; fn = "openPattern"; cls = "p";
+      label = p.name; tab = "patterns"; cls = "p";
     } else if (kind === "scenario") {
       const s = (DATA.scenarios.scenarios || []).find(x => x.id === id);
       if (!s) return "";
-      label = s.title; fn = "openScenario"; cls = "s";
+      label = s.title; tab = "scenarios"; cls = "s";
     } else if (kind === "cascade") {
       const c = (DATA.cascades.cascades || []).find(x => x.id === id);
       if (!c) return "";
-      label = c.name; fn = "openCascade"; cls = "c";
+      label = c.name; tab = "cascades"; cls = "c";
     } else return "";
   } catch (e) { return ""; }
   const mark = cls === "p" ? "◆" : cls === "s" ? "⚠" : "⧉";
-  return `<span class="cp-cite ${cls}" onclick="${fn}('${id}')" title="Open in catalog">${mark} ${escHtml(label)}</span>`;
+  /* a real link, so it is focusable, copyable and openable in a new tab
+     (iteration 111) */
+  return `<a class="cp-cite ${cls}" href="#${tab}/${encodeURIComponent(id)}" title="Open in catalog" ` +
+    `onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo('${tab}','${escHtml(id)}');return false;">` +
+    `${mark} ${escHtml(label)}</a>`;
 }
 
 function landSpotlight() {

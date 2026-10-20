@@ -435,6 +435,20 @@ function guardPromoteToTrace(item) {
   });
 }
 
+/* Ask Fox - Architect about a guardrail analysis, sending the design
+   itself rather than its title (iteration 110). */
+function askAboutGuard(item) {
+  if (!item) return;
+  const m = item.meta || {};
+  const q = "Guardrail design for: " + item.title + " (" + (m.domain || "") + ", risk " +
+    (m.riskScore || 0) + "/100, " + (m.tier || "") + " tier). " +
+    "The request was: " + (item.request || "") + " " +
+    "Recommended controls: " + (item.controls || []).slice(0, 6).map(c => c.name + " [" + c.layer + "/" + c.mode + "]").join("; ") + ". " +
+    "Cascade-aware rules cite: " + (item.cascadeRules || []).slice(0, 4).map(r => r.name + " (" + r.cls + ")").join("; ") + ". " +
+    "Which catalog patterns should I add to the architecture, and what is still uncovered?";
+  askCopilotAbout(q);
+}
+
 function crRuleText(r) {
   const q = s => '"' + String(s).replace(/"/g, "'") + '"';
   return "rule " + q("break " + r.cas) + " {\n" +
@@ -699,7 +713,7 @@ function renderGuardReport(it) {
       <b>Take this further</b>
       <button class="btn sm primary" onclick="guardAddToBlueprint(guardState.items.find(function(x){return x.id==='${it.id}'}), 'add')" ${mapped ? "" : "disabled"}>🧩 Add ${mapped || "no"} pattern${mapped === 1 ? "" : "s"} to blueprint</button>
       <button class="btn sm" onclick="guardAddToBlueprint(guardState.items.find(function(x){return x.id==='${it.id}'}), 'replace')" ${mapped ? "" : "disabled"}>↺ Replace canvas</button>
-      <button class="btn sm" onclick="askCopilotAbout('guardrail analysis: ${escHtml(it.title)} (risk ${m.riskScore}/100, ${escHtml(m.tier)} tier). Controls: ${escHtml((it.controls || []).map(c => c.name).join("; ")).slice(0, 400)}')">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" onclick="askAboutGuard(guardState.items.find(function(x){return x.id==='${it.id}'}))">🤖 Ask Fox - Architect</button>
       <button class="btn sm" onclick="copyText(JSON.stringify(guardState.items.find(function(x){return x.id==='${it.id}'}), null, 2), 'Analysis JSON')">⧉ Copy JSON</button>
       <button class="btn sm" onclick="guardPromoteToTrace(guardState.items.find(function(x){return x.id==='${it.id}'}))">▶ Promote mock run to Live View</button>
       <span class="muted small">${mapped ? ctrlMapped + " of " + (it.controls || []).length + " controls map to " + mapped + " catalog patterns" : "No control maps to a catalog pattern yet"}</span>

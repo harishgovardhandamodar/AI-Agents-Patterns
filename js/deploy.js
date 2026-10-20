@@ -405,6 +405,7 @@ function dpRender() {
       <div><h2>Deployment Planner</h2>
       <p class="muted small">Answer four questions about the system. The plan that comes out is grounded in this catalog — patterns, scenarios and cascades cited by name.
       <span class="save-stamp" data-save-stamp="dp"></span></p></div>
+      ${typeof dlCopyWorkLink === "function" ? `<button class="btn sm" onclick="dlCopyWorkLink('deploy','plan')" title="Copy a link that opens this plan">🔗 Copy link</button>` : ""}
     </div>
     ${stepper}
     ${body}`;

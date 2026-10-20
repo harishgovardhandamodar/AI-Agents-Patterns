@@ -260,6 +260,7 @@ function projPaintPanel() {
     '<div class="ux-sec">Active</div>' +
     '<div class="ux-usage"><div class="ux-usage-row"><span>Name</span><b>' + escHtml((projGet() || {}).name || "") + "</b></div>" +
     '<div class="ux-usage-row"><span>Domain</span><b>' + escHtml((projGet() || {}).domain || "—") + "</b></div></div>" +
+    (typeof dlCopyWorkLink === "function" ? '<div class="ux-btns" style="margin-top:6px"><button class="btn sm" type="button" onclick="dlCopyWorkLink(\'overview\',\'proj:' + (projGet() || {}).id + '\')" title="Copy a link that opens this project">🔗 Copy project link</button></div>' : "") +
     '<div style="display:flex;gap:6px;margin:8px 0">' +
     '<input class="search" id="projNameInput" aria-label="Project name" placeholder="Project name…" value="' + escHtml((projGet() || {}).name || "") + '" style="flex:1">' +
     '<button class="btn sm primary" type="button" onclick="projRenameFromUI()">Rename</button></div>' +

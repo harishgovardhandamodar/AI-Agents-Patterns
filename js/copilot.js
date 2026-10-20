@@ -164,21 +164,45 @@ function cpMsgEl(m, stream, i, isLast) {
   if (isLast && m.content && !stream) wrap.insertAdjacentHTML("beforeend", cpFollowHtml(m));
   return wrap;
 }
+/* Citations are the user's path from prose back into the catalog. They
+   used to be <span onclick> — not focusable, not keyboard-reachable, not
+   copyable as a URL. Now they are real <a href="#tab/id"> links: the
+   browser can open them in a new tab, they are in the tab order, and the
+   address bar shows the destination (iteration 111). */
 function cpCiteEl(cites) {
   const d = document.createElement("div");
   d.className = "cp-cites";
   cites.forEach(function (c) {
-    const b = document.createElement("span");
-    b.className = "cp-cite " + (c.kind || "").charAt(0);
-    b.textContent = c.label;
-    b.title = "Open in catalog";
-    b.onclick = function () { cpOpenCite(c); };
-    d.appendChild(b);
+    const tab = cpCiteTab(c.kind);
+    const a = document.createElement("a");
+    a.className = "cp-cite " + (c.kind || "").charAt(0);
+    a.textContent = c.label;
+    a.href = tab ? ("#" + tab + "/" + encodeURIComponent(c.id)) : "#";
+    a.title = tab ? ("Open " + (c.kind || "item") + " in the catalog — " + c.id) : "Open in catalog";
+    a.setAttribute("data-cite-kind", c.kind || "");
+    a.addEventListener("click", function (ev) {
+      /* let the browser handle modified clicks (new tab, new window) */
+      if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+      ev.preventDefault();
+      cpOpenCite(c);
+    });
+    d.appendChild(a);
   });
   d.insertAdjacentHTML("afterbegin", '<span class="muted small" style="align-self:center;margin-right:2px">grounded in:</span>');
   return d;
 }
+
+/* Which tab holds a kind of citation. */
+function cpCiteTab(kind) {
+  if (kind === "pattern") return "patterns";
+  if (kind === "scenario") return "scenarios";
+  if (kind === "cascade") return "cascades";
+  if (kind === "trace") return "live";
+  return null;
+}
 function cpOpenCite(c) {
+  const tab = cpCiteTab(c.kind);
+  if (tab) { goTo(tab, c.id); return; }
   if (c.kind === "pattern" && typeof openPattern === "function") openPattern(c.id);
   else if (c.kind === "scenario" && typeof openScenario === "function") openScenario(c.id);
   else if (c.kind === "trace" && typeof loadTrace === "function") { goTo("live", c.id); }
