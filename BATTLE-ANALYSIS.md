@@ -327,6 +327,53 @@ adding a scenario or a config automatically adds cases — that is the
 19. Full validation: the bench runs green over the whole corpus, in CI.
 20. Docs: the README, the in-app guide, this document.
 
+### Status (end of the branch's first campaign)
+
+Iterations **1–17 are done**, and 18 partially (adapters register via
+`btRegisterAdapter`; corpus import is not wired to a file picker yet).
+Shipped in three commits: `dafb637` (core), `5e8aaa0` (corpus + oracle),
+`09c97f1` (adversary + model comparison).
+
+What the runs showed:
+
+- **The full corpus runs green and fast deterministically.** 54 scenarios
+  × N configs (guardrail adapter) ≈ 190 ms for 108 cases. Full coverage is
+  a property of case *derivation*, not of a hand-maintained list.
+- **The oracle discriminates.** A config carrying the scenario's defending
+  controls passes 53/54; a config carrying none fails 31/54. (The single
+  "failure" of the first config is right: `infinite-loop-cost` burns
+  $41.20 over 127 tool calls — a real gap in the catalog's own controls.)
+- **Two oracle rules changed because the data was wrong, not the runs:**
+  `control-present` is a coverage ratio with a floor (an all-or-nothing
+  identity check failed nearly every real config), and `no-excess-effect`
+  bounds the money that *escaped*, not the money attempted (a blocked
+  spend is the control working).
+- **The mutation sweep finds the load-bearing control:** on the hardened
+  baseline, removing the human gate is the worst single mutation (−2
+  passing cases).
+- **The backend needed to be measured, not assumed.** fox-services' ollama
+  runs `-np 1` and shares the GPU; a bench case took minutes (or hit the
+  4m30s request timeout) while the `axiom` peer answered the same payload
+  in ~7–15 s. Backends are now pinnable per run (`X-Fox-Backend`), the
+  default is `axiom`, and every result records which node served it.
+- **Qwen 3.8 is a reasoning model and the bench had to be rebuilt around
+  that fact:** 700 max_tokens → *zero* content characters (finish reason
+  "length" — the budget was all reasoning); 3000 → a full answer using
+  ~2451 tokens. Live prompts are length-bounded (~200 words), the oracle
+  reads `content` only, and an empty completion is retried with a doubled
+  budget but is **never** counted as a pass.
+- **Live runs remain flaky at ~1 call in 4** (empty completion even at
+  8000 tokens; model cold-loads return empty). Warm-up calls and retries
+  reduce it; they cannot eliminate it. The bench reports it honestly
+  rather than hiding it.
+- **A comparison bug the live path caught:** `btCompareModels` passed the
+  model through the run-level context, but adapters read the *case*
+  context — so the compare silently ran both models on the same backend
+  default. Fixed by pinning the model into each case's own context.
+
+Remaining from the plan: 18 (corpus import UI), 19 (CI wiring), the rest
+of 20 (README + in-app guide sections for the bench).
+
 ---
 
 ## 5. Non-goals
