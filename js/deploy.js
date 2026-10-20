@@ -112,6 +112,7 @@ function dpLoad() {
 function dpSave() {
   try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus })); } catch (e) {}
   if (typeof markSaved === "function") markSaved("dp");
+  if (typeof projTouch === "function") projTouch();
 }
 function dpReset() {
   const snap = { a: JSON.parse(JSON.stringify(dpState.a)), step: dpState.step, done: dpState.done, target: dpState.target, ack: Object.assign({}, dpState.ack), adrStatus: dpState.adrStatus };
@@ -266,6 +267,15 @@ function dpFinish() {
   const errs = DP_STEPS.reduce((acc, _, i) => acc.concat(dpErrors(i)), []);
   if (errs.length) { dpState.err = errs; dpRender(); return; }
   dpState.done = true; dpState.err = null; dpSave(); dpRender();
+  /* The plan names the system — the project should carry that name too, so
+     every other tool's output lands under the same subject. */
+  if (typeof projRename === "function" && dpState.a.system) {
+    const cur = projGet();
+    if (!cur || cur.name !== dpState.a.system) {
+      projRename(dpState.a.system, dpState.a.domain ? dpDomainLabel() : (cur ? cur.domain : ""));
+      if (typeof projPaintChip === "function") projPaintChip();
+    }
+  }
   showNotif("Plan generated — " + (dpState.a.system || "deployment"));
 }
 function dpEditIntake() { dpState.done = false; dpState.step = 0; dpSave(); dpRender(); }
@@ -395,6 +405,7 @@ function dpRender() {
       <div><h2>Deployment Planner</h2>
       <p class="muted small">Answer four questions about the system. The plan that comes out is grounded in this catalog — patterns, scenarios and cascades cited by name.
       <span class="save-stamp" data-save-stamp="dp"></span></p></div>
+      ${typeof dlCopyWorkLink === "function" ? `<button class="btn sm" onclick="dlCopyWorkLink('deploy','plan')" title="Copy a link that opens this plan">🔗 Copy link</button>` : ""}
     </div>
     ${stepper}
     ${body}`;
@@ -435,8 +446,8 @@ function dpFinding(t, kind, id) { return { t: t, kind: kind, id: dpHas(kind, id)
 function dpOpenCite(kind, id) {
   try {
     if (kind === "pattern" && typeof openPattern === "function") openPattern(id);
-    else if (kind === "scenario") { switchTab("scenarios"); setTimeout(() => openScenario(id), 70); }
-    else if (kind === "cascade") { switchTab("cascades"); setTimeout(() => openCascade(id), 70); }
+    else if (kind === "scenario") { goTo("scenarios", id); }
+    else if (kind === "cascade") { goTo("cascades", id); }
     else showNotif("Reference: " + id);
   } catch (e) { showNotif("Couldn't open " + id); }
 }
@@ -657,6 +668,58 @@ function dpStack() {
   return R.filter(x => { if (!x.pat) return true; if (seen[x.pat]) return false; seen[x.pat] = 1; return true; });
 }
 
+/* ---------------- materialise the stack as a blueprint (iteration 103)
+   The planner's recommended stack already names the right catalog patterns
+   (12 of 13 entries carry a valid pattern id). Until now the only way to
+   act on that was to re-pick every one of them by hand in the Blueprints
+   palette. This turns the stack into a blueprint in one step — the
+   promise js/help.js has been making since iteration 44. */
+function dpStackPatternIds() {
+  return dpStack().filter(x => x.pat).map(x => x.pat)
+    .filter(id => typeof DATA !== "undefined" && DATA.patterns &&
+      (DATA.patterns.patterns || []).some(p => p.id === id));
+}
+
+/* Add the stack to the blueprint. `mode` is "add" (merge) or "replace"
+   (start a clean canvas from the stack). Never overwrites without a
+   confirmation the user can undo. */
+function dpMaterialise(mode) {
+  if (typeof bpAddMany !== "function") { showNotif("Blueprint builder unavailable"); return; }
+  const ids = dpStackPatternIds();
+  if (!ids.length) { showNotif("The recommended stack has no catalog patterns yet", { kind: "warn" }); return; }
+  const name = (dpState.a && dpState.a.system) || "";
+  if (mode === "replace" && bpState.comps.length) {
+    const had = bpState.comps.slice();
+    const hadName = bpState.name;
+    bpState.comps = [];
+    bpState.name = name;
+    bpAddMany(ids);
+    undoPush("replace blueprint with the recommended stack",
+      () => { bpState.comps = had; bpState.name = hadName; bpSave(); bpRender(); bpRenderPalette(); },
+      () => { bpState.comps = ids.slice(); bpState.name = name; bpSave(); bpRender(); bpRenderPalette(); });
+    showNotif("Blueprint replaced with the recommended stack — " + ids.length + " patterns", {
+      kind: "ok",
+      actions: [
+        { label: "Undo", primary: true, fn: undoOnce },
+        { label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }
+      ]
+    });
+    switchTab("blueprint");
+    focusPane("blueprint");
+    return;
+  }
+  if (name && !bpState.name) bpState.name = name;
+  const added = bpAddMany(ids);
+  showNotif(added
+    ? "Recommended stack added to the blueprint — " + added + " pattern" + (added === 1 ? "" : "s")
+    : "Every recommended pattern is already on the blueprint", {
+    kind: "ok",
+    actions: [{ label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }]
+  });
+  switchTab("blueprint");
+  focusPane("blueprint");
+}
+
 /* Deterministic guardrail configuration derived from the intake answers. */
 function dpConfig() {
   const a = dpState.a;
@@ -724,6 +787,11 @@ function dpSectionStack() {
     <div class="dp-stack">
       <p class="muted small">${stack.length} controls selected for this profile, grouped by the layer that enforces them. Citations open the catalog entry.</p>
       ${groups}
+    </div>
+    <div class="dp-actions-row" style="margin:10px 0 0">
+      <button class="btn primary" onclick="dpMaterialise('add')" title="Add every recommended control to your blueprint as a starting canvas">🧩 Materialise as blueprint</button>
+      <button class="btn" onclick="dpMaterialise('replace')" title="Replace the blueprint canvas with the recommended stack (undoable)">↺ Replace canvas</button>
+      <span class="muted small">${dpStackPatternIds().length} of these are catalog patterns — they land on the canvas, not as text.</span>
     </div>
     <div class="dp-confighead">
       <h4>Guardrail configuration</h4>
@@ -964,17 +1032,39 @@ function dpRiskList() {
   return { all: all, shown: dpRiskSrc === "all" ? all : all.filter(r => r.src === dpRiskSrc) };
 }
 function dpSetRiskSrc(v) { dpRiskSrc = v; dpRender(); }
+/* Acknowledging a risk is a decision, so it is undoable (iteration 115). */
 function dpAckRisk(key) {
   if (!dpState.ack) dpState.ack = {};
-  if (dpState.ack[key]) delete dpState.ack[key]; else dpState.ack[key] = 1;
+  const was = !!dpState.ack[key];
+  if (was) delete dpState.ack[key]; else dpState.ack[key] = 1;
   dpSave(); dpRender();
+  const apply = function (on) {
+    if (!dpState.ack) dpState.ack = {};
+    if (on) dpState.ack[key] = 1; else delete dpState.ack[key];
+    dpSave(); dpRender();
+  };
+  if (typeof undoPush === "function") {
+    undoPush((was ? "unacknowledge " : "acknowledge ") + key,
+      function () { apply(was); },
+      function () { apply(!was); });
+  }
 }
 function dpAckAll() {
   const list = dpRiskList().shown;
   if (!dpState.ack) dpState.ack = {};
   const allAcked = list.every(r => dpState.ack[r.key]);
+  const before = Object.assign({}, dpState.ack);
   list.forEach(r => { if (allAcked) delete dpState.ack[r.key]; else dpState.ack[r.key] = 1; });
   dpSave(); dpRender();
+  const apply = function (ack) {
+    dpState.ack = Object.assign({}, ack);
+    dpSave(); dpRender();
+  };
+  if (typeof undoPush === "function") {
+    undoPush((allAcked ? "clear" : "acknowledge") + " " + list.length + " risks",
+      function () { apply(before); },
+      function () { apply(dpState.ack); });
+  }
   showNotif(allAcked ? "Cleared acknowledgements" : "Acknowledged " + list.length + " risks");
 }
 function dpRiskCsv() {

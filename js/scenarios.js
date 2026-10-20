@@ -13,7 +13,35 @@ function initScenarios() {
   const vecs = uniq(S.scenarios.map(s => s.vector)).sort();
   el("scnVectors").innerHTML = vecs.map(v =>
     `<label class="filter-item"><input type="checkbox" data-vec="${escHtml(v)}" onchange="onScnFilter(this,'vectors')"> ${escHtml(v)}<span class="cnt">${S.scenarios.filter(s => s.vector === v).length}</span></label>`).join("");
+  scnMemRestore();
   renderScenarios();
+  if (typeof resPaint === "function") resPaint();
+}
+/* Restore / persist the filter state this pane was left in (iteration 76). */
+function scnMemRestore() {
+  const m = typeof uiMemGet === "function" ? uiMemGet("scn", null) : null;
+  if (!m || typeof m !== "object") return;
+  if (m.q && el("scnSearch")) el("scnSearch").value = m.q;
+  [["domains", "#scnDomains", "data-dom"], ["sevs", "#scnSev", "data-sev"], ["vectors", "#scnVectors", "data-vec"]].forEach(function (t) {
+    const saved = Array.isArray(m[t[0]]) ? m[t[0]] : [];
+    scnState[t[0]].clear();
+    document.querySelectorAll(t[1] + " input").forEach(i => {
+      const on = saved.indexOf(i.getAttribute(t[2])) >= 0;
+      i.checked = on;
+      if (on) scnState[t[0]].add(i.getAttribute(t[2]));
+    });
+  });
+  if (m.sort && el("scnSort")) el("scnSort").value = m.sort;
+}
+function scnMemSave() {
+  if (typeof uiMemSet !== "function" || !el("scnSearch")) return;
+  uiMemSet("scn", {
+    q: el("scnSearch").value,
+    domains: [...scnState.domains],
+    sevs: [...scnState.sevs],
+    vectors: [...scnState.vectors],
+    sort: el("scnSort") ? el("scnSort").value : ""
+  });
 }
 function onScnFilter(inp, key) {
   const val = inp.dataset.dom || inp.dataset.sev || inp.dataset.vec;
@@ -66,16 +94,17 @@ function renderScenarios() {
 
   el("scnCount").textContent = `${list.length} of ${S.scenarios.length} scenarios — click for attack chain, protections, and mock run`;
   if (typeof paintActiveChips === "function") paintActiveChips("scnActive", scnActiveChips(q));
+  scnMemSave();
   if ((uxPrefs.scnView || "cards") === "list") return renderScenarioList(list);
   el("scnGrid").innerHTML = list.map(s => `
-    <div class="pat-card" role="listitem" onclick="openScenario('${s.id}')">
+    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open scenario: ${escHtml(s.title)}" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScenario('${s.id}');}">
       <div class="cat" style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${escHtml(s.severity.toUpperCase())} · ${escHtml(s.domain)}</div>
       <div class="nm">${escHtml(s.title)}</div>
       <div class="sm">${escHtml(s.description.slice(0, 180))}…</div>
       <div class="chips">
         <span class="chip">${escHtml(s.vector)}</span>
         <span class="chip ok">${(s.protections || []).length} protections</span>
-        ${s.traceId ? `<span class="chip" style="color:var(--teal)">▶ mock run</span>` : ""}
+        ${s.traceId ? `<span class="chip" style="color:var(--teal)">▶ mock run</span>` : `<span class="chip" title="Documented risk, but no replayable trace is published yet">no replay</span>`}
       </div>
     </div>`).join("") || (typeof emptyState === "function"
       ? emptyState("⚠", "No scenarios match", "Try a broader vector or severity — or clear the search to browse all " + catN("scenarios", 43) + " scenarios.", "Reset filters", "resetScnFilters()")
@@ -95,7 +124,7 @@ function renderScenarioList(list) {
     <div class="mini-row" role="listitem" tabindex="0" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter')openScenario('${s.id}')">
       <span class="sev-dot sev-${s.severity}"></span>
       <span class="mini-nm">${escHtml(s.title)}</span>
-      <span class="mini-meta">${escHtml(s.vector)} · ${(s.protections || []).length} protections${s.traceId ? " · ▶ mock run" : ""}</span>
+      <span class="mini-meta">${escHtml(s.vector)} · ${(s.protections || []).length} protections${s.traceId ? " · ▶ mock run" : " · no replay"}</span>
       <span class="mini-sev" style="color:${dot(s)}">${escHtml(s.severity)}</span>
     </div>`).join("") + `</div>`;
 }
@@ -106,18 +135,18 @@ function openScenario(id) {
   if (!s) return;
   const patLinks = (s.patternRefs || []).map(pid => {
     const p = P.patterns.find(x => x.id === pid);
-    return p ? `<a href="#" onclick="closeDetail();switchTab('patterns');setTimeout(()=>openPattern('${pid}'),80);return false;">${escHtml(p.name)}</a>` : escHtml(pid);
+    return p ? `<a href="#" onclick="goTo('patterns','${pid}');return false;">${escHtml(p.name)}</a>` : escHtml(pid);
   }).join(" · ");
 
   const scnActions = ((typeof bpRefsBtnHtml === "function" && (s.patternRefs || []).length) ? bpRefsBtnHtml(s.patternRefs, "from this scenario") : "") +
-    `<button class="btn sm" onclick="askCopilotAbout('scenario: ${escHtml(s.title)}')">🤖 Ask Fox - Architect about this scenario</button>` +
+    `<button class="btn sm" onclick="askAbout('scenario','${escHtml(s.id)}')">🤖 Ask Fox - Architect about this scenario</button>` +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("scenarios", s.id) : "");
   const html = `
     <div class="dsec d-actions">${scnActions}</div>
     <div class="dsec">
       <p><span class="sev-dot sev-${s.severity}"></span><b style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${s.severity.toUpperCase()}</b>
       &nbsp; likelihood: <b>${escHtml(s.likelihood)}</b> &nbsp; vector: <b>${escHtml(s.vector)}</b> &nbsp; domain: <b>${escHtml(s.domain)}</b></p>
-      <p>${escHtml(s.description)}</p>
+      <p>${typeof jargon === "function" ? jargon(s.description) : escHtml(s.description)}</p>
     </div>
     <div class="dsec"><h4>Attack chain (how it unfolds)</h4>
       <ol style="padding-left:20px;margin:0">${s.attackChain.map(a => `<li style="color:var(--text2);margin-bottom:5px">${escHtml(a)}</li>`).join("")}</ol></div>
@@ -130,6 +159,8 @@ function openScenario(id) {
     ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}
     ${casLinksForScenario(s.id)}
     ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
-      <button class="btn primary" onclick="closeDetail();switchTab('live');setTimeout(()=>{loadTrace('${s.traceId}');focusPane('live');},100);">▶ Open in Live View</button></div>` : ""}`;
-  openDetail(s.title, `${s.severity} · ${s.domain}`, html);
+      <button class="btn primary" onclick="goTo('live','${s.traceId}');">▶ Open in Live View</button></div>`
+      : `<div class="dsec"><h4>Mock run</h4><p class="muted small">No replayable trace is published for this scenario yet — the risk is documented, but not demonstrated end-to-end. The Coverage &amp; Gaps tab tracks what is still thin.</p>
+      <button class="btn sm" onclick="closeDetail();switchTab('coverage');">📊 See coverage &amp; gaps</button></div>`}`;
+  openDetail(s.title, `${s.severity} · ${s.domain}`, html, { tab: "scenarios", id: s.id, title: s.title });
 }

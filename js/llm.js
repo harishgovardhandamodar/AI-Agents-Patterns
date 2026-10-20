@@ -24,6 +24,7 @@ const LLM = (function () {
     if (state.probing) return state;
     if (state.probed && !force) return state;
     state.probing = true;
+    if (typeof setBusy === "function") setBusy("Checking model backends…");
     try {
       const r = await fetch("api/llm/health", { cache: "no-store" });
       const j = await r.json();
@@ -39,6 +40,7 @@ const LLM = (function () {
     } finally {
       state.probing = false;
       state.probed = true;
+      if (typeof clearBusy === "function") clearBusy("Checking model backends…");
     }
     return state;
   }
@@ -121,9 +123,13 @@ const LLM = (function () {
     let res;
     arm(firstMs);
     try {
+      /* An optional backend pin. A chat wants failover; a *measurement*
+         wants a fixed node, so two runs can be compared. */
+      const hdrs = { "Content-Type": "application/json" };
+      if (opts.backend) hdrs["X-Fox-Backend"] = opts.backend;
       res = await fetch("api/llm/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: hdrs,
         body: JSON.stringify(body),
         signal: ctrl.signal
       });

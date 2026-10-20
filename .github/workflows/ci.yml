@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+
+jobs:
+  check:
+    name: lint + data integrity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install (skip the Chromium download — only lint/tests here)
+        run: npm ci --ignore-scripts
+        env:
+          PUPPETEER_SKIP_DOWNLOAD: "1"
+      - name: Lint (global-namespace guard)
+        run: npm run lint
+      - name: Data integrity + schema guard
+        run: npm run test
+
+  e2e:
+    name: headless smoke
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install (full, with Chromium)
+        run: npm ci
+      - name: Headless smoke (12 tabs, 0 errors)
+        run: npm run test:e2e

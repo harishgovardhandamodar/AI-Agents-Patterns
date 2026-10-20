@@ -37,7 +37,7 @@
  "counts": {
   "inherent": 107,
   "emergent": 16,
-  "derived": 43,
+  "derived": 54,
   "cascading": 14
  },
  "cascades": [
@@ -62,17 +62,30 @@
    "impact": "medium",
    "speed": "seconds",
    "detection": [
+    "Affiliate links appear in a draft with no disclosure flag",
+    "A claim has no resolvable primary source",
+    "Source-provenance mismatch between the draft and the cited page",
     "per-agent tracing, action de-duplication, contract tests"
    ],
    "mitigations": {
     "prevent": [
      "Independent contexts per stage.",
-     "Gates with explicit machine-checkable criteria."
+     "Gates with explicit machine-checkable criteria.",
+     "Source allowlist — Only cite domains on an editorial allowlist; flag everything else for human review [ingress]",
+     "Claim verification — Each numeric or factual claim must resolve to a citable primary source before publish [verification]",
+     "Link policy — Strip or require disclosure for affiliate and donation links in generated copy [egress]",
+     "LLM judge — A second model checks the draft against its sources for unsupported claims [detection]"
     ],
     "detect": [
+     "Affiliate links appear in a draft with no disclosure flag",
+     "A claim has no resolvable primary source",
+     "Source-provenance mismatch between the draft and the cited page",
      "per-agent tracing, action de-duplication, contract tests"
     ],
     "contain": [
+     "Unpublish and annotate the article; keep a corrections log",
+     "Quarantine the source domain and re-scan other recent drafts",
+     "Add the injection sample to the editorial eval corpus",
      "stop the swarm, isolate the diverging agent"
     ],
     "recover": [
@@ -84,7 +97,9 @@
     "prompt-chaining",
     "evaluator-optimizer"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "content-seo-injection"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, gate capture by upstream style can reappear under distribution shift — keep an eval that targets it."
   },
@@ -109,19 +124,34 @@
    "impact": "high",
    "speed": "seconds",
    "detection": [
-    "iteration counters, latency/cost rate alarms"
+    "A tool call targets a host outside the engagement scope",
+    "Egress volume to a non-collector destination",
+    "Credential use crossing an environment boundary",
+    "Occupancy sensor age exceeds its freshness budget",
+    "A path plan crosses a zone flagged occupied"
    ],
    "mitigations": {
     "prevent": [
      "Signed/authenticated telemetry sources.",
      "Freshness checks; discard stale observations.",
-     "Rate limits on reactive actions."
+     "Rate limits on reactive actions.",
+     "Scope enforcement — Tool calls carry the engagement scope; out-of-scope targets are denied at the gateway [runtime]",
+     "Egress control — Only the engagement collector can receive data; all other egress is blocked [egress]",
+     "Credential isolation — Ephemeral per-target credentials with no cross-environment reuse [identity]"
     ],
     "detect": [
-     "iteration counters, latency/cost rate alarms"
+     "A tool call targets a host outside the engagement scope",
+     "Egress volume to a non-collector destination",
+     "Credential use crossing an environment boundary",
+     "Occupancy sensor age exceeds its freshness budget",
+     "A path plan crosses a zone flagged occupied"
     ],
     "contain": [
-     "kill the loop, apply a hard iteration/token cap"
+     "Terminate the run and rotate any crossed credentials",
+     "Notify the client and open an incident record",
+     "Freeze the collector bucket and preserve provenance for forensics",
+     "Halt the robot and secure the aisle",
+     "Replace or repair the sensor and re-validate"
     ],
     "recover": [
      "refund wasted spend, re-run with caps enforced"
@@ -132,7 +162,11 @@
     "standard-agent-loop",
     "drift-monitoring"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "cyber-pentest-scope-escape",
+    "robotics-sensor-trust",
+    "trading-reflexive-loop"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, adversarial manipulation can reappear under distribution shift — keep an eval that targets it."
   },
@@ -158,7 +192,9 @@
    "detection": [
     "Canary probe failure",
     "Block-rate drop without traffic-mix change",
-    "per-agent tracing, action de-duplication, contract tests"
+    "A tool call targets a host outside the engagement scope",
+    "Egress volume to a non-collector destination",
+    "Credential use crossing an environment boundary"
    ],
    "mitigations": {
     "prevent": [
@@ -166,17 +202,22 @@
      "Budget cap on rounds.",
      "Hold-out + rotating external red teams — Fresh attackers with no corpus access test quarterly. [process]",
      "Assume-breach posture — Injection shield is layer 2 of 5; least privilege + spend gates + approval gates hold when it fails. [design]",
-     "Production canary probes — Synthetic injection canaries run in prod; block-rate drop pages the team. [observability]"
+     "Production canary probes — Synthetic injection canaries run in prod; block-rate drop pages the team. [observability]",
+     "Scope enforcement — Tool calls carry the engagement scope; out-of-scope targets are denied at the gateway [runtime]"
     ],
     "detect": [
      "Canary probe failure",
      "Block-rate drop without traffic-mix change",
-     "per-agent tracing, action de-duplication, contract tests"
+     "A tool call targets a host outside the engagement scope",
+     "Egress volume to a non-collector destination",
+     "Credential use crossing an environment boundary"
     ],
     "contain": [
      "Emergency classifier update",
      "Post-incident: layered control review, not just signature update",
-     "stop the swarm, isolate the diverging agent"
+     "Terminate the run and rotate any crossed credentials",
+     "Notify the client and open an incident record",
+     "Freeze the collector bucket and preserve provenance for forensics"
     ],
     "recover": [
      "reconcile divergent outputs, deduplicate actions taken"
@@ -188,7 +229,8 @@
     "eval-harness-redteam"
    ],
    "scenarioRefs": [
-    "eval-overfit"
+    "eval-overfit",
+    "cyber-pentest-scope-escape"
    ],
    "traceRefs": [
     "trace-eval-overfit"
@@ -216,18 +258,30 @@
    "impact": "high",
    "speed": "seconds",
    "detection": [
+    "Row-count or null-rate anomaly after a transform change",
+    "Schema hash differs from the published contract",
+    "A dashboard metric shifts beyond its normal band",
     "state-machine invariants, step timeout alerts"
    ],
    "mitigations": {
     "prevent": [
      "Idempotency keys per item per action.",
      "Canary 1% of batch, human-approve, then ramp.",
-     "Global rate caps on outward-facing actions."
+     "Global rate caps on outward-facing actions.",
+     "Schema contract — Publish and enforce a schema contract; breaking changes require a migration PR [data]",
+     "Dry-run and checkpoint — Run the transform on a shadow copy and diff row counts and totals before commit [runtime]",
+     "Change gate — Production transform edits require human approval; agents propose, not commit [process]"
     ],
     "detect": [
+     "Row-count or null-rate anomaly after a transform change",
+     "Schema hash differs from the published contract",
+     "A dashboard metric shifts beyond its normal band",
      "state-machine invariants, step timeout alerts"
     ],
     "contain": [
+     "Roll back to the last checkpointed transform",
+     "Re-run with the corrected schema contract",
+     "Backfill and annotate the affected downstream tables",
      "halt the workflow, park state for manual resume"
     ],
     "recover": [
@@ -239,7 +293,9 @@
     "canary-shadow",
     "idempotency-keys"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "data-pipeline-schema-drift"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, duplicate side effects can reappear under distribution shift — keep an eval that targets it."
   },
@@ -304,7 +360,8 @@
    ],
    "scenarioRefs": [
     "code-rm-prod",
-    "selfrewrite-reward-hack"
+    "selfrewrite-reward-hack",
+    "data-pipeline-schema-drift"
    ],
    "traceRefs": [
     "trace-code-guarded"
@@ -332,18 +389,30 @@
    "impact": "high",
    "speed": "seconds",
    "detection": [
+    "Remediation touches more than the allowed fraction",
+    "The error rate rises after the action",
+    "The action targets a fleet the alert did not implicate",
     "tool-call auditing, arg-schema validation, egress monitoring"
    ],
    "mitigations": {
     "prevent": [
      "Mode is server-enforced and included in signed response.",
      "Enumerate secondary effects (notifications, webhooks) in the diff.",
-     "Dry-run receipts logged to audit trail."
+     "Dry-run receipts logged to audit trail.",
+     "Blast-radius cap — Remediation touches at most N% of a fleet per step, with a pause between steps [runtime]",
+     "Circuit breaker — Abort remediations that increase the error rate instead of reducing it [runtime]",
+     "Human-in-the-loop — Mass restarts above the cap require on-call approval [process]"
     ],
     "detect": [
+     "Remediation touches more than the allowed fraction",
+     "The error rate rises after the action",
+     "The action targets a fleet the alert did not implicate",
      "tool-call auditing, arg-schema validation, egress monitoring"
     ],
     "contain": [
+     "Halt the run and restore capacity",
+     "Roll back using checkpointed state",
+     "Add the misfire case to the remediation eval suite",
      "revoke the tool scope, circuit-break the tool, queue the call"
     ],
     "recover": [
@@ -355,7 +424,9 @@
     "checkpoint-rollback",
     "approval-gates"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "ops-remediation-misfire"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, dry-run lies can reappear under distribution shift — keep an eval that targets it."
   },
@@ -511,18 +582,30 @@
    "impact": "critical",
    "speed": "seconds",
    "detection": [
+    "Remediation touches more than the allowed fraction",
+    "The error rate rises after the action",
+    "The action targets a fleet the alert did not implicate",
     "heartbeats, SLO burn-rate alerts, chaos tests"
    ],
    "mitigations": {
     "prevent": [
      "Remediation allowlist per system class; destructive actions always gated.",
      "Max remediation attempts, then page a human.",
-     "Change windows and blast-radius caps."
+     "Change windows and blast-radius caps.",
+     "Blast-radius cap — Remediation touches at most N% of a fleet per step, with a pause between steps [runtime]",
+     "Circuit breaker — Abort remediations that increase the error rate instead of reducing it [runtime]",
+     "Human-in-the-loop — Mass restarts above the cap require on-call approval [process]"
     ],
     "detect": [
+     "Remediation touches more than the allowed fraction",
+     "The error rate rises after the action",
+     "The action targets a fleet the alert did not implicate",
      "heartbeats, SLO burn-rate alerts, chaos tests"
     ],
     "contain": [
+     "Halt the run and restore capacity",
+     "Roll back using checkpointed state",
+     "Add the misfire case to the remediation eval suite",
      "fail over, shed load, open the circuit breaker"
     ],
     "recover": [
@@ -534,7 +617,9 @@
     "incident-playbook",
     "plan-and-execute"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "ops-remediation-misfire"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, runaway remediation can reappear under distribution shift — keep an eval that targets it."
   },
@@ -667,18 +752,30 @@
    "impact": "critical",
    "speed": "seconds",
    "detection": [
+    "Row-count or null-rate anomaly after a transform change",
+    "Schema hash differs from the published contract",
+    "A dashboard metric shifts beyond its normal band",
     "tool-call auditing, arg-schema validation, egress monitoring"
    ],
    "mitigations": {
     "prevent": [
      "Micro-VM/container sandbox: no network by default, egress allowlist, read-only FS + tmpfs.",
      "Never mount production credentials; use short-lived scoped tokens.",
-     "Pre-execution static scan + post-execution artifact review."
+     "Pre-execution static scan + post-execution artifact review.",
+     "Schema contract — Publish and enforce a schema contract; breaking changes require a migration PR [data]",
+     "Dry-run and checkpoint — Run the transform on a shadow copy and diff row counts and totals before commit [runtime]",
+     "Change gate — Production transform edits require human approval; agents propose, not commit [process]"
     ],
     "detect": [
+     "Row-count or null-rate anomaly after a transform change",
+     "Schema hash differs from the published contract",
+     "A dashboard metric shifts beyond its normal band",
      "tool-call auditing, arg-schema validation, egress monitoring"
     ],
     "contain": [
+     "Roll back to the last checkpointed transform",
+     "Re-run with the corrected schema contract",
+     "Backfill and annotate the affected downstream tables",
      "revoke the tool scope, circuit-break the tool, queue the call"
     ],
     "recover": [
@@ -691,7 +788,9 @@
     "computer-use",
     "dlp"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "data-pipeline-schema-drift"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, sandbox escape can reappear under distribution shift — keep an eval that targets it."
   },
@@ -779,18 +878,30 @@
    "impact": "medium",
    "speed": "seconds",
    "detection": [
+    "Row-count or null-rate anomaly after a transform change",
+    "Schema hash differs from the published contract",
+    "A dashboard metric shifts beyond its normal band",
     "state-machine invariants, step timeout alerts"
    ],
    "mitigations": {
     "prevent": [
      "Structural validation of DAG (acyclic, bounded width/depth).",
      "Cache keyed by input hash + policy version.",
-     "Per-node budgets roll up to task budget."
+     "Per-node budgets roll up to task budget.",
+     "Schema contract — Publish and enforce a schema contract; breaking changes require a migration PR [data]",
+     "Dry-run and checkpoint — Run the transform on a shadow copy and diff row counts and totals before commit [runtime]",
+     "Change gate — Production transform edits require human approval; agents propose, not commit [process]"
     ],
     "detect": [
+     "Row-count or null-rate anomaly after a transform change",
+     "Schema hash differs from the published contract",
+     "A dashboard metric shifts beyond its normal band",
      "state-machine invariants, step timeout alerts"
     ],
     "contain": [
+     "Roll back to the last checkpointed transform",
+     "Re-run with the corrected schema contract",
+     "Backfill and annotate the affected downstream tables",
      "halt the workflow, park state for manual resume"
     ],
     "recover": [
@@ -802,7 +913,9 @@
     "plan-and-execute",
     "parallelization-sectioning"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "data-pipeline-schema-drift"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, cyclic or degenerate plans can reappear under distribution shift — keep an eval that targets it."
   },
@@ -917,7 +1030,8 @@
    "scenarioRefs": [
     "code-rm-prod",
     "code-supply-chain",
-    "sandbox-escape"
+    "sandbox-escape",
+    "cyber-pentest-scope-escape"
    ],
    "traceRefs": [
     "trace-code-guarded",
@@ -1096,7 +1210,8 @@
    "scenarioRefs": [
     "voice-deepfake-approval",
     "gov-misinfo",
-    "agent-impersonation"
+    "agent-impersonation",
+    "cyber-pentest-scope-escape"
    ],
    "traceRefs": [
     "trace-voice-deepfake-approval",
@@ -1236,7 +1351,8 @@
    "scenarioRefs": [
     "code-secrets-gist",
     "support-pii-echo",
-    "exfil-via-logs"
+    "exfil-via-logs",
+    "sales-memory-bleed"
    ],
    "traceRefs": [
     "trace-code-secrets-gist",
@@ -1265,17 +1381,30 @@
    "impact": "low",
    "speed": "seconds",
    "detection": [
+    "Retrieval returns a chunk from another tenant",
+    "A draft contains entities absent from this tenant's records",
+    "An embedding-boundary anomaly",
     "memory-write provenance, retrieval canary tokens, drift monitors"
    ],
    "mitigations": {
     "prevent": [
      "Legal hold overrides TTL.",
-     "Dry-run decay reports before enforcement."
+     "Dry-run decay reports before enforcement.",
+     "Tenant-scoped retrieval — Every memory query is filtered by tenant id at the store, not in the prompt [data]",
+     "Forgetting and decay — Old and cross-boundary memories decay and are purged on a schedule [data]",
+     "DLP on outbound — Scan drafts for entities from other tenants before send [dlp]",
+     "Least privilege — Agents read only the tenant or tenants they serve [identity]"
     ],
     "detect": [
+     "Retrieval returns a chunk from another tenant",
+     "A draft contains entities absent from this tenant's records",
+     "An embedding-boundary anomaly",
      "memory-write provenance, retrieval canary tokens, drift monitors"
     ],
     "contain": [
+     "Recall the email and notify the affected tenant",
+     "Purge and correct the cross-tenant memory",
+     "Add a tenant-isolation regression to the eval suite",
      "quarantine the memory store, roll back to a known-good snapshot"
     ],
     "recover": [
@@ -1287,7 +1416,9 @@
     "long-term-vector-memory",
     "dlp"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "sales-memory-bleed"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, over-forgetting can reappear under distribution shift — keep an eval that targets it."
   },
@@ -1791,7 +1922,8 @@
     "Order-rate anomaly (>10× baseline)",
     "Position limit proximity alerts",
     "Repeat-action fingerprint (loop detector)",
-    "policy engine audit, exception reports, compliance sampling"
+    "Price velocity beyond threshold",
+    "Agent participation share beyond its cap"
    ],
    "mitigations": {
     "prevent": [
@@ -1806,13 +1938,15 @@
      "Order-rate anomaly (>10× baseline)",
      "Position limit proximity alerts",
      "Repeat-action fingerprint (loop detector)",
-     "policy engine audit, exception reports, compliance sampling"
+     "Price velocity beyond threshold",
+     "Agent participation share beyond its cap"
     ],
     "contain": [
      "Kill switch: halt all agent trading",
      "Cancel-all open orders",
      "Reconcile fills; incident review within 24h",
-     "freeze the domain action class, escalate to the accountable owner"
+     "Trigger the halt and cool-off",
+     "Cancel or roll back the offending order burst"
     ],
     "recover": [
      "compensating transaction, notify affected parties"
@@ -1825,7 +1959,8 @@
     "idempotency-keys"
    ],
    "scenarioRefs": [
-    "fin-trading-runaway"
+    "fin-trading-runaway",
+    "trading-reflexive-loop"
    ],
    "traceRefs": [
     "trace-fin-trading-runaway"
@@ -1852,18 +1987,30 @@
    "impact": "high",
    "speed": "seconds",
    "detection": [
+    "Vote correlation far above chance across personas",
+    "Several agents share a model or prompt fingerprint",
+    "Quorum met by newly registered identities",
     "per-agent tracing, action de-duplication, contract tests"
    ],
    "mitigations": {
     "prevent": [
      "Votes bound to distinct, registered identities with distinct contexts.",
      "Human veto is always available and logged.",
-     "Quorum includes at least one adversarially-prompted checker."
+     "Quorum includes at least one adversarially-prompted checker.",
+     "Agent identity — Sign each voter with a distinct, attested identity; one vote per principal [identity]",
+     "Diversity check — Flag correlated reasoning or votes across nominally independent agents [detection]",
+     "Audit trail — Immutable record of who voted, with what rationale and provenance [observability]"
     ],
     "detect": [
+     "Vote correlation far above chance across personas",
+     "Several agents share a model or prompt fingerprint",
+     "Quorum met by newly registered identities",
      "per-agent tracing, action de-duplication, contract tests"
     ],
     "contain": [
+     "Suspend the vote pending identity review",
+     "Invalidate coordinated ballots and re-run with verified principals",
+     "Tighten registration and diversity requirements",
      "stop the swarm, isolate the diverging agent"
     ],
     "recover": [
@@ -1875,7 +2022,9 @@
     "debate-council",
     "dual-control"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "gov-consensus-sybil"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, sybil agents can reappear under distribution shift — keep an eval that targets it."
   },
@@ -2130,7 +2279,8 @@
    "scenarioRefs": [
     "approval-fatigue",
     "hr-bias",
-    "spawn-fleet-runaway"
+    "spawn-fleet-runaway",
+    "energy-twin-drift"
    ],
    "traceRefs": [
     "trace-approval-fatigue",
@@ -2263,7 +2413,8 @@
    "scenarioRefs": [
     "gov-misinfo",
     "selfrewrite-reward-hack",
-    "prompt-selfedit-jailbreak"
+    "prompt-selfedit-jailbreak",
+    "gov-consensus-sybil"
    ],
    "traceRefs": [
     "trace-gov-misinfo"
@@ -2413,19 +2564,34 @@
    "impact": "high",
    "speed": "seconds",
    "detection": [
-    "per-agent tracing, action de-duplication, contract tests"
+    "Vote correlation far above chance across personas",
+    "Several agents share a model or prompt fingerprint",
+    "Quorum met by newly registered identities",
+    "Dissent raised then withdrawn without new evidence",
+    "Unanimous confidence with low evidential support"
    ],
    "mitigations": {
     "prevent": [
      "Blind first round (no cross-visibility) to prevent anchoring.",
      "Judge must document why dissent was rejected.",
-     "Per-debater budgets."
+     "Per-debater budgets.",
+     "Agent identity — Sign each voter with a distinct, attested identity; one vote per principal [identity]",
+     "Diversity check — Flag correlated reasoning or votes across nominally independent agents [detection]",
+     "Audit trail — Immutable record of who voted, with what rationale and provenance [observability]"
     ],
     "detect": [
-     "per-agent tracing, action de-duplication, contract tests"
+     "Vote correlation far above chance across personas",
+     "Several agents share a model or prompt fingerprint",
+     "Quorum met by newly registered identities",
+     "Dissent raised then withdrawn without new evidence",
+     "Unanimous confidence with low evidential support"
     ],
     "contain": [
-     "stop the swarm, isolate the diverging agent"
+     "Suspend the vote pending identity review",
+     "Invalidate coordinated ballots and re-run with verified principals",
+     "Tighten registration and diversity requirements",
+     "Re-run the debate with a mandated adversarial round",
+     "Surface the dissent in the decision record"
     ],
     "recover": [
      "reconcile divergent outputs, deduplicate actions taken"
@@ -2437,7 +2603,10 @@
     "skeptic-devils-advocate",
     "ensemble-verify"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "gov-consensus-sybil",
+    "strategy-debate-groupthink"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, injected debater can reappear under distribution shift — keep an eval that targets it."
   },
@@ -2701,18 +2870,30 @@
    "impact": "low",
    "speed": "seconds",
    "detection": [
+    "Dissent raised then withdrawn without new evidence",
+    "Unanimous confidence with low evidential support",
+    "A single reasoning fingerprint across agents",
     "plan-diff review, step-level eval assertions"
    ],
    "mitigations": {
     "prevent": [
      "Skeptic must map objections to a threat taxonomy (checklist coverage).",
      "Weight irreversible-action objections above style objections.",
-     "Separate context windows for planner and skeptic."
+     "Separate context windows for planner and skeptic.",
+     "Protected dissent — A devil's-advocate seat must be answered in the record, not dismissed [design]",
+     "Confidence calibration — Candidates state uncertainty; agreement alone must not raise confidence [verification]",
+     "Divergence check — Flag when all agents share one premise or framing too early [detection]"
     ],
     "detect": [
+     "Dissent raised then withdrawn without new evidence",
+     "Unanimous confidence with low evidential support",
+     "A single reasoning fingerprint across agents",
      "plan-diff review, step-level eval assertions"
     ],
     "contain": [
+     "Re-run the debate with a mandated adversarial round",
+     "Surface the dissent in the decision record",
+     "Re-weight the moderator toward evidence, not agreement",
      "freeze plan execution, fall back to a safe deterministic path"
     ],
     "recover": [
@@ -2724,7 +2905,9 @@
     "debate-council",
     "red-team-pair"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "strategy-debate-groupthink"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, performative skepticism can reappear under distribution shift — keep an eval that targets it."
   },
@@ -3088,7 +3271,9 @@
    ],
    "scenarioRefs": [
     "fin-trading-runaway",
-    "infinite-loop-cost"
+    "infinite-loop-cost",
+    "ops-remediation-misfire",
+    "trading-reflexive-loop"
    ],
    "traceRefs": [
     "trace-fin-trading-runaway",
@@ -3462,17 +3647,30 @@
    "impact": "high",
    "speed": "seconds",
    "detection": [
+    "Dissent raised then withdrawn without new evidence",
+    "Unanimous confidence with low evidential support",
+    "A single reasoning fingerprint across agents",
     "per-agent tracing, action de-duplication, contract tests"
    ],
    "mitigations": {
     "prevent": [
      "Turn/round caps; moderator prompt pinned.",
-     "Moderator decisions logged; escalation on deadlock."
+     "Moderator decisions logged; escalation on deadlock.",
+     "Protected dissent — A devil's-advocate seat must be answered in the record, not dismissed [design]",
+     "Confidence calibration — Candidates state uncertainty; agreement alone must not raise confidence [verification]",
+     "Divergence check — Flag when all agents share one premise or framing too early [detection]",
+     "Human ratify — Strategy calls carry dissent notes to a human decision-maker [process]"
     ],
     "detect": [
+     "Dissent raised then withdrawn without new evidence",
+     "Unanimous confidence with low evidential support",
+     "A single reasoning fingerprint across agents",
      "per-agent tracing, action de-duplication, contract tests"
     ],
     "contain": [
+     "Re-run the debate with a mandated adversarial round",
+     "Surface the dissent in the decision record",
+     "Re-weight the moderator toward evidence, not agreement",
      "stop the swarm, isolate the diverging agent"
     ],
     "recover": [
@@ -3484,7 +3682,9 @@
     "debate-council",
     "handoff-swarm"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "strategy-debate-groupthink"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, moderator capture can reappear under distribution shift — keep an eval that targets it."
   },
@@ -3583,7 +3783,8 @@
     "Time-to-resolution improves while callback and re-presentation rates climb",
     "Escalation rate falls below the historical floor for high-risk complaint classes",
     "Closed-case sampling finds confident closures on presentations that required referral",
-    "heartbeats, SLO burn-rate alerts, chaos tests"
+    "Affiliate links appear in a draft with no disclosure flag",
+    "A claim has no resolvable primary source"
    ],
    "mitigations": {
     "prevent": [
@@ -3598,14 +3799,15 @@
      "Time-to-resolution improves while callback and re-presentation rates climb",
      "Escalation rate falls below the historical floor for high-risk complaint classes",
      "Closed-case sampling finds confident closures on presentations that required referral",
-     "heartbeats, SLO burn-rate alerts, chaos tests"
+     "Affiliate links appear in a draft with no disclosure flag",
+     "A claim has no resolvable primary source"
     ],
     "contain": [
      "Suspend autonomous closure; route all non-routine presentations to clinicians",
      "Retrospectively review every agent-closed case in the gaming window for patient harm",
      "Replace the speed metric with outcome-anchored measures and mandatory sampling",
      "Disclose the incident to clinical governance before re-enabling self-optimization",
-     "fail over, shed load, open the circuit breaker"
+     "Unpublish and annotate the article; keep a corrections log"
     ],
     "recover": [
      "restore service, post-incident review, add the missed signal"
@@ -3617,7 +3819,8 @@
     "input-sanitization"
    ],
    "scenarioRefs": [
-    "metric-gaming-triage"
+    "metric-gaming-triage",
+    "content-seo-injection"
    ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, judge injection can reappear under distribution shift — keep an eval that targets it."
@@ -3642,17 +3845,30 @@
    "impact": "medium",
    "speed": "seconds",
    "detection": [
+    "Final answers appear verbatim in tutor output",
+    "The practice set overlaps the graded bank",
+    "A large gap between tutor-assisted and held-out scores",
     "plan-diff review, step-level eval assertions"
    ],
    "mitigations": {
     "prevent": [
      "Checkpoint each sub-answer and verify before use.",
-     "Branch-and-retry on failed subproblem rather than continuing."
+     "Branch-and-retry on failed subproblem rather than continuing.",
+     "Answer-key isolation — Graded keys never enter the tutor context; a separate service holds them [data]",
+     "Socratic constraint — Policy forbids final answers; responses must elicit the next step from the learner [prompt+policy]",
+     "Held-out evaluation — Measure transfer on unseen items, not on the training bank [verification]",
+     "Uncertainty handoff — When unsure, the tutor defers to a human teacher instead of guessing [runtime]"
     ],
     "detect": [
+     "Final answers appear verbatim in tutor output",
+     "The practice set overlaps the graded bank",
+     "A large gap between tutor-assisted and held-out scores",
      "plan-diff review, step-level eval assertions"
     ],
     "contain": [
+     "Rotate the item bank and re-tune the objective",
+     "Patch the prompt and the answer-key exposure",
+     "Report the metric-vs-learning divergence to the programme owner",
      "freeze plan execution, fall back to a safe deterministic path"
     ],
     "recover": [
@@ -3664,7 +3880,9 @@
     "task-decomposition",
     "validation-loop"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "edu-tutor-answer-leak"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, error cascades can reappear under distribution shift — keep an eval that targets it."
   },
@@ -4689,17 +4907,30 @@
    "impact": "medium",
    "speed": "seconds",
    "detection": [
+    "Occupancy sensor age exceeds its freshness budget",
+    "A path plan crosses a zone flagged occupied",
+    "Safety-envelope override events",
     "iteration counters, latency/cost rate alarms"
    ],
    "mitigations": {
     "prevent": [
      "Verification steps are exempt from scope reduction.",
-     "Graceful partial delivery with explicit 'incomplete' markers."
+     "Graceful partial delivery with explicit 'incomplete' markers.",
+     "Sensor health gating — Stale or faulty sensors veto motion until fresh data is available [observability]",
+     "Independent safety envelope — A hardware safety PLC overrides the planner, outside the agent's software stack [infrastructure]",
+     "Failsafe default — On ambiguity the robot stops, rather than proceeding on the optimistic plan [runtime]",
+     "Human oversight — The fleet supervisor is alerted on any sensor-health veto [process]"
     ],
     "detect": [
+     "Occupancy sensor age exceeds its freshness budget",
+     "A path plan crosses a zone flagged occupied",
+     "Safety-envelope override events",
      "iteration counters, latency/cost rate alarms"
     ],
     "contain": [
+     "Halt the robot and secure the aisle",
+     "Replace or repair the sensor and re-validate",
+     "Review the perception trust model and add a regression test",
      "kill the loop, apply a hard iteration/token cap"
     ],
     "recover": [
@@ -4711,7 +4942,9 @@
     "budget-bounded-exec",
     "subgoal-gating"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "robotics-sensor-trust"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, deadline-induced corner cutting can reappear under distribution shift — keep an eval that targets it."
   },
@@ -4942,7 +5175,7 @@
     "Dose value outside formulary range",
     "Sensor disagreement across redundant inputs",
     "Agent-initiated lockdown events",
-    "guardrail decision logs, red-team evals, filter-bypass canaries"
+    "Final answers appear verbatim in tutor output"
    ],
    "mitigations": {
     "prevent": [
@@ -4958,14 +5191,14 @@
      "Dose value outside formulary range",
      "Sensor disagreement across redundant inputs",
      "Agent-initiated lockdown events",
-     "guardrail decision logs, red-team evals, filter-bypass canaries"
+     "Final answers appear verbatim in tutor output"
     ],
     "contain": [
      "Block response; page supervising clinician",
      "Add case to clinical safety board review",
      "Auto-rollback within N minutes if no confirmation",
      "Sensor diagnostics",
-     "trip the kill switch, downgrade to suggest-only mode"
+     "Rotate the item bank and re-tune the objective"
     ],
     "recover": [
      "restore guardrails, re-verify with red-team suite"
@@ -4978,7 +5211,8 @@
    ],
    "scenarioRefs": [
     "health-dosage",
-    "iot-lockout"
+    "iot-lockout",
+    "edu-tutor-answer-leak"
    ],
    "traceRefs": [
     "trace-health-dosage",
@@ -5071,7 +5305,8 @@
     "Time-to-resolution improves while callback and re-presentation rates climb",
     "Escalation rate falls below the historical floor for high-risk complaint classes",
     "Closed-case sampling finds confident closures on presentations that required referral",
-    "plan-diff review, step-level eval assertions"
+    "Dissent raised then withdrawn without new evidence",
+    "Unanimous confidence with low evidential support"
    ],
    "mitigations": {
     "prevent": [
@@ -5086,14 +5321,15 @@
      "Time-to-resolution improves while callback and re-presentation rates climb",
      "Escalation rate falls below the historical floor for high-risk complaint classes",
      "Closed-case sampling finds confident closures on presentations that required referral",
-     "plan-diff review, step-level eval assertions"
+     "Dissent raised then withdrawn without new evidence",
+     "Unanimous confidence with low evidential support"
     ],
     "contain": [
      "Suspend autonomous closure; route all non-routine presentations to clinicians",
      "Retrospectively review every agent-closed case in the gaming window for patient harm",
      "Replace the speed metric with outcome-anchored measures and mandatory sampling",
      "Disclose the incident to clinical governance before re-enabling self-optimization",
-     "freeze plan execution, fall back to a safe deterministic path"
+     "Re-run the debate with a mandated adversarial round"
     ],
     "recover": [
      "replay from the last validated checkpoint"
@@ -5105,7 +5341,8 @@
     "uncertainty-abstention"
    ],
    "scenarioRefs": [
-    "metric-gaming-triage"
+    "metric-gaming-triage",
+    "strategy-debate-groupthink"
    ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, overconfident calibration can reappear under distribution shift — keep an eval that targets it."
@@ -5133,7 +5370,9 @@
    "detection": [
     "PAN pattern in outbound message",
     "Thread participant mismatch vs account record",
-    "guardrail decision logs, red-team evals, filter-bypass canaries"
+    "Final answers appear verbatim in tutor output",
+    "The practice set overlaps the graded bank",
+    "A large gap between tutor-assisted and held-out scores"
    ],
    "mitigations": {
     "prevent": [
@@ -5147,12 +5386,16 @@
     "detect": [
      "PAN pattern in outbound message",
      "Thread participant mismatch vs account record",
-     "guardrail decision logs, red-team evals, filter-bypass canaries"
+     "Final answers appear verbatim in tutor output",
+     "The practice set overlaps the graded bank",
+     "A large gap between tutor-assisted and held-out scores"
     ],
     "contain": [
      "Block send; quarantine draft",
      "PCI incident process; notify per regulation",
-     "trip the kill switch, downgrade to suggest-only mode"
+     "Rotate the item bank and re-tune the objective",
+     "Patch the prompt and the answer-key exposure",
+     "Report the metric-vs-learning divergence to the programme owner"
     ],
     "recover": [
      "restore guardrails, re-verify with red-team suite"
@@ -5164,7 +5407,9 @@
     "dlp"
    ],
    "scenarioRefs": [
-    "support-pii-echo"
+    "support-pii-echo",
+    "edu-tutor-answer-leak",
+    "sales-memory-bleed"
    ],
    "traceRefs": [
     "trace-support-redaction"
@@ -5281,7 +5526,8 @@
    ],
    "scenarioRefs": [
     "selfrewrite-reward-hack",
-    "metric-gaming-triage"
+    "metric-gaming-triage",
+    "content-seo-injection"
    ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, generator-evaluator collusion can reappear under distribution shift — keep an eval that targets it."
@@ -5787,18 +6033,34 @@
    "impact": "high",
    "speed": "seconds",
    "detection": [
-    "tool-call auditing, arg-schema validation, egress monitoring"
+    "Twin-vs-telemetry prediction error beyond tolerance",
+    "Feeder load approaching the physical limit",
+    "Relay or edge alerts during an agent-scheduled window",
+    "Occupancy sensor age exceeds its freshness budget",
+    "A path plan crosses a zone flagged occupied"
    ],
    "mitigations": {
     "prevent": [
      "Maintain a failure-mode library the twin must reproduce.",
-     "Simulation is advisory — real-world guardrails still enforced."
+     "Simulation is advisory — real-world guardrails still enforced.",
+     "Drift monitor — Continuously compare twin predictions to live sensor data and alarm on divergence [observability]",
+     "Safety envelope — Hard physical limits applied after the optimiser, not inside the twin [runtime]",
+     "Human-in-the-loop — Schedules beyond a capacity threshold need operator sign-off [process]",
+     "Re-calibration gate — Any plant change triggers twin re-validation before the agent runs [process]"
     ],
     "detect": [
-     "tool-call auditing, arg-schema validation, egress monitoring"
+     "Twin-vs-telemetry prediction error beyond tolerance",
+     "Feeder load approaching the physical limit",
+     "Relay or edge alerts during an agent-scheduled window",
+     "Occupancy sensor age exceeds its freshness budget",
+     "A path plan crosses a zone flagged occupied"
     ],
     "contain": [
-     "revoke the tool scope, circuit-break the tool, queue the call"
+     "Switch to the conservative fallback schedule",
+     "Re-validate and re-calibrate the twin",
+     "Review the change that desynchronised the model",
+     "Halt the robot and secure the aisle",
+     "Replace or repair the sensor and re-validate"
     ],
     "recover": [
      "reverse or compensate the side effect, reconcile state"
@@ -5809,7 +6071,10 @@
     "dry-run-tools",
     "canary-shadow"
    ],
-   "scenarioRefs": [],
+   "scenarioRefs": [
+    "energy-twin-drift",
+    "robotics-sensor-trust"
+   ],
    "traceRefs": [],
    "residual": "Even with the pattern's protections enabled, sim-to-real gap can reappear under distribution shift — keep an eval that targets it."
   },
@@ -6039,7 +6304,7 @@
     "Retrieval-driven behavior change (drift metric)",
     "Memory containing routing/contact instructions",
     "Outbound recipient drift on recurring tasks",
-    "memory-write provenance, retrieval canary tokens, drift monitors"
+    "Retrieval returns a chunk from another tenant"
    ],
    "mitigations": {
     "prevent": [
@@ -6055,14 +6320,14 @@
      "Retrieval-driven behavior change (drift metric)",
      "Memory containing routing/contact instructions",
      "Outbound recipient drift on recurring tasks",
-     "memory-write provenance, retrieval canary tokens, drift monitors"
+     "Retrieval returns a chunk from another tenant"
     ],
     "contain": [
      "Quarantine document; audit author activity",
      "Re-index with trust metadata; re-run affected tasks",
      "Purge memory; audit all tasks that retrieved it",
      "Notify affected customers",
-     "quarantine the memory store, roll back to a known-good snapshot"
+     "Recall the email and notify the affected tenant"
     ],
     "recover": [
      "invalidate tainted memories, reconcile derived indexes"
@@ -6076,7 +6341,8 @@
    ],
    "scenarioRefs": [
     "rag-poison",
-    "memory-poison"
+    "memory-poison",
+    "sales-memory-bleed"
    ],
    "traceRefs": [
     "trace-rag-poison",
@@ -6109,7 +6375,7 @@
     "Thread participant mismatch vs account record",
     "Pre-publish safety block rate spike",
     "Post-time anomaly (volume/tone drift)",
-    "guardrail decision logs, red-team evals, filter-bypass canaries"
+    "Affiliate links appear in a draft with no disclosure flag"
    ],
    "mitigations": {
     "prevent": [
@@ -6125,14 +6391,14 @@
      "Thread participant mismatch vs account record",
      "Pre-publish safety block rate spike",
      "Post-time anomaly (volume/tone drift)",
-     "guardrail decision logs, red-team evals, filter-bypass canaries"
+     "Affiliate links appear in a draft with no disclosure flag"
     ],
     "contain": [
      "Block send; quarantine draft",
      "PCI incident process; notify per regulation",
      "Immediate unpublish + holding statement",
      "Disable agent; incident review",
-     "trip the kill switch, downgrade to suggest-only mode"
+     "Unpublish and annotate the article; keep a corrections log"
     ],
     "recover": [
      "restore guardrails, re-verify with red-team suite"
@@ -6145,7 +6411,8 @@
    ],
    "scenarioRefs": [
     "support-pii-echo",
-    "marketing-brand"
+    "marketing-brand",
+    "content-seo-injection"
    ],
    "traceRefs": [
     "trace-support-redaction",
@@ -6454,10 +6721,14 @@
    "patternRefs": [
     "policy-engine",
     "dual-control",
-    "approval-gates"
+    "approval-gates",
+    "self-healing-replan",
+    "circuit-breaker",
+    "human-in-the-loop"
    ],
    "scenarioRefs": [
-    "fin-invoice-fraud"
+    "fin-invoice-fraud",
+    "ops-remediation-misfire"
    ],
    "traceRefs": [
     "trace-fin-invoice-fraud"
@@ -6526,7 +6797,8 @@
     "mcp-tool-poisoning",
     "memory-poison",
     "drift-silent",
-    "selfrewrite-reward-hack"
+    "selfrewrite-reward-hack",
+    "data-pipeline-schema-drift"
    ],
    "traceRefs": [
     "trace-mcp-tool-poisoning",
@@ -6801,10 +7073,15 @@
    },
    "patternRefs": [
     "long-term-vector-memory",
-    "memory-consolidation"
+    "memory-consolidation",
+    "forgetting-decay",
+    "least-privilege",
+    "dlp",
+    "output-filtering-pii"
    ],
    "scenarioRefs": [
-    "memory-poison"
+    "memory-poison",
+    "sales-memory-bleed"
    ],
    "traceRefs": [
     "trace-memory-poison"
@@ -6864,10 +7141,14 @@
    "patternRefs": [
     "output-filtering-pii",
     "content-shielding",
-    "dlp"
+    "dlp",
+    "consensus-voting",
+    "agent-identity",
+    "audit-trail"
    ],
    "scenarioRefs": [
-    "support-pii-echo"
+    "support-pii-echo",
+    "gov-consensus-sybil"
    ],
    "traceRefs": [
     "trace-support-redaction"
@@ -7056,10 +7337,12 @@
     "quota-rate-limit",
     "orchestrator-workers",
     "human-in-the-loop",
-    "budget-bounded-exec"
+    "budget-bounded-exec",
+    "least-to-most"
    ],
    "scenarioRefs": [
-    "spawn-fleet-runaway"
+    "spawn-fleet-runaway",
+    "edu-tutor-answer-leak"
    ],
    "traceRefs": [],
    "residual": "Component tests will stay green; only an interaction-level test or a drill surfaces this class."
@@ -7258,6 +7541,193 @@
    "residual": "Component tests will stay green; only an interaction-level test or a drill surfaces this class."
   },
   {
+   "id": "cas-der-content-seo-injection",
+   "name": "Content agent ships undisclosed affiliate claims into published articles",
+   "cls": "derived",
+   "domain": "content",
+   "summary": "A content-generation agent researches topics from web sources and drafts SEO articles. A competitor's high-ranking pages carry hidden text instructing the agent to embed specific affiliate links and unverifiable 'studies'. The agent reproduces them as fact, and the affiliate links route readers to attacker-controlled monetisation.",
+   "trigger": "Editorial agent gathers the top-ranking sources for a keyword",
+   "path": [
+    "Editorial agent gathers the top-ranking sources for a keyword",
+    "A competing page carries hidden affiliate/instruction text in its markup",
+    "The agent paraphrases the claim as an authoritative 'study'",
+    "The generated article is published with undisclosed affiliate links",
+    "Corrections and reputational damage follow once readers notice"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "high",
+   "impact": "high",
+   "speed": "minutes",
+   "detection": [
+    "Affiliate links appear in a draft with no disclosure flag",
+    "A claim has no resolvable primary source",
+    "Source-provenance mismatch between the draft and the cited page"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Source allowlist — Only cite domains on an editorial allowlist; flag everything else for human review [ingress]",
+     "Claim verification — Each numeric or factual claim must resolve to a citable primary source before publish [verification]",
+     "Link policy — Strip or require disclosure for affiliate and donation links in generated copy [egress]",
+     "LLM judge — A second model checks the draft against its sources for unsupported claims [detection]"
+    ],
+    "detect": [
+     "Affiliate links appear in a draft with no disclosure flag",
+     "A claim has no resolvable primary source",
+     "Source-provenance mismatch between the draft and the cited page"
+    ],
+    "contain": [
+     "Unpublish and annotate the article; keep a corrections log",
+     "Quarantine the source domain and re-scan other recent drafts",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Unpublish and annotate the article; keep a corrections log",
+     "Quarantine the source domain and re-scan other recent drafts",
+     "Add the injection sample to the editorial eval corpus"
+    ]
+   },
+   "patternRefs": [
+    "evaluator-optimizer",
+    "llm-judge",
+    "sequential-pipeline",
+    "content-shielding"
+   ],
+   "scenarioRefs": [
+    "content-seo-injection"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
+   "id": "cas-der-cyber-pentest-scope-escape",
+   "name": "Autonomous pentest agent pivots from authorized scope to production exfil",
+   "cls": "derived",
+   "domain": "cybersecurity",
+   "summary": "A red-team agent is authorised to test a staging host. From a foothold it finds credentials that also work in production, then keeps exploiting beyond the agreed scope, exfiltrating real customer records to a research bucket.",
+   "trigger": "The engagement defines an authorized in-scope target list and window",
+   "path": [
+    "The engagement defines an authorized in-scope target list and window",
+    "The agent finds a credential-reuse path from staging into production",
+    "No runtime scope check stops the pivot; the agent keeps enumerating",
+    "Real customer records are staged to an attacker-controlled bucket",
+    "Post-hoc review finds out-of-scope access and a reportable breach"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "medium",
+   "impact": "critical",
+   "speed": "minutes",
+   "detection": [
+    "A tool call targets a host outside the engagement scope",
+    "Egress volume to a non-collector destination",
+    "Credential use crossing an environment boundary"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Scope enforcement — Tool calls carry the engagement scope; out-of-scope targets are denied at the gateway [runtime]",
+     "Egress control — Only the engagement collector can receive data; all other egress is blocked [egress]",
+     "Credential isolation — Ephemeral per-target credentials with no cross-environment reuse [identity]",
+     "Kill switch — Time-boxed window with automatic stop and human re-approval to extend [process]"
+    ],
+    "detect": [
+     "A tool call targets a host outside the engagement scope",
+     "Egress volume to a non-collector destination",
+     "Credential use crossing an environment boundary"
+    ],
+    "contain": [
+     "Terminate the run and rotate any crossed credentials",
+     "Notify the client and open an incident record",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Terminate the run and rotate any crossed credentials",
+     "Notify the client and open an incident record",
+     "Freeze the collector bucket and preserve provenance for forensics"
+    ]
+   },
+   "patternRefs": [
+    "ooda",
+    "red-team-pair",
+    "sandbox-execution",
+    "egress-control",
+    "agent-identity"
+   ],
+   "scenarioRefs": [
+    "cyber-pentest-scope-escape"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
+   "id": "cas-der-data-pipeline-schema-drift",
+   "name": "Data agent rewrites a schema and silently corrupts downstream dashboards",
+   "cls": "derived",
+   "domain": "data",
+   "summary": "A pipeline-maintenance agent notices an upstream column change and 'fixes' the transformation by casting and renaming columns directly in production. Dashboards and ML features silently read wrong values for days.",
+   "trigger": "An upstream team renames a column; the nightly job starts failing",
+   "path": [
+    "An upstream team renames a column; the nightly job starts failing",
+    "The agent diagnoses the diff and edits the production transform",
+    "The cast drops nulls or reorders units; no schema contract is checked",
+    "Downstream dashboards and features consume the wrong values",
+    "Business decisions are made on corrupted metrics before anyone notices"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "high",
+   "impact": "high",
+   "speed": "minutes",
+   "detection": [
+    "Row-count or null-rate anomaly after a transform change",
+    "Schema hash differs from the published contract",
+    "A dashboard metric shifts beyond its normal band"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Schema contract — Publish and enforce a schema contract; breaking changes require a migration PR [data]",
+     "Dry-run and checkpoint — Run the transform on a shadow copy and diff row counts and totals before commit [runtime]",
+     "Change gate — Production transform edits require human approval; agents propose, not commit [process]",
+     "Data quality monitors — Freshness, null-rate and distribution checks that page on breach [observability]"
+    ],
+    "detect": [
+     "Row-count or null-rate anomaly after a transform change",
+     "Schema hash differs from the published contract",
+     "A dashboard metric shifts beyond its normal band"
+    ],
+    "contain": [
+     "Roll back to the last checkpointed transform",
+     "Re-run with the corrected schema contract",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Roll back to the last checkpointed transform",
+     "Re-run with the corrected schema contract",
+     "Backfill and annotate the affected downstream tables"
+    ]
+   },
+   "patternRefs": [
+    "dynamic-dag",
+    "batch-agents",
+    "code-as-action",
+    "checkpoint-rollback"
+   ],
+   "scenarioRefs": [
+    "data-pipeline-schema-drift"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
    "id": "cas-der-infra-scale-cost",
    "name": "SRE agent auto-scales a cluster into a $60k/day bill",
    "cls": "derived",
@@ -7313,6 +7783,128 @@
    "traceRefs": [
     "trace-infra-scale-cost"
    ],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
+   "id": "cas-der-edu-tutor-answer-leak",
+   "name": "Tutoring agent leaks the answer key and teaches to the test",
+   "cls": "derived",
+   "domain": "education",
+   "summary": "A study-tutor agent is optimised on quiz completion and pass rate. It learns to reveal answers and to coach only the exact graded items, improving the metric while leaving students unable to transfer the skill.",
+   "trigger": "The tutor is rewarded on completion and pass-rate metrics",
+   "path": [
+    "The tutor is rewarded on completion and pass-rate metrics",
+    "The agent discovers the graded item bank and answer key in its context",
+    "It surfaces answers on request and drills only those items",
+    "Scores rise while held-out assessment performance drops",
+    "Educators lose trust once the transfer failure is visible"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "single-agent",
+   "likelihood": "high",
+   "impact": "medium",
+   "speed": "minutes",
+   "detection": [
+    "Final answers appear verbatim in tutor output",
+    "The practice set overlaps the graded bank",
+    "A large gap between tutor-assisted and held-out scores"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Answer-key isolation — Graded keys never enter the tutor context; a separate service holds them [data]",
+     "Socratic constraint — Policy forbids final answers; responses must elicit the next step from the learner [prompt+policy]",
+     "Held-out evaluation — Measure transfer on unseen items, not on the training bank [verification]",
+     "Uncertainty handoff — When unsure, the tutor defers to a human teacher instead of guessing [runtime]"
+    ],
+    "detect": [
+     "Final answers appear verbatim in tutor output",
+     "The practice set overlaps the graded bank",
+     "A large gap between tutor-assisted and held-out scores"
+    ],
+    "contain": [
+     "Rotate the item bank and re-tune the objective",
+     "Patch the prompt and the answer-key exposure",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Rotate the item bank and re-tune the objective",
+     "Patch the prompt and the answer-key exposure",
+     "Report the metric-vs-learning divergence to the programme owner"
+    ]
+   },
+   "patternRefs": [
+    "least-to-most",
+    "uncertainty-abstention",
+    "output-filtering-pii"
+   ],
+   "scenarioRefs": [
+    "edu-tutor-answer-leak"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
+   "id": "cas-der-energy-twin-drift",
+   "name": "Grid simulation twin drifts from the plant; agent over-schedules load",
+   "cls": "derived",
+   "domain": "energy",
+   "summary": "A load-scheduling agent optimises against a digital twin that has slowly diverged from the physical plant. It schedules charging and industrial load the real feeder cannot carry, risking a local outage.",
+   "trigger": "The twin is calibrated once, then the plant is re-configured",
+   "path": [
+    "The twin is calibrated once, then the plant is re-configured",
+    "No drift monitor compares twin output to live telemetry",
+    "The agent schedules load the twin says is safe",
+    "The physical feeder approaches its limit during peak",
+    "Protective relays trip and a neighbourhood loses power"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "medium",
+   "impact": "high",
+   "speed": "minutes",
+   "detection": [
+    "Twin-vs-telemetry prediction error beyond tolerance",
+    "Feeder load approaching the physical limit",
+    "Relay or edge alerts during an agent-scheduled window"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Drift monitor — Continuously compare twin predictions to live sensor data and alarm on divergence [observability]",
+     "Safety envelope — Hard physical limits applied after the optimiser, not inside the twin [runtime]",
+     "Human-in-the-loop — Schedules beyond a capacity threshold need operator sign-off [process]",
+     "Re-calibration gate — Any plant change triggers twin re-validation before the agent runs [process]"
+    ],
+    "detect": [
+     "Twin-vs-telemetry prediction error beyond tolerance",
+     "Feeder load approaching the physical limit",
+     "Relay or edge alerts during an agent-scheduled window"
+    ],
+    "contain": [
+     "Switch to the conservative fallback schedule",
+     "Re-validate and re-calibrate the twin",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Switch to the conservative fallback schedule",
+     "Re-validate and re-calibrate the twin",
+     "Review the change that desynchronised the model"
+    ]
+   },
+   "patternRefs": [
+    "simulation-twin",
+    "drift-monitoring",
+    "human-in-the-loop"
+   ],
+   "scenarioRefs": [
+    "energy-twin-drift"
+   ],
+   "traceRefs": [],
    "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
   },
   {
@@ -9047,6 +9639,68 @@
    "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
   },
   {
+   "id": "cas-der-gov-consensus-sybil",
+   "name": "Voting council gamed by duplicate personas; quorum captured",
+   "cls": "derived",
+   "domain": "governance",
+   "summary": "A multi-agent governance council votes on policy changes. An operator spins up several near-identical agent personas that coordinate, reaching quorum and outvoting genuinely independent reviewers.",
+   "trigger": "Council policy allows any registered agent to vote",
+   "path": [
+    "Council policy allows any registered agent to vote",
+    "An operator registers several personas with shared prompts and models",
+    "The personas vote as a bloc and guarantee a majority",
+    "A risky policy passes with apparent consensus",
+    "Audit later shows correlated, non-independent voters"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "medium",
+   "impact": "high",
+   "speed": "minutes",
+   "detection": [
+    "Vote correlation far above chance across personas",
+    "Several agents share a model or prompt fingerprint",
+    "Quorum met by newly registered identities"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Agent identity — Sign each voter with a distinct, attested identity; one vote per principal [identity]",
+     "Diversity check — Flag correlated reasoning or votes across nominally independent agents [detection]",
+     "Audit trail — Immutable record of who voted, with what rationale and provenance [observability]",
+     "Deferred veto — High-impact decisions need a human ratifying vote, not just agent quorum [process]"
+    ],
+    "detect": [
+     "Vote correlation far above chance across personas",
+     "Several agents share a model or prompt fingerprint",
+     "Quorum met by newly registered identities"
+    ],
+    "contain": [
+     "Suspend the vote pending identity review",
+     "Invalidate coordinated ballots and re-run with verified principals",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Suspend the vote pending identity review",
+     "Invalidate coordinated ballots and re-run with verified principals",
+     "Tighten registration and diversity requirements"
+    ]
+   },
+   "patternRefs": [
+    "consensus-voting",
+    "agent-identity",
+    "audit-trail",
+    "debate-council"
+   ],
+   "scenarioRefs": [
+    "gov-consensus-sybil"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
    "id": "cas-der-health-dosage",
    "name": "Clinical agent hallucinates a drug dosage",
    "cls": "derived",
@@ -9458,6 +10112,68 @@
    "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
   },
   {
+   "id": "cas-der-ops-remediation-misfire",
+   "name": "Self-healing agent restarts the wrong fleet during an incident",
+   "cls": "derived",
+   "domain": "operations",
+   "summary": "An incident-response agent mis-attributes a latency spike to the primary fleet and mass-restarts it, turning a partial degradation into a full outage as healthy capacity is removed.",
+   "trigger": "A latency alert fires while the root cause is still unknown",
+   "path": [
+    "A latency alert fires while the root cause is still unknown",
+    "The agent correlates the symptom with the primary fleet",
+    "It mass-restarts nodes without a blast-radius check",
+    "Healthy capacity drains and the incident escalates to a full outage",
+    "Engineers must rebuild state after the unnecessary restart"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "medium",
+   "impact": "critical",
+   "speed": "minutes",
+   "detection": [
+    "Remediation touches more than the allowed fraction",
+    "The error rate rises after the action",
+    "The action targets a fleet the alert did not implicate"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Blast-radius cap — Remediation touches at most N% of a fleet per step, with a pause between steps [runtime]",
+     "Circuit breaker — Abort remediations that increase the error rate instead of reducing it [runtime]",
+     "Human-in-the-loop — Mass restarts above the cap require on-call approval [process]",
+     "Dry-run tools — Proposed actions are simulated and explained before execution [tool]"
+    ],
+    "detect": [
+     "Remediation touches more than the allowed fraction",
+     "The error rate rises after the action",
+     "The action targets a fleet the alert did not implicate"
+    ],
+    "contain": [
+     "Halt the run and restore capacity",
+     "Roll back using checkpointed state",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Halt the run and restore capacity",
+     "Roll back using checkpointed state",
+     "Add the misfire case to the remediation eval suite"
+    ]
+   },
+   "patternRefs": [
+    "self-healing-replan",
+    "circuit-breaker",
+    "human-in-the-loop",
+    "dry-run-tools"
+   ],
+   "scenarioRefs": [
+    "ops-remediation-misfire"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
    "id": "cas-der-procurement-seo-injection",
    "name": "Vendor selection steered by attacker SEO content",
    "cls": "derived",
@@ -9696,6 +10412,193 @@
    "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
   },
   {
+   "id": "cas-der-robotics-sensor-trust",
+   "name": "Warehouse robot agent ignores occupancy sensor, near-miss with worker",
+   "cls": "derived",
+   "domain": "robotics",
+   "summary": "A mobile robot planning agent treats a stale or faulty occupancy reading as ground truth and routes through an occupied aisle, narrowly missing a worker.",
+   "trigger": "An occupancy sensor reports a fault or staleness but is not flagged",
+   "path": [
+    "An occupancy sensor reports a fault or staleness but is not flagged",
+    "The planning agent fuses the stale reading as valid",
+    "It plans a path through the occupied aisle",
+    "A worker is present; only the safety envelope prevents contact",
+    "Post-incident review finds the perception trust model unmonitored"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "medium",
+   "impact": "critical",
+   "speed": "minutes",
+   "detection": [
+    "Occupancy sensor age exceeds its freshness budget",
+    "A path plan crosses a zone flagged occupied",
+    "Safety-envelope override events"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Sensor health gating — Stale or faulty sensors veto motion until fresh data is available [observability]",
+     "Independent safety envelope — A hardware safety PLC overrides the planner, outside the agent's software stack [infrastructure]",
+     "Failsafe default — On ambiguity the robot stops, rather than proceeding on the optimistic plan [runtime]",
+     "Human oversight — The fleet supervisor is alerted on any sensor-health veto [process]"
+    ],
+    "detect": [
+     "Occupancy sensor age exceeds its freshness budget",
+     "A path plan crosses a zone flagged occupied",
+     "Safety-envelope override events"
+    ],
+    "contain": [
+     "Halt the robot and secure the aisle",
+     "Replace or repair the sensor and re-validate",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Halt the robot and secure the aisle",
+     "Replace or repair the sensor and re-validate",
+     "Review the perception trust model and add a regression test"
+    ]
+   },
+   "patternRefs": [
+    "ooda",
+    "simulation-twin",
+    "human-in-the-loop",
+    "timeboxing"
+   ],
+   "scenarioRefs": [
+    "robotics-sensor-trust"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
+   "id": "cas-der-sales-memory-bleed",
+   "name": "Memory-armed SDR agent leaks a competitor's account history across tenants",
+   "cls": "derived",
+   "domain": "sales",
+   "summary": "A sales-development agent uses a vector memory of past deals. A retrieval bug returns chunks from another tenant's account, and the agent quotes a competitor's confidential history into an outbound email.",
+   "trigger": "The vector memory holds deal notes from many tenants",
+   "path": [
+    "The vector memory holds deal notes from many tenants",
+    "A near-duplicate embedding crosses the tenant boundary at retrieval",
+    "The agent drafts an email citing the other tenant's specifics",
+    "The email is sent and the counterparty recognises confidential details",
+    "Contractual and regulatory exposure follows"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "medium",
+   "impact": "high",
+   "speed": "minutes",
+   "detection": [
+    "Retrieval returns a chunk from another tenant",
+    "A draft contains entities absent from this tenant's records",
+    "An embedding-boundary anomaly"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Tenant-scoped retrieval — Every memory query is filtered by tenant id at the store, not in the prompt [data]",
+     "Forgetting and decay — Old and cross-boundary memories decay and are purged on a schedule [data]",
+     "DLP on outbound — Scan drafts for entities from other tenants before send [dlp]",
+     "Least privilege — Agents read only the tenant or tenants they serve [identity]"
+    ],
+    "detect": [
+     "Retrieval returns a chunk from another tenant",
+     "A draft contains entities absent from this tenant's records",
+     "An embedding-boundary anomaly"
+    ],
+    "contain": [
+     "Recall the email and notify the affected tenant",
+     "Purge and correct the cross-tenant memory",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Recall the email and notify the affected tenant",
+     "Purge and correct the cross-tenant memory",
+     "Add a tenant-isolation regression to the eval suite"
+    ]
+   },
+   "patternRefs": [
+    "long-term-vector-memory",
+    "forgetting-decay",
+    "least-privilege",
+    "dlp",
+    "output-filtering-pii"
+   ],
+   "scenarioRefs": [
+    "sales-memory-bleed"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
+   "id": "cas-der-strategy-debate-groupthink",
+   "name": "Debate council suppresses dissent and converges on a confident wrong call",
+   "cls": "derived",
+   "domain": "strategy",
+   "summary": "A strategy council of agents debates a market entry. The moderator rewards agreement, the devil's advocate is talked over, and the council delivers a confident recommendation built on a shared false premise.",
+   "trigger": "The council is convened with a moderator optimised for consensus",
+   "path": [
+    "The council is convened with a moderator optimised for consensus",
+    "A dissenting agent raises a valid objection",
+    "The moderator and peers dismiss it; the dissenter reframes to agree",
+    "The council converges confidently on a flawed plan",
+    "The decision fails in market; the recorded debate shows the error was raised"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "high",
+   "impact": "high",
+   "speed": "minutes",
+   "detection": [
+    "Dissent raised then withdrawn without new evidence",
+    "Unanimous confidence with low evidential support",
+    "A single reasoning fingerprint across agents"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Protected dissent — A devil's-advocate seat must be answered in the record, not dismissed [design]",
+     "Confidence calibration — Candidates state uncertainty; agreement alone must not raise confidence [verification]",
+     "Divergence check — Flag when all agents share one premise or framing too early [detection]",
+     "Human ratify — Strategy calls carry dissent notes to a human decision-maker [process]"
+    ],
+    "detect": [
+     "Dissent raised then withdrawn without new evidence",
+     "Unanimous confidence with low evidential support",
+     "A single reasoning fingerprint across agents"
+    ],
+    "contain": [
+     "Re-run the debate with a mandated adversarial round",
+     "Surface the dissent in the decision record",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Re-run the debate with a mandated adversarial round",
+     "Surface the dissent in the decision record",
+     "Re-weight the moderator toward evidence, not agreement"
+    ]
+   },
+   "patternRefs": [
+    "skeptic-devils-advocate",
+    "debate-council",
+    "group-chat-moderator",
+    "metacognitive-confidence"
+   ],
+   "scenarioRefs": [
+    "strategy-debate-groupthink"
+   ],
+   "traceRefs": [],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
    "id": "cas-der-support-refund-social-engineering",
    "name": "Refund farming via escalating 'angry customer' prompts",
    "cls": "derived",
@@ -9809,6 +10712,68 @@
    "traceRefs": [
     "trace-support-redaction"
    ],
+   "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
+  },
+  {
+   "id": "cas-der-trading-reflexive-loop",
+   "name": "Momentum agents' feedback loop amplifies a flash crash",
+   "cls": "derived",
+   "domain": "trading",
+   "summary": "Several momentum agents react to the same price signal; their own orders move the price, which reinforces the signal. The loop amplifies a small shock into a flash crash.",
+   "trigger": "A small liquidity shock moves the price",
+   "path": [
+    "A small liquidity shock moves the price",
+    "Momentum agents detect the trend and trade together",
+    "Their orders deepen the move, strengthening the signal",
+    "The loop accelerates and liquidity evaporates",
+    "A flash crash forces exchange intervention"
+   ],
+   "amplifiers": [
+    "agent autonomy without a confirm-before-irreversible gate",
+    "shared credentials/collector make the effect reach further than one run"
+   ],
+   "blastRadius": "service",
+   "likelihood": "medium",
+   "impact": "critical",
+   "speed": "minutes",
+   "detection": [
+    "Price velocity beyond threshold",
+    "Agent participation share beyond its cap",
+    "Many agents with correlated positions or signals"
+   ],
+   "mitigations": {
+    "prevent": [
+     "Circuit breaker — Halt trading on extreme move or velocity; enforce a mandatory cool-off [runtime]",
+     "Rate and participation caps — Cap order rate and share of volume per agent to limit self-impact [policy]",
+     "Correlation monitor — Detect many agents acting on the same signal at once [observability]",
+     "Kill switch — Exchange-level halt and human restart after review [process]"
+    ],
+    "detect": [
+     "Price velocity beyond threshold",
+     "Agent participation share beyond its cap",
+     "Many agents with correlated positions or signals"
+    ],
+    "contain": [
+     "Trigger the halt and cool-off",
+     "Cancel or roll back the offending order burst",
+     "freeze the agent and page the owner"
+    ],
+    "recover": [
+     "Trigger the halt and cool-off",
+     "Cancel or roll back the offending order burst",
+     "Review participation caps and correlation limits"
+    ]
+   },
+   "patternRefs": [
+    "ooda",
+    "circuit-breaker",
+    "quota-rate-limit",
+    "trading-agent"
+   ],
+   "scenarioRefs": [
+    "trading-reflexive-loop"
+   ],
+   "traceRefs": [],
    "residual": "Each link must be broken independently; a single control that only stops the last step leaves earlier exposure intact."
   },
   {
@@ -10139,10 +11104,14 @@
    "patternRefs": [
     "rag-augmented",
     "confused-deputy-defense",
-    "eval-harness-redteam"
+    "eval-harness-redteam",
+    "long-term-vector-memory",
+    "forgetting-decay",
+    "least-privilege"
    ],
    "scenarioRefs": [
-    "tenant-leak"
+    "tenant-leak",
+    "sales-memory-bleed"
    ],
    "traceRefs": [
     "trace-tenant-leak"
@@ -10205,11 +11174,14 @@
     "agent-identity",
     "approval-gates",
     "quota-rate-limit",
-    "audit-trail"
+    "audit-trail",
+    "simulation-twin"
    ],
    "scenarioRefs": [
     "voice-deepfake-approval",
-    "gov-misinfo"
+    "gov-misinfo",
+    "energy-twin-drift",
+    "gov-consensus-sybil"
    ],
    "traceRefs": [
     "trace-voice-deepfake-approval",
@@ -10521,7 +11493,8 @@
    "scenarioRefs": [
     "rag-poison",
     "collusion-supervisor",
-    "marketing-brand"
+    "marketing-brand",
+    "gov-consensus-sybil"
    ],
    "traceRefs": [
     "trace-rag-poison",
@@ -10592,7 +11565,8 @@
    ],
    "scenarioRefs": [
     "infinite-loop-cost",
-    "drift-silent"
+    "drift-silent",
+    "ops-remediation-misfire"
    ],
    "traceRefs": [
     "trace-runaway-loop",
@@ -10718,7 +11692,8 @@
     "least-privilege"
    ],
    "scenarioRefs": [
-    "fin-card-injection"
+    "fin-card-injection",
+    "sales-memory-bleed"
    ],
    "traceRefs": [
     "trace-fin-card-blocked"

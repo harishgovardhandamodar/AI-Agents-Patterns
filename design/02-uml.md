@@ -13,6 +13,12 @@ flowchart TB
     LIVV["LivePane<br/>trace playback"]
     DSNV["DesignPane<br/>rail · outline · doc"]
     GRDV["GuardPane<br/>collection + report"]
+    CASV["CascadesPane<br/>explorer + simulator"]
+    COVV["CoveragePane<br/>heatmap + backlog"]
+    DEPV["DeployPane<br/>planner + ADR"]
+    BPV["BlueprintPane<br/>compose + threat model"]
+    CPV["CopilotPane<br/>Fox - Architect chat"]
+    DSCV["DiscoveryPane<br/>forget-and-reseed ideation"]
     DRW["DetailDrawer<br/>(pattern/scenario)"]
     ZOOM["ZoomViewer<br/>clone-SVG pan/zoom"]
   end
@@ -24,19 +30,28 @@ flowchart TB
     MMR["MermaidEngine<br/>renderQueue: Promise"]
     MD["MarkdownRenderer<br/>blocks → HTML"]
     GRE["GuardrailEngine<br/>signals → report"]
+    CASENG["CascadeEngine<br/>classify · simulate"]
+    COVENG["CoverageEngine<br/>domain gaps · backlog"]
+    DISCENG["DiscoveryEngine<br/>seed → candidates → keep"]
+    COPV["Copilot<br/>grounded chat + citations"]
   end
 
   subgraph DATA2["Data layer"]
-    LOADER["DataLoader<br/>fetch ×3 at boot"]
+    LOADER["DataLoader<br/>fetch ×5 (cascades deferred)"]
     LS["CollectionStore<br/>localStorage"]
+    SW["ServiceWorker<br/>precache + cache"]
   end
 
-  TABS --> PATV & SCNV & LIVV & DSNV & GRDV
+  TABS --> PATV & SCNV & LIVV & DSNV & GRDV & CASV & COVV & DEPV & BPV & CPV & DSCV
   PATV --> PATENG
   SCNV --> SCNENG
   LIVV --> LIVE
   DSNV --> MD
   GRDV --> GRE
+  CASV --> CASENG
+  COVV --> COVENG
+  DSCV --> DISCENG
+  CPV --> COPV
   PATV --> DRW
   SCNV --> DRW
   DRW --> MMR
@@ -44,7 +59,8 @@ flowchart TB
   GRDV --> MMR
   LIVV --> ZOOM
   GRE --> LS
-  PATENG & SCNENG & LIVE & GRE --> LOADER
+  GRE & CASENG & COVENG & DISCENG & COPV --> LOADER
+  SW --> LOADER
 ```
 
 ## Core domain classes
@@ -126,10 +142,29 @@ classDiagram
     +float spendAttemptedUsd
     +float spendBlockedUsd
   }
+  class Cascade {
+    +string id
+    +string name
+    +string cls (inherent|emergent|derived|cascading)
+    +string domain
+    +string trigger
+    +string[] path
+    +string[] amplifiers
+    +string blastRadius
+    +Severity likelihood
+    +Severity impact
+    +string speed
+    +string[] detection
+    +string[] mitigations
+    +string residual
+  }
   Pattern "1" --> "1" Category
   Pattern "0..*" --> "0..*" Pattern : related
   Scenario "0..*" --> "1" Trace : replay
   Scenario "0..*" --> "0..*" Pattern : patternRefs
+  Cascade "0..*" --> "0..*" Pattern : patternRefs
+  Cascade "0..*" --> "0..*" Scenario : scenarioRefs
+  Cascade "0..*" --> "0..*" Trace : traceRefs
   Trace "1" --> "1..*" Step
   Trace "1" --> "1" Metrics
 ```
@@ -224,10 +259,18 @@ classDiagram
     +save(Analysis[])
     +export() JSON
   }
+  class IDataLoader {
+    <<interface>>
+    +load(id) Promise
+    +catalogReady Promise
+  }
   LivePane --> ITracePlayer
   DesignPane --> IDiagramHost
   GuardPane --> ICollectionStore
   DetailDrawer --> IDiagramHost
+  CascadesPane --> IDataLoader
+  DeployPane --> IDataLoader
+  BlueprintPane --> IDataLoader
 ```
 
-All interfaces are satisfied by plain functions/objects — TypeScript-free by design, but the contracts are kept explicit here so behavior stays swappable.
+All interfaces are satisfied by plain functions/objects — TypeScript-free by design, but the contracts are kept explicit here so behavior stays swappable. Panes are registered in `tabLoaders`/`PANE_INIT` and built by a phased boot, so `IDataLoader.catalogReady` gates any pane that needs the deferred cascades dataset — see *Runtime, Offline & Delivery*.

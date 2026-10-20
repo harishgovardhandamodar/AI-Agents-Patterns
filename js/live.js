@@ -5,8 +5,31 @@
 const liveState = { q: "", domains: new Set(), sevs: new Set(), verdicts: new Set(), byScenario: {} };
 let livePlayer = null;
 
+/* Locally authored traces (iteration 105): a Guardrail Lab mock run promoted
+   into the trace library. They live beside the shipped catalog traces, are
+   marked as local so nobody mistakes them for catalog data, and are part of
+   the project so they travel with it. */
+const LIVE_LOCAL_STORE = "aap.traces.local.v1";
+function liveLocal() {
+  try {
+    const v = JSON.parse(localStorage.getItem(LIVE_LOCAL_STORE) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+function liveLocalSave(list) {
+  try { localStorage.setItem(LIVE_LOCAL_STORE, JSON.stringify(list)); } catch (e) {}
+  if (typeof projTouch === "function") projTouch();
+}
+
+/* Every trace the Live View can show: the shipped catalog plus local ones. */
+function liveAllTraces() {
+  const base = (typeof DATA !== "undefined" && DATA.traces) ? DATA.traces.traces : [];
+  const locals = liveLocal().filter(t => t && t.id && t.steps && t.steps.length);
+  return base.concat(locals);
+}
+
 function initLive() {
-  const all = DATA.traces.traces;
+  const all = liveAllTraces();
   liveState.byScenario = {};
   DATA.scenarios.scenarios.forEach(s => { liveState.byScenario[s.id] = s; });
 
@@ -26,17 +49,20 @@ function initLive() {
 
   livePlayer = LivePlayer(el("livePlayer"), { speed: 700 });
   renderTraceList();
-  loadTrace(all[0].id);
+  /* The default trace loads on first tab visit (see tabLoaders.live), not
+     here: rendering mermaid into the hidden pane at boot produces spurious
+     "Syntax error in text" diagrams that then sit baked into the DOM. */
 }
 
 function traceScenario(t) { return t.scenarioId ? liveState.byScenario[t.scenarioId] : null; }
 function traceDomain(t) {
   const s = traceScenario(t);
   if (s) return s.domain;
+  if (t.local) return t.domain || "local";
   const m = String(t.name).match(/^([A-Za-z0-9-]+) agent/);
   return m ? m[1].toLowerCase() : "general";
 }
-function traceSeverity(t) { const s = traceScenario(t); return s ? s.severity : "medium"; }
+function traceSeverity(t) { const s = traceScenario(t); return s ? s.severity : (t.severity || "medium"); }
 function traceLabel(t) { return String(t.name).split(" — ").slice(1).join(" — ") || t.name; }
 
 function onLiveFilter(inp, key) {
@@ -53,7 +79,7 @@ function resetLiveFilters() {
 }
 
 function renderTraceList() {
-  const all = DATA.traces.traces;
+  const all = liveAllTraces();
   const list = all.filter(t => {
     if (liveState.domains.size && !liveState.domains.has(traceDomain(t))) return false;
     if (liveState.sevs.size && !liveState.sevs.has(traceSeverity(t))) return false;
@@ -68,8 +94,8 @@ function renderTraceList() {
   });
   el("traceCount").textContent = list.length + " / " + all.length;
   el("traceList").innerHTML = list.map(t => `
-    <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" role="listitem" data-tid="${escHtml(t.id)}" onclick="loadTrace('${t.id}')">
-      <div class="t">${escHtml(traceLabel(t))}</div>
+    <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" role="listitem" data-tid="${escHtml(t.id)}" onclick="loadTrace('${escHtml(t.id)}')">
+      <div class="t">${t.local ? '<span class="chip" style="margin-right:5px">local</span>' : ""}${escHtml(traceLabel(t))}</div>
       <div class="m"><span class="verdict ${t.verdict}">${t.verdict}</span> ${escHtml(traceDomain(t))} · ${t.metrics.steps} steps · ${escHtml(traceSeverity(t))}</div>
     </div>`).join("") || (typeof emptyState === "function"
       ? emptyState("▶", "No traces match", "Every trace is filtered out — clear a verdict, severity or domain filter to get the replay list back.", "Reset filters", "resetLiveFilters()")
@@ -77,7 +103,7 @@ function renderTraceList() {
 }
 
 function loadTrace(id) {
-  const t = DATA.traces.traces.find(x => x.id === id);
+  const t = liveAllTraces().find(x => x.id === id);
   if (!t) return;
   const s = traceScenario(t);
   document.querySelectorAll(".trace-item").forEach(i => i.classList.toggle("active", i.dataset.tid === id));
@@ -87,12 +113,12 @@ function loadTrace(id) {
     if (cl.length) {
       links.push({ text: "Cascades: " + cl.length, onClick: function () {
         switchTab("cascades");
-        setTimeout(function () {
+        dlWhenReady("cascades", function () {
           document.querySelectorAll("#casClasses input, #casDomains input").forEach(function (i) { i.checked = false; });
           const i = document.querySelector('#casDomains input[data-v="' + s.domain + '"]');
           if (i) { i.checked = true; i.dispatchEvent(new Event("change")); }
           if (typeof renderCascadeList === "function") renderCascadeList();
-        }, 80);
+        });
       }});
     }
   }
@@ -105,4 +131,11 @@ function loadTrace(id) {
   });
 }
 
-tabLoaders.live = () => { /* loaded during init */ };
+let liveBooted = false;
+
+tabLoaders.live = () => {
+  if (liveBooted || !livePlayer) return;
+  liveBooted = true;
+  const all = (typeof DATA !== "undefined" && DATA.traces) ? DATA.traces.traces : [];
+  if (all.length) loadTrace(all[0].id);
+};

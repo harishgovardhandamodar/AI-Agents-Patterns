@@ -3,46 +3,56 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="dark light">
 <title>AI Agent Patterns &amp; Guardrails</title>
 <link rel="stylesheet" href="css/styles.css">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js" id="mermaid-lib"></script>
+<!-- Mermaid is loaded lazily on the first diagram need (see mmEnsure in
+     js/app.js): the vendored copy is authoritative, the CDN is only a
+     last-resort fallback. Keeping it out of <head> removes a 3.3 MB
+     render-blocking script from the critical path. -->
 </head>
 <body>
 
-<a href="#main" class="skip-link" id="skipLink" onclick="skipToContent(event)">Skip to main content</a>
+<a href="#maincontent" class="skip-link" id="skipLink" onclick="skipToContent(event)">Skip to main content</a>
 <div id="main">
-<div class="topbar">
+<header class="topbar">
   <div class="logo">A</div>
   <h1>AI Agent Patterns &amp; Guardrails</h1>
-  <span class="sub">design catalog · threat scenarios · live control-flow traces · UML viewer</span>
+  <span class="sub tagline">design catalog · threat scenarios · live control-flow traces · UML viewer</span>
   <div class="spacer"></div>
-  <span class="sub mono" id="dataStatus">loading…</span>
-  <button class="iconbtn" id="undoBtn" onclick="undoOnce()" title="Undo (Ctrl+Z)" disabled>↶</button>
-  <button class="iconbtn" id="redoBtn" onclick="redoOnce()" title="Redo (Ctrl+Shift+Z)" disabled>↷</button>
-    <button class="iconbtn" id="uxBtn" onclick="uxPanelToggle()" title="Display: density and text size" aria-haspopup="dialog" aria-expanded="false">⛭ display</button>
-  <button class="iconbtn llm-pill" id="llmPill" onclick="LLM.infoToggle()" title="Model backend status" aria-haspopup="dialog" aria-expanded="false"><span class="dot wait"></span>checking…</button>
-<button class="iconbtn" id="notifBell" onclick="notifLogToggle()" title="Notification history" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
-  <button class="iconbtn" onclick="palOpen()" title="Search everything (Ctrl/⌘ K)">🔍 Search ⌘K</button>
-  <button class="iconbtn" onclick="skHelpOpen()" title="Keyboard shortcuts (?)">⌨</button>
-  <button class="iconbtn" onclick="helpOpen()" title="Guide for this tab">ⓘ guide</button>
-  <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme">◐ theme</button>
-</div>
+  <span class="sub mono" id="dataStatus" title="Catalog size">loading…</span>
+  <span id="projChipHost" style="display:inline-flex"></span>
+  <button class="iconbtn" id="undoBtn" onclick="undoOnce()" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
+  <button class="iconbtn" id="redoBtn" onclick="redoOnce()" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
+    <button class="iconbtn" id="uxBtn" onclick="uxPanelToggle()" title="Display: density and text size" aria-label="Display preferences" aria-haspopup="dialog" aria-expanded="false">⛭ display</button>
+  <button class="iconbtn llm-pill" id="llmPill" onclick="LLM.infoToggle()" title="Model backend status" aria-label="Model backend status" aria-haspopup="dialog" aria-expanded="false"><span class="dot wait"></span>checking…</button>
+<button class="iconbtn" id="notifBell" onclick="notifLogToggle()" title="Notification history" aria-label="Notifications" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
+  <button class="iconbtn" onclick="palOpen()" title="Search everything (Ctrl/⌘ K)" aria-label="Search everything">🔍 Search ⌘K</button>
+  <button class="iconbtn" onclick="skHelpOpen()" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">⌨</button>
+  <button class="iconbtn" onclick="helpOpen()" title="Guide for this tab" aria-label="Guide for this tab">ⓘ guide</button>
+  <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle light or dark theme">◐ theme</button>
+</header>
 
+<div class="tabs-wrap">
 <div class="app-tabs" id="appTabs" role="tablist" aria-label="Main sections">
-  <div class="app-tab active" role="tab" aria-controls="overviewPane" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
-  <div class="app-tab" role="tab" aria-controls="copilotPane" data-tab="copilot" onclick="switchTab('copilot')">🤖 Fox - Architect</div>
-  <div class="app-tab" role="tab" aria-controls="patternsPane" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-controls="scenariosPane" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-controls="cascadesPane" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-controls="coveragePane" data-tab="coverage" onclick="switchTab('coverage')">📊 Coverage &amp; Gaps</div>
-  <div class="app-tab" role="tab" aria-controls="deployPane" data-tab="deploy" onclick="switchTab('deploy')">🧭 Deployment Plan</div>
-  <div class="app-tab" role="tab" aria-controls="blueprintPane" data-tab="blueprint" onclick="switchTab('blueprint')">🧩 Blueprints</div>
-  <div class="app-tab" role="tab" aria-controls="livePane" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-controls="designPane" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
-  <div class="app-tab" role="tab" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
+  <div class="app-tab active" role="tab" aria-selected="true" tabindex="0" aria-controls="overviewPane" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="copilotPane" data-tab="copilot" onclick="switchTab('copilot')">🤖 Fox - Architect</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="patternsPane" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="scenariosPane" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="cascadesPane" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="coveragePane" data-tab="coverage" onclick="switchTab('coverage')">📊 Coverage &amp; Gaps</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="deployPane" data-tab="deploy" onclick="switchTab('deploy')">🧭 Deployment Plan</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="blueprintPane" data-tab="blueprint" onclick="switchTab('blueprint')">🧩 Blueprints</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="livePane" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="designPane" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="discoveryPane" data-tab="discovery" onclick="switchTab('discovery')">🧪 Discovery Lab</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="benchPane" data-tab="bench" onclick="switchTab('bench')">⚔ Battle Bench</div>
+</div>
 </div>
 
+<main id="maincontent">
 <!-- ======================= OVERVIEW ======================= -->
 <section class="pane visible" id="overviewPane" role="tabpanel" aria-label="overview">
   <div class="ov-wrap">
@@ -98,7 +108,7 @@
       <button class="btn" onclick="copilotExport()">⬇</button>
     </div>
   </aside>
-  <main class="cp-main">
+  <div class="cp-main">
     <div class="cp-log" id="cpLog"></div>
     <div class="cp-input">
       <textarea id="cpInput" aria-label="Ask Fox - Architect" placeholder="Describe your agent deployment… e.g. &quot;A refunds agent with Stripe tool access, 3 approvals/day, EU customers. What patterns, cascade risks and mitigations should I plan?&quot;"></textarea>
@@ -107,7 +117,7 @@
         <button class="btn" id="cpStop" onclick="copilotStop()" style="display:none">■ Stop</button>
       </div>
     </div>
-  </main>
+  </div>
 </section>
 
 <!-- ======================= PATTERNS ======================= -->
@@ -124,7 +134,7 @@
       <label class="filter-item"><input type="checkbox" id="patHasFailures" onchange="renderPatterns()"> Has failure modes</label>
       <div style="margin-top:10px"><button class="btn" onclick="resetPatFilters()">Reset filters</button></div>
     </aside>
-    <main class="main">
+    <div class="main">
       <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="patCount"></span>
         <div style="flex:1"></div>
@@ -138,9 +148,10 @@
           <option value="gap">sort: least protected first</option>
         </select>
         <div class="fchip-row" id="patActive" style="display:none"></div>
+        <span id="patResSets"></span>
       </div>
       <div class="card-grid" id="patGrid" role="list"></div>
-    </main>
+    </div>
   </div>
 </section>
 
@@ -157,7 +168,7 @@
       <div id="scnVectors"></div>
       <div style="margin-top:10px"><button class="btn" onclick="resetScnFilters()">Reset filters</button></div>
     </aside>
-    <main class="main">
+    <div class="main">
       <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <div class="muted small" style="margin-bottom:0" id="scnCount"></div>
         <div style="flex:1"></div>
@@ -171,9 +182,10 @@
           <option value="vector">sort: attack vector</option>
         </select>
         <div class="fchip-row" id="scnActive" style="display:none"></div>
+        <span id="scnResSets"></span>
       </div>
       <div class="card-grid" id="scnGrid" role="list"></div>
-    </main>
+    </div>
   </div>
 </section>
 
@@ -191,7 +203,7 @@
     <h4>Why four classes?</h4>
     <p class="muted small" style="padding:0 6px">Inherent failures live in one part; emergent ones only exist when parts interact; derived ones are the necessary consequence chain; cascading ones cross a boundary and amplify. They need different tests and different controls — see <a href="#" onclick="switchTab('design');return false;">Design → Architect Value Map</a>.</p>
   </aside>
-  <main class="main">
+  <div class="main">
     <div class="seg" id="casSeg">
       <button class="seg-btn active" data-v="explorer" onclick="setCasView('explorer')">⧉ Explorer</button>
       <button class="seg-btn" data-v="mitigation" onclick="setCasView('mitigation')">✔ Mitigation planner</button>
@@ -212,7 +224,7 @@
       <div class="card-grid" id="casGrid" role="list"></div>
     </div>
     <div id="casMitigation" class="hidden"></div>
-  </main>
+  </div>
 </section>
 
 <!-- ======================= COVERAGE & GAPS ======================= -->
@@ -239,8 +251,9 @@
     <div id="bpCats" class="bp-cats"></div>
     <h4>Palette <span class="muted small" id="bpPalCount"></span></h4>
     <div id="bpPalette" class="bp-palette"></div>
+    <div id="bpSelBar" style="display:none"></div>
   </aside>
-  <main class="main" id="bpMain"></main>
+  <div class="main" id="bpMain"></div>
 </section>
 
 <!-- ======================= LIVE VIEW ======================= -->
@@ -289,9 +302,34 @@
     <div style="flex:1"></div>
     <button class="btn" style="margin-top:10px" onclick="exportCollection()">⬇ Export JSON</button>
   </aside>
-  <main class="g-main" id="guardMain"></main>
+  <div class="g-main" id="guardMain"></div>
 </section>
-</div>
+
+<!-- ======================= DISCOVERY LAB ======================= -->
+<section class="pane" id="discoveryPane" role="tabpanel" aria-label="discovery">
+  <div class="split">
+    <aside class="side">
+      <h4 style="margin-top:0">Discovery runs</h4>
+      <p class="muted small" style="padding:0 6px">Gap-seeded ideation in forgetting rounds, after arXiv:2610.20563 — keep the winners, forget the rest.</p>
+      <div id="discControls"></div>
+      <h4>Promoted drafts</h4>
+      <p class="muted small" style="padding:0 6px">Drafts you promoted into catalog-shaped scenarios. They stay in this browser and export with the run.</p>
+      <div id="discDrafts" role="list"></div>
+    </aside>
+    <div class="main">
+      <div id="discMain"><p class="muted small" data-discboot>Loading Discovery Lab…</p></div>
+    </div>
+  </div>
+</section>
+<!-- ======================= BATTLE BENCH ======================= -->
+<section class="pane" id="benchPane" role="tabpanel" aria-label="bench">
+  <div class="ov-wrap">
+    <div id="benchMain"></div>
+  </div>
+</section>
+</main><!-- /#maincontent: every .pane must live inside this grid — outside it the
+     pane renders below the 100vh app shell, i.e. off-screen -->
+</div><!-- /#main -->
 
 <!-- ======================= OVERLAYS ======================= -->
 <div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Detail" onclick="if(event.target===this)closeDetail()">
@@ -300,6 +338,7 @@
       <h2 id="detailTitle"></h2>
       <span class="chip" id="detailCat"></span>
       <div class="spacer"></div>
+      <div class="d-share" id="detailShare"></div>
       <button class="btn" onclick="closeDetail()">✕ Close</button>
     </div>
     <div class="drawer-body" id="detailBody"></div>
@@ -323,6 +362,9 @@
 </div>
 
 <script src="js/app.js"></script>
+<script src="js/project.js"></script>
+<script src="js/workflow.js"></script>
+<script src="js/ressets.js"></script>
 <script src="js/player.js"></script>
 <script src="js/llm.js"></script>
 <script src="js/context.js"></script>
@@ -342,5 +384,35 @@
 <script src="js/live.js"></script>
 <script src="js/design.js"></script>
 <script src="js/guardrail.js"></script>
+<script src="js/discovery.js"></script>
+<script src="js/bench.js"></script>
+<script src="js/adversary.js"></script>
+<script src="js/benchui.js"></script>
+<script>
+/* Inline boot check (runs from index.html itself, so it works even when a
+   module file is stale, blocked or 404s): every expected entry point must
+   exist, otherwise offer a cache-busting reload instead of a silent dead tab. */
+window.addEventListener("load", function () {
+  setTimeout(function () {
+    try {
+      var need = [["initDiscovery", "Discovery Lab"], ["initLanding", "Overview landing"], ["initCopilot", "Fox - Architect"], ["renderGuardReport", "Guardrail Lab"]];
+      var missing = need.filter(function (x) { return typeof window[x[0]] !== "function"; });
+      if (!missing.length) return;
+      var b = document.getElementById("freshBanner");
+      if (!b) {
+        b = document.createElement("div");
+        b.id = "freshBanner";
+        document.body.appendChild(b);
+      }
+      b.innerHTML = "<b>App files mismatched.</b><span>These modules did not load: " + missing.map(function (x) { return x[1]; }).join(", ") + ". The tab will look broken. </span>";
+      var btn = document.createElement("button");
+      btn.className = "btn sm primary";
+      btn.textContent = "Reload fresh copy";
+      btn.onclick = function () { location.href = location.pathname + "?v=" + Date.now() + location.hash; };
+      b.appendChild(btn);
+    } catch (e) { /* never break boot for the checker itself */ }
+  }, 2500);
+});
+</script>
 </body>
 </html>

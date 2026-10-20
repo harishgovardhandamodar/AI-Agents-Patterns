@@ -88,7 +88,7 @@ function casLinksBlock(list, title) {
   sorted.forEach(function (c) { (byCls[c.cls] = byCls[c.cls] || []).push(c); });
   const groups = Object.keys(order).filter(function (k) { return byCls[k]; }).map(function (k) {
     return '<div style="margin:5px 0"><span class="cls-chip ' + k + '">' + k + "</span> " +
-      byCls[k].map(function (c) { return '<span class="cp-cite c" onclick="openCascade(\'' + c.id + '\')">' + escHtml(c.name) + "</span>"; }).join(" ") + "</div>";
+      byCls[k].map(function (c) { return '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(c.id) + '" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'cascades\',\'' + c.id + '\');return false;">' + escHtml(c.name) + "</a>"; }).join(" ") + "</div>";
   }).join("");
   return '<div class="dsec"><h4>' + escHtml(title) + ' <span class="muted small" style="text-transform:none">(' + list.length + ")</span></h4>" +
     '<p class="small muted" style="margin:0 0 4px">How this can propagate — grouped by cascade class. Click to open the full analysis, simulator and mitigation plan.</p>' +
@@ -117,7 +117,7 @@ function setCasView(v) {
   if (v === "mitigation") renderMitigation();
 }
 function mitLoad() { try { return JSON.parse(localStorage.getItem(MIT_STORE) || "{}"); } catch (e) { return {}; } }
-function mitSave(m) { try { localStorage.setItem(MIT_STORE, JSON.stringify(m)); } catch (e) {} }
+function mitSave(m) { try { localStorage.setItem(MIT_STORE, JSON.stringify(m)); } catch (e) {} if (typeof projTouch === "function") projTouch(); }
 function mitKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 90); }
 
 /* Aggregate every cascade's controls into a de-duplicated, scored backlog. */
@@ -152,7 +152,7 @@ function buildMitigationBacklog() {
   });
   return list;
 }
-const mitFilter = { func: null, pri: null, limit: 40, q: "" };
+const mitFilter = { func: null, pri: null, limit: 40, q: "", onlyUnowned: false };
 const MIT_PAGE_STEP = 40;
 function setMitFilter(k, v) {
   mitFilter[k] = (k === "limit") ? v : (v === null ? null : (k === "q" ? String(v).toLowerCase() : (mitFilter[k] === v ? null : v)));
@@ -165,7 +165,7 @@ function mitSetQ(v) {
   const inp = document.getElementById("mitSearch");
   if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {} }
 }
-function mitClearFilters() { mitFilter.func = null; mitFilter.pri = null; mitFilter.q = ""; mitFilter.limit = MIT_PAGE_STEP; renderMitigation(); }
+function mitClearFilters() { mitFilter.func = null; mitFilter.pri = null; mitFilter.q = ""; mitFilter.onlyUnowned = false; mitFilter.limit = MIT_PAGE_STEP; renderMitigation(); }
 function renderMitigation() {
   const box = el("casMitigation");
   if (!box) return;
@@ -174,19 +174,35 @@ function renderMitigation() {
   const filtered = all.filter(function (e) {
     if (mitFilter.func && e.func !== mitFilter.func) return false;
     if (mitFilter.pri && e.priority !== mitFilter.pri) return false;
+    if (mitFilter.onlyUnowned) {
+      const st = saved[e.key] || {};
+      if (st.owner || st.status === "done" || st.status === "accepted risk") return false;
+    }
     if (mitFilter.q && (e.text + " " + e.func).toLowerCase().indexOf(mitFilter.q) < 0) return false;
     return true;
   });
   const shown = filtered.slice(0, mitFilter.limit);
   const counts = { P1: 0, P2: 0, P3: 0 };
   all.forEach(function (e) { counts[e.priority]++; });
+  const prog = mitProgress();
   const fbtn = function (label, key, val, extra) {
     const on = mitFilter[key] === val;
     return '<button class="seg-btn' + (on ? " active" : "") + '" onclick="setMitFilter(\'' + key + '\',\'' + (val || "") + '\')">' + label + (extra || "") + "</button>";
   };
   box.innerHTML =
     '<div class="panel" style="margin-bottom:12px"><h3>Mitigation planner — ' + all.length + " distinct controls from " + casAll().length + " cascades</h3>" +
-    '<p class="muted small">Every control across all cascades, de-duplicated and ranked by leverage (how many cascades it addresses), the worst impact it prevents and the widest blast radius it bounds. Priority is relative (top 15% / next 25% / tail) — a planning heuristic, not your risk appetite. Assign owners and track status; it persists locally.</p>' +
+    '<p class="muted small">Every control across all cascades, de-duplicated and ranked by leverage (how many cascades it addresses), the worst impact it prevents and the widest blast radius it bounds. Priority is relative (top 15% / next 25% / tail) — a planning heuristic, not your risk appetite. Assign owners and track status; it persists locally and travels with the project.</p>' +
+    '<div class="mit-progress">' +
+      '<div class="mit-prog-row"><span>Owned</span><b>' + prog.owned + " / " + prog.total + "</b></div>" +
+      '<div class="mit-prog-bar"><div class="mit-prog-fill" style="width:' + (prog.total ? Math.round((prog.owned / prog.total) * 100) : 0) + '%"></div></div>' +
+      '<div class="mit-prog-row"><span>Done / accepted risk</span><b>' + (prog.done + prog.risk) + " · " + prog.pct + "%</b></div>" +
+      '<div class="mit-prog-bar done"><div class="mit-prog-fill" style="width:' + prog.pct + '%"></div></div>' +
+      '<div class="mit-prog-row"><span>In progress</span><b>' + prog.inProgress + "</b></div>" +
+    "</div>" +
+    '<div class="mit-actions">' +
+      '<button class="btn sm" onclick="mitFocusUnowned()">🎯 Focus un-owned</button>' +
+      '<button class="btn sm" onclick="mitToBlueprint(10)">🧩 Seed blueprint from top 10</button>' +
+    "</div>" +
     '<div class="seg" style="margin:10px 0 8px">' + fbtn("All functions", "func", null) + MIT_FUNCS.map(function (f) { return fbtn(f[1], "func", f[0]); }).join("") + "</div>" +
     '<div class="seg" style="margin:0 0 8px">' + fbtn("All priorities", "pri", null) + fbtn("P1", "pri", "P1", " · " + counts.P1) + fbtn("P2", "pri", "P2", " · " + counts.P2) + fbtn("P3", "pri", "P3", " · " + counts.P3) + "</div>" +
     '<div style="margin:0 0 8px"><input class="search" id="mitSearch" aria-label="Search mitigation controls" style="width:100%" placeholder="Search controls… (e.g. audit, sandbox, approval)" value="' + escHtml(mitFilter.q || "") + '" oninput="mitSetQ(this.value)"></div>' +
@@ -217,7 +233,7 @@ function mitRow(e, st) {
     '<div class="mit-m"><span class="chip" style="font-size:9px">' + fn[1] + "</span>" +
     '<span class="muted small">' + e.freq + " cascade" + (e.freq > 1 ? "s" : "") + " · worst impact " + ({ 4: "critical", 3: "high", 2: "medium", 1: "low" }[e.impact] || "?") + " · blast " + BLAST_ORDER[e.blast] + "</span></div>" +
     '<div class="mit-links">' + e.cascades.slice(0, 6).map(function (id) {
-      const c = casById(id); return c ? '<span class="cp-cite c" onclick="openCascade(\'' + id + '\')">' + escHtml(c.name.slice(0, 34)) + "</span>" : "";
+      const c = casById(id); return c ? '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(id) + '" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'cascades\',\'' + id + '\');return false;">' + escHtml(c.name.slice(0, 34)) + "</a>" : "";
     }).join("") + "</div>" +
     '<div class="mit-verify">verify: ' + escHtml(MIT_VERIFY[e.func]) + "</div></div>" +
     '<div class="mit-side"><input class="mit-owner" aria-label="Control owner" placeholder="owner" value="' + escHtml(owner) + '" oninput="mitSet(\'' + escHtml(e.key) + '\',\'owner\',this.value)">' +
@@ -227,8 +243,111 @@ function mitRow(e, st) {
 function mitSet(key, field, val) {
   const m = mitLoad();
   m[key] = m[key] || {};
+  const before = m[key][field];
   m[key][field] = val;
   mitSave(m);
+  /* The backlog is real work — an owner or a status change is a decision,
+     so it must be undoable (iteration 111/115). */
+  if (typeof undoPush === "function") {
+    undoPush("mitigation " + field + " → " + (val || "(empty)"),
+      function () {
+        const mm = mitLoad();
+        if (mm[key]) {
+          if (before === undefined) delete mm[key][field];
+          else mm[key][field] = before;
+        }
+        mitSave(mm);
+        renderMitigation();
+      },
+      function () {
+        const mm = mitLoad();
+        mm[key] = mm[key] || {};
+        mm[key][field] = val;
+        mitSave(mm);
+        renderMitigation();
+      });
+  }
+  if (typeof wfPaintRail === "function") wfPaintRail();
+}
+
+/* ---------------- the backlog as a work product (iteration 112) ----------
+   The mitigation backlog is where a team's real hardening work lives: 900+
+   de-duplicated controls with owners and status. Until now it was an
+   island — invisible on the Overview, absent from the report, and lost
+   with the browser profile.
+
+   These helpers make it a first-class artefact of the project:
+   - a progress summary (how much is owned, how much is done),
+   - the ability to push the top un-owned controls onto the blueprint,
+   - a "focus" mode that filters the backlog down to what still needs work. */
+function mitProgress() {
+  const all = buildMitigationBacklog();
+  const saved = mitLoad();
+  let owned = 0, done = 0, progress = 0, inProgress = 0, risk = 0;
+  all.forEach(function (e) {
+    const st = saved[e.key] || {};
+    if (st.owner) owned++;
+    if (st.status === "done") done++;
+    else if (st.status === "in progress") inProgress++;
+    else if (st.status === "accepted risk") risk++;
+  });
+  return {
+    total: all.length, owned: owned, done: done, inProgress: inProgress, risk: risk,
+    pct: all.length ? Math.round(((done + risk) / all.length) * 100) : 0
+  };
+}
+
+/* The controls that still need an owner, highest leverage first. */
+function mitUnowned() {
+  const saved = mitLoad();
+  return buildMitigationBacklog().filter(function (e) {
+    const st = saved[e.key] || {};
+    return !st.owner && st.status !== "done" && st.status !== "accepted risk";
+  });
+}
+
+/* Add the top un-owned controls to the blueprint as real components. The
+   mapping is by function: each mitigation function has a natural
+   implementation pattern, so the backlog can seed the canvas. */
+const MIT_FUNC_PATTERN = {
+  prevent: ["input-sanitization", "policy-engine", "least-privilege"],
+  detect: ["audit-trail", "drift-monitoring", "telemetry"],
+  contain: ["circuit-breaker", "checkpoint-rollback", "kill-switch"],
+  recover: ["checkpoint-rollback", "fallback-chain", "human-in-the-loop"]
+};
+
+/* Push the top N un-owned controls' patterns onto the blueprint. */
+function mitToBlueprint(n) {
+  if (typeof bpAddMany !== "function") { showNotif("Blueprint builder unavailable"); return; }
+  const rows = mitUnowned().slice(0, n || 10);
+  if (!rows.length) { showNotif("Every mitigation control already has an owner", { kind: "ok" }); return; }
+  const ids = [];
+  rows.forEach(function (e) {
+    (MIT_FUNC_PATTERN[e.func] || []).forEach(function (id) {
+      if (ids.indexOf(id) < 0) ids.push(id);
+    });
+  });
+  const known = (typeof DATA !== "undefined" && DATA.patterns)
+    ? (DATA.patterns.patterns || []).map(function (p) { return p.id; }) : [];
+  const real = ids.filter(function (id) { return known.indexOf(id) >= 0; });
+  if (!real.length) { showNotif("No catalog pattern matches those controls", { kind: "warn" }); return; }
+  const added = bpAddMany(real);
+  showNotif("Added " + (added || real.length) + " pattern" + ((added || real.length) === 1 ? "" : "s") +
+    " from the top " + rows.length + " un-owned mitigation controls", {
+    kind: "ok",
+    actions: [{ label: "View", fn: function () { switchTab("blueprint"); focusPane("blueprint"); } }]
+  });
+  switchTab("blueprint");
+  focusPane("blueprint");
+}
+
+/* Filter the backlog down to the work that still needs doing. */
+function mitFocusUnowned() {
+  mitFilter.func = null; mitFilter.pri = null; mitFilter.q = "";
+  mitFilter.limit = MIT_PAGE_STEP;
+  mitFilter.onlyUnowned = true;
+  renderMitigation();
+  showNotif("Showing only the controls that still need an owner");
 }
 function exportMitigations(kind) {
   const list = buildMitigationBacklog();
@@ -424,7 +543,7 @@ function buildCasFilters() {
 /* Jump to Cascades tab filtered to one domain (used by Coverage view). */
 function casOpenDomain(dom) {
   switchTab("cascades");
-  setTimeout(function () {
+  dlWhenReady("cascades", function () {
     casState.q = ""; casState.cls.clear(); casState.domain.clear(); casState.blast.clear();
     const s = el("casSearch"); if (s) s.value = "";
     const box = el("casDomains");
@@ -433,7 +552,7 @@ function casOpenDomain(dom) {
       casState.domain.add(dom);
     }
     renderCascadeList();
-  }, 40);
+  });
 }
 
 function casShowMore() { casState.limit += CAS_LIST_STEP; renderCascadeList(); casScrollKeep(); }
@@ -487,7 +606,7 @@ function casCardHtml(c) {
   const hi = casBlastRank(c) >= 4 ? " hi" : "";
   const mit = c.mitigations || {};
   const mc = ["prevent", "detect", "contain", "recover"].reduce(function (n, k) { return n + ((mit[k] || []).length); }, 0);
-  return '<div class="cas-card" role="listitem" onclick="openCascade(\'' + c.id + '\')">' +
+  return '<div class="cas-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open cascade: ' + escHtml(c.name) + '" onclick="openCascade(\'' + c.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCascade(\'' + c.id + '\')}">' +
     '<div class="t"><span class="cls-chip ' + c.cls + '">' + c.cls + '</span> ' + escHtml(c.name) + "</div>" +
     '<div class="m"><span class="blast-chip' + hi + '">blast: ' + escHtml(c.blastRadius) + "</span>" +
     '<span class="blast-chip">' + escHtml(c.impact) + " impact</span>" +
@@ -498,20 +617,28 @@ function casCardHtml(c) {
     '<div class="d">' + escHtml(c.summary) + "</div></div>";
 }
 
-/* ---------------- detail ---------------- */
+/* ---------------- detail ----------------
+   Reference chips are real links (iteration 111): focusable, copyable and
+   openable in a new tab, with the destination in the address bar. */
 function casRefChips(c) {
   const parts = [];
   (c.patternRefs || []).forEach(function (id) {
     const p = DATA.patterns && DATA.patterns.patterns.find(function (x) { return x.id === id; });
-    parts.push('<span class="cp-cite p" onclick="openPattern(\'' + id + '\')" title="Pattern">◆ ' + escHtml(p ? p.name : id) + "</span>");
+    parts.push('<a class="cp-cite p" href="#patterns/' + encodeURIComponent(id) + '" title="Pattern" ' +
+      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'patterns\',\'' + id + '\');return false;">◆ ' +
+      escHtml(p ? p.name : id) + "</a>");
   });
   (c.scenarioRefs || []).forEach(function (id) {
     const s = DATA.scenarios && DATA.scenarios.scenarios.find(function (x) { return x.id === id; });
-    parts.push('<span class="cp-cite s" onclick="openScenario(\'' + id + '\')" title="Scenario">⚠ ' + escHtml(s ? s.title : id) + "</span>");
+    parts.push('<a class="cp-cite s" href="#scenarios/' + encodeURIComponent(id) + '" title="Scenario" ' +
+      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'scenarios\',\'' + id + '\');return false;">⚠ ' +
+      escHtml(s ? s.title : id) + "</a>");
   });
   (c.traceRefs || []).forEach(function (id) {
     const t = DATA.traces && DATA.traces.traces.find(function (x) { return x.id === id; });
-    parts.push('<span class="cp-cite t" onclick="switchTab(\'live\');setTimeout(function(){loadTrace(\'' + id + '\')},90)" title="Trace">▶ ' + escHtml(t ? String(t.name).split(" — ").slice(1).join(" — ") || t.name : id) + "</span>");
+    parts.push('<a class="cp-cite t" href="#live/' + encodeURIComponent(id) + '" title="Trace" ' +
+      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'live\',\'' + id + '\');return false;">▶ ' +
+      escHtml(t ? String(t.name).split(" — ").slice(1).join(" — ") || t.name : id) + "</a>");
   });
   return parts.length ? '<div class="ref-chips">' + parts.join("") + "</div>" : '<span class="muted small">no direct catalog links</span>';
 }
@@ -533,7 +660,7 @@ function openCascade(id) {
     '<span>likelihood <b>' + escHtml(c.likelihood) + "</b></span>" +
     '<span>impact <b>' + escHtml(c.impact) + "</b></span>" +
     '<span>speed <b>' + escHtml(c.speed) + "</b></span></div>" +
-    "<p>" + escHtml(c.summary) + "</p>" +
+    "<p>" + (typeof jargon === "function" ? jargon(c.summary) : escHtml(c.summary)) + "</p>" +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Trigger</h4>' +
     "<p>" + escHtml(c.trigger) + "</p>" +
     '<h4 style="font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.05em;margin:14px 0 4px">Propagation</h4>' +
@@ -555,8 +682,8 @@ function openCascade(id) {
     '<div class="d-actions" style="margin-top:14px">' +
     (typeof bpRefsBtnHtml === "function" && (c.patternRefs || []).length ? bpRefsBtnHtml(c.patternRefs, "from this cascade") : "") +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("cascades", c.id) : "") +
-    '<button class="btn primary" onclick="askCopilotAbout(\'cascade: ' + escHtml(c.name) + '\')">🤖 Ask Fox - Architect about this</button></div>';
-  openDetail(c.name, c.cls + " cascade", html);
+    '<button class="btn primary" onclick="askAbout(\'cascade\',' + JSON.stringify(c.id) + ')">🤖 Ask Fox - Architect about this</button></div>';
+  openDetail(c.name, c.cls + " cascade", html, { tab: "cascades", id: c.id, title: c.name });
 }
 
 /* Feed a cascade (or any item) into the copilot and switch to it. */
@@ -568,5 +695,53 @@ function askCopilotAbout(text) {
     const i = el("cpInput");
     if (i) { i.value = text; i.focus(); }
   }, 90);
+}
+
+/* ---------------- ask about the *artifact*, not its title (iteration 110)
+   "Ask Fox - Architect" in a drawer used to send the item's name — so the
+   copilot had to re-derive what the user was looking at from a title, and
+   a title like "escalation-bypass" or "ReAct (Reason + Act)" is a poor
+   retrieval key.
+
+   askAbout(kind, id) sends the item's own record: its summary, failure
+   modes, protections, attack chain, propagation path. The copilot's
+   deterministic retrieval then matches on the substance, and the answer
+   cites the real catalog ids. */
+function askAbout(kind, id) {
+  let q = "";
+  try {
+    if (kind === "pattern") {
+      const p = (DATA.patterns.patterns || []).find(x => x.id === id);
+      if (!p) return;
+      q = "Pattern: " + p.name + " (id " + p.id + ", category " + p.cat + "). " +
+        p.summary + " How it works: " + (p.how || []).slice(0, 3).join("; ") + ". " +
+        "Failure modes: " + (p.failures || []).slice(0, 3).map(f => f.n + " (" + f.sev + ")").join("; ") + ". " +
+        "Protections: " + (p.protections || []).slice(0, 3).join("; ") + ". " +
+        "What should I watch for when I use this pattern in a production agent?";
+    } else if (kind === "scenario") {
+      const s = (DATA.scenarios.scenarios || []).find(x => x.id === id);
+      if (!s) return;
+      q = "Failure scenario: " + s.title + " (id " + s.id + ", " + s.domain + ", " + s.severity + ", vector " + s.vector + "). " +
+        s.description + " Attack chain: " + (s.attackChain || []).join(" → ") + ". " +
+        "Protections that stop it: " + (s.protections || []).slice(0, 3).map(p => p.name + " (" + p.layer + ")").join("; ") + ". " +
+        "Which catalog patterns and cascades should I combine to stop this end to end?";
+    } else if (kind === "cascade") {
+      const c = (DATA.cascades.cascades || []).find(x => x.id === id);
+      if (!c) return;
+      q = "Composition cascade: " + c.name + " (id " + c.id + ", class " + c.cls + ", " + c.domain + ", impact " + c.impact + "). " +
+        "Propagation path: " + (c.path || "").join(" → ") + ". " +
+        "Amplifiers: " + (c.amplifiers || []).slice(0, 3).join("; ") + ". " +
+        "Mitigations: " + Object.keys(c.mitigations || {}).slice(0, 3).flatMap(k => (c.mitigations[k] || []).slice(0, 1)).join("; ") + ". " +
+        "How do I break this cascade, and which control families does it need?";
+    } else if (kind === "trace") {
+      const t = (DATA.traces.traces || []).find(x => x.id === id);
+      if (!t) return;
+      q = "Execution trace: " + t.name + " (id " + t.id + ", verdict " + t.verdict + "). " +
+        (t.summary || "") + " Which guardrails fired, and what would have happened without them?";
+    } else {
+      return;
+    }
+  } catch (e) { return; }
+  askCopilotAbout(q);
 }
 tabLoaders.cascades = function () { initCascades(); };

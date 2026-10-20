@@ -69,20 +69,26 @@ stateDiagram-v2
 
 ```mermaid
 flowchart LR
-  BOOT["loadAll()"] --> F1["fetch data/patterns.json"]
-  BOOT --> F2["fetch data/scenarios.json"]
-  BOOT --> F3["fetch data/traces.json"]
-  F1 & F2 & F3 --> INIT["init*() per tab<br/>(build filters, defaults)"]
-  INIT --> RENDER["render*( )<br/>(filter → sort → innerHTML)"]
+  BOOT["loadAll()"] --> P1["Phase 1 · fetch<br/>patterns · scenarios · traces · coverage"]
+  BOOT --> P2["Phase 2 · fetch cascades<br/>(deferred, in parallel)"]
+  P1 --> EARLY["first panes: init*()<br/>(build filters, defaults)"]
+  P2 --> CAT["catalogReady"]
+  EARLY --> RENDER["render*( )<br/>(filter → sort → innerHTML)"]
+  CAT --> WIDE["palette · dashboard · landing<br/>+ deferred panes"]
   RENDER --> DETAIL["openPattern/openScenario<br/>(drawer + diagramHtml)"]
   DETAIL --> MM["mmRender(queue)<br/>mermaid.run per node"]
+  WIDE --> MM
 ```
 
 Every render is a pure function of filter state — no hidden caches, so the same filters always produce the same view (the dashboard's own form of idempotency).
 
+### Boot is phased, and any pane can jump the queue
+
+Only the first paint path (overview, patterns, scenarios, plus whatever pane the hash names) is awaited up front; `cascades.json` — the largest dataset — loads in parallel and gates `catalogReady`, which the remaining panes wait on. A tab visit runs a not-yet-built pane's `init` immediately instead of waiting for the idle pump. The full boot sequence, the offline read path and the service worker are in *Runtime, Offline & Delivery*.
+
 ## Mermaid render queue (why sequential)
 
-Mermaid measures label widths in shared global state; concurrent `run()` calls corrupt each other's layout. All renders therefore pass through a single promise chain:
+Mermaid measures label widths in shared global state; concurrent `run()` calls corrupt each other's layout. The library is vendored (`js/vendor/mermaid.min.js`, CDN only as a fallback); all renders pass through a single promise chain:
 
 ```mermaid
 flowchart LR

@@ -40,6 +40,7 @@ Configuration (environment variables):
     LLM_FIRST_TOKEN_TIMEOUT default 60 (seconds, before first token reaches client)
     LLM_STALL_TIMEOUT    default 45    (seconds, max silence mid-stream)
 """
+import gzip
 import http.client
 import http.server
 import json
@@ -52,6 +53,43 @@ import urllib.parse
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5175
 ROOT = os.path.dirname(os.path.abspath(__file__))
+
+# ---------------------------------------------------------- static delivery
+# The app's data alone is ~1 MB of JSON and the vendored Mermaid build is
+# 3.3 MB, so compress compressible types and revalidate the rest instead of
+# sending everything raw with `no-store`.
+GZIP_TYPES = (".html", ".htm", ".css", ".js", ".mjs", ".json", ".svg",
+              ".md", ".txt", ".xml", ".webmanifest", ".map")
+GZIP_MIN = 1024
+_GZ_CACHE = {}
+_GZ_LOCK = threading.Lock()
+
+
+def gzip_cached(path, st):
+    """gzip a file once, cached on (mtime, size); return the compressed bytes."""
+    with _GZ_LOCK:
+        hit = _GZ_CACHE.get(path)
+        if hit and hit[0] == st.st_mtime and hit[1] == st.st_size:
+            return hit[2]
+    with open(path, "rb") as fh:
+        raw = fh.read()
+    out = gzip.compress(raw, 6)
+    with _GZ_LOCK:
+        _GZ_CACHE[path] = (st.st_mtime, st.st_size, out)
+    return out
+
+
+# Same-origin hardening applied to every response. The app is inline-handler
+# heavy (76 on* attributes) and the print view writes an inline <style>, so
+# script-src/style-src keep 'unsafe-inline'; the jsdelivr entry preserves the
+# documented Mermaid CDN fallback (the vendored copy stays authoritative).
+CSP = ("default-src 'self'; "
+       "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+       "style-src 'self' 'unsafe-inline'; "
+       "img-src 'self' data:; font-src 'self' data:; "
+       "connect-src 'self'; worker-src 'self'; "
+       "object-src 'none'; base-uri 'self'; "
+       "frame-ancestors 'none'; form-action 'self'")
 
 # ---------------------------------------------------------------- backends
 def _backend_list():
@@ -149,6 +187,9 @@ def health():
 # ---------------------------------------------------------------- server
 class Handler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
+    server_version = "aap"      # don't advertise the Python build in Server:
+    sys_version = ""
+    _gz_body = None
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ROOT, **kwargs)
@@ -168,8 +209,93 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self.rfile.read(n) if n else b""
 
     def end_headers(self):
-        self.send_header("Cache-Control", "no-store")
+        # Security headers on every response (cheap XSS backstop for the app's
+        # many innerHTML sites); caching is set per response instead of a blanket
+        # no-store, which previously re-sent 4.9 MB on every visit.
+        self.send_header("X-Content-Type-Options", "nosniff")
+        self.send_header("X-Frame-Options", "DENY")
+        self.send_header("Referrer-Policy", "no-referrer")
+        self.send_header("Content-Security-Policy", CSP)
         super().end_headers()
+
+    # -- static files: gzip + conditional caching --------------------------
+    def _cache_control(self, path):
+        rel = path[len(ROOT):] if path.startswith(ROOT) else path
+        if "/vendor/" in rel:
+            return "public, max-age=31536000, immutable"
+        return "no-cache"       # revalidate via If-Modified-Since -> cheap 304
+
+    def _not_modified(self, header, mtime):
+        try:
+            from email.utils import parsedate_to_datetime
+            return int(mtime) <= int(parsedate_to_datetime(header).timestamp())
+        except Exception:
+            return False
+
+    def send_head(self):
+        path = self.translate_path(self.path)
+        if os.path.isdir(path):
+            parts = urllib.parse.urlsplit(self.path)
+            if not parts.path.endswith("/"):
+                self.send_response(301)
+                loc = parts._replace(path=parts.path + "/", fragment="")
+                self.send_header("Location", urllib.parse.urlunsplit(loc))
+                self.send_header("Content-Length", "0")
+                self.end_headers()
+                return None
+            for idx in ("index.html", "index.htm"):
+                candidate = os.path.join(path, idx)
+                if os.path.isfile(candidate):
+                    path = candidate
+                    break
+            else:
+                self._gz_body = None
+                return self.list_directory(path)   # no index -> directory listing
+        try:
+            f = open(path, "rb")
+        except OSError:
+            self._gz_body = None
+            self.send_error(404, "File not found")
+            return None
+        try:
+            st = os.fstat(f.fileno())
+            ims = self.headers.get("If-Modified-Since")
+            if ims and self._not_modified(ims, st.st_mtime):
+                f.close()
+                self.send_response(304)
+                self.send_header("Last-Modified", self.date_time_string(st.st_mtime))
+                self.end_headers()
+                return None
+            ext = os.path.splitext(path)[1].lower()
+            accepts = "gzip" in (self.headers.get("Accept-Encoding") or "")
+            use_gz = accepts and ext in GZIP_TYPES and st.st_size > GZIP_MIN
+            self.send_response(200)
+            self.send_header("Content-Type", self.guess_type(path))
+            if use_gz:
+                body = gzip_cached(path, st)
+                self._gz_body = body
+                self.send_header("Content-Encoding", "gzip")
+                self.send_header("Vary", "Accept-Encoding")
+                self.send_header("Content-Length", str(len(body)))
+            else:
+                self._gz_body = None
+                self.send_header("Content-Length", str(st.st_size))
+            self.send_header("Last-Modified", self.date_time_string(st.st_mtime))
+            self.send_header("Cache-Control", self._cache_control(path))
+            self.end_headers()
+            return f
+        except Exception:
+            f.close()
+            raise
+
+    def copyfile(self, source, outputfile):
+        # When send_head swapped in a compressed body, write that instead.
+        body = self._gz_body
+        if body is not None:
+            outputfile.write(body)
+            self._gz_body = None
+            return
+        super().copyfile(source, outputfile)
 
     def log_message(self, fmt, *args):  # quieter console
         sys.stderr.write("%s - %s\n" % (self.address_string(), fmt % args))
@@ -185,6 +311,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self):
         path = urllib.parse.urlparse(self.path).path
+        if path == "/api/diag":
+            # Client-side diagnostics beacon (see bootDiag in js/app.js):
+            # logs browser errors + boot markers to stderr (docker logs).
+            # Same-origin only, no PII beyond UA string and tab name.
+            try:
+                q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                msg = (q.get("msg") or [""])[0][:300].replace("\n", " ")
+                kind = (q.get("kind") or [""])[0][:20].replace("\n", " ")
+                tab = (q.get("tab") or [""])[0][:20].replace("\n", " ")
+                ua = (q.get("ua") or [""])[0][:120].replace("\n", " ")
+                sys.stderr.write(f"DIAG [{self.client_address[0]}] {kind} tab={tab} :: {msg} :: {ua}\n")
+                sys.stderr.flush()
+            except Exception:
+                pass
+            self.send_response(204)
+            self.end_headers()
+            return
         if path == "/api/llm/health":
             return self._json(health())
         if path == "/api/llm/config":
@@ -205,6 +348,21 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path == "/api/llm/chat":
             return self._chat()
+        if path == "/api/diag":
+            # sendBeacon posts here; same handling as the GET beacon.
+            try:
+                q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+                msg = (q.get("msg") or [""])[0][:300].replace("\n", " ")
+                kind = (q.get("kind") or [""])[0][:20].replace("\n", " ")
+                tab = (q.get("tab") or [""])[0][:20].replace("\n", " ")
+                ua = (q.get("ua") or [""])[0][:120].replace("\n", " ")
+                sys.stderr.write(f"DIAG [{self.client_address[0]}] {kind} tab={tab} :: {msg} :: {ua}\n")
+                sys.stderr.flush()
+            except Exception:
+                pass
+            self.send_response(204)
+            self.end_headers()
+            return
         self._json({"error": "not found"}, 404)
 
     # -- llm handlers ------------------------------------------------------
@@ -242,6 +400,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                    "Accept-Encoding": "identity"}
 
         backends = _backend_list()
+        # A client may pin a backend with X-Fox-Backend. The bench uses this
+        # to force a specific node (e.g. fox-services) instead of taking
+        # whichever answers first — a failover is right for a chat, wrong
+        # for a measurement you intend to compare against a later run.
+        pinned = (self.headers.get("X-Fox-Backend") or "").strip().lower()
+        if pinned:
+            chosen = [b for b in backends if b["name"].lower() == pinned]
+            if not chosen:
+                return self._json({"ok": False, "error": "unknown backend: %s" % pinned,
+                                   "available": [b["name"] for b in backends]})
+            backends = chosen + [b for b in backends if b["name"].lower() != pinned]
         errors = []
         for b in backends:
             try:

@@ -1,6 +1,6 @@
 # System Context
 
-**What this system is:** a no-build dashboard for studying AI-agent design patterns, their failure modes, and the guardrail architectures that contain them — plus the tooling to act on them (deployment planner, reference-architecture builder, guardrail lab). It is deliberately modeled on the *Agentic Knowledge Mapper* classic GUI: a single-page vanilla-JS app with a tab strip, CSS-variable theming, and a Design & Architecture tab that renders markdown+Mermaid documents live. An optional same-origin LLM proxy (`serve.py /api/llm/*`) grounds Fox - Architect answers in a tailnet model; without it the app degrades to a deterministic catalog fallback.
+**What this system is:** a no-build dashboard for studying AI-agent design patterns, their failure modes, and the guardrail architectures that contain them — plus the tooling to act on them (deployment planner, reference-architecture builder, guardrail lab, battle-test bench). It is deliberately modeled on the *Agentic Knowledge Mapper* classic GUI: a single-page vanilla-JS app with a 13-tab strip, CSS-variable theming, and a Design & Architecture tab that renders markdown+Mermaid documents live. Mermaid is vendored under `js/vendor/` (the CDN is only a fallback), an offline service worker precaches the whole shell, and an optional same-origin LLM proxy (`serve.py /api/llm/*`) grounds Fox - Architect answers and the bench's live adapter in a tailnet model; without it the app degrades to a deterministic catalog fallback.
 
 ## Purpose & principles
 
@@ -24,9 +24,11 @@ flowchart TB
 
   subgraph EXT["External knowledge (static, versioned)"]
     PAT["data/patterns.json<br/>107 design patterns"]
-    SCN["data/scenarios.json<br/>43 failure scenarios"]
-    TRC["data/traces.json<br/>39 mock execution traces"]
-    DES["design/*.md<br/>UML & architecture docs"]
+    SCN["data/scenarios.json<br/>54 failure scenarios"]
+    TRC["data/traces.json<br/>55 mock execution traces"]
+    CAS["data/cascades.json<br/>191 composition cascades"]
+    COV["data/coverage.json<br/>26-domain coverage index"]
+    DES["design/*.md<br/>9 architecture documents"]
   end
 
   subgraph LLM["Tailnet model backends (optional)"]
@@ -41,6 +43,8 @@ flowchart TB
   DASH --> PAT
   DASH --> SCN
   DASH --> TRC
+  DASH --> CAS
+  DASH --> COV
   DASH --> DES
   DASH -->|grounded chat| AXM
   DASH -->|failover| FOX
@@ -50,25 +54,31 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  subgraph BROWSER["Browser (single page, 11 tabs)"]
-    TABS["Tab strip<br/>Overview · Fox - Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design · Guardrail Lab"]
+  subgraph BROWSER["Browser (single page, 13 tabs)"]
+    TABS["Tab strip<br/>Overview · Fox - Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab · Battle Bench"]
     ENG1["Pattern catalog engine"]
     ENG2["Scenario catalog engine"]
     ENG3["Trace playback engine"]
     ENG4["Markdown+Mermaid renderer"]
     ENG5["Guardrail rule engine"]
     ENG6["Planner · blueprint · copilot tooling"]
+    ENG7["Cascade · coverage · discovery engines"]
+    ENG8["Battle-bench engine<br/>(cases · adapters · oracle · adversary)"]
     STORE["localStorage<br/>(plans, blueprints, collection, prefs)"]
+    SW["sw.js<br/>offline shell (precache)"]
   end
 
-  CDN["Mermaid 10 (CDN)"] --> ENG4
-  TABS --> ENG1 & ENG2 & ENG3 & ENG4 & ENG5 & ENG6
+  MM["Mermaid 10<br/>vendored (js/vendor)<br/>CDN only as fallback"] --> ENG4
+  TABS --> ENG1 & ENG2 & ENG3 & ENG4 & ENG5 & ENG6 & ENG7 & ENG8
   ENG5 --> STORE
   ENG6 --> STORE
+  ENG8 --> STORE
+  SW -.->|"serves the shell offline"| TABS
   ENG6 -->|/api/llm/*| PROXY["serve.py LLM proxy<br/>axiom first, Fox-Services fallback"]
+  ENG8 -->|/api/llm/* (live adapter)| PROXY
 ```
 
-There is **no server-side agent**. The Guardrail Lab's "agent" is a deterministic rule engine (`js/guardrail.js`) that classifies the request, scores risk, selects controls, and synthesizes a mock run — chosen so the demo is auditable and reproducible: an un-auditable analyzer would undercut the very thesis the tool teaches. The only model calls in the system are Fox - Architect chats, which stream through the same-origin proxy with a deterministic catalog fallback when no backend answers.
+There is **no server-side agent**. The Guardrail Lab's "agent" is a deterministic rule engine (`js/guardrail.js`) that classifies the request, scores risk, selects controls, and synthesizes a mock run — chosen so the demo is auditable and reproducible: an un-auditable analyzer would undercut the very thesis the tool teaches. The model calls in the system are Fox - Architect chats and the Battle Bench's live/red-team adapters — all streaming through the same-origin proxy with a deterministic fallback when no backend answers. Every model-backed result records which backend served it, and an errored or empty completion is never counted as a pass (see *Battle Bench*).
 
 ## Trust boundaries
 
@@ -90,12 +100,14 @@ flowchart TB
 
 ## Deployment
 
-The app ships as static files plus one small Python server. `serve.py` hosts the files (needed because the Design tab fetches `design/*.md`; `file://` would block that fetch) **and** the same-origin LLM proxy (`/api/llm/*`) with per-backend health, watchdog timeouts and axiom-first failover (`LLM_PRIMARY=fox` to flip the order). Docker is unnecessary; any static host works if you don't need the model backend.
+The app ships as static files plus one small Python server. `serve.py` hosts the files (needed because the Design tab fetches `design/*.md`; `file://` would block that fetch) **and** the same-origin LLM proxy (`/api/llm/*`) with per-backend health, watchdog timeouts and axiom-first failover (`LLM_PRIMARY=fox` to flip the order). Docker is unnecessary; any static host works if you don't need the model backend. An offline service worker precaches the shell, so a LAN-only or air-gapped host keeps working after the first visit — see *Runtime, Offline & Delivery*.
 
 | Component | Technology | Rationale |
 |---|---|---|
 | UI shell | Vanilla JS + CSS custom properties | Zero build step; every behavior inspectable in one place |
-| Diagrams | Mermaid 10 via CDN, sequential render queue | Same engine the AKM project uses; queue avoids label-measurement races |
-| Data | Static JSON, loaded once at boot | Trivially versionable, diffable, exportable |
+| Diagrams | Mermaid 10 vendored (`js/vendor`, CDN only as fallback), sequential render queue | Same engine the AKM project uses; queue avoids label-measurement races; works air-gapped |
+| Data | Static JSON, phased load (cascades deferred) | Trivially versionable, diffable, exportable |
 | Persistence | localStorage (plans, blueprints, collection, prefs) | Work survives reloads with no account and no cloud |
+| Offline shell | Service worker (`sw.js`) precaches the app; network-first with cache fallback | Works on a LAN-only or air-gapped host after one visit; `/api/*` is never cached |
+| Delivery | `serve.py`: gzip (cached per `(mtime, size)`), `immutable` vendor caching, conditional 304s, CSP + defensive headers | First load ~1.37 MB compressed; no version banner |
 | Model backend | Tailnet Ollama nodes via same-origin proxy | Qwen 3.8-27B answers stay on your network; deterministic fallback when unreachable |
