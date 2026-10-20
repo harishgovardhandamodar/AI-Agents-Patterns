@@ -444,7 +444,7 @@ def write_part(doc, part, cat):
 # --------------------------------------------------------------------------- #
 #  Part X — the application that publishes the catalog
 #
-#  The chapters above are built from catalog records; these six are built from
+#  The chapters above are built from catalog records; these seven are built from
 #  the repository the catalog ships in (README, design/*.md, serve.py, sw.js,
 #  Dockerfile, docker-compose.yml, .env.example). Every count in the prose goes
 #  through book_stats()/format_map(), so a record that changes on disk changes
@@ -455,8 +455,9 @@ APP_PART_N = "X"
 APP_PART_NAME = "The Application"
 APP_PART_DESC = (
     "The dashboard that publishes the catalog — what it is, how it carries a "
-    "design workflow, how it is designed and built, and how it keeps your data "
-    "and your model on hardware you control."
+    "design workflow, how it is designed and built, how it tests the defenses "
+    "it recommends, and how it keeps your data and your model on hardware you "
+    "control."
 )
 
 APP_PART_INTRO = [
@@ -471,7 +472,7 @@ APP_PART_INTRO = [
     "where that argument is applied to the tool itself — a rule engine instead "
     "of a model for the analysis, a gate instead of a build step, a cache "
     "instead of a CDN dependency, and a same-origin proxy instead of a "
-    "third-party API. The six chapters below follow the same shape as every "
+    "third-party API. The seven chapters below follow the same shape as every "
     "chapter above them, and every claim in them points at a file in the "
     "repository the catalog ships in.",
 ]
@@ -567,6 +568,7 @@ APP_CHAPTERS = [
                 ["Design & Architecture", "{design_docs} design documents rendered live with their Mermaid diagrams, a scroll-spy outline, a source toggle and a zoom viewer."],
                 ["Guardrail Lab", "Any agent idea analyzed into a full guardrail design with a mock run, saved to a collection in `localStorage` and exportable as JSON."],
                 ["Discovery Lab", "Deterministic ideation of novel scenarios: candidates compete, winners are kept, the rest are forgotten. Winners are drafts only, never auto-added."],
+                ["Battle Bench", "The catalog testing itself: all {scenarios} failure scenarios run as test cases against a configuration, through deterministic simulation, trace replay or the live model — graded by an oracle, attacked by an adversary (chapter {bench_ch})."],
             ],
         ),
         "figures": [
@@ -607,9 +609,10 @@ APP_CHAPTERS = [
             "key schema guard — the check that caught the historical "
             "`proteations` typo — plus coverage freshness and the offline "
             "precache list.",
-            "A model is an accelerator, never a dependency: nothing else in "
-            "the application calls one, and the chat degrades to a "
-            "deterministic answer when both backends are down.",
+            "A model is an accelerator, never a dependency: only the chat and "
+            "the bench's live adapter call one, and both degrade without it — "
+            "the chat to a deterministic catalog answer, the bench to its "
+            "deterministic adapters — when both backends are down.",
             "Rendered text is treated as data: user content is escaped before "
             "it reaches the DOM, and Mermaid runs in strict mode.",
         ],
@@ -721,6 +724,12 @@ APP_CHAPTERS = [
             "Rehearse in Live View: {traces} execution traces, filterable and "
             "replayable step by step on the control-flow diagram, with budget, "
             "cost and guardrail counters advancing beside them.",
+            "Test the defenses in Battle Bench: every one of the {scenarios} "
+            "scenarios becomes a test case against a configuration — simulated "
+            "deterministically, replayed from the {traces} traces, or answered "
+            "by the live model — graded by an oracle, attacked by an adversary "
+            "that names the load-bearing control, and saved for comparison "
+            "across time.",
             "Take it out of the app from the Overview export row: the whole "
             "architect report as Markdown, JSON or a print-friendly page.",
         ],
@@ -737,6 +746,7 @@ APP_CHAPTERS = [
                 ["Bound it", "Guardrail Lab", "Rule set citing cascades, mock run, saved collection"],
                 ["Plan the rollout", "Deployment Plan", "Scorecard, stack, autonomy dial, risk register, ADR"],
                 ["Rehearse", "Live View", "Replayed trace with step tracker, gauges and event log"],
+                ["Test the defenses", "Battle Bench", "Pass/fail per scenario against a configuration, adversary findings, saved runs"],
                 ["Hand it over", "Overview export", "Architect report as Markdown, JSON or print page"],
             ],
         ),
@@ -778,8 +788,8 @@ APP_CHAPTERS = [
         "glance": [
             ["Input", "An agent idea, in plain language"],
             ["Questions", "Build? missing? spread? in what order?"],
-            ["Stages", "frame → choose → test → trace → gap → compose → bound → plan → rehearse → export"],
-            ["Artifacts", "pattern set, gap backlog, rule set, architecture, scorecard, ADR, report"],
+            ["Stages", "frame → choose → test → trace → gap → compose → bound → plan → rehearse → battle-test → export"],
+            ["Artifacts", "pattern set, gap backlog, rule set, architecture, scorecard, ADR, bench report, report"],
             ["Evidence", "every artifact names the catalog record behind it"],
             ["Rehearsal", "{traces} traces, step-controllable, on the control-flow diagram"],
             ["Determinism", "rule engine in the browser; model optional"],
@@ -794,6 +804,9 @@ APP_CHAPTERS = [
             "is worth more than a paragraph that persuades.",
             "Rehearse the control flow before you ship it; the replay is "
             "cheaper than the incident.",
+            "Test the defenses before you hand over: a configuration nobody "
+            "ran the scenarios against is a hypothesis, and the bench keeps "
+            "the receipt.",
             "Export before you review, so the artifact survives outside the "
             "tool.",
         ],
@@ -1009,8 +1022,8 @@ APP_CHAPTERS = [
             "every module plugs into.",
             "**Feature modules.** {scripts} plain scripts: one per pane — "
             "overview, catalog, scenarios, cascades, coverage, deployment "
-            "planner, blueprints, copilot, live view, design, guardrail lab and "
-            "discovery — plus the shared playback widget, LLM client, grounding "
+            "planner, blueprints, copilot, live view, design, guardrail lab, "
+            "discovery and battle bench — plus the shared playback widget, LLM client, grounding "
             "context, report, dashboard, help, command palette and shortcuts.",
             "**Data.** Five JSON datasets. Phase one (patterns, scenarios, "
             "traces, coverage) is awaited for first paint; `cascades.json` "
@@ -1032,7 +1045,7 @@ APP_CHAPTERS = [
             [
                 ["Delivery", "`serve.py`", "Static host: gzip, ETag and Last-Modified revalidation, immutable vendor cache, security headers, CSP."],
                 ["Shell", "`index.html` · `js/app.js`", "Tab switcher, theme, data load, Mermaid queue, zoom viewer, `tabLoaders` and `PANE_INIT` registries."],
-                ["Feature modules", "`js/*.js` — {scripts} files", "One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, copilot, live view, design, guardrail lab, discovery — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts."],
+                ["Feature modules", "`js/*.js` — {scripts} files", "One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, copilot, live view, design, guardrail lab, discovery, battle bench — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts."],
                 ["Data", "`data/*.json` — 5 datasets", "Patterns, scenarios, cascades, traces and coverage; plain, versioned, diffable."],
                 ["Documents", "`design/*.md` — {design_docs} docs", "Architecture documents fetched at view time and rendered with live Mermaid."],
                 ["Offline", "`sw.js`", "{precache} precache entries; network-first with cache fallback; `/api/*` exempt."],
@@ -1228,7 +1241,7 @@ APP_CHAPTERS = [
             "No account and no cloud store means the only copies of your work "
             "are the one in your browser and whatever you exported.",
             "A model outage is not a tool outage: everything except the chat "
-            "works with no backend at all.",
+            "and the bench's live adapter works with no backend at all.",
         ],
         "glance": [
             ["Page egress", "same origin only (`connect-src 'self'`)"],
@@ -1422,6 +1435,190 @@ APP_CHAPTERS = [
             "network itself is gone.",
         ],
     },
+    {
+        "title": "Testing the Defenses",
+        "covers": "The battle-test bench: the catalog testing itself",
+        "overview": [
+            "Every chapter so far has recommended controls — spend guards, "
+            "approval gates, injection shields, sandboxes, audit trails. This "
+            "chapter is about the uncomfortable question that follows: do "
+            "those controls actually hold? The Battle Bench is the catalog "
+            "turned on itself. It takes all {scenarios} failure scenarios as a "
+            "test corpus, runs them against a *configuration* — a set of "
+            "controls an agent would actually deploy — and grades whether each "
+            "scenario's defenses held.",
+            "A case is a triple: one scenario, one configuration, one context "
+            "(persona, audience, model, backend, seed, mode). Cases are "
+            "*derived*, not listed — the corpus crossed with the "
+            "configurations — so full coverage is a property of the math: add "
+            "a scenario or a configuration and its cases appear automatically. "
+            "The bench also reports what a run did *not* test, by severity.",
+            "Three interchangeable executors answer the same cases: a "
+            "deterministic guardrail simulation ({scenarios} scenarios in a "
+            "fraction of a second, so the bench works with no model at all), a "
+            "golden adapter that replays the catalog's {traces} execution "
+            "traces, and a live adapter that puts the question to the local "
+            "model. An oracle grades every answer against assertions derived "
+            "from each scenario's own protections — and an adversary attacks "
+            "the configuration to find which control matters most.",
+        ],
+        "why": [
+            "A control nobody tested is a hypothesis. Teams adopt spend caps "
+            "and approval gates because the catalog recommends them, then "
+            "discover in production which ones were wired wrong, scoped too "
+            "narrowly, or quietly bypassed by the next feature. Running the "
+            "failure scenarios against the configuration *before* deployment "
+            "moves that discovery left, where it is cheap.",
+            "Testing against your own catalog also closes a loop the rest of "
+            "the book leaves open. The workflow chapters hand over designs, "
+            "rule sets and ADRs; the bench checks the handover by replaying "
+            "the threats the design claims to stop. A design that passes its "
+            "scenarios is still not proven safe — but a design that *fails* "
+            "them was never a design, only a document.",
+            "And the bench keeps the receipt. Runs are saved locally and "
+            "comparable across time, so a model swap or a config change shows "
+            "up as a diff of verdicts — regressions listed explicitly — "
+            "instead of a feeling that the new version behaves about the same.",
+        ],
+        "how": [
+            "**Configure.** Pick or edit configurations — autonomy tier, spend "
+            "caps, approval gates, injection shield, sandboxing, logging — as "
+            "plain data. The configuration dimensions are derived from the "
+            "Deployment Plan's own option tables, with a drift check that "
+            "fails loudly if the two ever disagree, so the bench can never "
+            "quietly test a different space than the app configures.",
+            "**Derive cases.** The bench crosses the {scenarios} scenarios "
+            "with the chosen configurations and contexts into the full case "
+            "list, each case stamped with hashes of exactly what was tested.",
+            "**Execute.** Run the matrix through one of three adapters: "
+            "`guardrail` simulates the configuration's controls "
+            "deterministically; `golden` replays the {traces} catalog traces; "
+            "`live` sends each scenario to the local model with the backend "
+            "pinned per run and recorded in every result. New executors "
+            "register through one function and inherit the runner, the oracle "
+            "and the interface unchanged.",
+            "**Grade.** The oracle derives machine-checkable assertions from "
+            "each scenario's own protections and evaluates them against the "
+            "result — pass, fail, skip, or error. Errored and skipped runs are "
+            "never counted as passes.",
+            "**Attack.** Turn the adversary on the configuration: ranked "
+            "exposure shows which scenarios it leaves most uncovered; a "
+            "mutation sweep erodes a passing baseline one dial at a time and "
+            "ranks the controls by sensitivity; a live red-team loop has the "
+            "model write attacks that the oracle grades for named-but-missing "
+            "controls.",
+            "**Compare and keep.** Diff two models on the same cases, save "
+            "runs for cross-time comparison, and export the report as Markdown "
+            "or JSON — the eighth work product in the architect report.",
+        ],
+        "components": (
+            "table",
+            ["Piece", "File", "Responsibility"],
+            [
+                ["Configuration, context, cases", "`js/bench.js`", "Config and context models with hashing, the drift check against the planner, corpus × configs case derivation, and coverage of what was not tested."],
+                ["Adapters", "`js/bench.js` registry", "`guardrail` (deterministic), `golden` (trace replay), `live` (the model, serialised, backend pinned); new executors register with one call."],
+                ["Oracle", "`js/bench.js` evaluator", "Assertions derived from each scenario's protections; pass / fail / skip / error, with errors never counted as passes."],
+                ["Runner and store", "`js/bench.js` + `localStorage`", "Serial execution with progress, saved runs comparable across time, verdict diffs with explicit regressions."],
+                ["Adversary", "`js/adversary.js`", "Exposure probe, mutation sweep over passing baselines, and the live red-team loop."],
+                ["Interface", "`js/benchui.js`", "Matrix view, configuration editor, adversary panel, model comparison, run store and report export."],
+                ["Golden traces", "`tools/gen_traces.py`", "Deterministic generator for the scenarios that had no replay — built from each scenario's own record, never hand-written to match a verdict."],
+            ],
+        ),
+        "figures": [
+            ("Five Capabilities, One Case List", "design/09-battle-bench.md",
+             "Five capabilities, one case list",
+             "Configuration, corpus, context, executors and oracle: the bench's five capabilities feed one derived case list, and every run is diffable across time."),
+            ("The Live Path", "design/09-battle-bench.md",
+             "The live path: measured, not assumed",
+             "Warm the model, send one case at a time with the backend pinned, read content only, and retry an empty completion with a doubled budget — never as a pass."),
+            ("Attacking the Configuration", "design/09-battle-bench.md",
+             "The adversary attacks the configuration, not the app",
+             "Exposure ranking, mutation sweep and the red-team loop all build on the same case derivation, so an adversary run covers the corpus like any other run."),
+        ],
+        "risks": [
+            "A passing synthetic run proves the *controls are wired*, not that "
+            "any agent is safe — the bench measures the controls the catalog "
+            "names, and reports the rest as gaps. Its own report template says "
+            "so.",
+            "Live verdicts are flaky by nature: roughly one call in four can "
+            "return an empty completion from a reasoning model whose hidden "
+            "reasoning consumed the token budget. Warm-up calls and escalating "
+            "retries reduce it; the bench reports the remainder as errors "
+            "rather than hiding them.",
+            "The oracle is only as complete as the scenario records. Two of "
+            "its own rules had to be corrected by measurement — a coverage "
+            "ratio instead of an identity check, escaped spend instead of "
+            "attempted spend — and the catalog itself carries at least one "
+            "scenario no listed control stops.",
+            "A red-team attack the model writes is bounded by what the model "
+            "can imagine; absence of findings is not absence of holes.",
+            "Small samples mislead: a two-case model comparison proves the "
+            "comparison mechanism, not a ranking between models.",
+        ],
+        "safeguards": [
+            "Errored and skipped runs are fenced out of pass rates by "
+            "construction — an adapter that fails has failed loudly, not "
+            "passed quietly.",
+            "The configuration space is checked against the planner's option "
+            "tables, so the bench cannot drift into testing controls the app "
+            "does not offer.",
+            "Every live result records which backend served it, with failover "
+            "disabled for the run — a silent backend swap is right for a chat "
+            "and wrong for a measurement you intend to diff.",
+            "The bench never mutates the shipped catalog: scenarios and "
+            "traces are read-only, runs live beside the other work products, "
+            "and generated traces come from scenario records rather than from "
+            "expected verdicts.",
+            "Coverage is reported both ways — what ran and what did not, by "
+            "severity — so an untested corner is visible instead of assumed.",
+        ],
+        "glance": [
+            ["Corpus", "{scenarios} scenarios · {traces} replayable traces"],
+            ["Coverage", "derived: corpus × configurations × contexts"],
+            ["Adapters", "guardrail (deterministic) · golden (replay) · live (model, pinned backend)"],
+            ["Oracle", "assertions from each scenario's protections; errors never pass"],
+            ["Adversary", "exposure rank · mutation sweep · live red-team loop"],
+            ["Comparison", "same cases, two models, explicit regressions"],
+            ["Memory", "saved runs in `localStorage`; Markdown/JSON report"],
+            ["First campaign", "defended config 53/{scenarios}; undefended fails 31; human gate is load-bearing"],
+            ["Honesty", "a pass proves wiring, not safety — printed in the report"],
+        ],
+        "takeaways": [
+            "Test the configuration, not the idea: scenarios × controls is "
+            "where a design meets the threats it claims to stop.",
+            "Derive coverage instead of listing it — a case list computed from "
+            "the corpus cannot quietly go stale.",
+            "Never let an error count as a pass; a bench that agrees with you "
+            "every time is not testing anything.",
+            "Measure the backend before trusting it: pin it, record it, and "
+            "report the flakiness you cannot remove.",
+            "Attack the configuration on purpose — exposure ranking, mutation "
+            "sweeps and red-team loops find the load-bearing control before "
+            "production does.",
+        ],
+        "refs": [
+            "`BATTLE-ANALYSIS.md` — the analysis, the twenty-iteration plan "
+            "and the first campaign's findings.",
+            "`design/09-battle-bench.md` — the bench architecture: the five "
+            "capabilities, the measured live path and the adversary.",
+            "`js/bench.js`, `js/adversary.js`, `js/benchui.js` — the engine, "
+            "the adversary and the tab.",
+            "`tools/gen_traces.py` — the deterministic trace generator.",
+            "`data/scenarios.json`, `data/traces.json` — the corpus the bench "
+            "runs.",
+        ],
+        "conclusion": [
+            "The bench is the book's thesis with the serial numbers filed "
+            "back on: deterministic enforcement outside the model, verification "
+            "outside the enforcement, and every claim pointing at a record. It "
+            "will not tell you an agent is safe — nothing synthetic can — but "
+            "it will tell you, case by case and run by run, whether the "
+            "controls you named are the controls you built. That receipt is "
+            "the difference between a design and a document, and it is why "
+            "this part of the book closes with a test harness rather than a "
+            "peroration.",
+        ],
+    },
 ]
 
 
@@ -1485,6 +1682,9 @@ def book_stats(cat):
         "precache": len(re.findall(r'"[^"]+"', precache)),
         "pattern_diagrams": sum(1 for p in cat["patterns"] if p.get("diagram")),
         "serve_lines": len((ROOT / "serve.py").read_text().splitlines()),
+        # The battle-bench chapter is appended last in APP_CHAPTERS, so its
+        # number is patterns + app chapters — recomputed, never hardcoded.
+        "bench_ch": len(cat["patterns"]) + len(APP_CHAPTERS),
     }
 
 
