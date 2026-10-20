@@ -95,6 +95,70 @@ async function main() {
     if (a11y.nestedMain !== 0) errors.push("no <main> may be nested inside <main>");
     if (a11y.tabs !== TAB_IDS.length) errors.push(`expected ${TAB_IDS.length} role=tab, got ${a11y.tabs}`);
 
+    // ---- the workflow (iterations 101-120) --------------------------
+    // A single journey that crosses the authoring tools: the planner's
+    // stack becomes a blueprint, the guardrail analysis becomes a
+    // blueprint, the mock run becomes a trace, and the report carries
+    // every work product. If any seam is broken, the user is stuck.
+    const wf = await page.evaluate(async () => {
+      const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+      const out = { steps: [] };
+      const step = (name, ok, detail) => out.steps.push({ name, ok, detail });
+
+      // the project spine exists and is unique
+      step("project store", typeof projGet === "function" && !!projGet(),
+        "active=" + (typeof projActiveId === "function" ? projActiveId() : "n/a"));
+
+      // deploy -> blueprint
+      dpState.done = true;
+      dpState.a.system = "Smoke refunds agent";
+      dpSave();
+      const ids = typeof dpStackPatternIds === "function" ? dpStackPatternIds() : [];
+      dpMaterialise("add");
+      await wait(300);
+      step("deploy -> blueprint", bpState.comps.length >= ids.length && ids.length > 0,
+        "stack=" + ids.length + " comps=" + bpState.comps.length);
+
+      // guard -> blueprint
+      const g = guardState.items[0];
+      const mapped = typeof guardAnalysisPatternIds === "function" ? guardAnalysisPatternIds(g) : [];
+      step("guard -> blueprint", mapped.length > 0, "mapped=" + mapped.length);
+
+      // guard -> live
+      if (typeof guardPromoteToTrace === "function") {
+        guardPromoteToTrace(g);
+        await wait(200);
+        const local = typeof liveLocal === "function" ? liveLocal() : [];
+        step("guard -> live", local.length > 0, "localTraces=" + local.length);
+      }
+
+      // the report carries all seven work products
+      const md = typeof rpMarkdown === "function" ? rpMarkdown() : "";
+      const want = ["## 1. Deployment plan", "## 2. Reference architecture", "## 3. Guardrail analyses",
+        "## 4. Cascade mitigation backlog", "## 5. Working set", "## 6. Discovery drafts",
+        "## 7. Fox - Architect consult"];
+      const missing = want.filter((w) => md.indexOf(w) < 0);
+      step("report sections", missing.length === 0, missing.length ? "missing " + missing.join(",") : "all 7");
+
+      // the workflow rail and the next-step engine
+      const stages = typeof wfStatus === "function" ? wfStatus().stages : [];
+      step("workflow rail", stages.length === 5, "stages=" + stages.length);
+      const nx = typeof wfNext === "function" ? wfNext() : null;
+      step("next engine", !!nx && !!nx.tab && !!nx.cta, nx ? nx.cta : "none");
+
+      // the navigation primitive opens items and keeps the deep link
+      goTo("scenarios", "fin-card-injection");
+      await wait(600);
+      const drawer = document.getElementById("detailOverlay");
+      step("goTo opens item", drawer.classList.contains("open") && location.hash.indexOf("#scenarios/") === 0,
+        "hash=" + location.hash);
+
+      return out;
+    });
+    for (const s of wf.steps) {
+      if (!s.ok) errors.push(`workflow: ${s.name} failed (${s.detail})`);
+    }
+
     const empty = results.filter(([, n]) => n <= 0).map(([id]) => id);
     if (empty.length) errors.push(`panes rendered empty: ${empty.join(", ")}`);
 
@@ -105,7 +169,8 @@ async function main() {
       for (const e of errors) console.error("  " + e);
       process.exitCode = 1;
     } else {
-      console.log(`OK: ${TAB_IDS.length} tabs rendered, single <main>, ${a11y.tabs} role=tab, 0 errors.`);
+      console.log(`OK: ${TAB_IDS.length} tabs rendered, single <main>, ${a11y.tabs} role=tab, ` +
+        `${wf.steps.length} workflow steps, 0 errors.`);
     }
   } finally {
     server.kill("SIGTERM");

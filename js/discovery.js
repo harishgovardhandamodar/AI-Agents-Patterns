@@ -275,7 +275,7 @@ function discCard(c, i) {
   const sevColor = c.severity === "critical" ? "var(--red)" : c.severity === "high" ? "var(--orange)" : "var(--accent)";
   const anchorChips = c.anchors.map(id => {
     const p = (DATA.patterns.patterns || []).find(x => x.id === id);
-    return p ? `<span class="cp-cite p" onclick="openPattern('${id}')" title="Pattern">◆ ${escHtml(p.name)}</span>` : "";
+    return p ? `<a class="cp-cite p" href="#patterns/${encodeURIComponent(id)}" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo('patterns','${id}');return false;" title="Pattern">◆ ${escHtml(p.name)}</a>` : "";
   }).join("");
   return `<div class="panel disc-card"><div class="dash-h" style="font-size:13px">${escHtml(c.title)}</div>` +
     `<div class="disc-meta"><span class="chip">${escHtml(c.domain)}</span>` +

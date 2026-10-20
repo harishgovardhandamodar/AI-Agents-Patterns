@@ -88,7 +88,7 @@ function casLinksBlock(list, title) {
   sorted.forEach(function (c) { (byCls[c.cls] = byCls[c.cls] || []).push(c); });
   const groups = Object.keys(order).filter(function (k) { return byCls[k]; }).map(function (k) {
     return '<div style="margin:5px 0"><span class="cls-chip ' + k + '">' + k + "</span> " +
-      byCls[k].map(function (c) { return '<span class="cp-cite c" onclick="openCascade(\'' + c.id + '\')">' + escHtml(c.name) + "</span>"; }).join(" ") + "</div>";
+      byCls[k].map(function (c) { return '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(c.id) + '" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'cascades\',\'' + c.id + '\');return false;">' + escHtml(c.name) + "</a>"; }).join(" ") + "</div>";
   }).join("");
   return '<div class="dsec"><h4>' + escHtml(title) + ' <span class="muted small" style="text-transform:none">(' + list.length + ")</span></h4>" +
     '<p class="small muted" style="margin:0 0 4px">How this can propagate — grouped by cascade class. Click to open the full analysis, simulator and mitigation plan.</p>' +
@@ -233,7 +233,7 @@ function mitRow(e, st) {
     '<div class="mit-m"><span class="chip" style="font-size:9px">' + fn[1] + "</span>" +
     '<span class="muted small">' + e.freq + " cascade" + (e.freq > 1 ? "s" : "") + " · worst impact " + ({ 4: "critical", 3: "high", 2: "medium", 1: "low" }[e.impact] || "?") + " · blast " + BLAST_ORDER[e.blast] + "</span></div>" +
     '<div class="mit-links">' + e.cascades.slice(0, 6).map(function (id) {
-      const c = casById(id); return c ? '<span class="cp-cite c" onclick="openCascade(\'' + id + '\')">' + escHtml(c.name.slice(0, 34)) + "</span>" : "";
+      const c = casById(id); return c ? '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(id) + '" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'cascades\',\'' + id + '\');return false;">' + escHtml(c.name.slice(0, 34)) + "</a>" : "";
     }).join("") + "</div>" +
     '<div class="mit-verify">verify: ' + escHtml(MIT_VERIFY[e.func]) + "</div></div>" +
     '<div class="mit-side"><input class="mit-owner" aria-label="Control owner" placeholder="owner" value="' + escHtml(owner) + '" oninput="mitSet(\'' + escHtml(e.key) + '\',\'owner\',this.value)">' +
