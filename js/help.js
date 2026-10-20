@@ -28,32 +28,34 @@ const GLOSSARY = [
 const HELP = {
   overview: {
     t: "Overview",
-    b: `<p>This tab answers <b>“where do I stand?”</b> — catalog size, severity split, domain coverage, and a Next-step pointer that looks at your actual planner, blueprint and copilot state.</p>
+    b: `<p>This tab answers <b>“where do I stand?”</b> — the workflow rail shows the five stages of the job (discover → research → design → harden → deliver) and where each one stands, and the <b>Next</b> box names the single most useful thing to do. It reads every tool: the planner, the blueprint, the copilot, the guardrail lab, the mitigation backlog and the discovery run.</p>
     <ul><li>The landing strip on top collects what's new (spotlight scenarios), what the field just found (field notes with paper links), an incident-anatomy diagram and the cascade-class chart — everything below it is the standing catalog summary.</li>
-    <ul><li>Start here after any break: the <b>Next</b> box tells you the single most useful thing to do.</li>
-    <li><b>Pins you make</b> in any catalog drawer collect in the Working set below for review and export.</li></ul>
+    <li><b>📁 Projects</b> in the top bar group everything you produce for one system — the plan, the blueprint, the guardrail analyses, the mitigation backlog and the pins. Switching projects keeps every one of them.</li>
+    <li><b>Pins you make</b> in any catalog drawer collect in the Working set below for review and export.</li>
+    <li>The export row produces the full architect report — all seven work products in one document.</li></ul>
     <p class="muted small">Tip: Alt+1…− jumps between tabs; ? shows every shortcut.</p>`
   },
   copilot: {
     t: "Fox - Architect",
     b: `<p>Ask in plain language. Answers are <b>grounded in this catalog</b> — every claim cites the pattern, scenario or cascade it came from, via the local model with a deterministic fallback when no backend answers.</p>
-    <ul><li>Scope answers with the <b>Ground answers in</b> checkboxes.</li><li>Pick a <b>persona</b> (AI Agent Architect, Security Architect, PhD Researcher, Council of Researchers) and an <b>audience</b> — the live model reshapes its voice and depth; the offline fallback always uses the default catalog voice.</li><li><b>Grounding</b> shows the exact context sent to the model — audit what it was allowed to know.</li><li>The top-bar pill shows which backend answered: Fox-Services, axiom, or the local fallback.</li><li><b>Ask Fox - Architect</b> buttons inside catalog drawers pre-fill a grounded question about that item.</li></ul>`
+    <ul><li>Scope answers with the <b>Ground answers in</b> checkboxes.</li><li>Pick a <b>persona</b> (AI Agent Architect, Security Architect, PhD Researcher, Council of Researchers) and an <b>audience</b> — the live model reshapes its voice and depth; the offline fallback always uses the default catalog voice.</li><li><b>Grounding</b> shows the exact context sent to the model — audit what it was allowed to know.</li><li>The top-bar pill shows which backend answered: Fox-Services, axiom, or the local fallback.</li><li><b>Ask Fox - Architect</b> buttons inside catalog drawers send the <i>artefact</i> — the pattern's failure modes, the scenario's attack chain, the cascade's propagation path — so the answer is grounded in the substance, not the title.</li><li>Citations are real links: focusable, copyable, and openable in a new tab.</li></ul>`
   },
   patterns: {
     t: "Patterns",
     b: `<p>107 reusable <b>design patterns</b> — the building blocks blueprints are made of. Each card shows failure modes and protections at a glance; the drawer has the full control flow.</p>
-    <ul><li>Filter by category, domain, or “has diagram / has failures”.</li><li><b>Least-protected-first sort</b> surfaces the patterns most worth hardening.</li><li>☰ switches to a dense list when you are scanning, not reading.</li></ul>
+    <ul><li>Filter by category, domain, or “has diagram / has failures”.</li><li><b>Least-protected-first sort</b> surfaces the patterns most worth hardening.</li><li>☰ switches to a dense list when you are scanning, not reading.</li><li><b>💾 Save set</b> stores the current filters as a named <b>research set</b> you can come back to or share.</li></ul>
     <p class="muted small">Tip: “Add to blueprint” in any drawer drops the pattern straight onto your canvas.</p>`
   },
   scenarios: {
     t: "Scenarios",
     b: `<p>${catN("scenarios", 43)} concrete <b>failure stories</b>: attack chain, protections that stop it, detection signals, incident response. Scenarios are what the threat model matches your blueprint against.</p>
-    <ul><li>Sort by least-protected to find the scenarios your controls don't cover yet.</li><li>“▶ mock run” replays the scenario as a trace in Live View.</li><li>“Add linked patterns” builds a blueprint from the scenario's defences.</li></ul>`
+    <ul><li>Sort by least-protected to find the scenarios your controls don't cover yet.</li><li>“▶ mock run” replays the scenario as a trace in Live View.</li><li>“Add linked patterns” builds a blueprint from the scenario's defences.</li><li><b>💾 Save set</b> stores the current filters as a named <b>research set</b>.</li></ul>`
   },
   cascades: {
     t: "Cascades",
     b: `<p>${catN("cascades", 180)} ways small faults <b>propagate and amplify</b>, in four classes: <b>inherent</b> (one part fails alone), <b>emergent</b> (only the interaction fails), <b>derived</b> (A must lead to B), <b>cascading</b> (crosses a boundary and amplifies).</p>
-    <ul><li>The Mitigation planner de-duplicates every control across all cascades, ranked by leverage — fix the top rows first.</li><li>Assign owners and status; it persists locally and exports to CSV.</li><li>The propagation simulator shows how a trigger fans out step by step.</li></ul>
+    <ul><li>The Mitigation planner de-duplicates every control across all cascades, ranked by leverage — fix the top rows first. The progress panel shows how much is owned and how much is done.</li><li><b>🎯 Focus un-owned</b> narrows the backlog to the work that still needs an owner; <b>🧩 Seed blueprint</b> pushes the top 10 onto your canvas.</li><li>Assign owners and status; it persists locally, travels with the project, and exports to CSV.</li>
+    <li>The propagation simulator shows how a trigger fans out step by step.</li></ul>
     <p class="muted small">Tip: adding more controls can never raise the Blueprint exposure index — it only discounts matched cascades.</p>`
   },
   coverage: {
@@ -64,18 +66,18 @@ const HELP = {
   deploy: {
     t: "Deployment Planner",
     b: `<p>Answer four intake questions; the planner returns a <b>readiness score, recommended stack, rollout plan, risk register and ADR</b> — every recommendation cited to the catalog.</p>
-    <ul><li>Work top to bottom; each section unlocks from the same answers, so changing an answer re-grounds everything.</li><li>Acknowledge risks to record that a human saw them; export the ADR for your repo.</li></ul>
+    <ul><li>Work top to bottom; each section unlocks from the same answers, so changing an answer re-grounds everything.</li><li><b>🧩 Materialise as blueprint</b> turns the recommended stack into a canvas in one step — the 13 catalog patterns it names, already chosen for your domain.</li><li>Acknowledge risks to record that a human saw them; export the ADR for your repo. Acknowledgements are undoable.</li></ul>
     <p class="muted small">Tip: the recommended stack can be materialised as a blueprint in one step (section 2).</p>`
   },
   blueprint: {
     t: "Blueprints",
     b: `<p>Compose your <b>reference architecture</b> from stages and controls. Coverage, cost, latency, risk and the threat-model <b>exposure index</b> recompute live.</p>
-    <ul><li>Templates are starting points, not answers — the warnings row tells you what's structurally wrong.</li><li><b>Compare</b> pits your canvas against any template or saved blueprint before you restore it.</li><li>Ctrl+Z undoes removes, clears, template swaps and library deletes.</li></ul>`
+    <ul><li>Templates are starting points, not answers — the warnings row tells you what's structurally wrong.</li><li><b>Compare</b> pits your canvas against any template or saved blueprint before you restore it.</li><li>The palette <b>multi-selects</b>: tick patterns and the preview tells you how many will be added, how many are already there, and which control families the addition closes.</li><li>Ctrl+Z undoes removes, clears, template swaps, library deletes — and now mitigation edits, risk acknowledgements and copilot regeneration.</li></ul>`
   },
   live: {
     t: "Live View",
     b: `<p><b>Replayable execution traces</b> — watch an agent run step by step: inputs, tool calls, outputs. The player controls work like a media player.</p>
-    <ul><li>Open any trace, then scrub, pause and inspect each step's payload.</li><li>Scenarios with a “mock run” chip link straight here.</li></ul>`
+    <ul><li>Open any trace, then scrub, pause and inspect each step's payload.</li><li>Scenarios with a “mock run” chip link straight here.</li><li>Traces you promoted from the Guardrail Lab are marked <b>local</b> and play in the same player.</li></ul>`
   },
   design: {
     t: "Design & Architecture",
@@ -85,12 +87,13 @@ const HELP = {
   guard: {
     t: "Guardrail Lab",
     b: `<p>Turn catalog knowledge into <b>enforceable rules</b>: analyse a request, get cascade-aware control recommendations, save them to a collection, export as JSON.</p>
-    <ul><li>Every analysis is stored locally and re-openable from the collection rail.</li><li>The report's 8 sections cite the exact cascades each rule defends against.</li></ul>`
+    <ul><li>Every analysis is stored locally and re-openable from the collection rail — the pane re-opens the one you were last reading.</li><li>The report's 8 sections cite the exact cascades each rule defends against.</li>
+    <li>The <b>handoff bar</b> takes the analysis further: <b>🧩 Add patterns to blueprint</b> maps its controls onto the catalog patterns that implement them, and <b>▶ Promote mock run to Live View</b> puts the replay in the trace library.</li></ul>`
   },
   discovery: {
     t: "Discovery Lab",
     b: `<p><b>Auto-discovery of novel scenarios</b>: gap-seeded candidates scored for novelty, iterated in forgetting rounds after arXiv:2610.20563 — winners are reseeded, near-duplicates are discarded each round.</p>
-    <ul><li>Run with forgetting off (compare mode) to watch novelty plateau on accumulated history.</li><li>Winners are review drafts, never catalog entries: ask Fox - Architect about one, copy it, or export JSON for curator review.</li></ul>`
+    <ul><li>Run with forgetting off (compare mode) to watch novelty plateau on accumulated history.</li><li><b>⬆ Promote to draft scenario</b> turns a winner into a catalog-shaped scenario — the same fields the shipped scenarios carry — kept in your draft collection and exportable for curation. The shipped catalog is never modified.</li><li>Winners are review drafts, never catalog entries: ask Fox - Architect about one, copy it, or export JSON.</li></ul>`
   }
 };
 

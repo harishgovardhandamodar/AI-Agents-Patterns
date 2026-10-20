@@ -8,6 +8,40 @@ The **Design & Architecture** tab follows the same pattern as the *Agentic Knowl
 
 ---
 
+## The workflow
+
+The app is built around a five-stage chain, and every tool belongs to one of
+its stages. A **project** (the 📁 chip in the top bar) is a named workspace
+that holds everything you produce for one system, so the planner, the
+blueprint, the guardrail analyses, the mitigation backlog and the pins all
+describe the *same* system.
+
+```
+  discover  →  research  →  design  →  harden  →  deliver
+  Overview     Scenarios     Deployment   Blueprints     Export
+  Patterns     Cascades      Planner      Guardrail Lab  (report)
+                             Coverage     Discovery
+```
+
+The Overview shows this chain as a **rail** with each stage's live state, and
+a **Next:** box that reads *every* tool — not just the three it used to know
+about — to name the single most useful next action.
+
+| Seam | What it does |
+|---|---|
+| Planner → Blueprint | "Materialise as blueprint" turns the recommended stack's 13 catalog patterns into a canvas. |
+| Guardrail Lab → Blueprint | The analysis's 9 reference controls are mapped to the catalog patterns that implement them and land on the canvas. |
+| Guardrail Lab → Live View | The mock run is already a replayable trace — promote it into the trace library and play it beside the 39 catalog traces. |
+| Mitigation backlog → Blueprint | "Seed blueprint from top 10" pushes the highest-leverage un-owned controls onto the canvas. |
+| Anything → Fox - Architect | "Ask" sends the *artefact* (the pattern's failure modes, the scenario's attack chain, the cascade's propagation path), not its title. |
+
+Every destination is a real link: `#blueprint/current`, `#deploy/plan`,
+`#discovery/run`, `#blueprint/lib:N`, `#overview/proj:<id>` and the catalog
+ids — all shareable, and the browser Back button closes the drawer rather
+than leaving the app.
+
+---
+
 ## Run it
 
 ### Docker — LAN + Tailscale (recommended)
@@ -53,27 +87,33 @@ A server is needed because the Design tab fetches `design/*.md` (`file://` would
 
 | Tab | What it does |
 |---|---|
-| **Overview** | Landing page (hero, new-in-catalog spotlight, dated field notes mapped to the catalog, incident-anatomy diagram, cascade-class chart) plus the architect dashboard (planner readiness, blueprint coverage/risk/exposure, Fox - Architect and rule-lab state, a deterministic "Next:" suggestion, pinned working set and report export), totals, patterns-per-category, scenarios-by-severity, domain coverage, and a "how defenses stack" view of protection layers. |
+| **Overview** | Landing page (hero, new-in-catalog spotlight, dated field notes mapped to the catalog, incident-anatomy diagram, cascade-class chart) plus the architect dashboard: a **five-stage workflow rail** (discover → research → design → harden → deliver) with each stage's live state, a "Next:" suggestion that reads every tool, the planner / blueprint / copilot / guardrail / mitigation / discovery cards, a pinned working set and report export. Also totals, patterns-per-category, scenarios-by-severity, domain coverage, and a "how defenses stack" view of protection layers. |
 | **Fox - Architect** | Chat with Qwen 3.8-27B (`quai-qwen3.8-27b`, served via **axiom first**, Fox-Services fallback, `LLM_PRIMARY` to flip) grounded in the catalog through the server-side proxy; streaming, citations, scope toggles, tables and Mermaid diagrams in answers, message actions (copy/regenerate), follow-ups, and a deterministic offline fallback. |
 | **Patterns** | The catalog: **107 design patterns** across 9 categories, each with how it works, components, failure modes, protections, related patterns, and a control-flow diagram (32 diagrams; every pattern also gets its category diagram). Filter by category, domain, or "has diagram / has failures"; card or compact-list layout; least-protected-first sort. |
 | **Scenarios** | **54 failure scenarios** across 26 domains (18 critical / 27 high / 9 medium) — including five on **self-improving agents** (reward hacking, self-distillation collapse, prompt self-editing, spawn-fleet runaway, metric gaming) and a pack covering the formerly patterns-only domains (content, cybersecurity, data, education, energy, governance, operations, robotics, sales, strategy, trading). Each opens to the attack chain, protection table, detection signals, incident response, and — where a replay is published — a mock run; scenarios without one are badged **no replay** and route you to Coverage & Gaps. |
-| **Cascades** | **191 catalogued composition cascades** in four classes (inherent, derived, emergent, cascading) with propagation paths, amplifiers, blast radius, detection and mitigation columns, plus a simulator and bidirectional links to the patterns/scenarios they involve. Paged explorer + ranked mitigation backlog (leverage-scored, owner/status tracked). |
+| **Cascades** | **191 catalogued composition cascades** in four classes (inherent, derived, emergent, cascading) with propagation paths, amplifiers, blast radius, detection and mitigation columns, plus a simulator and bidirectional links to the patterns/scenarios they involve. Paged explorer + ranked mitigation backlog (leverage-scored, owner/status tracked, with a progress panel and a "seed blueprint from the top 10" action). |
 | **Coverage** | Gap view: heatmap of patterns/scenarios/cascade-classes per domain, a **scenario-budget** bar chart (target ≥ 2 per domain, 7/26 meet it), ranked gap cards with concrete authoring suggestions, an **exportable backlog** (Markdown checklist / CSV) for a team to pick up, and domain drill-downs into the catalog. |
 | **Deployment Plan** | Four-step intake → readiness scorecard across weighted dimensions → recommended stack + guardrail config → autonomy/rollout dial → residual-risk register → ADR generator (citations validated against the catalog). |
-| **Blueprints** | Reference-architecture builder: compose patterns from templates or the palette into a pipeline + control overlay, with Mermaid export, deterministic warnings, a cost/latency/risk estimator, a per-blueprint **threat model** (exposure index vs. the catalog ceiling, matched scenarios/cascades/failure modes, one-click add of missing defenses) and **baseline compare** (template/library diff with metric deltas, undoable restore). |
+| **Blueprints** | Reference-architecture builder: compose patterns from templates or the palette into a pipeline + control overlay, with Mermaid export, deterministic warnings, a cost/latency/risk estimator, a per-blueprint **threat model** (exposure index vs. the catalog ceiling, matched scenarios/cascades/failure modes, one-click add of missing defenses) and **baseline compare** (template/library diff with metric deltas, undoable restore). The palette multi-selects, with a live preview of what the addition will close. |
 | **Live View** | An exhaustive, filterable library of **39 mock execution traces**, linked from the scenarios that have replays. The control-flow diagram highlights the active node while the step tracker, budget/cost/token gauges, guardrail counters, and event log advance in sync. Play / step / back / reset with adjustable speed; filter by domain, severity, verdict or free text. |
 | **Design & Architecture** | UML & architecture documents with live Mermaid — **eight docs**: system context, component/class UML, control flow & runtime, financial guardrail architecture, data model (ER), threat model, the architect value map, and runtime/offline/delivery. Rail + scroll-spy outline + source toggle + zoom viewer (wheel zoom, drag pan, ←/→ step). Loaded lazily on first visit. |
-| **Guardrail Lab** | Type any agent idea and it is analyzed into a full design (see below). Every analysis is saved to a collection in `localStorage` and exportable as JSON. |
-| **Discovery Lab** | Deterministic, grounded *ideation* of novel scenarios (after "Scaling Discovery Requires Forgetting"): each round generates parallel candidates, keeps only the winners and forgets the rest, reseeding the next round from the winners alone — with a compare mode that runs the same budget with forgetting off to show the plateau on this catalog. Winners are drafts only (never auto-added): review, ask Fox - Architect, or export as JSON. |
+| **Guardrail Lab** | Type any agent idea and it is analyzed into a full design (see below). Every analysis is saved to a collection in `localStorage` and exportable as JSON. The analysis is not a dead end: its controls map to catalog patterns that land on your blueprint, and its mock run can be promoted into the Live View trace library. |
+| **Discovery Lab** | Deterministic, grounded *ideation* of novel scenarios (after "Scaling Discovery Requires Forgetting"): each round generates parallel candidates, keeps only the winners and forgets the rest, reseeding the next round from the winners alone — with a compare mode that runs the same budget with forgetting off to show the plateau on this catalog. Winners are drafts only (never auto-added): **promote** one into a catalog-shaped scenario you can review, ask Fox - Architect about, or export as JSON. |
 
 **Global**: `Ctrl/⌘ K` (or `/`) opens a command palette over everything — patterns,
-scenarios, cascades, tabs, templates, saved blueprints — plus one-shot **commands**
-(`>` prefix), scoped prefixes (`pat:`/`scn:`/`cas:`), recents and usage learning.
+scenarios, cascades, tabs, templates, saved blueprints, **projects, research sets
+and workflow commands** — plus one-shot **commands** (`>` prefix), scoped prefixes
+(`pat:`/`scn:`/`cas:`/`proj:`/`stage:`), recents and usage learning.
 `?` shows keyboard shortcuts; `Alt+1…9/0/-` jump between tabs; `ⓘ guide` opens a
 contextual guide for the current tab (with glossary). `Ctrl+Z` / `Ctrl+Shift+Z`
-undo and redo destructive actions; the 🔔 bell keeps a notification history; `⛭ display`
-controls density and text size. The Overview export row produces a
-full architect report as Markdown, JSON, or a print-friendly page.
+undo and redo destructive actions (including mitigation owners, risk
+acknowledgements and copilot regeneration); the 🔔 bell keeps a notification
+history; `⛭ display` controls density and text size. The Overview export row
+produces a full architect report — Markdown, JSON, or a print-friendly page —
+covering **all seven work products**: the deployment plan, the blueprint and its
+threat model, the guardrail analyses, the cascade mitigation backlog with its
+owners, the pinned working set, the discovery drafts and the Fox - Architect
+transcript.
 
 ---
 
@@ -119,7 +159,10 @@ Outcome in the mock run: attempted $50,000 → **denied at the policy gateway, c
 ```
 index.html                 single-page shell (tabs + panes + overlays)
 css/styles.css             GitHub-dark palette via CSS custom properties; light theme
-js/app.js                  shell: tabs, theme, data load, Mermaid queue, zoom viewer, drawer
+js/app.js                  shell: tabs, theme, data load, Mermaid queue, zoom viewer, drawer, goTo()
+js/project.js              project spine: named workspaces owning the plan, blueprint, guards, backlog, pins
+js/workflow.js             the five stages, the "Next:" engine and the workflow rail
+js/ressets.js              saved research sets (named, shareable filter states)
 js/player.js               reusable playback widget (Live View + Guardrail Lab)
 js/patterns.js             Overview stats + Patterns catalog
 js/scenarios.js            Scenarios catalog + detail drawer
@@ -136,10 +179,10 @@ js/live.js                 trace library (filters) driving the player
 js/design.js               markdown renderer + Design & Architecture tab (lazy)
 js/guardrail.js            Guardrail Lab rule engine + collection + replay + cascade rules
 js/dashboard.js            architect dashboard projection on Overview
-js/palette.js              Ctrl/⌘K command palette
+js/palette.js              Ctrl/⌘K command palette (catalog, projects, research sets, workflow commands)
 js/shortcuts.js            global keyboard shortcuts + help
 js/vendor/mermaid.min.js   Mermaid 10, vendored so diagrams work air-gapped (CDN only as fallback)
-js/report.js               full report export (Markdown / JSON / print)
+js/report.js               full report export (Markdown / JSON / print) — all 7 work products
 data/patterns.json         107 patterns, categories, category diagrams
 data/scenarios.json        54 scenarios (attack chains, protections, detection, response)
 data/cascades.json         191 composition cascades (four classes)
@@ -163,7 +206,7 @@ tailscale/serve.json       Tailscale Serve config for the sidecar deployment
 package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / book / check
 eslint.config.mjs          flat ESLint config; no-undef over the app's shared global namespace
 test/data.test.mjs         catalog integrity, schema guard, coverage freshness, SW precache sync
-test/smoke.mjs             headless smoke (boots the server, walks all 12 tabs, asserts 0 errors)
+test/smoke.mjs             headless smoke (boots the server, walks all 12 tabs + the workflow journey, asserts 0 errors)
 .github/workflows/ci.yml   CI: lint + data integrity (blocking), headless smoke (non-blocking)
 ```
 
@@ -211,6 +254,6 @@ All datasets are plain JSON, versioned, and diffable. There are no hidden defaul
 
 ## Scope
 
-107 design patterns · 207 documented failure modes · 54 failure scenarios (18 critical / 27 high / 9 medium) · 191 composition cascades · 26 scenario domains · 39 replayable mock traces · 8 architecture documents · 38 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox - Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · command palette (commands, recents) and keyboard shortcuts · full report export · offline service worker + perf budget · linted, tested, CI-gated (no build step).
+107 design patterns · 207 documented failure modes · 54 failure scenarios (18 critical / 27 high / 9 medium) · 191 composition cascades · 26 scenario domains · 39 replayable mock traces · 8 architecture documents · 38 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox - Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · command palette (commands, recents, projects, research sets, workflow commands) and keyboard shortcuts · full report export covering all seven work products · project workspaces that carry the whole job · saved research sets · offline service worker + perf budget · linted, tested, CI-gated (no build step).
 
-**Caveats, honestly:** the exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like blueprints. The copilot's grounding is deterministic retrieval, not RAG fine-tuning; when both LLM backends are down it degrades to a deterministic catalog answer rather than failing. Cost/latency figures are estimates from stated assumptions, not benchmarks.
+**Caveats, honestly:** the exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like blueprints. The copilot's grounding is deterministic retrieval, not RAG fine-tuning; when both LLM backends are down it degrades to a deterministic catalog answer rather than failing. Cost/latency figures are estimates from stated assumptions, not benchmarks. A project lives in this browser's `localStorage` — back it up (⛭ display → Back up all) before clearing site data. Promoted discovery drafts are *your* drafts, not catalog entries: the shipped `data/*.json` is read-only.

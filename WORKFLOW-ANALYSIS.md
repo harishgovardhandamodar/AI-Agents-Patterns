@@ -359,6 +359,94 @@ Ordered by (impact ÷ effort). Each is a real, testable increment.
 
 ---
 
-## 5. Delivery status
+## 5. Delivery status — iterations 101–120 (all shipped)
 
-_(filled in as the iterations land)_
+Every item below is implemented, committed and verified headless against the
+running app. Evidence is measured, not estimated.
+
+### The spine
+
+| # | What shipped | Commit |
+|---|---|---|
+| 101 | **Project spine** — `js/project.js`: a named local workspace owning the plan, blueprint, guardrail analyses, discovery runs, mitigation backlog and pins | `eec9812` |
+| 102 | Project chip + panel in the top bar: switch, rename, new, export, import; tool state is snapshotted on switch and on tab-hide | `eec9812` |
+| 103 | Deployment → Blueprint: "Materialise as blueprint" — the 13 catalog patterns the recommended stack already names land on the canvas (the promise `js/help.js` had been making since iteration 44) | `6d25da0` |
+| 104 | Guardrail Lab → Blueprint: the 9 reference controls map to the catalog patterns that implement them (narrow, name-first, catalog-verified) and land on the canvas | `6d25da0` |
+| 105 | Guardrail Lab → Live View: the mock run is promoted into the trace library and plays in the same player as the 39 catalog traces | `6d25da0` |
+| 106 | Report v2: **all seven** work products (was three), stamped with the project | `4de59a7` |
+| 107 | "Next:" v2 — the suggestion engine reads every tool and follows the stage order | `4de59a7` |
+
+### The seams
+
+| # | What shipped | Commit |
+|---|---|---|
+| 108 | `goTo(tab, id)` — one navigation primitive replacing 13 hand-rolled `setTimeout` races; keeps the `#tab/item` deep link and the Back button working | `087adf8` |
+| 109 | Deep links for the work products: `#blueprint/current`, `#deploy/plan`, `#discovery/run`, `#blueprint/lib:N`, `#overview/proj:<id>`, plus Copy-link buttons | `0ffcfa5` |
+| 110 | "Ask Fox - Architect" sends the **artefact** (the pattern's failure modes, the scenario's attack chain, the cascade's propagation path, the guardrail design's controls) — not the title | `0ffcfa5` |
+| 111 | Citations become real `<a href="#tab/id">` links — focusable, keyboard-reachable, copyable, openable in a new tab. 15 links, 0 spans | `0ffcfa5`, `5ab60e1` |
+
+### The depth
+
+| # | What shipped | Commit |
+|---|---|---|
+| 112 | Mitigation backlog → a real work product: progress panel, "focus un-owned", "seed blueprint from the top 10", in the report and on the dashboard | `b69f7f7` |
+| 113 | Discovery → "promote to draft scenario": a catalog-shaped scenario (the shipped fields) kept in a draft collection, reviewable in the shared drawer, exportable. `data/*.json` stays read-only | `b69f7f7` |
+| 114 | Saved **research sets**: named, shareable filter states for the Patterns and Scenarios panes. A set stores the filter *state*, never the results, so it never goes stale | `723d344` |
+| 115 | Undo extended to the authoring tools' own decisions: mitigation owner/status, risk acknowledgements, copilot regeneration | `b69f7f7` |
+| 116 | Multi-select in the blueprint palette with a live preview: how many will be added, how many are already there, and which control families the addition closes | `723d344` |
+
+### The finish
+
+| # | What shipped | Commit |
+|---|---|---|
+| 117 | The five-stage workflow rail on the Overview, with each stage's live state | `4de59a7` |
+| 118 | Command palette v3: the current project, the next step, each workflow stage, and the actions the project enables; projects and research sets are searchable items; new `proj:` / `stage:` prefixes | `723d344` |
+| 119 | Full validation: a cross-tool journey in the headless smoke test (8 workflow assertions), plus a 13-width × 12-tab overflow sweep | `5ab60e1` |
+| 120 | Docs: README (the workflow, the seams, the new files, the report scope), the twelve in-app tab guides, this file | this commit |
+
+### Measured outcomes
+
+- **The authoring tools are no longer islands.** Before: Deployment,
+  Guardrail Lab, Design and Discovery had **0** cross-pane handoffs
+  between them. After: 4 working seams (planner → blueprint, guard →
+  blueprint, guard → live view, backlog → blueprint), each one a single
+  click from the tool that produced the work.
+- **The report is complete.** Before: 3 of 7 work products. After: 7 of 7
+  — measured by asserting the section headings in the headless smoke
+  test, so a regression fails the build.
+- **The "Next:" engine is honest.** Before it read 3 tools; after it
+  reads all of them, and follows the stage order (a user with no design
+  is told to design, not to triage a backlog that needs a design first).
+- **Navigation is no longer a race.** 13 hand-rolled
+  `switchTab(...); setTimeout(..., 60..120)` calls replaced by one
+  `goTo()` that waits for the pane to be ready. The browser Back button
+  still closes the drawer.
+- **Everything is addressable.** 12 work-product deep-link kinds
+  (`#blueprint/current`, `#deploy/plan`, `#discovery/run`,
+  `#blueprint/lib:N`, `#overview/proj:<id>`, plus the 5 catalog kinds).
+- **The state has a subject.** 3 independent identity fields (the
+  planner's `a.system`, the blueprint's `name`, the guardrail analysis's
+  title) became 1 project.
+- **Validation:** 13 widths (1920 → 360) × 12 tabs, **0 horizontal
+  overflow**, **0 page errors**; 1 `<main>`, 0 nested `<main>`, 12
+  `role=tab` all with `aria-selected`, 0 unlabelled controls, 0 unnamed
+  buttons, 15 citation links, 0 citation spans, 5 workflow rail stages.
+  `npm run lint` clean, `npm test` 8/8, `npm run test:e2e` OK with the
+  8 workflow assertions.
+
+### Notes / deliberately out of scope
+
+- `data/*.json` stays read-only. A promoted discovery draft is the
+  *user's* draft, in their own collection, exported for curation — the
+  shipped catalog is never modified by the app.
+- A project lives in this browser's `localStorage`. It is included in the
+  "Back up all" sweep, but a cleared profile still loses it — hence the
+  backup button and the project export/import.
+- The control → pattern map in the Guardrail Lab is a hand-written
+  keyword table, not a learned model. It is deliberately narrow: it
+  matches on the control's *name* first and takes the first rule that
+  fires, so a loose match cannot add patterns the user never chose.
+- The "add all" affordances (materialise, promote) still exist next to
+  the multi-select. The preview in iteration 116 exists so the user can
+  see exactly what a bulk add will do before committing it.
+

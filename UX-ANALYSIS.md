@@ -1,5 +1,11 @@
 # UX Analysis — AI Agent Patterns & Guardrails (iterations 31–50)
 
+> **Note.** This document covers iterations 31–80 (UX) and 61–80 (deep
+> UI/UX audit). A fourth, independent lens — the **work** itself rather than
+> the pixels — lives in `WORKFLOW-ANALYSIS.md` (iterations 101–120): the
+> project spine, the cross-tool handoffs, the addressable work products and
+> the workflow rail.
+
 Audit method: headless-browser DOM/computed-style inspection of every pane at
 1440×900 and 390×844, plus a code review of feedback, persistence and
 affordance paths. Findings below drove the 20 UI/UX iterations that follow.
