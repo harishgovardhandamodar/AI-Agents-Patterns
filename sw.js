@@ -14,12 +14,13 @@
  * Bump VERSION whenever the shell changes; activate() drops older caches.
  * The precache list is kept in sync by test/data.test.mjs.
  */
-const VERSION = "aap-v3";
+const VERSION = "aap-v4";
 
 const PRECACHE = [
   "index.html",
   "css/styles.css",
   "js/app.js",
+  "js/project.js",
   "js/player.js",
   "js/llm.js",
   "js/context.js",

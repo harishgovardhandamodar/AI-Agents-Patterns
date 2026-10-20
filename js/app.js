@@ -1711,6 +1711,7 @@ async function loadAll() {
     if (typeof initPalette === "function") await safeInit("palette", async () => initPalette());
     if (typeof initShortcuts === "function") await safeInit("shortcuts", async () => initShortcuts());
     if (typeof initTabBar === "function") await safeInit("tab bar", async () => initTabBar());
+    if (typeof initProject === "function") await safeInit("projects", async () => initProject());
     if (typeof dashRender === "function") await safeInit("dashboard", async () => dashRender());
     if (typeof initLanding === "function") await safeInit("landing", async () => initLanding());
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();

@@ -78,6 +78,7 @@ const bpState = { name: "", comps: [], notes: "", q: "", cat: "", lib: [], est: 
 function bpSave() {
   try { localStorage.setItem(BP_STORE, JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes, est: bpState.est })); } catch (e) {}
   if (typeof markSaved === "function") markSaved("bp");
+  if (typeof projTouch === "function") projTouch();
 }
 function bpSaveLib() {
   try { localStorage.setItem(BP_LIB_STORE, JSON.stringify(bpState.lib)); } catch (e) {}

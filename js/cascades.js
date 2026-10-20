@@ -117,7 +117,7 @@ function setCasView(v) {
   if (v === "mitigation") renderMitigation();
 }
 function mitLoad() { try { return JSON.parse(localStorage.getItem(MIT_STORE) || "{}"); } catch (e) { return {}; } }
-function mitSave(m) { try { localStorage.setItem(MIT_STORE, JSON.stringify(m)); } catch (e) {} }
+function mitSave(m) { try { localStorage.setItem(MIT_STORE, JSON.stringify(m)); } catch (e) {} if (typeof projTouch === "function") projTouch(); }
 function mitKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 90); }
 
 /* Aggregate every cascade's controls into a de-duplicated, scored backlog. */

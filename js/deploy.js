@@ -112,6 +112,7 @@ function dpLoad() {
 function dpSave() {
   try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus })); } catch (e) {}
   if (typeof markSaved === "function") markSaved("dp");
+  if (typeof projTouch === "function") projTouch();
 }
 function dpReset() {
   const snap = { a: JSON.parse(JSON.stringify(dpState.a)), step: dpState.step, done: dpState.done, target: dpState.target, ack: Object.assign({}, dpState.ack), adrStatus: dpState.adrStatus };

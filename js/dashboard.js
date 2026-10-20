@@ -116,6 +116,7 @@ function pinLoad() {
 }
 function pinSave() {
   try { localStorage.setItem(PIN_STORE, JSON.stringify(pinState)); } catch (e) {}
+  if (typeof projTouch === "function") projTouch();
 }
 function pinHas(kind, id) { return (pinState[kind] || []).indexOf(id) >= 0; }
 

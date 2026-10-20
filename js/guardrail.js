@@ -27,6 +27,7 @@ function persistGuard() {
     } catch (e2) { showNotif("Could not persist collection (storage unavailable)", { kind: "error" }); }
   }
   if (typeof markSaved === "function") markSaved("guard");
+  if (typeof projTouch === "function") projTouch();
 }
 function seedExample() {
   return analyzeRequest(
