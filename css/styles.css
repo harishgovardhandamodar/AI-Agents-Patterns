@@ -598,6 +598,27 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 .cp-cite.s { border-color: color-mix(in srgb, var(--orange) 45%, transparent); }
 .cp-cite.c { border-color: color-mix(in srgb, var(--purple) 45%, transparent); }
 .cp-cite.t { border-color: color-mix(in srgb, var(--teal) 45%, transparent); }
+
+/* ---------------- mitigation backlog progress (iteration 112) ----------- */
+.mit-progress {
+  margin: 10px 0; padding: 10px 12px;
+  border: 1px solid var(--border); border-radius: 8px; background: var(--bg);
+}
+.mit-prog-row {
+  display: flex; justify-content: space-between; gap: 10px;
+  font-size: 11.5px; color: var(--text2); margin: 4px 0 3px;
+}
+.mit-prog-row b { color: var(--text); font-weight: 600; }
+.mit-prog-bar {
+  height: 6px; border-radius: 3px; background: var(--bg3);
+  overflow: hidden; margin-bottom: 6px;
+}
+.mit-prog-fill {
+  height: 100%; background: var(--accent); border-radius: 3px;
+  transition: width .2s ease;
+}
+.mit-prog-bar.done .mit-prog-fill { background: var(--green); }
+.mit-actions { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
 .cp-offline-note {
   font-size: 11px; color: var(--orange); background: color-mix(in srgb, var(--orange) 12%, transparent);
   border: 1px solid color-mix(in srgb, var(--orange) 40%, transparent); border-radius: 7px;

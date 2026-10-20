@@ -1032,17 +1032,39 @@ function dpRiskList() {
   return { all: all, shown: dpRiskSrc === "all" ? all : all.filter(r => r.src === dpRiskSrc) };
 }
 function dpSetRiskSrc(v) { dpRiskSrc = v; dpRender(); }
+/* Acknowledging a risk is a decision, so it is undoable (iteration 115). */
 function dpAckRisk(key) {
   if (!dpState.ack) dpState.ack = {};
-  if (dpState.ack[key]) delete dpState.ack[key]; else dpState.ack[key] = 1;
+  const was = !!dpState.ack[key];
+  if (was) delete dpState.ack[key]; else dpState.ack[key] = 1;
   dpSave(); dpRender();
+  const apply = function (on) {
+    if (!dpState.ack) dpState.ack = {};
+    if (on) dpState.ack[key] = 1; else delete dpState.ack[key];
+    dpSave(); dpRender();
+  };
+  if (typeof undoPush === "function") {
+    undoPush((was ? "unacknowledge " : "acknowledge ") + key,
+      function () { apply(was); },
+      function () { apply(!was); });
+  }
 }
 function dpAckAll() {
   const list = dpRiskList().shown;
   if (!dpState.ack) dpState.ack = {};
   const allAcked = list.every(r => dpState.ack[r.key]);
+  const before = Object.assign({}, dpState.ack);
   list.forEach(r => { if (allAcked) delete dpState.ack[r.key]; else dpState.ack[r.key] = 1; });
   dpSave(); dpRender();
+  const apply = function (ack) {
+    dpState.ack = Object.assign({}, ack);
+    dpSave(); dpRender();
+  };
+  if (typeof undoPush === "function") {
+    undoPush((allAcked ? "clear" : "acknowledge") + " " + list.length + " risks",
+      function () { apply(before); },
+      function () { apply(dpState.ack); });
+  }
   showNotif(allAcked ? "Cleared acknowledgements" : "Acknowledged " + list.length + " risks");
 }
 function dpRiskCsv() {

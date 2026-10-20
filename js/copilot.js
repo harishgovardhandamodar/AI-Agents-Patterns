@@ -451,7 +451,9 @@ function cpAskNew(q) {
   cpRunAssistant(q);
 }
 /* Regenerate: drop the old assistant answer, re-run the same question
-   without duplicating the user turn. */
+   without duplicating the user turn. The old answer is kept so the
+   regeneration can be undone (iteration 115) — a model answer you did
+   not like should not be unrecoverable. */
 function cpRegen(i) {
   if (cpBusy) return;
   const cur = cpMessages[i];
@@ -461,8 +463,22 @@ function cpRegen(i) {
     if (cpMessages[j].role === "user") { q = cpMessages[j].content; break; }
   }
   if (!q) { showNotif("No question found to regenerate"); return; }
+  const old = cpMessages[i];
   cpMessages.splice(i, 1);
-  cpRunAssistant(q);
+  cpRunAssistant(q).then(function () {
+    if (typeof undoPush === "function") {
+      undoPush("regenerate the answer",
+        function () {
+          const at = Math.min(i, cpMessages.length);
+          cpMessages.splice(at, 0, old);
+          cpSave(); cpRenderLog();
+        },
+        function () {
+          const at = cpMessages.findIndex(function (m) { return m.role === "assistant" && m.content !== old.content; });
+          if (at >= 0) { cpMessages.splice(at, 1); cpSave(); cpRenderLog(); }
+        });
+    }
+  });
 }
 async function cpRunAssistant(q) {
   const assistant = { role: "assistant", content: "", cites: [], persona: cpPersona, audience: cpAudience };

@@ -152,7 +152,7 @@ function buildMitigationBacklog() {
   });
   return list;
 }
-const mitFilter = { func: null, pri: null, limit: 40, q: "" };
+const mitFilter = { func: null, pri: null, limit: 40, q: "", onlyUnowned: false };
 const MIT_PAGE_STEP = 40;
 function setMitFilter(k, v) {
   mitFilter[k] = (k === "limit") ? v : (v === null ? null : (k === "q" ? String(v).toLowerCase() : (mitFilter[k] === v ? null : v)));
@@ -165,7 +165,7 @@ function mitSetQ(v) {
   const inp = document.getElementById("mitSearch");
   if (inp) { inp.focus(); try { inp.setSelectionRange(inp.value.length, inp.value.length); } catch (e) {} }
 }
-function mitClearFilters() { mitFilter.func = null; mitFilter.pri = null; mitFilter.q = ""; mitFilter.limit = MIT_PAGE_STEP; renderMitigation(); }
+function mitClearFilters() { mitFilter.func = null; mitFilter.pri = null; mitFilter.q = ""; mitFilter.onlyUnowned = false; mitFilter.limit = MIT_PAGE_STEP; renderMitigation(); }
 function renderMitigation() {
   const box = el("casMitigation");
   if (!box) return;
@@ -174,19 +174,35 @@ function renderMitigation() {
   const filtered = all.filter(function (e) {
     if (mitFilter.func && e.func !== mitFilter.func) return false;
     if (mitFilter.pri && e.priority !== mitFilter.pri) return false;
+    if (mitFilter.onlyUnowned) {
+      const st = saved[e.key] || {};
+      if (st.owner || st.status === "done" || st.status === "accepted risk") return false;
+    }
     if (mitFilter.q && (e.text + " " + e.func).toLowerCase().indexOf(mitFilter.q) < 0) return false;
     return true;
   });
   const shown = filtered.slice(0, mitFilter.limit);
   const counts = { P1: 0, P2: 0, P3: 0 };
   all.forEach(function (e) { counts[e.priority]++; });
+  const prog = mitProgress();
   const fbtn = function (label, key, val, extra) {
     const on = mitFilter[key] === val;
     return '<button class="seg-btn' + (on ? " active" : "") + '" onclick="setMitFilter(\'' + key + '\',\'' + (val || "") + '\')">' + label + (extra || "") + "</button>";
   };
   box.innerHTML =
     '<div class="panel" style="margin-bottom:12px"><h3>Mitigation planner — ' + all.length + " distinct controls from " + casAll().length + " cascades</h3>" +
-    '<p class="muted small">Every control across all cascades, de-duplicated and ranked by leverage (how many cascades it addresses), the worst impact it prevents and the widest blast radius it bounds. Priority is relative (top 15% / next 25% / tail) — a planning heuristic, not your risk appetite. Assign owners and track status; it persists locally.</p>' +
+    '<p class="muted small">Every control across all cascades, de-duplicated and ranked by leverage (how many cascades it addresses), the worst impact it prevents and the widest blast radius it bounds. Priority is relative (top 15% / next 25% / tail) — a planning heuristic, not your risk appetite. Assign owners and track status; it persists locally and travels with the project.</p>' +
+    '<div class="mit-progress">' +
+      '<div class="mit-prog-row"><span>Owned</span><b>' + prog.owned + " / " + prog.total + "</b></div>" +
+      '<div class="mit-prog-bar"><div class="mit-prog-fill" style="width:' + (prog.total ? Math.round((prog.owned / prog.total) * 100) : 0) + '%"></div></div>' +
+      '<div class="mit-prog-row"><span>Done / accepted risk</span><b>' + (prog.done + prog.risk) + " · " + prog.pct + "%</b></div>" +
+      '<div class="mit-prog-bar done"><div class="mit-prog-fill" style="width:' + prog.pct + '%"></div></div>' +
+      '<div class="mit-prog-row"><span>In progress</span><b>' + prog.inProgress + "</b></div>" +
+    "</div>" +
+    '<div class="mit-actions">' +
+      '<button class="btn sm" onclick="mitFocusUnowned()">🎯 Focus un-owned</button>' +
+      '<button class="btn sm" onclick="mitToBlueprint(10)">🧩 Seed blueprint from top 10</button>' +
+    "</div>" +
     '<div class="seg" style="margin:10px 0 8px">' + fbtn("All functions", "func", null) + MIT_FUNCS.map(function (f) { return fbtn(f[1], "func", f[0]); }).join("") + "</div>" +
     '<div class="seg" style="margin:0 0 8px">' + fbtn("All priorities", "pri", null) + fbtn("P1", "pri", "P1", " · " + counts.P1) + fbtn("P2", "pri", "P2", " · " + counts.P2) + fbtn("P3", "pri", "P3", " · " + counts.P3) + "</div>" +
     '<div style="margin:0 0 8px"><input class="search" id="mitSearch" aria-label="Search mitigation controls" style="width:100%" placeholder="Search controls… (e.g. audit, sandbox, approval)" value="' + escHtml(mitFilter.q || "") + '" oninput="mitSetQ(this.value)"></div>' +
@@ -227,8 +243,111 @@ function mitRow(e, st) {
 function mitSet(key, field, val) {
   const m = mitLoad();
   m[key] = m[key] || {};
+  const before = m[key][field];
   m[key][field] = val;
   mitSave(m);
+  /* The backlog is real work — an owner or a status change is a decision,
+     so it must be undoable (iteration 111/115). */
+  if (typeof undoPush === "function") {
+    undoPush("mitigation " + field + " → " + (val || "(empty)"),
+      function () {
+        const mm = mitLoad();
+        if (mm[key]) {
+          if (before === undefined) delete mm[key][field];
+          else mm[key][field] = before;
+        }
+        mitSave(mm);
+        renderMitigation();
+      },
+      function () {
+        const mm = mitLoad();
+        mm[key] = mm[key] || {};
+        mm[key][field] = val;
+        mitSave(mm);
+        renderMitigation();
+      });
+  }
+  if (typeof wfPaintRail === "function") wfPaintRail();
+}
+
+/* ---------------- the backlog as a work product (iteration 112) ----------
+   The mitigation backlog is where a team's real hardening work lives: 900+
+   de-duplicated controls with owners and status. Until now it was an
+   island — invisible on the Overview, absent from the report, and lost
+   with the browser profile.
+
+   These helpers make it a first-class artefact of the project:
+   - a progress summary (how much is owned, how much is done),
+   - the ability to push the top un-owned controls onto the blueprint,
+   - a "focus" mode that filters the backlog down to what still needs work. */
+function mitProgress() {
+  const all = buildMitigationBacklog();
+  const saved = mitLoad();
+  let owned = 0, done = 0, progress = 0, inProgress = 0, risk = 0;
+  all.forEach(function (e) {
+    const st = saved[e.key] || {};
+    if (st.owner) owned++;
+    if (st.status === "done") done++;
+    else if (st.status === "in progress") inProgress++;
+    else if (st.status === "accepted risk") risk++;
+  });
+  return {
+    total: all.length, owned: owned, done: done, inProgress: inProgress, risk: risk,
+    pct: all.length ? Math.round(((done + risk) / all.length) * 100) : 0
+  };
+}
+
+/* The controls that still need an owner, highest leverage first. */
+function mitUnowned() {
+  const saved = mitLoad();
+  return buildMitigationBacklog().filter(function (e) {
+    const st = saved[e.key] || {};
+    return !st.owner && st.status !== "done" && st.status !== "accepted risk";
+  });
+}
+
+/* Add the top un-owned controls to the blueprint as real components. The
+   mapping is by function: each mitigation function has a natural
+   implementation pattern, so the backlog can seed the canvas. */
+const MIT_FUNC_PATTERN = {
+  prevent: ["input-sanitization", "policy-engine", "least-privilege"],
+  detect: ["audit-trail", "drift-monitoring", "telemetry"],
+  contain: ["circuit-breaker", "checkpoint-rollback", "kill-switch"],
+  recover: ["checkpoint-rollback", "fallback-chain", "human-in-the-loop"]
+};
+
+/* Push the top N un-owned controls' patterns onto the blueprint. */
+function mitToBlueprint(n) {
+  if (typeof bpAddMany !== "function") { showNotif("Blueprint builder unavailable"); return; }
+  const rows = mitUnowned().slice(0, n || 10);
+  if (!rows.length) { showNotif("Every mitigation control already has an owner", { kind: "ok" }); return; }
+  const ids = [];
+  rows.forEach(function (e) {
+    (MIT_FUNC_PATTERN[e.func] || []).forEach(function (id) {
+      if (ids.indexOf(id) < 0) ids.push(id);
+    });
+  });
+  const known = (typeof DATA !== "undefined" && DATA.patterns)
+    ? (DATA.patterns.patterns || []).map(function (p) { return p.id; }) : [];
+  const real = ids.filter(function (id) { return known.indexOf(id) >= 0; });
+  if (!real.length) { showNotif("No catalog pattern matches those controls", { kind: "warn" }); return; }
+  const added = bpAddMany(real);
+  showNotif("Added " + (added || real.length) + " pattern" + ((added || real.length) === 1 ? "" : "s") +
+    " from the top " + rows.length + " un-owned mitigation controls", {
+    kind: "ok",
+    actions: [{ label: "View", fn: function () { switchTab("blueprint"); focusPane("blueprint"); } }]
+  });
+  switchTab("blueprint");
+  focusPane("blueprint");
+}
+
+/* Filter the backlog down to the work that still needs doing. */
+function mitFocusUnowned() {
+  mitFilter.func = null; mitFilter.pri = null; mitFilter.q = "";
+  mitFilter.limit = MIT_PAGE_STEP;
+  mitFilter.onlyUnowned = true;
+  renderMitigation();
+  showNotif("Showing only the controls that still need an owner");
 }
 function exportMitigations(kind) {
   const list = buildMitigationBacklog();

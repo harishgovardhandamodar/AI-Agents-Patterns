@@ -213,8 +213,19 @@ function rpMarkdown() {
   out.push("## 6. Discovery drafts");
   out.push("");
   const run = (typeof discState !== "undefined" && discState.run) ? discState.run : null;
+  const promoted = (typeof discDrafts === "function") ? discDrafts() : [];
+  if (promoted.length) {
+    out.push("_Drafts you promoted into catalog-shaped scenarios — review before they enter the catalog._");
+    out.push("");
+    out.push("| Draft | Domain | Severity | Vector | Description |");
+    out.push("| --- | --- | --- | --- | --- |");
+    promoted.forEach(d => {
+      out.push(`| ${escMd(d.title)} | ${escMd(d.domain)} | ${escMd(d.severity)} | ${escMd(d.vector)} | ${escMd(String(d.description || "").slice(0, 180))} |`);
+    });
+    out.push("");
+  }
   if (run && run.winners && run.winners.length) {
-    out.push("_Drafts from the Discovery Lab — hypotheses for review, not catalog entries._");
+    out.push("_Drafts from the current Discovery Lab run — hypotheses for review, not catalog entries._");
     out.push("");
     out.push("| Draft | Domain | Class | Vector | Severity |");
     out.push("| --- | --- | --- | --- | --- |");
@@ -222,8 +233,9 @@ function rpMarkdown() {
       out.push(`| ${escMd(c.title)} | ${escMd(c.domain)} | ${escMd(c.cls)} | ${escMd(c.vector)} | ${escMd(c.severity)} |`);
     });
     out.push("");
-  } else {
-    out.push("_No discovery run yet — the Discovery Lab generates novel scenario candidates from the catalog's gaps._");
+  }
+  if (!promoted.length && !(run && run.winners && run.winners.length)) {
+    out.push("_No discovery drafts yet — the Discovery Lab generates novel scenario candidates from the catalog's gaps._");
   }
   out.push("");
 

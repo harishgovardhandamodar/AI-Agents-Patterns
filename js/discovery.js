@@ -255,24 +255,6 @@ function discExportMd(i) {
   if (navigator.clipboard) navigator.clipboard.writeText(md).then(() => showNotif("Draft copied as Markdown")).catch(() => showNotif("Clipboard blocked", { kind: "warn" }));
   else showNotif("Clipboard unavailable", { kind: "warn" });
 }
-function discExportJson() {
-  const list = (discState.run ? discState.run.winners : []).map(c => ({
-    id: c.id, title: c.title, domain: c.domain, severity: c.severity, likelihood: c.likelihood,
-    vector: c.vector, description: c.description, attackChain: c.attackChain,
-    protections: c.protections.map(p => ({ name: p.name, mechanism: "Candidate control from " + p.name + " — validate in the Blueprint tab.", layer: p.layer })),
-    detection: ["Draft: describe how this would first be noticed in logs/metrics."],
-    response: ["Draft: freeze the affected scope, then trace the originating transition."],
-    patternRefs: c.anchors, traceId: null
-  }));
-  if (!list.length) { showNotif("Run discovery first"); return; }
-  const blob = new Blob([JSON.stringify({ version: "draft-1", drafts: list }, null, 1)], { type: "application/json" });
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = "scenario-drafts.json";
-  document.body.appendChild(a); a.click(); a.remove();
-  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
-  showNotif("Exported " + list.length + " drafts for curator review");
-}
-
 /* ---- rendering ---- */
 function discRoundChart(run, other) {
   if (!run) return "";
@@ -303,14 +285,148 @@ function discCard(c, i) {
     `<ol class="disc-chain">${c.attackChain.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>` +
     (anchorChips ? `<div class="ref-chips">${anchorChips}</div>` : "") +
     `<div class="d-actions" style="margin-top:8px">` +
-    `<button class="btn sm primary" onclick="discAsk(${i})">🤖 Ask Fox - Architect</button>` +
+    `<button class="btn sm primary" onclick="discPromote(${i})" title="Turn this draft into a catalog-shaped scenario you can review and export">⬆ Promote to draft scenario</button>` +
+    `<button class="btn sm" onclick="discAsk(${i})">🤖 Ask Fox - Architect</button>` +
     `<button class="btn sm ghost" onclick="discExportMd(${i})">⧉ Copy draft</button></div></div>`;
+}
+
+/* ---------------- promote a draft to a catalog-shaped scenario (113)
+   The Discovery Lab produces *hypotheses*. Until now the only exit was
+   copy-paste into a JSON file for "curator review" — a manual round trip
+   with no way to see the draft in the shape the catalog actually uses.
+
+   A promoted draft becomes a real scenario record, in the user's own
+   draft collection, with the same fields the shipped scenarios carry:
+   id, title, domain, severity, likelihood, vector, description, attack
+   chain, protections, detection, response, patternRefs, traceId. It is
+   exportable, diffable and reviewable in the same drawer the catalog
+   scenarios use — but it never touches the shipped data/*.json, which
+   stays read-only. */
+const DISC_DRAFT_STORE = "aap.drafts.v1";
+
+function discDrafts() {
+  try {
+    const v = JSON.parse(localStorage.getItem(DISC_DRAFT_STORE) || "[]");
+    return Array.isArray(v) ? v : [];
+  } catch (e) { return []; }
+}
+function discDraftSave(list) {
+  try { localStorage.setItem(DISC_DRAFT_STORE, JSON.stringify(list)); } catch (e) {}
+  if (typeof projTouch === "function") projTouch();
+}
+
+/* Turn a discovery winner into a catalog-shaped draft scenario. */
+function discToScenario(c, i) {
+  return {
+    id: "draft-" + String(c.id || ("run" + i)).replace(/[^a-z0-9-]+/gi, "-").toLowerCase(),
+    title: c.title,
+    domain: c.domain,
+    severity: c.severity || "medium",
+    likelihood: c.likelihood || "medium",
+    vector: c.vector,
+    description: c.description,
+    attackChain: (c.attackChain || []).slice(),
+    protections: (c.protections || []).map(function (p) {
+      return { name: p.name, layer: p.layer || "policy", mechanism: p.why || "Candidate control — validate against the catalog." };
+    }),
+    detection: ["Draft: describe how this would first be noticed in logs or metrics."],
+    response: ["Draft: freeze the affected scope, then trace the originating transition."],
+    patternRefs: (c.anchors || []).slice(),
+    traceId: null,
+    draft: true,
+    novelty: c.novelty,
+    createdAt: new Date().toISOString()
+  };
+}
+
+/* Promote one winner into the draft collection. */
+function discPromote(i) {
+  const c = discState.run && discState.run.winners[i];
+  if (!c) { showNotif("Run discovery first"); return; }
+  const scn = discToScenario(c, i);
+  const list = discDrafts();
+  if (list.some(function (d) { return d.id === scn.id; })) {
+    showNotif("Already promoted — " + scn.id, { kind: "warn" });
+    return;
+  }
+  list.unshift(scn);
+  discDraftSave(list);
+  if (typeof renderDraftCollection === "function") renderDraftCollection();
+  showNotif("Promoted to a draft scenario — " + scn.id, {
+    kind: "ok",
+    actions: [
+      { label: "Review", primary: true, fn: function () { openDraftScenario(scn.id); } },
+      { label: "Export", fn: discExportJson }
+    ]
+  });
+}
+
+/* Open a promoted draft in the shared detail drawer, in the same shape a
+   catalog scenario uses. */
+function openDraftScenario(id) {
+  const d = discDrafts().find(function (x) { return x.id === id; });
+  if (!d) return;
+  const patLinks = (d.patternRefs || []).map(function (pid) {
+    const p = (DATA.patterns.patterns || []).find(function (x) { return x.id === pid; });
+    return p ? `<a href="#" onclick="goTo('patterns','${pid}');return false;">${escHtml(p.name)}</a>` : escHtml(pid);
+  }).join(" · ");
+  const html = `
+    <div class="dsec d-actions">
+      <span class="chip" style="color:var(--orange)">DRAFT — not a catalog entry</span>
+      <button class="btn sm" onclick="askAbout('scenario','${escHtml(d.id)}')">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" onclick="discExportJson()">⬇ Export drafts</button>
+    </div>
+    <div class="dsec">
+      <p><span class="sev-dot sev-${escHtml(d.severity)}"></span><b>${escHtml(d.severity.toUpperCase())}</b>
+      &nbsp; likelihood: <b>${escHtml(d.likelihood)}</b> &nbsp; vector: <b>${escHtml(d.vector)}</b> &nbsp; domain: <b>${escHtml(d.domain)}</b></p>
+      <p>${escHtml(d.description)}</p>
+    </div>
+    <div class="dsec"><h4>Attack chain</h4>
+      <ol style="padding-left:20px;margin:0">${(d.attackChain || []).map(function (a) { return "<li style=\"color:var(--text2);margin-bottom:5px\">" + escHtml(a) + "</li>"; }).join("")}</ol></div>
+    <div class="dsec"><h4>Candidate protections</h4>
+      <table class="tbl"><tr><th>Control</th><th>Layer</th><th>Mechanism</th></tr>
+      ${(d.protections || []).map(function (p) { return "<tr><td>" + escHtml(p.name) + "</td><td><span class=\"chip\">" + escHtml(p.layer) + "</span></td><td>" + escHtml(p.mechanism) + "</td></tr>"; }).join("")}
+      </table></div>
+    <div class="dsec"><h4>Detection signals</h4><ul>${(d.detection || []).map(function (x) { return "<li>" + escHtml(x) + "</li>"; }).join("")}</ul></div>
+    <div class="dsec"><h4>Incident response</h4><ul>${(d.response || []).map(function (x) { return "<li>" + escHtml(x) + "</li>"; }).join("")}</ul></div>
+    ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}`;
+  openDetail(d.title, d.severity + " · " + d.domain + " · draft", html, { tab: "discovery", id: d.id, title: d.title });
+}
+
+/* The draft collection rail, so promoted drafts are findable again. */
+function renderDraftCollection() {
+  const host = document.getElementById("discDrafts");
+  if (!host) return;
+  const list = discDrafts();
+  host.innerHTML = list.length
+    ? list.map(function (d) {
+        return '<div class="g-item" role="listitem" onclick="openDraftScenario(\'' + d.id + '\')">' +
+          '<div class="t">' + escHtml(d.title) + "</div>" +
+          '<div class="m">' + escHtml(d.domain) + " · " + escHtml(d.severity) + " · draft</div></div>";
+      }).join("")
+    : '<p class="muted small" style="padding:0 6px">Promote a discovery draft to keep it here as a catalog-shaped scenario.</p>';
+}
+
+/* Export the draft collection (plus the current run's winners). */
+function discExportJson() {
+  const list = discDrafts();
+  const run = (discState.run && discState.run.winners) ? discState.run.winners : [];
+  const out = list.concat(run.map(function (c, i) { return discToScenario(c, i); }));
+  if (!out.length) { showNotif("Nothing to export — run discovery or promote a draft first"); return; }
+  const blob = new Blob([JSON.stringify({ version: "draft-2", exported: new Date().toISOString(), drafts: out }, null, 1)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "scenario-drafts.json";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1500);
+  showNotif("Exported " + out.length + " draft scenario" + (out.length === 1 ? "" : "s") + " for curator review");
 }
 
 function discRender() {
   const main = el("discMain");
   if (!main) return;
   paintDiscControls();
+  renderDraftCollection();
   const run = discState.run;
   if (!run) {
     main.innerHTML = emptyState("🧪", "No discovery run yet", "The lab generates candidate scenarios from catalog gaps — domain/class/vector combinations nothing covers yet — scores their novelty, and iterates in forgetting rounds. Nothing is added to the catalog automatically.", "Run discovery", "discRunAll(false)");
@@ -374,6 +490,7 @@ function initDiscovery() {
   try {
     discLoad();
     discRender();
+    renderDraftCollection();
   } catch (e) {
     console.warn("discovery init failed", e);
     el("discMain").innerHTML = emptyState("🧪", "Discovery Lab could not start",
