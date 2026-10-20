@@ -24,6 +24,8 @@ The material is the *AI Agent Patterns & Guardrails* catalog: 107 patterns acros
 
 — Harish Govardhan Damodar
 
+The final part steps outside the catalog and into the application that publishes it: what the dashboard is for, how it carries a design workflow end to end, how it is put together, and what it does to keep your data, your diagrams and your model on hardware you control. It is written from the repository itself — README, design documents, server, worker and container files — for the same reason the pattern chapters are written from records: so that every claim can be checked against a file.
+
 ---
 
 # Acknowledgment
@@ -36,9 +38,9 @@ The catalog behind this book was built in the open, one entry at a time, with a 
 
 AI agents are programs that decide their own steps. That single property is why the design vocabulary below exists: once a system chooses its own actions, you cannot enumerate its behavior in advance, so you have to design its boundaries instead.
 
-The book is organized as 107 chapters across 9 parts, one chapter per catalog pattern. Each part is one category of the catalog:
+The book is organized as 113 chapters across 10 parts — 107 of them, one per catalog pattern, across 9 parts, then 6 chapters on the application that publishes the catalog. Each of the first 9 parts is one category of the catalog:
 
-| Part | Category | Patterns | What it covers |
+| Part | Category | Chapters | What it covers |
 |---|---|---|---|
 | I | Planning & Reasoning | 14 | How agents think before they act: decomposition, deliberation, self-correction. |
 | II | Agent Loop & Control | 9 | The core observe-think-act cycle and the levers that bound it. |
@@ -49,6 +51,7 @@ The book is organized as 107 chapters across 9 parts, one chapter per catalog pa
 | VII | Safety, Security & Governance | 27 | Guardrails: permissions, budgets, approvals, injection defenses, audit. |
 | VIII | Resilience & Reliability | 9 | Degrading gracefully when the model, tools or world misbehave. |
 | IX | Domain Playbooks | 7 | End-to-end reference architectures per industry, guardrails included. |
+| X | The Application | 6 | The dashboard that publishes the catalog — what it is, how it carries a design workflow, how it is designed and built, and how it keeps your data and your model on hardware you control. |
 
 **How to read a chapter.** Every chapter follows the same shape:
 
@@ -58,6 +61,8 @@ The book is organized as 107 chapters across 9 parts, one chapter per catalog pa
 - *Control-Flow Diagram* — the catalog's Mermaid source, rendered.
 - *Failure Modes and Risks* then *Protections* — the honest half.
 - *At a Glance*, *Key Takeaways*, *References and Related Patterns*, *Conclusion*.
+
+**Part X uses the same order.** Its 6 chapters open with *Overview* and *Why It Matters*, then *How It Works*, *Components*, the chapter's diagram, *Risks and Limitations*, *Safeguards*, *At a Glance*, *Key Takeaways*, *References* and *Conclusion* — the same shape, applied to the application instead of to a pattern.
 
 **Severity.** Failure modes, scenarios and cascades carry one of four severity labels — critical, high, medium, low — used consistently across the catalog so a critical entry in one part means the same thing as a critical entry in another.
 
@@ -219,6 +224,15 @@ Everything else in the catalog follows from it. Memory exists so the loop can ca
 - Chapter 105: SRE / DevOps Agent Playbook
 - Chapter 106: Research Agent with Citation Enforcement
 - Chapter 107: Procurement / Purchasing Agent Playbook
+
+**Part X — The Application**
+
+- Chapter 108: What the Application Is
+- Chapter 109: Supporting the Agentic Workflow
+- Chapter 110: Design Principles
+- Chapter 111: Architecture
+- Chapter 112: Privacy: Local Models and Data That Stay Put
+- Chapter 113: Isolation, Hardening and Offline Operation
 
 - Glossary
 - Index of Terms
@@ -11526,6 +11540,851 @@ sequenceDiagram
 ## Conclusion
 
 In the catalog this chapter was generated from, **Procurement / Purchasing Agent Playbook** is one of 107 patterns in *Domain Playbooks*, carrying 3 documented failure modes and 4 listed protections. Use it as a starting point, not a specification: the protection list is the part that survives contact with an adversary.
+
+---
+
+# Part X: The Application
+
+The dashboard that publishes the catalog — what it is, how it carries a design workflow, how it is designed and built, and how it keeps your data and your model on hardware you control.
+
+This book has been read through an application for its whole life, and so has every diagram in it. *AI Agent Patterns & Guardrails* is a 12-tab single-page dashboard of plain HTML, CSS and JavaScript, served by one small Python program, rendered by a vendored Mermaid engine, and reachable over a LAN, a tailnet or no network at all. This part opens that machine up.
+
+It closes the book deliberately. The pattern chapters argue that safety comes from deterministic enforcement outside the model; the application is where that argument is applied to the tool itself — a rule engine instead of a model for the analysis, a gate instead of a build step, a cache instead of a CDN dependency, and a same-origin proxy instead of a third-party API. The six chapters below follow the same shape as every chapter above them, and every claim in them points at a file in the repository the catalog ships in.
+
+| Chapter | Chapter title | Covers |
+|---|---|---|
+| 108 | What the Application Is | What the dashboard is and what it is for |
+| 109 | Supporting the Agentic Workflow | How the app carries a design workflow end to end |
+| 110 | Design Principles | The principles the tool holds itself to |
+| 111 | Architecture | How the pieces fit together at runtime |
+| 112 | Privacy: Local Models and Data That Stay Put | Where your data goes, and where it does not |
+| 113 | Isolation, Hardening and Offline Operation | Boundaries, container hardening and the offline shell |
+
+```mermaid
+flowchart LR
+  subgraph BROWSER["Browser (single page, 12 tabs)"]
+    TABS["Tab strip<br/>Overview · Fox - Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab"]
+    ENG1["Pattern catalog engine"]
+    ENG2["Scenario catalog engine"]
+    ENG3["Trace playback engine"]
+    ENG4["Markdown+Mermaid renderer"]
+    ENG5["Guardrail rule engine"]
+    ENG6["Planner · blueprint · copilot tooling"]
+    ENG7["Cascade · coverage · discovery engines"]
+    STORE["localStorage<br/>(plans, blueprints, collection, prefs)"]
+    SW["sw.js<br/>offline shell (precache)"]
+  end
+
+  MM["Mermaid 10<br/>vendored (js/vendor)<br/>CDN only as fallback"] --> ENG4
+  TABS --> ENG1 & ENG2 & ENG3 & ENG4 & ENG5 & ENG6 & ENG7
+  ENG5 --> STORE
+  ENG6 --> STORE
+  SW -.->|"serves the shell offline"| TABS
+  ENG6 -->|/api/llm/*| PROXY["serve.py LLM proxy<br/>axiom first, Fox-Services fallback"]
+```
+
+---
+
+# Chapter 108: What the Application Is
+
+**Part X — The Application**
+
+## Overview
+
+This book's catalog does not arrive as a folder of JSON files. It arrives as *AI Agent Patterns & Guardrails* — a 12-tab single-page dashboard of plain HTML, CSS and JavaScript, rendered at view time by a vendored Mermaid engine, with no build step, no bundler, no framework and no account anywhere in the stack.
+
+The lifecycle it covers is the one this book describes from its first chapter: design patterns, then what can go wrong, then how to protect against it, then a live replay of the control flow, then the architecture, and finally a lab that turns your own agent idea into a guardrail design with a mock run. The whole thing is served by `serve.py`, 467 lines of standard-library Python that also doubles as a same-origin relay to an optional model running on your own network.
+
+It is a reference you can interrogate rather than a shelf you can only read: filter, sort, replay, compose, compare, and take the result out as Markdown, JSON, CSV or a print-friendly page.
+
+## Why It Matters
+
+A catalog earns its keep when it can be asked questions. The application is organized around the four questions every architect brings to a new agent — *what do I need to build?*, *what am I missing?*, *how far does failure spread?*, and *what do I do, in what order?* — and each answer comes back as an artifact: a filtered pattern set, a ranked gap backlog, a cascade with its blast radius, a readiness score, an ADR you can hand to a reviewer.
+
+The flagship example is the proof. A $50,000 card charge enters the Guardrail Lab and is stopped by five independent layers — context, authority, runtime policy, human process, infrastructure — each one assuming the layers above it have already failed. The replay reports the charge denied at the policy gateway, contained in 2.8 seconds with $0 moved, while a legitimate $3,850 order passes through the same five.
+
+The output is reproducible. The lab's analysis comes from a deterministic rule engine running in your browser rather than from a model, so the same agent idea produces the same design tomorrow — which is what makes it discussable in a review.
+
+And it runs where it is needed: after a single visit the service worker holds the whole shell, so a LAN-only or air-gapped host keeps working with the cable unplugged.
+
+## How It Works
+
+1. `index.html` loads the shell script first. The shell owns the tab switcher, the theme, the data load, the Mermaid queue and the zoom viewer, and exposes two registries — `tabLoaders` and `PANE_INIT` — that every tab module fills with its own `init*()`.
+2. First paint is phased rather than total: patterns, scenarios, traces and coverage are awaited before the count badges appear, while `cascades.json` — the largest dataset — loads in parallel and is awaited only by the panes that actually need it.
+3. A tab builds on first visit behind a skeleton and stays built afterwards. `switchTab` runs a pending pane immediately instead of waiting its turn in the idle queue, so a slow pane is never blank.
+4. Every diagram enters one queue. The vendored Mermaid is loaded once, initialised with `securityLevel: 'strict'`, and run node by node — sequential, because Mermaid measures labels in shared global state and concurrent renders would race each other — with a CDN copy used only if the vendored file is missing.
+5. Opening Fox - Architect posts to `/api/llm/chat` on the page's own origin; `serve.py` walks its backend list in failover order and relays the reply as it arrives. With no backend online it answers with a payload the interface understands, and the chat falls back to a deterministic catalog answer instead of an error.
+6. Everything you build is kept in `localStorage` on this origin, and leaves only when you export it — as JSON, Markdown, CSV or a print page.
+
+## Components
+
+| Tab | What it does |
+|---|---|
+| Overview | Landing page and architect dashboard: catalog totals, spotlights, a deterministic "Next:" suggestion, the pinned working set, and the report export row. |
+| Fox - Architect | Grounded chat with a local model through the server-side proxy: streaming, citations, tables and Mermaid in answers, plus a deterministic offline fallback. |
+| Patterns | 107 design patterns across 9 categories, each with failure modes, protections, related patterns and a control-flow diagram; filter by category, domain or diagram. |
+| Scenarios | 54 failure scenarios across 26 domains — 18 critical, 27 high, 9 medium — each opening onto its attack chain, protection table, detection signals and response. |
+| Cascades | 191 composition cascades in four classes, with propagation paths, amplifiers, blast radius and mitigation columns, plus a simulator and a ranked mitigation backlog. |
+| Coverage | Gap view: heatmap per domain, a scenario-budget chart (7 of 26 meet it), ranked gap cards and an exportable authoring backlog. |
+| Deployment Plan | Four-step intake, readiness scorecard, recommended stack, autonomy and rollout dial, residual-risk register, and an ADR generator with validated citations. |
+| Blueprints | Reference-architecture builder with Mermaid export, deterministic warnings, a cost/latency/risk estimator, a per-blueprint threat model and baseline compare. |
+| Live View | 39 filterable mock execution traces, replayed on the control-flow diagram with step tracker, gauges and streaming event log. |
+| Design & Architecture | 8 design documents rendered live with their Mermaid diagrams, a scroll-spy outline, a source toggle and a zoom viewer. |
+| Guardrail Lab | Any agent idea analyzed into a full guardrail design with a mock run, saved to a collection in `localStorage` and exportable as JSON. |
+| Discovery Lab | Deterministic ideation of novel scenarios: candidates compete, winners are kept, the rest are forgotten. Winners are drafts only, never auto-added. |
+
+## System Context
+
+```mermaid
+flowchart TB
+  subgraph USER["People"]
+    ENG["Engineer / architect<br/>designing an agent"]
+    SEC["Security / risk reviewer"]
+    PM["Product owner<br/>(what may it do?)"]
+  end
+
+  subgraph SYS["AI Agent Patterns & Guardrails (this app)"]
+    DASH["Dashboard SPA<br/>+ same-origin LLM proxy"]
+  end
+
+  subgraph EXT["External knowledge (static, versioned)"]
+    PAT["data/patterns.json<br/>107 design patterns"]
+    SCN["data/scenarios.json<br/>54 failure scenarios"]
+    TRC["data/traces.json<br/>39 mock execution traces"]
+    CAS["data/cascades.json<br/>191 composition cascades"]
+    COV["data/coverage.json<br/>26-domain coverage index"]
+    DES["design/*.md<br/>8 architecture documents"]
+  end
+
+  subgraph LLM["Tailnet model backends (optional)"]
+    AXM["axiom :8210 (primary)<br/>Qwen 3.8-27B"]
+    FOX["Fox-Services :8210 (fallback)"]
+  end
+
+  ENG -->|"browse patterns · replay traces"| DASH
+  SEC -->|"study attack chains · protections"| DASH
+  PM -->|"submit agent idea → guardrail design"| DASH
+
+  DASH --> PAT
+  DASH --> SCN
+  DASH --> TRC
+  DASH --> CAS
+  DASH --> COV
+  DASH --> DES
+  DASH -->|grounded chat| AXM
+  DASH -->|failover| FOX
+```
+
+## Risks and Limitations
+
+- The catalog is deliberately unfinished: 54 scenarios across 26 domains, and only 7 of the 26 meet the two-per-domain budget the Coverage tab charts. The gap ships as an exportable backlog rather than being papered over.
+- The blueprint exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like designs rather than index numbers against feelings.
+- Fox - Architect grounds itself by deterministic retrieval over the catalog, not by fine-tuning: it names the record it used, and reading that record is still your job.
+- Cost, latency and benefit figures in the estimator are stated assumptions for comparison, not benchmarks on your infrastructure.
+- There is no build step, so nothing stops a mistake before runtime the way a type checker would; the substitute is the gate — lint, data-integrity tests, and a headless smoke test that boots the server and walks all 12 tabs.
+- It designs enforcement, it does not enforce. No part of this application sits between your agent and the world: what it produces is a design, a rule set and an ADR that your own runtime still has to implement.
+
+## Safeguards
+
+1. Every recommendation carries its source: cascade rules cite the cascade they break, guardrail configs name the layer they are enforced at, and the ADR generator validates its citations against the catalog before you see them.
+2. The lab's analysis is a rule engine, so it is auditable line by line and identical on every machine.
+3. Data integrity is tested, not trusted: `npm test` enforces id uniqueness, full referential integrity and a required/unexpected-key schema guard — the check that caught the historical `proteations` typo — plus coverage freshness and the offline precache list.
+4. A model is an accelerator, never a dependency: nothing else in the application calls one, and the chat degrades to a deterministic answer when both backends are down.
+5. Rendered text is treated as data: user content is escaped before it reaches the DOM, and Mermaid runs in strict mode.
+
+## At a Glance
+
+| Field | Value |
+|---|---|
+| Form | Static single-page app; no build step, no account |
+| Tabs | 12 tabs over one shell and 21 modules |
+| Catalog | 107 patterns · 9 categories · 207 failure modes · 289 protections |
+| Evidence | 54 scenarios · 191 cascades · 39 traces · 26 domains |
+| Diagrams | Vendored Mermaid in one queue; CDN only as a fallback |
+| Server | `serve.py` — static host plus same-origin model proxy |
+| Offline | Service worker precaches the shell (37 entries) |
+| Persistence | `localStorage`; exports are user-initiated |
+| Model | Optional; local backend first, deterministic fallback |
+| Gate | ESLint · node:test · headless smoke · CI |
+
+## Key Takeaways
+
+- The catalog is an application, not a document: 107 patterns, 54 scenarios and 191 cascades that you filter, replay and export instead of merely indexing.
+- Its unit of output is a reviewable artifact — a pattern set, a backlog, a rule set, a scorecard, an ADR — and each one names the record behind it.
+- The deterministic parts are deterministic on purpose, so a design review reproduces instead of drifting.
+- Offline is a first-class state: one visit, then no network.
+- What it makes is a design your runtime still has to implement.
+
+## References
+
+- `README.md` — run instructions, the twelve tabs, testing and performance, and the scope caveats quoted above.
+- `design/01-system-context.md` — context and container diagrams, trust boundaries, deployment.
+- `design/07-architect-analysis.md` — the four questions and the value map this chapter is organized around.
+- `index.html` and `js/app.js` — the shell, the tab registry and the panes themselves.
+- `serve.py` — the static host and the same-origin model proxy.
+- `sw.js` — the offline shell and its precache list.
+
+## Conclusion
+
+Read the rest of this book through it. Every diagram, count and failure mode in the pattern chapters is one of this application's screens, and Part X is what happens when you take the catalog's own advice and apply it to the tool that publishes the catalog: deterministic where it can be, gated where it cannot, and inside your network either way.
+
+---
+
+# Chapter 109: Supporting the Agentic Workflow
+
+**Part X — The Application**
+
+## Overview
+
+The loop this book describes has two halves. One is the runtime that executes it — context assembled, model proposes, gateway disposes, every iteration lands in an audit trail. The other is the design work that decides what that runtime should be in the first place.
+
+This application is about the second half. It does not run your agent; it carries the workflow that happens before runs, between runs and after runs — choosing patterns, writing the failure mode before the feature, deciding how much autonomy to grant, rehearsing the control flow, and producing the artifacts a review can approve.
+
+Its spine is the catalog's four questions: *what do I need to build?*, *what am I missing?*, *how far does failure spread?*, and *what do I do, in what order?* Each one is answered by a tab, and each answer leaves something behind.
+
+## Why It Matters
+
+Design work fails in a team when it stays verbal. "We should add a spend guard" is an opinion; a rule set with a per-transaction cap, a rolling window, a vendor allowlist and velocity detection — citing the cascade it breaks — is a design someone can implement and someone else can review.
+
+Keeping the evidence next to the advice is what makes that review possible: every proposal names the records behind it, so the argument happens about the catalog rather than about prose.
+
+It also compresses the loop. One session can go from a one-line agent idea to a threat model, a rollout plan and an exportable report, with a replayed control flow to show the team what failure looks like before it looks like that.
+
+## How It Works
+
+1. Frame the system on Overview: planner readiness, blueprint coverage, the state of the chat and the rule lab, a deterministic *Next:* suggestion, and the working set you have pinned.
+2. Choose the vocabulary in Patterns — 107 designs across 9 categories, filtered by domain or by whether they carry a diagram or documented failures.
+3. Test the threats in Scenarios: 54 recorded failures across 26 domains, each with its attack chain, protection table, detection signals and incident response.
+4. Trace the spread in Cascades — 191 composition cascades in four classes, with propagation paths, blast radius, a simulator and a leverage-ranked mitigation backlog.
+5. Find the gaps in Coverage: the heatmap, the two-per-domain budget chart (7 of 26 meet it today) and the exportable authoring backlog.
+6. Compose in Blueprints: patterns into a pipeline with a control overlay, Mermaid export, a cost/latency/risk estimator, and a threat model scored against the catalog ceiling.
+7. Bound it in the Guardrail Lab: the idea is analyzed into a full design — risk score, advice, tiered proposals, an enforcement diagram, a reference control set, cascade-aware rules and a mock run — then saved to a collection.
+8. Plan the rollout in Deployment Plan: intake, readiness scorecard, recommended stack, autonomy dial from shadow to autonomous, residual-risk register, then an ADR whose citations are validated against the catalog.
+9. Rehearse in Live View: 39 execution traces, filterable and replayable step by step on the control-flow diagram, with budget, cost and guardrail counters advancing beside them.
+10. Take it out of the app from the Overview export row: the whole architect report as Markdown, JSON or a print-friendly page.
+
+## Components
+
+| Workflow stage | Tab | Artifact produced |
+|---|---|---|
+| Frame the system | Overview | Dashboard state, pinned working set, "Next:" suggestion |
+| Choose the vocabulary | Patterns | Filtered pattern set with failure modes and protections |
+| Test the threats | Scenarios | Attack chain, protection table, detection signals |
+| Trace the spread | Cascades | Propagation path, blast radius, simulator run, backlog |
+| Find the gaps | Coverage | Gap cards and an exportable authoring backlog |
+| Compose the design | Blueprints | Architecture, estimator, threat model vs. ceiling |
+| Bound it | Guardrail Lab | Rule set citing cascades, mock run, saved collection |
+| Plan the rollout | Deployment Plan | Scorecard, stack, autonomy dial, risk register, ADR |
+| Rehearse | Live View | Replayed trace with step tracker, gauges and event log |
+| Hand it over | Overview export | Architect report as Markdown, JSON or print page |
+
+## From Catalog to Advisory System
+
+```mermaid
+flowchart LR
+  subgraph TODAY["Today — reference"]
+    P["107 patterns"]
+    S["54 scenarios"]
+    T["39 traces"]
+    C["191 cascades"]
+    D["8 design docs"]
+  end
+  subgraph ASK["Architect's four questions"]
+    Q1["What do I need to build?"]
+    Q2["What am I missing?"]
+    Q3["How far does failure spread?"]
+    Q4["What do I do, in what order?"]
+  end
+  subgraph NEW["New — advisory"]
+    CP["Fox - Architect<br/>(grounded, local model)"]
+    CV["Coverage &amp; gap analysis"]
+    CA["Cascade explorer + simulator"]
+    PL["Planner: readiness, stack,<br/>rollout, risk register"]
+    BP["Blueprint + threat model"]
+    RP["Exportable review"]
+  end
+  P --> CP
+  S --> CP
+  T --> CP
+  C --> CP
+  D --> CP
+  P --> CV
+  S --> CV
+  C --> CV
+  CP --> Q1
+  CP --> Q4
+  CV --> Q2
+  CA --> Q3
+  CA --> PL
+  CV --> PL
+  PL --> BP
+  BP --> RP
+  PL --> RP
+  CP --> RP
+```
+
+## Risks and Limitations
+
+- Design-time only. Nothing here is runtime enforcement — the gateway you diagram in the lab still has to be built and deployed by you.
+- Discovery Lab results are drafts. Winners are kept and the rest forgotten by design, but they are never auto-added to the catalog: a novel scenario stays an idea until a human reviews it.
+- Coverage is thin in places: 7 of 26 domains meet the scenario budget, and the Coverage tab says which ones.
+- Scores are starting points. A readiness score or an exposure index opens a conversation; neither certifies anything, and neither measures real-world risk.
+- Estimates stay estimates: cost and latency figures come from stated assumptions, not from benchmarks on your stack.
+
+## Safeguards
+
+1. Citations are validated, not decorative: the ADR generator checks its references against the catalog, and each cascade rule names the cascade it breaks.
+2. Every stage is inspectable in place — the same records drive the filter, the diagram, the rule and the export, so they cannot quietly disagree with each other.
+3. A seeded example ships with the lab, so the whole flow is visible on first load before you put your own idea into it.
+4. The mock run is replayable — play, step, back and reset over the same trace — so a review can stop at the exact step where it disagrees.
+5. Everything leaves the app explicitly, through export, copy or print, and stays in your browser until it does.
+
+## At a Glance
+
+| Field | Value |
+|---|---|
+| Input | An agent idea, in plain language |
+| Questions | Build? missing? spread? in what order? |
+| Stages | frame → choose → test → trace → gap → compose → bound → plan → rehearse → export |
+| Artifacts | pattern set, gap backlog, rule set, architecture, scorecard, ADR, report |
+| Evidence | every artifact names the catalog record behind it |
+| Rehearsal | 39 traces, step-controllable, on the control-flow diagram |
+| Determinism | rule engine in the browser; model optional |
+| Flagship | $50k card: five layers, denied in 2.8s, $0 moved |
+
+## Key Takeaways
+
+- Treat design as a workflow with stages and artifacts, not as a document you start writing.
+- Write the failure mode before the feature — the Scenarios and Cascades tabs are the inputs to the design, not an appendix to it.
+- Attach the record to the recommendation: a citation that validates is worth more than a paragraph that persuades.
+- Rehearse the control flow before you ship it; the replay is cheaper than the incident.
+- Export before you review, so the artifact survives outside the tool.
+
+## References
+
+- `README.md` — the twelve tabs and what each one produces.
+- `design/07-architect-analysis.md` — the four questions, the value map, and the deployment lifecycle the planner encodes.
+- `design/04-guardrails.md` — the flagship's enforcement sequence and charge lifecycle.
+- `design/03-control-flow.md` — the canonical agent loop and the replay state machine.
+- `data/scenarios.json`, `data/cascades.json`, `data/traces.json` — the records every artifact cites.
+
+## Conclusion
+
+A design workflow is only as good as what it hands over. The test of this one is whether a colleague can take the export — the pattern set, the rule set, the scorecard and the ADR — and build the thing without asking you what you meant. Every stage above exists to make that hand-over boring, and boring is the highest compliment a design review can pay itself.
+
+---
+
+# Chapter 110: Design Principles
+
+**Part X — The Application**
+
+## Overview
+
+The catalog's thesis is that safety lives in deterministic enforcement outside the model. The application applies that thesis to itself: it is not a toolchain project, it is a short list of constraints chosen so that what you read on screen is what the files on disk say.
+
+Seven principles, each one visible in a file — a rule engine instead of a model, a gate instead of a build step, plain JSON instead of a database, one namespace instead of a bundle, one diagram queue instead of concurrent renders, degradation instead of failure, and a printed budget instead of a claim.
+
+## Why It Matters
+
+A tool that tells you where your controls live has to be inspectable itself: you should be able to open the file it named and find the line.
+
+A reference that runs on a LAN, a tailnet or an air-gapped host cannot depend on a package registry, a font CDN, or a service that might be gone tomorrow.
+
+And claims about speed and offline behaviour are worthless unless they are measured. A tool that prints its own numbers can be caught being wrong — which is exactly the point of printing them.
+
+## How It Works
+
+1. **Deterministic outside the model.** The Guardrail Lab's analysis is a rule engine running in the browser: signals times weights, mapped to a tier, matched to proposals. The chat is optional, and when it is unavailable the analysis does not change.
+2. **No build step, but there is a gate.** Plain files that any editor can change, wrapped in `npm run lint` (ESLint `no-undef` over the shared globals), `npm test` (ids, schema, references, coverage freshness, precache sync) and a headless smoke test that boots the server and walks all 12 tabs.
+3. **Plain, versioned JSON with no hidden defaults.** The datasets are diffable and exportable, and a missing field renders as absent rather than as a silently-chosen value.
+4. **One global namespace with guarded edges.** `index.html` loads classic scripts — no modules, no bundler. Cross-module calls are checked with `typeof … === 'function'`, so any single module can fail to define itself without blanking the application.
+5. **One queue for every diagram.** Mermaid measures text in shared global state, so renders are serialised behind one promise chain: vendored engine first, CDN only as a fallback, initialise once in strict mode, run node by node, heal if fonts raced, and write an inline note instead of throwing.
+6. **Degrade, don't fail.** Phased boot, skeletons for panes that are still building, a pane that can jump the idle queue, a deterministic copilot fallback, and a worker that serves from cache when the network is gone.
+7. **Make the wins visible, not claims.** The Display panel prints a live budget from the sizes the worker recorded: first load about 1.37 MB compressed against 4.9 MB raw, and a repeat visit about 0.02 MB.
+
+## Components
+
+- **The shell** — `index.html` plus `js/app.js`: one namespace, two registries, and `typeof`-guarded edges between them.
+- **The gate** — lint, the `node:test` suite, the headless smoke test, and CI wiring that makes lint and data integrity blocking.
+- **The queue** — one promise chain around Mermaid, preserving each block's `data-src` so a re-render never feeds the engine its own generated CSS.
+- **The worker** — `sw.js`, with a `VERSION`, a 37-entry precache list, network-first fetches and `/api/*` excluded.
+- **The store** — plain JSON on disk, `localStorage` in the browser, exports on the way out.
+- **The budget** — the Display panel, reading the worker's own size records instead of a hard-coded number.
+
+## Guardrails for the App Itself
+
+```mermaid
+flowchart LR
+  EDIT["edit catalog or shell"] --> LINT["npm run lint<br/>ESLint no-undef<br/>over the shared globals"]
+  EDIT --> TEST["npm test (node:test)<br/>ids · schema · references<br/>coverage freshness · SW precache sync"]
+  EDIT --> E2E["npm run test:e2e<br/>headless: boot, walk all 12 tabs, 0 errors"]
+  LINT --> CI{"CI"}
+  TEST --> CI
+  E2E -.->|"non-blocking"| CI
+  CI -->|"green"| SHIP["ship"]
+```
+
+## One Diagram Queue
+
+```mermaid
+flowchart TB
+  REQ["mmRender(nodes)"] --> Q["mmQueue<br/>(single promise chain)"]
+  Q --> ENS["mmEnsure()"]
+  ENS -->|"window.mermaid?"| HAVE["use it"]
+  ENS -->|"no"| VEND["load js/vendor/mermaid.min.js"]
+  VEND -->|"missing"| CDN["fall back to jsDelivr"]
+  HAVE --> INIT["initialize — theme vars<br/>securityLevel strict"]
+  CDN --> INIT
+  INIT --> RUN["for each node: mermaid.run"]
+  RUN --> OK{"SVG present?"}
+  OK -->|"yes"| HEAL["heal pass if fonts raced"]
+  OK -->|"no"| ERR["inline .mm-err-note"]
+```
+
+## Risks and Limitations
+
+- No bundler means no type checker: a mistake in a module surfaces when that module runs, not when you save. The gate narrows the window; it does not close it.
+- One namespace means an accidental redefinition is possible. `no-undef` is what turns a typo into a failed lint instead of a runtime surprise.
+- Sequential rendering is a correctness decision that costs perceived speed — a diagram-heavy pane fills in one figure at a time.
+- The CSP keeps `'unsafe-inline'` for scripts and styles because the shell is inline-handler heavy and the print view writes its own `<style>`. That is a real widening of `script-src 'self'`, and the clearest concession the hardening makes.
+- Saved work lives in `localStorage`, which belongs to the browser profile: a fresh profile starts empty, so export before you move machines.
+- A precached shell is a stale shell until `VERSION` moves; the worker's activation step exists to keep that window short.
+
+## Safeguards
+
+1. `no-undef` runs over every `js/*.js`, with the shell's own top-level declarations declared as shared globals, so genuine typos fail and legitimate cross-file calls do not.
+2. A schema guard on the data fails the test on an unexpected key — the check that caught the misspelled `proteations` field.
+3. `VERSION` plus an activation step that deletes every cache that is not current, so a bumped shell cannot be served stale.
+4. `data-src` on every diagram plus a heal pass: a re-render never feeds Mermaid its own CSS, and a font race cannot leave a half-drawn figure.
+5. A deterministic fallback wherever a model could fail, so the tool still answers when the network or the backend does not.
+6. The perf budget is read from the worker's recorded sizes at runtime — measured, not asserted.
+
+## At a Glance
+
+| Field | Value |
+|---|---|
+| Thesis | deterministic enforcement outside the model, applied to the tool itself |
+| Build | none — plain files, no bundler, no framework |
+| Gate | lint · node:test · headless smoke · CI |
+| Data | plain versioned JSON; no hidden defaults |
+| Namespace | one global namespace, `typeof`-guarded edges |
+| Diagrams | vendored Mermaid, strict mode, one sequential queue |
+| Failure policy | degrade and skeleton, never blank |
+| Budget | first load ~1.37 MB (~4.9 MB raw); repeat ~0.02 MB |
+
+## Key Takeaways
+
+- The catalog's thesis — deterministic enforcement outside the model — is applied to the tool itself, not just to the agents it describes.
+- A gate is not a build step: lint, tests and a smoke test catch what a compiler would, without producing a bundle.
+- Serialising the diagram queue is a correctness requirement of the engine, and the fallback ladder keeps it offline-safe.
+- Degradation is designed: skeletons, guards and deterministic fallbacks mean a failure narrows the app instead of blanking it.
+- Print the measurement. If a performance or offline claim cannot be read off the running tool, it is marketing.
+
+## References
+
+- `design/08-runtime-offline.md` — the namespace, the boot phases, the queue, the worker and the gate.
+- `design/06-threat-model.md` — the threat model these constraints are answers to.
+- `README.md` — testing, offline behaviour and the published perf budget.
+- `tools/gen_cascades.py` and `tools/gen_coverage.py` — the deterministic generators behind the derived datasets.
+
+## Conclusion
+
+Principles are only worth writing down if you can point at where they are enforced, and each one here points at a file: a rule engine, a test, a queue, a version string, a printed budget. Take the list to your own system — it costs nothing to be deterministic outside the model, and everything to leave that part to the model.
+
+---
+
+# Chapter 111: Architecture
+
+**Part X — The Application**
+
+## Overview
+
+The deployed shape is static files plus one small server process: a delivery layer that serves and hardens those files, a shell that owns the tab switcher and its registries, 21 feature modules that register into it, five JSON datasets loaded in phases, 8 markdown documents fetched live, a service worker that caches the shell, and an optional same-origin model proxy.
+
+Nothing is compiled, so the architecture you read in the source is the architecture that runs: no bundle to unwind, no generated code to trace back, and no build output that can drift away from the repository.
+
+## Why It Matters
+
+Knowing which layer a control lives in is how you change it safely. A header belongs to the delivery layer, a rule to an engine, a record to the data layer and a cache to the worker — naming the layer is what stops a fix in one place becoming a bug in another.
+
+It also explains the deployment story. The image copies exactly what the server serves, the compose file adds privilege restrictions rather than behaviour, and any other static host can serve the same files, because nothing has to be generated first.
+
+## How It Works
+
+1. **Delivery.** `serve.py` serves the files with gzip, conditional revalidation for a cheap 304, immutable caching for the vendored engine, and the same header block on every single response.
+2. **Shell.** `index.html` and `js/app.js` own the tab switcher, theme, data load, Mermaid queue, zoom viewer and the registries every module plugs into.
+3. **Feature modules.** 21 plain scripts: one per pane — overview, catalog, scenarios, cascades, coverage, deployment planner, blueprints, copilot, live view, design, guardrail lab and discovery — plus the shared playback widget, LLM client, grounding context, report, dashboard, help, command palette and shortcuts.
+4. **Data.** Five JSON datasets. Phase one (patterns, scenarios, traces, coverage) is awaited for first paint; `cascades.json` streams in beside it and is awaited only by the panes that read it.
+5. **Documents.** `design/*.md` — 8 of them — are fetched live and rendered, which is the one reason a server is needed at all beyond hosting the optional model proxy.
+6. **Offline.** `sw.js` precaches 37 entries, answers same-origin GETs network-first with a cache fallback, and never touches `/api/*`.
+7. **Model.** `/api/llm/*` relays to a configured backend in failover order with watchdog timeouts, streaming the reply back chunked so the interface can render it as it arrives.
+
+## Components
+
+| Layer | Files | Responsibility |
+|---|---|---|
+| Delivery | `serve.py` | Static host: gzip, ETag and Last-Modified revalidation, immutable vendor cache, security headers, CSP. |
+| Shell | `index.html` · `js/app.js` | Tab switcher, theme, data load, Mermaid queue, zoom viewer, `tabLoaders` and `PANE_INIT` registries. |
+| Feature modules | `js/*.js` — 21 files | One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, copilot, live view, design, guardrail lab, discovery — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts. |
+| Data | `data/*.json` — 5 datasets | Patterns, scenarios, cascades, traces and coverage; plain, versioned, diffable. |
+| Documents | `design/*.md` — 8 docs | Architecture documents fetched at view time and rendered with live Mermaid. |
+| Offline | `sw.js` | 37 precache entries; network-first with cache fallback; `/api/*` exempt. |
+| Model | `serve.py` → `/api/llm/*` | Same-origin proxy: failover list, watchdogs, chunked relay, deterministic fallback. |
+
+## Component Diagram
+
+```mermaid
+flowchart TB
+  subgraph PRES["Presentation layer"]
+    TABS["AppTabs<br/>switchTab(name)"]
+    PATV["PatternsPane<br/>card grid + filters"]
+    SCNV["ScenariosPane<br/>card grid + filters"]
+    LIVV["LivePane<br/>trace playback"]
+    DSNV["DesignPane<br/>rail · outline · doc"]
+    GRDV["GuardPane<br/>collection + report"]
+    CASV["CascadesPane<br/>explorer + simulator"]
+    COVV["CoveragePane<br/>heatmap + backlog"]
+    DEPV["DeployPane<br/>planner + ADR"]
+    BPV["BlueprintPane<br/>compose + threat model"]
+    CPV["CopilotPane<br/>Fox - Architect chat"]
+    DSCV["DiscoveryPane<br/>forget-and-reseed ideation"]
+    DRW["DetailDrawer<br/>(pattern/scenario)"]
+    ZOOM["ZoomViewer<br/>clone-SVG pan/zoom"]
+  end
+
+  subgraph ENGINES["Engines"]
+    PATENG["PatternEngine<br/>filter · sort · detail"]
+    SCNENG["ScenarioEngine<br/>filter · attack-chain view"]
+    LIVE["TracePlayback<br/>play · step · highlight"]
+    MMR["MermaidEngine<br/>renderQueue: Promise"]
+    MD["MarkdownRenderer<br/>blocks → HTML"]
+    GRE["GuardrailEngine<br/>signals → report"]
+    CASENG["CascadeEngine<br/>classify · simulate"]
+    COVENG["CoverageEngine<br/>domain gaps · backlog"]
+    DISCENG["DiscoveryEngine<br/>seed → candidates → keep"]
+    COPV["Copilot<br/>grounded chat + citations"]
+  end
+
+  subgraph DATA2["Data layer"]
+    LOADER["DataLoader<br/>fetch ×5 (cascades deferred)"]
+    LS["CollectionStore<br/>localStorage"]
+    SW["ServiceWorker<br/>precache + cache"]
+  end
+
+  TABS --> PATV & SCNV & LIVV & DSNV & GRDV & CASV & COVV & DEPV & BPV & CPV & DSCV
+  PATV --> PATENG
+  SCNV --> SCNENG
+  LIVV --> LIVE
+  DSNV --> MD
+  GRDV --> GRE
+  CASV --> CASENG
+  COVV --> COVENG
+  DSCV --> DISCENG
+  CPV --> COPV
+  PATV --> DRW
+  SCNV --> DRW
+  DRW --> MMR
+  DSNV --> MMR
+  GRDV --> MMR
+  LIVV --> ZOOM
+  GRE --> LS
+  GRE & CASENG & COVENG & DISCENG & COPV --> LOADER
+  SW --> LOADER
+```
+
+## Phased Boot
+
+```mermaid
+flowchart TB
+  L["loadAll()"] --> P1["Phase 1 — await<br/>patterns · scenarios · traces · coverage"]
+  P1 --> PAINT["paintCounts()<br/>tab badges + dataStatus"]
+  PAINT --> EARLY["first panes: overview · patterns · scenarios<br/>plus the hash's pane"]
+  PAINT --> P2["Phase 2 — cascades.json in parallel"]
+  EARLY --> IDLE["idle queue — one pane init per slice"]
+  P2 --> CAT["catalogReady resolves"]
+  CAT --> WIDE["palette · dashboard · landing"]
+  IDLE --> DONE["all panes built"]
+```
+
+## Risks and Limitations
+
+- One small threaded server is sized for a team, not for the internet: there is no authentication anywhere in it, and it does not pretend otherwise.
+- The Design pane needs an HTTP origin, because `file://` blocks its fetch — so even a bare static host is required for that pane, however the rest of the app is deployed.
+- State lives in each browser's `localStorage` rather than in a database: no multi-user sync, and a fresh profile starts from nothing.
+- Modules share one global namespace, so an accidental redefinition is possible; the lint configuration is the guard (chapter 110).
+- The corpus is loaded rather than paged: five datasets and 8 documents sit in memory together, which is right at catalog scale and a limit well before it.
+
+## Safeguards
+
+1. One header block for every response — `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` and the content security policy — so a file added next month is hardened before anyone asks.
+2. Caching that cannot go stale silently: vendored assets are immutable, everything else revalidates with `If-Modified-Since`, and the worker drops old caches whenever `VERSION` moves.
+3. Blast radius inside the shell: a module that fails to register leaves a skeleton or a narrower pane, never a blank application, because every cross-module call is guarded.
+4. `/api/*` is excluded from the cache, so a model answer or a diagnostic beacon can never be replayed out of it.
+5. The image copies only what the server serves, and CI keeps the offline precache list in step with the files on disk.
+
+## At a Glance
+
+| Field | Value |
+|---|---|
+| Delivery | `serve.py` — gzip, 304 revalidation, immutable vendor |
+| Shell | `index.html` + `js/app.js`, one global namespace |
+| Modules | 21 scripts, one pane each, `typeof`-guarded |
+| Data | 5 JSON datasets, phased load with cascades deferred |
+| Documents | 8 `design/*.md`, fetched live |
+| Offline | `sw.js`, 37 entries, network-first |
+| Model | `/api/llm/*` — failover, watchdogs, chunked relay |
+| Container | python:3.12-slim, non-root, read-only, about 42 MB |
+| Health | urllib healthcheck on `/`, 3s interval, 1s timeout |
+
+## Key Takeaways
+
+- Seven layers, one process, zero generated files: the source is the deployment.
+- The delivery layer is where the headers, the compression and the cache policy live — hardening a response is one block of code, not a per-file decision.
+- Phased loading is an architecture decision, not an optimisation: first paint waits for what the first screen reads and nothing more.
+- The model sits behind the server, never beside the browser, which is what keeps the application one origin.
+- Deployment modes differ in privilege, not in behaviour — the same files are served by a laptop, a container or a static host.
+
+## References
+
+- `design/01-system-context.md` — context and container overview, trust boundaries, deployment.
+- `design/02-uml.md` — the component diagram and the classes behind each pane.
+- `design/03-control-flow.md` — boot phases, data flow and the render queue.
+- `design/08-runtime-offline.md` — delivery, offline shell and the perf budget.
+- `Dockerfile`, `docker-compose.yml`, `.env.example` — the container and its configuration.
+
+## Conclusion
+
+Architecture is the set of decisions that are expensive to change later, and this one is deliberately small: static files, one process, one origin, one queue, one worker. Everything else — the twelve panes, the engines, the lab — is replaceable detail built on top of it, which is the only kind of complexity a catalog tool should be allowed to carry.
+
+---
+
+# Chapter 112: Privacy: Local Models and Data That Stay Put
+
+**Part X — The Application**
+
+## Overview
+
+The privacy posture fits in one line from the README: *no data ever leaves your network for a third-party cloud*. It is enforced structurally rather than promised — the page can only reach its own origin, the model only reaches a backend you configured on your own network, and the things you build are kept in your browser.
+
+That matters more in this domain than most. A tool that holds your agent's architecture, your spend thresholds, your incident scenarios and your threat model is exactly the kind of thing you do not want phoning home before you have shipped anything.
+
+## Why It Matters
+
+Agents touch money, personal data, health records and customer content; the design document you write for them is the map of where those things move. Publishing that map by using a design tool would be a leak on day one.
+
+A local model keeps the questions inside the boundary. Fox - Architect is grounded in the catalog and answered by a model on your own network, so asking how your spend guard should work does not become somebody else's telemetry.
+
+There is no account, no cloud store and no analytics vendor: there is no server-side copy of your work to breach, because there is no server-side copy.
+
+## How It Works
+
+1. The browser talks to itself first. Every `fetch` and `XMLHttpRequest` the page's scripts make is bound by `connect-src 'self'`, so the network client in the page cannot open a connection to any origin but the one that served it.
+2. The proxy walks its backends in failover order. `/api/llm/chat` tries the primary backend on your tailnet first and the local one second (`LLM_PRIMARY` flips the order), with watchdogs of 5 seconds to connect, 60 to the first token, 45 of silence mid-answer and 600 in total.
+3. The reply is relayed as it arrives, tagged with the backend that produced it. If neither backend answers, the proxy returns a normal response carrying `ok: false` and the reason, and the chat runs its deterministic catalog fallback instead of showing an error.
+4. What you save stays in `localStorage` on this origin — patterns, scenarios, blueprints, collections and preferences — with no sync and no background upload. Exports happen only when you ask for one.
+5. Diagnostics are small and server-side: the beacon accepts a short payload, truncates the message, kind, tab and user-agent fields before writing, logs at DEBUG to the server's own stderr, and is never served back to anyone.
+
+## Components
+
+| Path | Where it lives | Crosses the machine boundary? |
+|---|---|---|
+| Patterns, scenarios, cascades, traces, coverage | `data/*.json` on the same origin | No — fetched once, then from cache |
+| Design documents and diagrams | `design/*.md`, rendered by the vendored engine | No — CDN only if the vendored file is missing |
+| Collections, blueprints, plans, preferences | `localStorage` on this origin | No — browser-local until you export |
+| Model prompts and answers | Browser → `/api/llm/*` → your backend | Only to the backend you configured on your network |
+| Diagnostics beacon | `/api/diag` → server stderr, DEBUG level | To the same server; truncated before it is written |
+| Perf counters and session state | Page memory | No — printed in the Display panel, not sent |
+| Anything a third party could buy | Nowhere — no account, no cloud, no analytics | No |
+
+## Where the Local Model Sits
+
+```mermaid
+sequenceDiagram
+  participant UI as Fox - Architect UI
+  participant PX as serve.py /api/llm
+  participant AX as axiom :8210 (primary)
+  participant FS as Fox-Services :8210
+  UI->>PX: chat(messages, model, context)
+  PX->>AX: /v1/chat/completions (stream)
+  alt axiom healthy
+    AX-->>PX: SSE deltas (served model reported)
+  else axiom down and Fox-Services online
+    PX->>FS: /v1/chat/completions (stream)
+    FS-->>PX: SSE deltas
+  else neither available
+    PX-->>UI: 503 → UI runs deterministic fallback
+  end
+  PX-->>UI: SSE deltas + X-Fox-Backend
+```
+
+## Risks and Limitations
+
+- On your network is not the same as zero transmission. Prompts do leave the browser for the backend you configured — point `AXIOM_LLM_URL` or `FOX_LLM_URL` at a public API and the traffic follows them, because the browser's security policy governs the page, not the server's egress.
+- The proxy has no authentication and no secrets, by design; its own documentation says so. Anyone who can reach the port can use whatever backend you pointed it at, which is why the stated scope is a LAN, a tailnet or a CIDR rather than the open internet.
+- `localStorage` is plain, per-browser storage: a fresh profile has none of your collections, and clearing site data clears them. Export before you switch machines.
+- The diagnostics beacon still carries your user agent and client IP into the server's log — server-side only, DEBUG level, but it is a log.
+- Offline is earned after one visit, so a genuinely air-gapped host has to be seeded once before it can run with the network out.
+
+## Safeguards
+
+1. The page's own reach is pinned by `connect-src 'self'`, `Referrer-Policy: no-referrer`, no third-party script beyond the documented Mermaid CDN fallback, and no analytics of any kind.
+2. The service worker never caches `/api/*`, so model calls and diagnostics always go to the network rather than being frozen into a cache someone could read later.
+3. Watchdogs bound a hung backend, and an upstream 5xx skips that backend for the next one in the failover list.
+4. The beacon is truncated at the source — message to 300 characters, kind and tab to 20, user-agent to 120 — before anything is written.
+5. No account and no cloud store means the only copies of your work are the one in your browser and whatever you exported.
+6. A model outage is not a tool outage: everything except the chat works with no backend at all.
+
+## At a Glance
+
+| Field | Value |
+|---|---|
+| Page egress | same origin only (`connect-src 'self'`) |
+| Model egress | your network: primary backend, then fallback; `LLM_PRIMARY` flips |
+| Model | Qwen 3.8-27B, optional; deterministic answer if it is down |
+| Saved work | `localStorage`; exports are user-initiated |
+| Account / cloud | none |
+| Analytics | none — one truncated same-origin beacon, DEBUG to stderr |
+| Diagrams | vendored Mermaid; CDN only as a documented fallback |
+| Retention | no server-side store; clearing the profile clears the collections |
+| Scope | LAN, tailnet or CIDR — not published to the internet |
+
+## Key Takeaways
+
+- Privacy here is structural: one origin, one optional proxy, one local model — not a policy page.
+- Prompts and answers do travel, and they travel only to a backend you chose on a network you own.
+- Your artifacts never leave the browser unless you export them, and there is no account that could hold a copy.
+- The honest limitations are real: no proxy authentication, plain browser storage, and a log line for the beacon.
+- Point the backend URLs somewhere public and the guarantees move with them — the boundary is where you put it.
+
+## References
+
+- `README.md` — the no-third-party-cloud claim and the deployment scopes.
+- `serve.py` — the proxy, the failover order, the watchdogs and the truncating diagnostics handler.
+- `design/05-data-model.md` — retention and privacy: what is stored, where, and what leaves.
+- `design/07-architect-analysis.md` — where the local model sits in the architecture.
+- `design/06-threat-model.md` — the STRIDE table this posture answers.
+- `.env.example` — the backend URLs and watchdog timeouts you can change.
+
+## Conclusion
+
+Privacy in a tool like this is a topology, not a promise: one origin the page cannot leave, one proxy that only knows backends you configured, one browser profile that holds your work, and a deterministic answer waiting when the model is not there. Know the three places data can move — browser to origin, server to backend, browser to export — and you know exactly what this application can and cannot leak.
+
+---
+
+# Chapter 113: Isolation, Hardening and Offline Operation
+
+**Part X — The Application**
+
+## Overview
+
+Isolation here means four different things at once: the browser from the page's own content, the process from its host, the service from the network, and the application from the clock — the last one being offline operation, which is what makes an air-gap deployment real instead of aspirational.
+
+Each has a control you can read in a file: a header block in the server, a Dockerfile, a compose file, and a service worker. None of them requires trusting the model, the vendor or each other.
+
+## Why It Matters
+
+A static shell plus one small server is a small surface, but only if it is a bounded one. Small surfaces that listen on a port still need to say who may talk to them and what they may do.
+
+This application holds your threat model and your spend thresholds. Neither should be one missing escape or one open port away from being readable by something you did not invite.
+
+And a LAN or air-gapped deployment is only honest if it keeps working with the cable out — otherwise the offline claim is a screenshot, not a capability.
+
+## How It Works
+
+1. **In the browser.** Every response carries the same hardening — `nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer` and a content security policy with `frame-ancestors 'none'` — and the server declines to advertise its version. User text is escaped before it is rendered, and Mermaid runs in strict mode.
+2. **In the container.** The image is a slim Python base with only the served files copied in, running as a non-root uid with a nologin shell; compose runs it with a read-only root filesystem, `cap_drop: ALL`, `no-new-privileges`, a tmpfs for `/tmp`, and a health check that re-requests `/` on a short interval.
+3. **On the network.** The service is published on an address you choose — your LAN, your tailnet, a CIDR — and the dedicated Tailscale variant shares the container's network namespace so `tailscale serve` fronts the loopback port and nothing else is exposed.
+4. **In time.** After one visit the service worker has precached the shell, so same-origin requests are answered network-first with a cache fallback and the offline chip reads *Offline · cached*. A `VERSION` bump drops the old caches so clients re-precache instead of running a stale shell.
+
+## Components
+
+| Axis | Control | What it buys you |
+|---|---|---|
+| Content | Escaped user text; Mermaid `securityLevel: 'strict'` | Answers and markdown are data, never code |
+| Headers | `nosniff` · `DENY` · `no-referrer` · `frame-ancestors 'none'` | No sniffing, no framing, no referrer leak |
+| Fingerprint | Fixed server token, system version suppressed | The server does not advertise what it is |
+| Identity | Non-root uid with a nologin shell; only served files copied in | A compromised request runs as nothing useful |
+| Privilege | Read-only rootfs · `cap_drop: ALL` · `no-new-privileges` · tmpfs `/tmp` | The process cannot write, escalate or hold a capability |
+| Exposure | Published on your LAN, tailnet or CIDR; loopback behind `tailscale serve` | The port exists exactly where you put it |
+| Model path | Same-origin proxy, no secrets, `/api/*` never cached, watchdogs, truncated beacon | The one outbound path is bounded and auditable |
+| Time | `sw.js` precaches 37 entries; network-first; `VERSION` invalidation | After one visit, no network is needed |
+
+## The App's Own Threat Model
+
+```mermaid
+flowchart LR
+  ATK["Web threat<br/>XSS · clickjacking · MIME sniff ·<br/>exfil · stale cache · proxy abuse"] --> APP["App shell + serve.py"]
+  APP --> M1["CSP: default-src 'self'<br/>no third-party script<br/>connect-src 'self'"]
+  APP --> M2["escHtml on all user text —<br/>Mermaid runs securityLevel strict"]
+  APP --> M3["XFO DENY · nosniff · no-referrer<br/>Server version suppressed"]
+  APP --> M4["Service worker caches the shell only —<br/>never /api/*"]
+  APP --> M5["Same-origin LLM proxy;<br/>no third-party egress"]
+```
+
+## The Offline Shell
+
+```mermaid
+flowchart TB
+  INST["install"] --> PRE["precache PRECACHE list<br/>(revalidates the shell the page just fetched)"]
+  PRE --> ACT["activate — drop older caches<br/>and claim clients"]
+  ACT --> FETCH{"fetch — GET, same-origin,<br/>not /api/"}
+  FETCH -->|"yes"| NET["network-first"]
+  NET -->|"ok"| STASH["stash decoded body in cache<br/>+ x-aap-len size header"]
+  NET -->|"offline"| HIT["cache.match(req)<br/>navigation falls back to index.html"]
+  FETCH -->|"no"| PASS["pass through untouched"]
+```
+
+## Risks and Limitations
+
+- The content security policy keeps `'unsafe-inline'` for scripts and styles because the shell is inline-handler heavy. It is a backstop against third-party script, not a sandbox against inline handlers.
+- Nothing in the deployment authenticates a user. Whoever can reach the port can read the catalog and use the proxy — the trust boundary is the network you published it on, and that is stated as scope rather than hidden behind a login.
+- A precached shell is a stale shell until `VERSION` bumps; the worker's activation step exists precisely so that window cannot persist.
+- A read-only root filesystem means the container keeps nothing: logs go to stderr, `/tmp` is a tmpfs, and anything you want to keep has to leave through an export.
+- Offline state is per-browser. Clearing site data, opening a new profile or moving to another machine all cost one more visit.
+
+## Safeguards
+
+1. Spoofing: answers are untrusted data, rendered as escaped text and markdown, never executed.
+2. Tampering: same-origin fetch, `nosniff`, `frame-ancestors 'none'`, and a pinned vendored Mermaid.
+3. Repudiation: the data is versioned in git, and exports are explicit and stamped.
+4. Information disclosure: `connect-src 'self'`, `Referrer-Policy: no-referrer`, and browser-local storage with nothing auto-sent.
+5. Denial of service: proxy watchdogs, `VERSION` invalidation and per-pane boot isolation so one stuck pane cannot stop the shell.
+6. Elevation of privilege: no in-app shell, a CSP that blocks third-party inline script, and strict Mermaid rendering.
+7. Container: non-root, read-only, capability-free, no-new-privileges, health-checked.
+
+## At a Glance
+
+| Field | Value |
+|---|---|
+| Browser | escaped text · strict Mermaid · hardened header set · no version leak |
+| Container | slim image, non-root uid, read-only rootfs, `cap_drop: ALL`, health check |
+| Network | LAN / tailnet / CIDR scope; loopback only behind `tailscale serve` |
+| Model path | same-origin proxy, no secrets, `/api/*` never cached |
+| Offline | 37 precached entries, network-first with cache fallback |
+| Invalidation | `VERSION` bump drops every older cache on activate |
+| Retention | no server-side store; exports are how data leaves |
+| Scope | a team tool on infrastructure you control — not an internet service |
+
+## Key Takeaways
+
+- Isolation is four boundaries — content, process, network and time — and each one is a control you can point at in a file.
+- The hardening is the same on every response, so a new file cannot be served without it.
+- A read-only, capability-free, non-root container turns the server from a foothold into a process with nowhere to go.
+- Offline is a tested state, not a fallback: precache, network-first, and a version that invalidates stale shells.
+- State the scope out loud. This is published on a network you control, and every control above assumes you meant to.
+
+## References
+
+- `design/06-threat-model.md` — the STRIDE table condensed above.
+- `design/01-system-context.md` — trust boundaries and deployment.
+- `design/08-runtime-offline.md` — the offline shell, delivery and header story.
+- `Dockerfile` and `docker-compose.yml` — image hygiene, privilege drops and the health check.
+- `docker-compose.tailscale.yml` — the dedicated tailnet node behind `tailscale serve`.
+- `sw.js` — precache list, fetch strategy and `VERSION`.
+
+## Conclusion
+
+None of these controls is exotic: a header block, a non-root user, a dropped capability set, a cache that knows its own version. What makes them worth writing down is that they are all that stands between a tool holding your threat model and a network that would read it — and that every one of them keeps working when the network itself is gone.
 
 ---
 
