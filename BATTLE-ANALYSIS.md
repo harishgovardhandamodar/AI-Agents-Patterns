@@ -371,8 +371,17 @@ What the runs showed:
   context — so the compare silently ran both models on the same backend
   default. Fixed by pinning the model into each case's own context.
 
-Remaining from the plan: 18 (corpus import UI), 19 (CI wiring), the rest
-of 20 (README + in-app guide sections for the bench).
+Remaining from the plan: 18 (corpus import UI) and 19 (CI wiring).
+Iteration 20 is done: the README carries the bench (tab row, feature
+section, file list, extension points, scope line), the in-app guide has a
+`bench` entry with live catalog counts, the architecture lives in
+`design/09-battle-bench.md`, and the bench is wired into the app's own
+surfaces — saved runs are the eighth work product in the architect report
+(Markdown §8 + JSON `battleBench`), and the workflow's Next-engine and
+harden-stage status know about bench runs (covered-but-untested is an
+explicit state, not "done"). All pre-existing counts were corrected along
+the way (13 tabs, 55 traces, 9 design docs), and the e2e smoke now walks
+all 13 tabs.
 
 ---
 

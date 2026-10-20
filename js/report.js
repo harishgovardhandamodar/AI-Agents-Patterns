@@ -3,7 +3,8 @@
    intake answers, readiness scorecard, recommended stack, rollout, risk
    register, ADR, blueprint (pipeline, coverage, cost/risk estimate,
    threat model), guardrail analyses, the cascade mitigation backlog, the
-   pinned working set, discovery drafts and the copilot transcript.
+   pinned working set, discovery drafts, the copilot transcript, and the
+   saved battle-bench runs.
 
    Every section degrades to a "not yet filled in" line when its tool hasn't
    been used, so the report is always printable. The report is also stamped
@@ -74,6 +75,7 @@ function rpMarkdown() {
   if (typeof pinState !== "undefined" && (pinState.patterns.length + pinState.scenarios.length + pinState.cascades.length)) covers.push("working set");
   if (typeof cpMessages !== "undefined" && cpMessages.length) covers.push("Fox - Architect consult");
   if (typeof discState !== "undefined" && discState.run) covers.push("discovery drafts");
+  if (typeof btLoadRuns === "function") { try { if (btLoadRuns().length) covers.push("battle-bench runs"); } catch (e) {} }
   out.push("**Covers:** " + (covers.length ? covers.join(" · ") : "nothing yet — use the tools above to build the design") + ".");
   out.push("");
 
@@ -251,6 +253,29 @@ function rpMarkdown() {
   } else {
     out.push("_No Fox - Architect conversation yet — ask Fox - Architect to stress-test the architecture._");
   }
+  out.push("");
+
+  /* 8 — battle-bench runs */
+  out.push("## 8. Battle-bench runs");
+  out.push("");
+  const savedRuns = (typeof btLoadRuns === "function") ? btLoadRuns() : [];
+  if (savedRuns.length) {
+    out.push("_Saved Battle Bench runs — same cases, comparable across time. A passing synthetic run proves the controls are wired, not that any agent is safe._");
+    out.push("");
+    savedRuns.slice(0, 5).forEach(sr => {
+      const r = sr.run || {}, sum = r.summary || {};
+      out.push(`**${escMd(r.id || "run")}** — ${escMd(String(r.at || "").slice(0, 10))} · adapter \`${escMd(r.adapter || "?")}\` · ` +
+        `${sum.pass || 0} pass / ${sum.fail || 0} fail / ${sum.error || 0} error / ${sum.skip || 0} skip over ${sum.total || 0} cases` +
+        (r.coverage ? ` · corpus coverage ${r.coverage.pct || 0}%` : "") + ".");
+      (sum.failing || []).slice(0, 8).forEach(f => {
+        out.push(`- ❌ ${escMd(f.scenarioTitle || f.scenarioId)} (${escMd(f.severity || "?")}, ${escMd(f.configName || "?")})`);
+      });
+      out.push("");
+    });
+  } else {
+    out.push("_No saved battle-bench runs yet — run the Battle Bench matrix and save the run to make it comparable across time._");
+    out.push("");
+  }
   return out.join("\n");
 }
 
@@ -312,14 +337,31 @@ function rpJson() {
   const run = (typeof discState !== "undefined" && discState.run) ? discState.run : null;
   j.discovery = run && run.winners ? { winners: run.winners.map(c => ({ title: c.title, domain: c.domain, cls: c.cls, vector: c.vector, severity: c.severity })) } : null;
   j.copilot = cpMessages.length ? cpMessages.map(m => ({ role: m.role, content: m.content })) : null;
+  /* battle-bench runs — saved runs are comparable across time, so keep the
+     summaries and the verdict rows, not the full outputs. */
+  let saved = [];
+  try { saved = (typeof btLoadRuns === "function") ? btLoadRuns() : []; } catch (e) { saved = []; }
+  j.battleBench = saved.length ? saved.slice(0, 5).map(sr => ({
+    id: (sr.run || {}).id || null, at: (sr.run || {}).at || null,
+    adapter: (sr.run || {}).adapter || null, cases: (sr.run || {}).cases || 0,
+    summary: (sr.run || {}).summary || null, coverage: (sr.run || {}).coverage || null,
+    results: (sr.results || []).map(r => ({ scenarioId: r.scenarioId, configName: r.configName,
+      verdict: r.verdict, passed: r.passed, total: r.total, error: r.error || null }))
+  })) : null;
   return JSON.stringify(j, null, 2);
 }
 
+function rpHasAny() {
+  if (bpState.comps.length || dpState.done || cpMessages.length) return true;
+  if (typeof guardState !== "undefined" && guardState.items.length) return true;
+  if (rpMitigationRows().length) return true;
+  try { if (typeof btLoadRuns === "function" && btLoadRuns().length) return true; } catch (e) {}
+  return false;
+}
+
 function rpDownload(kind) {
-  if (!bpState.comps.length && !dpState.done && !cpMessages.length &&
-      !(typeof guardState !== "undefined" && guardState.items.length) &&
-      !rpMitigationRows().length) {
-    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab or copilot first");
+  if (!rpHasAny()) {
+    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or copilot first");
     return;
   }
   const isMd = kind === "md";
@@ -342,10 +384,8 @@ function rpDownload(kind) {
 
 /* print: a dedicated, self-contained page — no app chrome, no JS needed */
 function rpPrint() {
-  if (!bpState.comps.length && !dpState.done && !cpMessages.length &&
-      !(typeof guardState !== "undefined" && guardState.items.length) &&
-      !rpMitigationRows().length) {
-    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab or copilot first");
+  if (!rpHasAny()) {
+    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or copilot first");
     return;
   }
   const w = window.open("", "_blank");

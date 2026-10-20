@@ -1,6 +1,6 @@
 /* js/workflow.js — the workflow spine (iterations 107, 117).
  *
- * The app has twelve tabs but only five *stages* of work:
+ * The app has thirteen tabs but only five *stages* of work:
  *
  *   discover → research → design → harden → deliver
  *
@@ -67,6 +67,11 @@ function wfSignals() {
     try { s.mitOwned = Object.keys(mitLoad()).length; } catch (e) {}
   }
   s.runs = (typeof discState !== "undefined" && discState.run) ? (discState.run.winners || []).length : 0;
+  /* harden — battle-bench: saved runs prove the controls were tested */
+  s.benchRuns = 0;
+  if (typeof btLoadRuns === "function") {
+    try { s.benchRuns = btLoadRuns().length; } catch (e) {}
+  }
   /* deliver */
   s.copilot = (typeof cpMessages !== "undefined") ? cpMessages.length : 0;
   s.exported = 0;
@@ -95,7 +100,8 @@ function wfStatus() {
       case "harden":
         if (!s.comps) { state = "todo"; detail = "No architecture yet"; cta = "Build the canvas"; tab = "blueprint"; }
         else if (s.gaps) { state = "active"; detail = s.covOk + "/" + s.covTotal + " control families covered — " + s.gaps + " gap" + (s.gaps === 1 ? "" : "s"); cta = "Close the gaps"; tab = "blueprint"; }
-        else { state = "done"; detail = s.covOk + "/" + s.covTotal + " control families covered"; }
+        else if (!s.benchRuns) { state = "active"; detail = s.covOk + "/" + s.covTotal + " covered, but untested"; cta = "Battle-test it"; tab = "bench"; }
+        else { state = "done"; detail = s.covOk + "/" + s.covTotal + " covered · " + s.benchRuns + " bench run" + (s.benchRuns === 1 ? "" : "s"); }
         break;
       case "deliver":
         if (s.exported) { state = "done"; detail = "Report exported " + s.exported + "×"; }
@@ -110,7 +116,7 @@ function wfStatus() {
 
 /* The single most useful next action (iteration 107).
    Unlike the old dashNext, this reads *every* tool — the guardrail lab,
-   the mitigation backlog and the discovery run included — and it prefers to
+   the mitigation backlog, the discovery run and the battle bench included — and it prefers to
    close a gap in work the user has already started over starting something
    new. */
 function wfNext() {
@@ -153,6 +159,10 @@ function wfNext() {
         return { t: "Exposure is " + tm.band[0].toLowerCase() + " — worst matched scenario: " + tm.scns[0].s.title + ".", tab: "blueprint", cta: "Open threat model" };
       }
     } catch (e) { /* blueprint not ready */ }
+  }
+  /* 2 — harden: the canvas is covered but was never tested */
+  if (!s.benchRuns) {
+    return { t: "Your blueprint covers the control families, but no configuration has been battle-tested — run the 54 failure scenarios against it in the Battle Bench.", tab: "bench", cta: "Open the Battle Bench" };
   }
   /* 3 — deliver: the mitigation backlog exists but nobody owns the work */
   if (s.mit && !s.mitOwned) {

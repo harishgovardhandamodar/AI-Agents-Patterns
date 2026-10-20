@@ -32,7 +32,7 @@ const HELP = {
     <ul><li>The landing strip on top collects what's new (spotlight scenarios), what the field just found (field notes with paper links), an incident-anatomy diagram and the cascade-class chart — everything below it is the standing catalog summary.</li>
     <li><b>📁 Projects</b> in the top bar group everything you produce for one system — the plan, the blueprint, the guardrail analyses, the mitigation backlog and the pins. Switching projects keeps every one of them.</li>
     <li><b>Pins you make</b> in any catalog drawer collect in the Working set below for review and export.</li>
-    <li>The export row produces the full architect report — all seven work products in one document.</li></ul>
+    <li>The export row produces the full architect report — all eight work products in one document.</li></ul>
     <p class="muted small">Tip: Alt+1…− jumps between tabs; ? shows every shortcut.</p>`
   },
   copilot: {
@@ -81,8 +81,8 @@ const HELP = {
   },
   design: {
     t: "Design & Architecture",
-    b: `<p>The <b>eight design documents</b> behind the app: system context, UML, control flow, the financial guardrail architecture, data model, threat model, the architect value map, and runtime/offline delivery.</p>
-    <ul><li>Read 07 for the “why” (the cascade taxonomy the app is built on) and 08 for how it boots, renders diagrams, works offline and is delivered.</li><li>⤢ enlarges any diagram with zoom and pan.</li></ul>`
+    b: `<p>The <b>nine design documents</b> behind the app: system context, UML, control flow, the financial guardrail architecture, data model, threat model, the architect value map, runtime/offline delivery, and the Battle Bench.</p>
+    <ul><li>Read 07 for the “why” (the cascade taxonomy the app is built on) and 08 for how it boots, renders diagrams, works offline and is delivered.</li><li>Read 09 for how the catalog <b>tests itself</b> — the battle-test bench that runs the 54 failure scenarios against a configuration and grades the controls.</li><li>⤢ enlarges any diagram with zoom and pan.</li></ul>`
   },
   guard: {
     t: "Guardrail Lab",
@@ -94,6 +94,12 @@ const HELP = {
     t: "Discovery Lab",
     b: `<p><b>Auto-discovery of novel scenarios</b>: gap-seeded candidates scored for novelty, iterated in forgetting rounds after arXiv:2610.20563 — winners are reseeded, near-duplicates are discarded each round.</p>
     <ul><li>Run with forgetting off (compare mode) to watch novelty plateau on accumulated history.</li><li><b>⬆ Promote to draft scenario</b> turns a winner into a catalog-shaped scenario — the same fields the shipped scenarios carry — kept in your draft collection and exportable for curation. The shipped catalog is never modified.</li><li>Winners are review drafts, never catalog entries: ask Fox - Architect about one, copy it, or export JSON.</li></ul>`
+  },
+  bench: {
+    t: "Battle Bench",
+    b: `<p><b>The catalog testing itself.</b> Every one of the ${catN("scenarios", 54)} failure scenarios becomes a test case against a <b>configuration</b> — a set of controls an agent would actually deploy. Pick configurations, run the matrix, and the oracle grades whether each scenario's defenses held.</p>
+    <ul><li><b>Three adapters</b> answer the same cases: <b>guardrail</b> (deterministic, instant), <b>golden</b> (replays the catalog's ${catN("traces", 55)} execution traces), and <b>live</b> (the local model, backend pinned per run and recorded in every result).</li><li><b>Configs are data</b> — derived from the Deployment Plan's option tables, with a drift check, so the bench can never quietly disagree with the app.</li><li><b>🤖 Adversary</b> attacks the configuration, not the app: ranked <b>exposure</b> (which scenarios a config leaves uncovered), a <b>mutation sweep</b> that erodes a passing baseline one dial at a time to find the load-bearing control, and a <b>red-team</b> loop where the live model writes the attack and the oracle grades it.</li><li><b>Compare models</b> runs the same cases against two models and diffs the verdicts — regressions and improvements listed explicitly.</li><li><b>💾 Save run</b> stores results locally so runs are comparable across time; the report exports as Markdown or JSON.</li></ul>
+    <p class="muted small">Honest caveats: errored runs are never counted as passes, and a passing synthetic run proves the <i>controls are wired</i> — not that any agent is safe. The full analysis lives in BATTLE-ANALYSIS.md; the architecture in Design doc 09.</p>`
   }
 };
 

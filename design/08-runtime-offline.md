@@ -9,7 +9,7 @@ How the app actually runs: a no-build shell that paints the panes you opened bef
 ```mermaid
 flowchart LR
   HTML["index.html"] --> APP["app.js — shell"]
-  APP --> MOD["per-tab modules<br/>patterns · scenarios<br/>cascades · coverage<br/>deploy · blueprints · copilot · live<br/>design · guardrail · discovery<br/>landing · dashboard"]
+  APP --> MOD["per-tab modules<br/>patterns · scenarios<br/>cascades · coverage<br/>deploy · blueprints · copilot · live<br/>design · guardrail · discovery<br/>bench · benchui · adversary<br/>landing · dashboard"]
   MOD -->|"register init*() + tabLoaders"| APP
   APP --> SW["sw.js registration<br/>(offline shell)"]
 ```
@@ -116,7 +116,7 @@ The catalog's thesis — deterministic enforcement outside the model — applies
 flowchart LR
   EDIT["edit catalog or shell"] --> LINT["npm run lint<br/>ESLint no-undef<br/>over the shared globals"]
   EDIT --> TEST["npm test (node:test)<br/>ids · schema · references<br/>coverage freshness · SW precache sync"]
-  EDIT --> E2E["npm run test:e2e<br/>headless: boot, walk all 12 tabs, 0 errors"]
+  EDIT --> E2E["npm run test:e2e<br/>headless: boot, walk all 13 tabs, 0 errors"]
   LINT --> CI{"CI"}
   TEST --> CI
   E2E -.->|"non-blocking"| CI

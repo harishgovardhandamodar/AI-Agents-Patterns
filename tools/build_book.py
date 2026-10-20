@@ -638,7 +638,7 @@ APP_CHAPTERS = [
             "What it makes is a design your runtime still has to implement.",
         ],
         "refs": [
-            "`README.md` — run instructions, the twelve tabs, testing and "
+            "`README.md` — run instructions, the thirteen tabs, testing and "
             "performance, and the scope caveats quoted above.",
             "`design/01-system-context.md` — context and container diagrams, "
             "trust boundaries, deployment.",
@@ -798,7 +798,7 @@ APP_CHAPTERS = [
             "tool.",
         ],
         "refs": [
-            "`README.md` — the twelve tabs and what each one produces.",
+            "`README.md` — the thirteen tabs and what each one produces.",
             "`design/07-architect-analysis.md` — the four questions, the value "
             "map, and the deployment lifecycle the planner encodes.",
             "`design/04-guardrails.md` — the flagship's enforcement sequence "
@@ -1120,7 +1120,7 @@ APP_CHAPTERS = [
             "Architecture is the set of decisions that are expensive to change "
             "later, and this one is deliberately small: static files, one "
             "process, one origin, one queue, one worker. Everything else — the "
-            "twelve panes, the engines, the lab — is replaceable detail built "
+            "thirteen panes, the engines, the lab, the bench — is replaceable detail built "
             "on top of it, which is the only kind of complexity a catalog tool "
             "should be allowed to carry.",
         ],

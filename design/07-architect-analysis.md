@@ -12,9 +12,9 @@ flowchart LR
   subgraph TODAY["Today — reference"]
     P["107 patterns"]
     S["54 scenarios"]
-    T["39 traces"]
+    T["55 traces"]
     C["191 cascades"]
-    D["8 design docs"]
+    D["9 design docs"]
   end
   subgraph ASK["Architect's four questions"]
     Q1["What do I need to build?"]

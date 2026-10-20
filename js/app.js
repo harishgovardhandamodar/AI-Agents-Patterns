@@ -14,7 +14,8 @@ const DESIGN_DOCS = [
   { id: "05-data-model", file: "design/05-data-model.md", title: "Data Model", group: "Architecture", answers: "Entities: patterns, scenarios, traces, analyses" },
   { id: "06-threat-model", file: "design/06-threat-model.md", title: "Threat Model & Protections Map", group: "Safety", answers: "STRIDE view, attack trees, defense-in-depth map" },
   { id: "07-architect-analysis", file: "design/07-architect-analysis.md", title: "Architect Value Map & Cascade Taxonomy", group: "Architecture", answers: "Why the app advises, not just describes — and the four cascade classes" },
-  { id: "08-runtime-offline", file: "design/08-runtime-offline.md", title: "Runtime, Offline & Delivery", group: "Dynamics", answers: "Phased boot, vendored Mermaid, the offline service worker, caching, headers and CI gates" }
+  { id: "08-runtime-offline", file: "design/08-runtime-offline.md", title: "Runtime, Offline & Delivery", group: "Dynamics", answers: "Phased boot, vendored Mermaid, the offline service worker, caching, headers and CI gates" },
+  { id: "09-battle-bench", file: "design/09-battle-bench.md", title: "Battle Bench — Testing Agents", group: "Safety", answers: "How the catalog tests itself: cases, adapters, the oracle, the adversary" }
 ];
 
 /* ---------------- theme ---------------- */
@@ -697,6 +698,7 @@ function catN(kind, fallback) {
     if (kind === "patterns" && DATA.patterns) return DATA.patterns.patterns.length;
     if (kind === "scenarios" && DATA.scenarios) return DATA.scenarios.scenarios.length;
     if (kind === "cascades" && DATA.cascades) return DATA.cascades.cascades.length;
+    if (kind === "traces" && DATA.traces) return DATA.traces.traces.length;
   } catch (e) {}
   return fallback;
 }
