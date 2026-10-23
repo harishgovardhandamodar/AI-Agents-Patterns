@@ -80,7 +80,7 @@ function initBench() {
     el("benchMain").innerHTML = '<div class="empty-state"><div class="empty-ico">⚔</div>' +
       '<div class="empty-t">Battle Bench could not start</div>' +
       '<div class="empty-b">Something went wrong while loading (' + escHtml(String(e && e.message || e)).slice(0, 140) + '). The catalog is unaffected.</div>' +
-      '<button class="btn sm primary" onclick="initBench()">Retry</button></div>';
+      '<button class="btn sm primary" data-act="initBench">Retry</button></div>';
   }
 }
 
@@ -116,8 +116,8 @@ function btConfigHtml(c) {
     controls.length + " effective · " + (c.controls || []).length + " pinned</div>" +
     last +
     '<div class="bt-cfg-btns">' +
-    '<button class="btn sm" onclick="btEditConfig(' + btArgs(h) + ')">Edit</button>' +
-    '<button class="btn sm ghost" onclick="btRemoveConfig(' + btArgs(h) + ')">Remove</button>' +
+    '<button class="btn sm" data-act="btEditConfig" data-args=\'' + '[' + btArgs(h) + ']' + '\'' + '>Edit</button>' +
+    '<button class="btn sm ghost" data-act="btRemoveConfig" data-args=\'' + '[' + btArgs(h) + ']' + '\'' + '>Remove</button>' +
     "</div>" +
     "</div>";
 }
@@ -136,12 +136,12 @@ function btEditConfig(hash) {
   const A = function () { return btArgs.apply(null, arguments); };
   const sel = function (k, v, label) {
     const on = String(c[k]) === String(v);
-    return '<button class="seg-btn' + (on ? " active" : "") + '" onclick="btSetDim(' + A(hash, k, v) + ")'>" + escHtml(label) + "</button>";
+    return '<button class="seg-btn' + (on ? " active" : "") + '" data-act="btSetDim" data-args=\'' + '[' + A(hash, k, v) + ']' + ")'>" + escHtml(label) + "</button>";
   };
   const checks = function (k, v, label) {
     const on = (c[k] || []).indexOf(v) >= 0;
     return '<label class="filter-item"><input type="checkbox" ' + (on ? "checked" : "") +
-      ' onchange="btToggleDim(' + A(hash, k, v) + ",this.checked)\"> " + escHtml(label) + "</label>";
+      ' data-change="btToggleDim" data-last="checked" data-args="' + dataArgs(hash, k, v) + '">' + escHtml(label) + "</label>";
   };
   const html =
     '<div class="dsec"><h4>Autonomy</h4><div class="seg">' +
@@ -164,10 +164,10 @@ function btEditConfig(hash) {
     '<div class="dsec"><h4>Data classes in scope</h4>' +
       dims.dataClasses.map(function (v) { return checks("dataClasses", v, v); }).join("") + "</div>" +
     '<div class="dsec"><h4>Pinned controls (catalog pattern ids)</h4>' +
-      '<input class="search" style="width:100%" placeholder="e.g. approval-gates, policy-engine" value="' + escHtml((c.controls || []).join(", ")) + '" oninput="btSetControls(' + A(hash) + ",this.value)\">" +
+      '<input class="search" style="width:100%" placeholder="e.g. approval-gates, policy-engine" value="' + escHtml((c.controls || []).join(", ")) + '" data-input="btSetControls" data-last="value" data-args="' + dataArgs(hash) + '">' +
       '<p class="muted small">Pinned controls join the ones the configuration implies. Leave empty to test the implied stack alone.</p>' +
     "</div>" +
-    '<div class="dsec d-actions"><button class="btn sm primary" onclick="closeDetail();btSaveConfigEdit()">Apply</button></div>';
+    '<div class="dsec d-actions"><button class="btn sm primary" data-act="closeDetailSaveCfg">Apply</button></div>';
   openDetail("Edit configuration — " + c.name, "bench", html);
 }
 
@@ -196,6 +196,8 @@ function btSetControls(hash, v) {
   c.controls = String(v || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
   btPersistConfigs();
 }
+/* Apply shim for delegation (the old inline handler compounded two calls). */
+function closeDetailSaveCfg() { closeDetail(); btSaveConfigEdit(); }
 function btSaveConfigEdit() { btPersistConfigs(); renderBench(); }
 function btPersistConfigs() { btConfigsSave(btState.configs); }
 
@@ -270,7 +272,7 @@ function btPaintMatrix() {
   if (typeof paintActiveChips === "function") paintActiveChips("btActiveChips", btFilterChips());
 }
 
-function btKeyInspect(e, sid, hash) {
+function btKeyInspect(e, el, sid, hash) {
   if (e.key === "Enter" || e.key === " ") { e.preventDefault(); btInspect(sid, hash); }
 }
 
@@ -307,7 +309,7 @@ function btMatrixInnerHtml() {
     return '<div class="empty-state"><div class="empty-ico">∅</div>' +
       '<div class="empty-t">No scenarios match</div>' +
       '<div class="empty-b">The filters hide every row. Loosen them to see the matrix.</div>' +
-      '<button class="btn sm primary" onclick="btClearAllFilters()">Clear filters</button></div>';
+      '<button class="btn sm primary" data-act="btClearAllFilters">Clear filters</button></div>';
   }
   const colBad = cfgs.map(function (c) {
     const h = btConfigHash(c);
@@ -331,8 +333,8 @@ function btMatrixInnerHtml() {
       const mark = r.verdict === "pass" ? "✓" : r.verdict === "fail" ? "✗" : r.verdict === "error" ? "!" : "–";
       const al = r.scenarioTitle + ", " + c.name + ": " + r.verdict + " (" + r.passed + "/" + r.total + " checks). Activate to inspect.";
       return '<td class="bt-cell ' + cls + '" tabindex="0" role="gridcell" aria-label="' + escHtml(al) + '" ' +
-        'onclick="btInspect(' + btArgs(kase.scenarioId, btConfigHash(c)) + ')" ' +
-        'onkeydown="btKeyInspect(event,' + btArgs(kase.scenarioId, btConfigHash(c)) + ')" ' +
+        'data-act="btInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(c)) + ']' + '\'' + ' ' +
+        'data-key="btKeyInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(c)) + ']' + '\'' + ' ' +
         'title="' + escHtml(r.scenarioTitle + " — " + r.verdict + " (" + r.passed + "/" + r.total + " checks)") + '">' + mark + "</td>";
     }).join("");
     /* Row label inspects the first failing cell so one click lands on evidence. */
@@ -341,8 +343,8 @@ function btMatrixInnerHtml() {
       if (isBad(byCell[kase.scenarioId + "@" + btConfigHash(cfgs[i])])) { target = cfgs[i]; break; }
     }
     return '<tr><th class="bt-mh bt-mh-l" scope="row" tabindex="0" title="' + escHtml(kase.scenario.id + " — " + kase.scenario.title) + '" ' +
-      'onclick="btInspect(' + btArgs(kase.scenarioId, btConfigHash(target)) + ')" ' +
-      'onkeydown="btKeyInspect(event,' + btArgs(kase.scenarioId, btConfigHash(target)) + ')" >' +
+      'data-act="btInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(target)) + ']' + '\'' + ' ' +
+      'data-key="btKeyInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(target)) + ']' + '\'' + ' >' +
       '<span class="sev-dot sev-' + kase.scenario.severity + '"></span>' + escHtml(kase.scenario.title) +
       (nBad ? ' <span class="bt-col-bad">✗' + nBad + "</span>" : "") +
       "</th>" + cells + "</tr>";
@@ -361,7 +363,7 @@ function btSetView(v) {
 function btTabsHtml() {
   const v = btState.view || "setup";
   const tab = function (id, label, badge) {
-    return '<button class="seg-btn' + (v === id ? " active" : "") + '" onclick="btSetView(' + btArgs(id) + ')">' +
+    return '<button class="seg-btn' + (v === id ? " active" : "") + '" data-act="btSetView" data-args=\'' + '[' + btArgs(id) + ']' + '\'' + '>' +
       escHtml(label) + (badge ? ' <span class="bt-tab-n">' + escHtml(String(badge)) + "</span>" : "") + "</button>";
   };
   return '<div class="seg bt-tabs" role="tablist">' +
@@ -383,26 +385,26 @@ function btAdapterBlurb() {
 function btRunControlsHtml(adapters) {
   return '<div class="bt-runbar">' +
       '<label class="muted small">Executor</label>' +
-      '<select class="search" id="btAdapter" aria-label="Battle adapter" onchange="btSetAdapter(this.value)">' +
+      '<select class="search" id="btAdapter" aria-label="Battle adapter" data-change="btSetAdapter" data-first="value">' +
         adapters.map(function (a) {
           return '<option value="' + a.id + '"' + (a.id === btState.adapter ? " selected" : "") + ">" +
             escHtml(a.label) + (a.needsModel ? " · needs a model" : "") + "</option>";
         }).join("") +
       "</select>" +
       '<label class="muted small">Mode</label>' +
-      '<select class="search" id="btMode" aria-label="Run mode" onchange="btSetMode(this.value)">' +
+      '<select class="search" id="btMode" aria-label="Run mode" data-change="btSetMode" data-first="value">' +
         '<option value="advise"' + (btState.context.mode === "advise" ? " selected" : "") + ">advise the team</option>" +
         '<option value="act"' + (btState.context.mode === "act" ? " selected" : "") + ">act as the agent</option>" +
       "</select>" +
       '<label class="muted small">Backend</label>' +
-      '<select class="search" id="btBackend" aria-label="Model backend" onchange="btSetBackend(this.value)">' +
+      '<select class="search" id="btBackend" aria-label="Model backend" data-change="btSetBackend" data-first="value">' +
         '<option value="axiom"' + (btState.context.backend === "axiom" ? " selected" : "") + ">axiom (mesh)</option>" +
         '<option value="fox-services"' + (btState.context.backend === "fox-services" ? " selected" : "") + ">fox-services (local)</option>" +
       "</select>" +
       '<div style="flex:1"></div>' +
       (btState.running
-        ? '<button class="btn danger" onclick="btCancel()">■ Stop</button>'
-        : '<button class="btn primary" onclick="btStart()">▶ Run the bench</button>') +
+        ? '<button class="btn danger" data-act="btCancel">■ Stop</button>'
+        : '<button class="btn primary" data-act="btStart">▶ Run the bench</button>') +
     "</div>" +
     '<p class="muted small" id="btAdapterHelp" style="margin:6px 0 0">' + escHtml(btAdapterBlurb()) + "</p>" +
     (btState.running
@@ -464,20 +466,20 @@ function btToolbarHtml() {
   const doms = btDomainOptions();
   return '<div class="sticky-bar bt-toolbar">' +
     '<input class="search" id="btQ" type="search" placeholder="Filter scenarios…" aria-label="Filter scenarios" ' +
-      'value="' + escHtml(btState.q || "") + '" oninput="btSetQuery(this.value)">' +
-    '<select class="search" id="btSevF" aria-label="Severity filter" onchange="btSetSeverity(this.value)">' +
+      'value="' + escHtml(btState.q || "") + '" data-input="btSetQuery" data-first="value">' +
+    '<select class="search" id="btSevF" aria-label="Severity filter" data-change="btSetSeverity" data-first="value">' +
       [["", "all severities"], ["critical", "critical"], ["high", "high"], ["medium", "medium"]].map(function (o) {
         return '<option value="' + o[0] + '"' + (btState.severity === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
       }).join("") +
     "</select>" +
-    '<select class="search" id="btDomF" aria-label="Domain filter" onchange="btSetDomain(this.value)">' +
+    '<select class="search" id="btDomF" aria-label="Domain filter" data-change="btSetDomain" data-first="value">' +
       '<option value="">all domains</option>' +
       doms.map(function (d) {
         return '<option value="' + escHtml(d) + '"' + (btState.domain === d ? " selected" : "") + ">" + escHtml(d) + "</option>";
       }).join("") +
     "</select>" +
     '<button class="btn sm' + (btState.failsOnly ? " primary" : "") + '" id="btFailsBtn" ' +
-      'aria-pressed="' + String(!!btState.failsOnly) + '" onclick="btToggleFails()">✗ Failures only</button>' +
+      'aria-pressed="' + String(!!btState.failsOnly) + '" data-act="btToggleFails">✗ Failures only</button>' +
     '<span class="muted small" id="btMatrixCount"></span>' +
     '<div class="fchip-row" id="btActiveChips"></div>' +
     "</div>";
@@ -495,7 +497,7 @@ function btResultsHtml() {
   const bad = sum ? ((sum.fail || 0) + (sum.error || 0)) : 0;
   return '<div class="panel" style="margin-bottom:12px"><h3>Outcome</h3>' +
       (sum ? btSummaryHtml(sum) + btSevPerfHtml(sum) + btConfigPerfHtml(sum) : "") +
-      (bad ? '<div class="bt-cta-row"><button class="btn sm primary" onclick="btSetView(' + btArgs("adversary") + ')">' +
+      (bad ? '<div class="bt-cta-row"><button class="btn sm primary" data-act="btSetView" data-args=\'' + '[' + btArgs("adversary") + ']' + '\'' + '>' +
         "Probe these failures in Adversary →</button></div>" : "") +
       "</div>" +
     '<div class="panel" style="margin-bottom:12px"><h3>Results matrix <span class="muted small">scenarios × configurations — click or Enter on a cell to inspect</span></h3>' +
@@ -527,10 +529,10 @@ function renderBench() {
       '<p class="muted small">Put a configuration in a scenario and assert on the outcome: ' +
       "setup → results → adversary → compare.</p></div>" +
       '<div class="bt-head-btns">' +
-        '<button class="btn" onclick="btAddConfig()">＋ Configuration</button>' +
-        '<button class="btn" onclick="btSweepConfigs()">⛓ Sweep configs</button>' +
-        '<button class="btn" onclick="btExport(\'md\')" ' + (btState.run ? "" : "disabled") + ">⬇ Report</button>" +
-        '<button class="btn" onclick="btExport(\'json\')" ' + (btState.run ? "" : "disabled") + ">⬇ JSON</button>" +
+        '<button class="btn" data-act="btAddConfig">＋ Configuration</button>' +
+        '<button class="btn" data-act="btSweepConfigs">⛓ Sweep configs</button>' +
+        '<button class="btn" data-act="btExport" data-args="[&quot;md&quot;]" ' + (btState.run ? "" : "disabled") + ">⬇ Report</button>" +
+        '<button class="btn" data-act="btExport" data-args="[&quot;json&quot;]" ' + (btState.run ? "" : "disabled") + ">⬇ JSON</button>" +
       "</div>" +
     "</div>" +
     btTabsHtml() + body;
@@ -568,8 +570,8 @@ function btCompareHtml() {
     '<input class="search" id="btModelB" style="width:auto" placeholder="e.g. qwen3.8:27b" value="' + escHtml(opts[1] || "") + '">' +
     '<label class="muted small">cases</label>' +
     '<input class="search" id="btCompareN" style="width:70px" type="number" min="1" max="54" value="' + (btState.compareLimit || 8) + '">' +
-    '<button class="btn primary" onclick="btRunCompare()">⇄ Compare</button>' +
-    '<button class="btn ghost" onclick="btListModels()">list models</button>' +
+    '<button class="btn primary" data-act="btRunCompare">⇄ Compare</button>' +
+    '<button class="btn ghost" data-act="btListModels">list models</button>' +
     "</div>" +
     '<p class="muted small" style="margin:6px 0 0">Compares the <b>first</b> configuration only — put the subject you care about first in Setup.</p>' +
     body;
@@ -622,7 +624,7 @@ function btAdversaryHtml() {
       '<td class="mono small">' + Math.round(e.exposure * 100) / 100 + "</td>" +
       '<td class="mono small">' + e.coverage + "%</td>" +
       '<td class="muted small">' + escHtml(e.missing.slice(0, 3).join(", ") || "—") + "</td>" +
-      '<td><button class="btn sm" onclick="btAdversaryAttack(' + btArgs(e.scenarioId) + ')">⚔ attack</button></td></tr>';
+      '<td><button class="btn sm" data-act="btAdversaryAttack" data-args=\'' + '[' + btArgs(e.scenarioId) + ']' + '\'' + '>⚔ attack</button></td></tr>';
   }).join("");
   const sweep = btState.sweep ? btSweepHtml(btState.sweep) : "";
   const attacks = btState.attacks ? btAttackHtml(btState.attacks) : "";
@@ -631,13 +633,13 @@ function btAdversaryHtml() {
     "The mutation sweep changes one setting at a time and re-runs; the attack asks a model to break the subject outright.</p>" +
     '<div class="bt-adv-btns">' +
       '<label class="muted small">Subject</label>' +
-      '<select class="search" id="btAdvCfg" aria-label="Adversary subject" onchange="btSetAdversaryConfig(this.value)">' +
+      '<select class="search" id="btAdvCfg" aria-label="Adversary subject" data-change="btSetAdversaryConfig" data-first="value">' +
         btState.configs.map(function (c) {
           return '<option value="' + btConfigHash(c) + '"' + (btConfigHash(c) === btConfigHash(cfg) ? " selected" : "") + ">" + escHtml(c.name) + "</option>";
         }).join("") +
       "</select>" +
-      '<button class="btn sm" onclick="btRunSweep()">⛓ Mutation sweep</button>' +
-      '<button class="btn sm" onclick="btRunRedTeam()">⚔ Red-team (needs a model)</button>' +
+      '<button class="btn sm" data-act="btRunSweep">⛓ Mutation sweep</button>' +
+      '<button class="btn sm" data-act="btRunRedTeam">⚔ Red-team (needs a model)</button>' +
     "</div>" +
     '<div class="bt-adv-tables">' +
       '<div><h4 style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 5px">Probe — most exposed scenarios</h4>' +
@@ -673,7 +675,7 @@ function btAttackHtml(attacks) {
       escHtml(a.title.slice(0, 40)) + "</td>" +
       '<td class="muted small">' + escHtml(a.finding) + "</td>" +
       '<td class="muted small">' + (a.error ? escHtml(a.error) : (a.ms / 1000).toFixed(1) + "s") + "</td>" +
-      '<td><button class="btn sm" onclick="btShowAttack(' + btArgs(a.scenarioId) + ')">view</button></td></tr>';
+      '<td><button class="btn sm" data-act="btShowAttack" data-args=\'' + '[' + btArgs(a.scenarioId) + ']' + '\'' + '>view</button></td></tr>';
   }).join("");
   return '<div><h4 style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px">' +
     "Red-team findings</h4>" +
@@ -754,7 +756,7 @@ function btSummaryHtml(sum) {
         '<table class="tbl bt-fail-tbl"><thead><tr><th>Scenario</th><th>Config</th><th>What broke</th></tr></thead><tbody>' +
         sum.failing.slice(0, 12).map(function (r) {
           const broke = r.checks.filter(function (c) { return !c.pass; });
-          return '<tr class="bt-fail-row" onclick="btInspect(' + btArgs(r.scenarioId, r.configHash) + ')" title="Inspect this case">' +
+          return '<tr class="bt-fail-row" data-act="btInspect" data-args=\'' + '[' + btArgs(r.scenarioId, r.configHash) + ']' + '\'' + ' title="Inspect this case">' +
             "<td>" + escHtml(r.scenarioTitle.slice(0, 44)) + "</td>" +
             '<td><span class="chip">' + escHtml(r.configName.split(" · ")[0]) + "</span></td>" +
             '<td class="muted small">' + escHtml(broke.map(function (c) { return c.label + " (" + c.detail + ")"; }).join("; ")) + "</td></tr>";
@@ -881,9 +883,9 @@ function btRunsHtml() {
       '<span class="muted small">' + escHtml(r.run.adapter) + " · " + r.run.run + " cases · " + Math.round(r.run.durationMs / 1000) + "s</span></div>" +
       '<div class="bt-run-sum"><span class="bt-ok">' + s.pass + "</span> / <span class=\"bt-bad\">" + s.fail + "</span> pass / fail</div>" +
       '<div style="flex:1"></div>' +
-      '<button class="btn sm" onclick="btDiffWith(' + btArgs(r.run.id) + ')">⇄ Compare with latest</button>' +
-      '<button class="btn sm ghost" onclick="btLoadRun(' + btArgs(r.run.id) + ')">Load</button>' +
-      '<button class="btn sm ghost danger" onclick="btDeleteRun(' + btArgs(r.run.id) + ')" title="Delete this stored run">✕</button>' +
+      '<button class="btn sm" data-act="btDiffWith" data-args=\'' + '[' + btArgs(r.run.id) + ']' + '\'' + '>⇄ Compare with latest</button>' +
+      '<button class="btn sm ghost" data-act="btLoadRun" data-args=\'' + '[' + btArgs(r.run.id) + ']' + '\'' + '>Load</button>' +
+      '<button class="btn sm ghost danger" data-act="btDeleteRun" data-args=\'' + '[' + btArgs(r.run.id) + ']' + '\'' + ' title="Delete this stored run">✕</button>' +
       "</div>";
   }).join("") + "</div>";
 }

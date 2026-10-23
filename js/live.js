@@ -37,16 +37,16 @@ function initLive() {
 
   const domains = uniq(all.map(t => traceDomain(t))).sort();
   el("traceDomains").innerHTML = domains.map(d => `
-    <label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" onchange="onLiveFilter(this,'domains')">
+    <label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" data-change="onLiveFilter" data-first="el" data-args="[&quot;domains&quot;]">
     ${escHtml(d)}<span class="cnt">${all.filter(t => traceDomain(t) === d).length}</span></label>`).join("");
 
   const sevs = ["critical", "high", "medium"];
   el("traceSevs").innerHTML = sevs.map(sv => `
-    <label class="filter-item"><input type="checkbox" data-sev="${sv}" onchange="onLiveFilter(this,'sevs')">
+    <label class="filter-item"><input type="checkbox" data-sev="${sv}" data-change="onLiveFilter" data-first="el" data-args="[&quot;sevs&quot;]">
     <span class="sev-dot sev-${sv}"></span>${sv}<span class="cnt">${all.filter(t => traceSeverity(t) === sv).length}</span></label>`).join("");
 
   el("traceVerdicts").innerHTML = ["blocked", "degraded", "allowed"].map(v => `
-    <label class="filter-item"><input type="checkbox" data-ver="${v}" onchange="onLiveFilter(this,'verdicts')">
+    <label class="filter-item"><input type="checkbox" data-ver="${v}" data-change="onLiveFilter" data-first="el" data-args="[&quot;verdicts&quot;]">
     <span class="verdict ${v}">${v}</span><span class="cnt">${all.filter(t => t.verdict === v).length}</span></label>`).join("");
 
   livePlayer = LivePlayer(el("livePlayer"), { speed: 700 });
@@ -96,7 +96,7 @@ function renderTraceList() {
   });
   el("traceCount").textContent = list.length + " / " + all.length;
   el("traceList").innerHTML = list.map(t => `
-    <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" role="listitem" data-tid="${escHtml(t.id)}" onclick="loadTrace('${escHtml(t.id)}')">
+    <div class="trace-item ${livePlayer && livePlayer.state.data && livePlayer.state.data.id === t.id ? "active" : ""}" role="listitem" data-tid="${escHtml(t.id)}" data-act="loadTrace" data-args="[&quot;${escHtml(t.id)}&quot;]">
       <div class="t">${t.local ? '<span class="chip" style="margin-right:5px">local</span>' : ""}${escHtml(traceLabel(t))}</div>
       <div class="m"><span class="verdict ${t.verdict}">${t.verdict}</span> ${escHtml(traceDomain(t))} · ${t.metrics.steps} steps · ${escHtml(traceSeverity(t))}</div>
     </div>`).join("") || (typeof emptyState === "function"

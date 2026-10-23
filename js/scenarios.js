@@ -7,12 +7,12 @@ function initScenarios() {
   const S = DATA.scenarios;
   const doms = uniq(S.scenarios.map(s => s.domain)).sort();
   el("scnDomains").innerHTML = doms.map(d =>
-    `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" onchange="onScnFilter(this,'domains')"> ${escHtml(d)}<span class="cnt">${S.scenarios.filter(s => s.domain === d).length}</span></label>`).join("");
+    `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" data-change="onScnFilter" data-first="el" data-args="[&quot;domains&quot;]"> ${escHtml(d)}<span class="cnt">${S.scenarios.filter(s => s.domain === d).length}</span></label>`).join("");
   el("scnSev").innerHTML = ["critical", "high", "medium", "low"].map(sv =>
-    `<label class="filter-item"><input type="checkbox" data-sev="${sv}" onchange="onScnFilter(this,'sevs')"> <span class="sev-dot sev-${sv}"></span>${sv}<span class="cnt">${S.scenarios.filter(s => s.severity === sv).length}</span></label>`).join("");
+    `<label class="filter-item"><input type="checkbox" data-sev="${sv}" data-change="onScnFilter" data-first="el" data-args="[&quot;sevs&quot;]"> <span class="sev-dot sev-${sv}"></span>${sv}<span class="cnt">${S.scenarios.filter(s => s.severity === sv).length}</span></label>`).join("");
   const vecs = uniq(S.scenarios.map(s => s.vector)).sort();
   el("scnVectors").innerHTML = vecs.map(v =>
-    `<label class="filter-item"><input type="checkbox" data-vec="${escHtml(v)}" onchange="onScnFilter(this,'vectors')"> ${escHtml(v)}<span class="cnt">${S.scenarios.filter(s => s.vector === v).length}</span></label>`).join("");
+    `<label class="filter-item"><input type="checkbox" data-vec="${escHtml(v)}" data-change="onScnFilter" data-first="el" data-args="[&quot;vectors&quot;]"> ${escHtml(v)}<span class="cnt">${S.scenarios.filter(s => s.vector === v).length}</span></label>`).join("");
   scnMemRestore();
   renderScenarios();
   if (typeof resPaint === "function") resPaint();
@@ -72,6 +72,10 @@ function scnActiveChips(q) {
   return chips;
 }
 
+/* View-switch shims for delegation (the old inline handlers compounded
+   the uxSetView call with a re-render). */
+function scnShowCards() { uxSetView("scnView", "cards"); renderScenarios(); }
+function scnShowList() { uxSetView("scnView", "list"); renderScenarios(); }
 function renderScenarios() {
   const S = DATA.scenarios;
   const q = el("scnSearch").value.trim().toLowerCase();
@@ -97,7 +101,7 @@ function renderScenarios() {
   scnMemSave();
   if ((uxPrefs.scnView || "cards") === "list") return renderScenarioList(list);
   el("scnGrid").innerHTML = list.map(s => `
-    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open scenario: ${escHtml(s.title)}" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openScenario('${s.id}');}">
+    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open scenario: ${escHtml(s.title)}" data-act="openScenario" data-args="[&quot;${s.id}&quot;]" data-keys="Enter, ">
       <div class="cat" style="color:var(--${s.severity === "critical" ? "red" : s.severity === "high" ? "orange" : "accent"})">${escHtml(s.severity.toUpperCase())} · ${escHtml(s.domain)}</div>
       <div class="nm">${escHtml(s.title)}</div>
       <div class="sm">${escHtml(s.description.slice(0, 180))}…</div>
@@ -121,7 +125,7 @@ function renderScenarioList(list) {
   }
   const dot = s => s.severity === "critical" ? "var(--red)" : s.severity === "high" ? "var(--orange)" : s.severity === "medium" ? "var(--accent)" : "var(--green)";
   el("scnGrid").innerHTML = `<div class="mini-list" role="list">` + list.map(s => `
-    <div class="mini-row" role="listitem" tabindex="0" onclick="openScenario('${s.id}')" onkeydown="if(event.key==='Enter')openScenario('${s.id}')">
+    <div class="mini-row" role="listitem" tabindex="0" data-act="openScenario" data-args="[&quot;${s.id}&quot;]" data-keys="Enter">
       <span class="sev-dot sev-${s.severity}"></span>
       <span class="mini-nm">${escHtml(s.title)}</span>
       <span class="mini-meta">${escHtml(s.vector)} · ${(s.protections || []).length} protections${s.traceId ? " · ▶ mock run" : " · no replay"}</span>
@@ -135,11 +139,11 @@ function openScenario(id) {
   if (!s) return;
   const patLinks = (s.patternRefs || []).map(pid => {
     const p = P.patterns.find(x => x.id === pid);
-    return p ? `<a href="#" onclick="goTo('patterns','${pid}');return false;">${escHtml(p.name)}</a>` : escHtml(pid);
+    return p ? `<a href="#" data-act="goTo" data-args="[&quot;patterns&quot;,&quot;${pid}&quot;]">${escHtml(p.name)}</a>` : escHtml(pid);
   }).join(" · ");
 
   const scnActions = ((typeof bpRefsBtnHtml === "function" && (s.patternRefs || []).length) ? bpRefsBtnHtml(s.patternRefs, "from this scenario") : "") +
-    `<button class="btn sm" onclick="askAbout('scenario','${escHtml(s.id)}')">🤖 Ask Fox - Architect about this scenario</button>` +
+    `<button class="btn sm" data-act="askAbout" data-args="[&quot;scenario&quot;,&quot;${escHtml(s.id)}&quot;]">🤖 Ask Fox - Architect about this scenario</button>` +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("scenarios", s.id) : "");
   const html = `
     <div class="dsec d-actions">${scnActions}</div>
@@ -159,8 +163,8 @@ function openScenario(id) {
     ${patLinks ? `<div class="dsec"><h4>Relevant design patterns</h4><p>${patLinks}</p></div>` : ""}
     ${casLinksForScenario(s.id)}
     ${s.traceId ? `<div class="dsec"><h4>Mock run</h4><p>This scenario has a replayable execution trace in the Live View.</p>
-      <button class="btn primary" onclick="goTo('live','${s.traceId}');">▶ Open in Live View</button></div>`
+      <button class="btn primary" data-act="goTo" data-args="[&quot;live&quot;,&quot;${s.traceId}&quot;]">▶ Open in Live View</button></div>`
       : `<div class="dsec"><h4>Mock run</h4><p class="muted small">No replayable trace is published for this scenario yet — the risk is documented, but not demonstrated end-to-end. The Coverage &amp; Gaps tab tracks what is still thin.</p>
-      <button class="btn sm" onclick="closeDetail();switchTab('coverage');">📊 See coverage &amp; gaps</button></div>`}`;
+      <button class="btn sm" data-act="closeDetailGo" data-args="[&quot;coverage&quot;]">📊 See coverage &amp; gaps</button></div>`}`;
   openDetail(s.title, `${s.severity} · ${s.domain}`, html, { tab: "scenarios", id: s.id, title: s.title });
 }

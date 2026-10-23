@@ -120,7 +120,7 @@ function renderCoverage() {
       const lvl = covLevel(n, c.target);
       return `<td class="heat heat-${lvl}" title="${escHtml(r.d)} · ${escHtml(c.label)}: ${n}">${n || ""}</td>`;
     }).join("");
-    return `<tr onclick="covOpenDomain('${escAttr(r.d)}')" class="cov-row"><th class="cov-domain">${escHtml(r.d)}</th>${cells}<td class="cov-band">${covBand(r)}</td></tr>`;
+    return `<tr data-act="covOpenDomain" data-args="[&quot;${escAttr(r.d)}&quot;]" class="cov-row"><th class="cov-domain">${escHtml(r.d)}</th>${cells}<td class="cov-band">${covBand(r)}</td></tr>`;
   }).join("");
 
   const cards = `
@@ -139,8 +139,8 @@ function renderCoverage() {
       <h3>${navDomain(r.d)} <span class="chip risk">${r.penalty} risk</span></h3>
       <ul class="cov-gaplist">${items}</ul>
       <div class="cov-actions">
-        <button class="iconbtn" onclick="covOpenDomain('${escAttr(r.d)}')">Inspect</button>
-        <button class="iconbtn" onclick="covAsk('${escAttr(r.d)}')">Ask Fox - Architect</button>
+        <button class="iconbtn" data-act="covOpenDomain" data-args="[&quot;${escAttr(r.d)}&quot;]">Inspect</button>
+        <button class="iconbtn" data-act="covAsk" data-args="[&quot;${escAttr(r.d)}&quot;]">Ask Fox - Architect</button>
       </div>
     </div>`;
   }).join("") || '<div class="panel"><div class="muted small">No gaps flagged — every domain meets its heuristic targets.</div></div>';
@@ -151,12 +151,12 @@ function renderCoverage() {
     ${cards}
     <div class="cov-controls">
       <span class="muted small">Sort:</span>
-      <button class="iconbtn${covSort === "risk" ? " on" : ""}" onclick="covSetSort('risk')">by risk</button>
-      <button class="iconbtn${covSort === "name" ? " on" : ""}" onclick="covSetSort('name')">by volume</button>
-      <button class="iconbtn${covSort === "alpha" ? " on" : ""}" onclick="covSetSort('alpha')">A–Z</button>
+      <button class="iconbtn${covSort === "risk" ? " on" : ""}" data-act="covSetSort" data-args="[&quot;risk&quot;]">by risk</button>
+      <button class="iconbtn${covSort === "name" ? " on" : ""}" data-act="covSetSort" data-args="[&quot;name&quot;]">by volume</button>
+      <button class="iconbtn${covSort === "alpha" ? " on" : ""}" data-act="covSetSort" data-args="[&quot;alpha&quot;]">A–Z</button>
       <span class="spacer"></span>
-      <button class="iconbtn" onclick="covDownloadBacklog('md')" title="Download the gap list as a Markdown checklist">⬇ backlog .md</button>
-      <button class="iconbtn" onclick="covDownloadBacklog('csv')" title="Download the gap list as CSV">⬇ .csv</button>
+      <button class="iconbtn" data-act="covDownloadBacklog" data-args="[&quot;md&quot;]" title="Download the gap list as a Markdown checklist">⬇ backlog .md</button>
+      <button class="iconbtn" data-act="covDownloadBacklog" data-args="[&quot;csv&quot;]" title="Download the gap list as CSV">⬇ .csv</button>
       <span class="cov-legend muted small">low <i class="heat heat-0"></i><i class="heat heat-1"></i><i class="heat heat-2"></i><i class="heat heat-3"></i><i class="heat heat-4"></i> high</span>
     </div>
     <div class="panel cov-heatpanel">
@@ -202,7 +202,7 @@ function covAsk(d) {
 
 /* Small helper: link a domain name to a copilot-ready prompt */
 function navDomain(d) {
-  return `<a href="#" onclick="covAsk('${escAttr(d)}');return false" title="Ask Fox - Architect about this domain">${escHtml(d)}</a>`;
+  return `<a href="#" data-act="covAsk" data-args="[&quot;${escAttr(d)}&quot;]" title="Ask Fox - Architect about this domain">${escHtml(d)}</a>`;
 }
 
 function escAttr(s) { return String(s == null ? "" : s).replace(/['"\\]/g, ""); }

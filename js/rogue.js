@@ -1251,7 +1251,7 @@ function rgCaseOverdue(c, now) {
 }
 
 /* Actions on the board. */
-function rgCaseAction(id, action) {
+function rgCaseAction(id, action, stepId) {
   const c = rogueState.board.find(function (x) { return x.id === id; });
   if (!c) return;
   const now = Date.now();
@@ -1260,7 +1260,6 @@ function rgCaseAction(id, action) {
     c.owner = c.owner || "on-call";
     showNotif("Case " + c.id + " acknowledged — owner " + c.owner);
   } else if (action === "step") {
-    const stepId = arguments[2];
     const step = RG_SLA.filter(function (s) { return s.id === stepId; })[0];
     if (!step) return;
     c.steps = c.steps || {};
@@ -1566,7 +1565,7 @@ function rgTabsHtml() {
   const v = rogueState.view || "setup";
   const open = rogueState.board.filter(function (c) { return c.status === "open" || c.status === "acknowledged" || c.status === "escalated"; }).length;
   const tab = function (id, label, badge) {
-    return '<button class="seg-btn' + (v === id ? " active" : "") + '" onclick="rgSetView(' + rgArgs(id) + ')">' +
+    return '<button class="seg-btn' + (v === id ? " active" : "") + '" data-act="rgSetView" data-args=\'' + '[' + rgArgs(id) + ']' + '\'' + '>' +
       escHtml(label) + (badge ? ' <span class="bt-tab-n">' + escHtml(String(badge)) + "</span>" : "") + "</button>";
   };
   return '<div class="seg bt-tabs" role="tablist">' +
@@ -1594,10 +1593,10 @@ function renderRogue() {
       "Setup → results → board → guardrails.</p></div>" +
       '<div class="bt-head-btns">' +
         (rogueState.view === "board"
-          ? '<button class="btn" onclick="rgBoardOpenFromForm()">＋ Open case</button>'
-          : '<button class="btn primary" onclick="rgRun()">▶ Run simulation</button>') +
-        '<button class="btn" onclick="rgExport(' + rgArgs("md") + ')" ' + (rogueState.run ? "" : "disabled") + ">⬇ Report</button>" +
-        '<button class="btn" onclick="rgExport(' + rgArgs("json") + ')" ' + (rogueState.run ? "" : "disabled") + ">⬇ JSON</button>" +
+          ? '<button class="btn" data-act="rgBoardOpenFromForm">＋ Open case</button>'
+          : '<button class="btn primary" data-act="rgRun">▶ Run simulation</button>') +
+        '<button class="btn" data-act="rgExport" data-args=\'' + '[' + rgArgs("md") + ']' + '\'' + '" ' + (rogueState.run ? "" : "disabled") + ">⬇ Report</button>" +
+        '<button class="btn" data-act="rgExport" data-args=\'' + '[' + rgArgs("json") + ']' + '\'' + '" ' + (rogueState.run ? "" : "disabled") + ">⬇ JSON</button>" +
       "</div>" +
     "</div>" +
     rgTabsHtml() + body;
@@ -1626,32 +1625,32 @@ function rgSetupHtml() {
   const num = function (field, label, min, max, hint) {
     return '<label class="rg-field"><span class="muted small">' + escHtml(label) + '</span>' +
       '<input class="search" type="number" min="' + min + '" max="' + max + '" value="' + escHtml(String(c[field])) + '"' +
-      ' onchange="rgSetNum(' + rgArgs(field) + ',this.value)" aria-label="' + escHtml(label) + '">' +
+      ' data-change="rgSetNum" data-last="value" data-args=\'' + '[' + rgArgs(field) + ']' + '\'' + ' aria-label="' + escHtml(label) + '">' +
       (hint ? '<span class="muted small">' + escHtml(hint) + "</span>" : "") + "</label>";
   };
   const presets = RG_PRESETS.map(function (p) {
     return '<button class="seg-btn' + (rgPresetActive(p.id) ? " active" : "") + '"' +
-      ' onclick="rgPreset(' + rgArgs(p.id) + ')" title="' + escHtml(p.desc) + '">' + escHtml(p.name) + "</button>";
+      ' data-act="rgPreset" data-args=\'' + '[' + rgArgs(p.id) + ']' + '\'' + ' title="' + escHtml(p.desc) + '">' + escHtml(p.name) + "</button>";
   }).join("");
   const dets = RG_DETECTORS.map(function (d) {
     const on = !!c.detectors[d.id];
     const th = c.thresholds[d.id];
     return '<label class="filter-item rg-check"><input type="checkbox" ' + (on ? "checked" : "") +
-      ' onchange="rgToggle(' + rgArgs("detectors", d.id) + ',this.checked)"> <b>' + escHtml(d.label) + "</b>" +
+      ' data-change="rgToggle" data-last="checked" data-args=\'' + '[' + rgArgs("detectors", d.id) + ']' + '\'' + '"> <b>' + escHtml(d.label) + "</b>" +
       ' <span class="muted small">' + escHtml(d.desc) + "</span>" +
       '<span class="rg-thr">threshold <input class="search" type="number" step="0.1" style="width:64px" value="' + escHtml(String(th)) + '"' +
-      ' onchange="rgSetThresh(' + rgArgs(d.id) + ',this.value)" aria-label="' + escHtml(d.label) + ' threshold"> ' + escHtml(d.unit) + "</span></label>";
+      ' data-change="rgSetThresh" data-last="value" data-args=\'' + '[' + rgArgs(d.id) + ']' + '\'' + ' aria-label="' + escHtml(d.label) + ' threshold"> ' + escHtml(d.unit) + "</span></label>";
   }).join("");
   const ctrls = RG_CONTROLS.map(function (k) {
     return '<label class="filter-item rg-check"><input type="checkbox" ' + (c.controls[k.id] ? "checked" : "") +
-      ' onchange="rgToggle(' + rgArgs("controls", k.id) + ',this.checked)"> <b>' + escHtml(k.label) + "</b>" +
+      ' data-change="rgToggle" data-last="checked" data-args=\'' + '[' + rgArgs("controls", k.id) + ']' + '\'' + '"> <b>' + escHtml(k.label) + "</b>" +
       ' <span class="chip">' + escHtml(k.layer) + "</span>" +
       ' <span class="muted small">' + escHtml(k.desc) + "</span></label>";
   }).join("");
   const archs = Object.keys(RG_ARCHETYPES).map(function (k) {
     const a = RG_ARCHETYPES[k];
     return '<label class="filter-item rg-check"><input type="checkbox" ' + (c.archetypes[k] ? "checked" : "") +
-      ' onchange="rgToggle(' + rgArgs("archetypes", k) + ',this.checked)"> <b>' + escHtml(a.label) + "</b>" +
+      ' data-change="rgToggle" data-last="checked" data-args=\'' + '[' + rgArgs("archetypes", k) + ']' + '\'' + '"> <b>' + escHtml(a.label) + "</b>" +
       ' <span class="muted small">' + escHtml(a.desc) + "</span></label>";
   }).join("");
   const last = rogueState.run
@@ -1659,7 +1658,7 @@ function rgSetupHtml() {
       rogueState.run.detected + "/" + rogueState.run.rogues + " detected · " +
       rogueState.run.contained + " contained · " + rogueState.run.escaped + " escaped · " +
       "SLA " + (rogueState.run.slaCompliance == null ? "—" : rgPct(rogueState.run.slaCompliance)) + " · " +
-      '<button class="btn sm" onclick="rgSetView(' + rgArgs("results") + ')">Open results →</button></p>'
+      '<button class="btn sm" data-act="rgSetView" data-args=\'' + '[' + rgArgs("results") + ']' + '\'' + '">Open results →</button></p>'
     : '<p class="muted small" style="margin:8px 0 0">No run yet — the defaults reproduce the guarded-swarm baseline.</p>';
   return rgThemeHtml() +
     '<div class="panel" style="margin-bottom:12px"><h3>Scenario <span class="muted small">the swarm, the injection, the horizon</span></h3>' +
@@ -1726,7 +1725,7 @@ function rgSetBackend(b) {
 function rgThemeHtml() {
   const th = rgTheme(rogueState.cfg);
   const btns = RG_THEMES.map(function (t) {
-    return '<button class="seg-btn' + (th.id === t.id ? " active" : "") + '" onclick="rgSetTheme(' + rgArgs(t.id) + ')" title="' + escHtml(t.desc) + '">' + escHtml(t.label) + "</button>";
+    return '<button class="seg-btn' + (th.id === t.id ? " active" : "") + '" data-act="rgSetTheme" data-args=\'' + '[' + rgArgs(t.id) + ']' + '\'' + ' title="' + escHtml(t.desc) + '">' + escHtml(t.label) + "</button>";
   }).join("");
   const legend = RG_CLASSES.map(function (cl) {
     return '<span class="chip">' + escHtml(cl) + " → " + escHtml(th.tools[cl]) + "</span>";
@@ -1744,10 +1743,10 @@ function rgLiveHtml() {
     const pct = Math.round(((p.done || 0) / Math.max(1, p.total || 1)) * 100);
     return '<div class="panel" style="margin-bottom:12px"><h3>Live fire <span class="muted small">planning via ' + escHtml(c.live.backend) + "</span></h3>" +
       '<div class="bt-progress"><div class="bt-progress-fill" style="width:' + pct + '%"></div></div>' +
-      '<p class="muted small" id="rgLiveText">' + escHtml(p.label || "") + ' <button class="btn sm danger" onclick="rgCancelLive()">Stop</button></p></div>';
+      '<p class="muted small" id="rgLiveText">' + escHtml(p.label || "") + ' <button class="btn sm danger" data-act="rgCancelLive">Stop</button></p></div>';
   }
   const backendBtn = function (id, label) {
-    return '<button class="seg-btn' + (c.live.backend === id ? " active" : "") + '" onclick="rgSetBackend(' + rgArgs(id) + ')">' + escHtml(label) + "</button>";
+    return '<button class="seg-btn' + (c.live.backend === id ? " active" : "") + '" data-act="rgSetBackend" data-args=\'' + '[' + rgArgs(id) + ']' + '\'' + '>' + escHtml(label) + "</button>";
   };
   let status;
   try {
@@ -1761,7 +1760,7 @@ function rgLiveHtml() {
     "Caps: swarm ≤ " + RG_LIVE_CAPS.swarm + ", ticks ≤ " + RG_LIVE_CAPS.ticks + " (the setup is clamped, not refused). " +
     "A rogue the model never answers for stays simulated and is flagged as a fallback.</p>" +
     '<div class="seg" role="group" aria-label="Model backend">' + backendBtn("fox-services", "fox-services") + backendBtn("axiom", "axiom") + "</div> " + status +
-    '<div class="bt-cta-row"><button class="btn primary" onclick="rgRunLive()">▶ Run live fire</button></div></div>';
+    '<div class="bt-cta-row"><button class="btn primary" data-act="rgRunLive">▶ Run live fire</button></div></div>';
 }
 
 function rgPreset(id) {
@@ -1860,7 +1859,7 @@ function rgResultsHtml() {
       "<td class=\"mono\">" + (g.quarantine != null && g.quarantine >= 0 ? "t" + g.quarantine : "—") + "</td>" +
       "<td class=\"mono\">" + g.damage + (g.damageAtQ ? " (" + g.damageAtQ + " pre-Q)" : "") + "</td>" +
       "<td class=\"mono\">" + g.blast + "</td>" +
-      "<td><button class=\"btn sm\" onclick=\"rgInspect(" + g.agent + ')\">Inspect</button></td></tr>';
+      "<td><button class=\"btn sm\" data-act='rgInspect' data-args='" + dataArgs(g.agent) + '\'>Inspect</button></td></tr>';
   }).join("");
   const fpNote = (r.fpDetail && r.fpDetail.length)
     ? '<p class="muted small">False positives: ' + r.fpDetail.map(function (f) {
@@ -1883,8 +1882,8 @@ function rgResultsHtml() {
       (r.slaImpossible ? " · " + r.slaImpossible + " impossible (no audit trail to snapshot)" : "") +
       (r.slaBeyond ? " · " + r.slaBeyond + " beyond the run horizon (excluded)" : "") +
       (r.preActivation ? " · " + r.preActivation + " pre-activation flag" + (r.preActivation === 1 ? "" : "s") + " (not counted)" : "") + ".</p>" +
-      '<div class="bt-cta-row"><button class="btn sm primary" onclick="rgBoardSeedFromRun()">Open detections as board cases →</button> ' +
-      '<button class="btn sm" onclick="rgSetView(' + rgArgs("guardrails") + ')">Which control mattered? →</button></div></div>' +
+      '<div class="bt-cta-row"><button class="btn sm primary" data-act="rgBoardSeedFromRun">Open detections as board cases →</button> ' +
+      '<button class="btn sm" data-act="rgSetView" data-args=\'' + '[' + rgArgs("guardrails") + ']' + '\'' + '">Which control mattered? →</button></div></div>' +
     '<div class="panel" style="margin-bottom:12px"><h3>Detectors <span class="muted small">fired = held its streak and opened a case</span></h3>' +
       '<table class="tbl"><thead><tr><th>Detector</th><th>TP</th><th>FP</th><th>FN</th><th>Recall</th></tr></thead><tbody>' + detRows + "</tbody></table>" + fpNote + "</div>" +
     '<div class="panel" style="margin-bottom:12px"><h3>Archetypes <span class="muted small">which rogue shapes get caught</span></h3>' +
@@ -1930,7 +1929,7 @@ function rgInspect(agentIdx) {
 
 function rgBoardHtml() {
   const now = Date.now();
-  const halted = rogueState.fleetHalted ? '<div class="rg-halt">⏸ Fleet halted — every agent is paused and no new work is dispatched. <button class="btn sm primary" onclick="rgKillSwitch()">Resume the fleet</button></div>' : "";
+  const halted = rogueState.fleetHalted ? '<div class="rg-halt">⏸ Fleet halted — every agent is paused and no new work is dispatched. <button class="btn sm primary" data-act="rgKillSwitch">Resume the fleet</button></div>' : "";
   const cards = rogueState.board.length ? rogueState.board.map(function (c) { return rgCaseHtml(c, now); }).join("") :
     '<div class="panel">' + (typeof emptyState === "function"
       ? emptyState("📋", "Board is empty", "Confirmed detections land here with their SLA clocks running. Seed it from the last run, or open a case by hand.", "Seed from last run", "rgBoardSeedFromRun()")
@@ -1938,9 +1937,9 @@ function rgBoardHtml() {
   return (rogueState.fleetHalted ? halted : "") +
     '<div class="panel" style="margin-bottom:12px"><h3>Quarantine board <span class="muted small">wall-clock SLAs · owners · remediation state</span></h3>' +
       '<div class="bt-cta-row">' +
-        (rogueState.fleetHalted ? "" : '<button class="btn sm danger" onclick="rgKillSwitch()">⏸ Halt the fleet</button> ') +
-        '<button class="btn sm" onclick="rgBoardSeedFromRun()">＋ Seed from last run</button> ' +
-        '<button class="btn sm ghost" onclick="rgBoardClear()">Clear board</button></div>' +
+        (rogueState.fleetHalted ? "" : '<button class="btn sm danger" data-act="rgKillSwitch">⏸ Halt the fleet</button> ') +
+        '<button class="btn sm" data-act="rgBoardSeedFromRun">＋ Seed from last run</button> ' +
+        '<button class="btn sm ghost" data-act="rgBoardClear">Clear board</button></div>' +
       '<div class="rg-form-grid"><label class="rg-field"><span class="muted small">Agent</span>' +
         '<input class="search" id="rgManualAgent" placeholder="agent-042" aria-label="Agent name"></label>' +
       '<label class="rg-field"><span class="muted small">Shape</span><select class="search" id="rgManualArch" aria-label="Archetype">' +
@@ -1949,7 +1948,7 @@ function rgBoardHtml() {
         }).join("") + "</select></label>" +
       '<label class="rg-field"><span class="muted small">Severity</span><select class="search" id="rgManualSev" aria-label="Severity">' +
         ["medium", "high", "critical", "low"].map(function (s) { return '<option value="' + s + '">' + s + "</option>"; }).join("") + "</select></label>" +
-      '<label class="rg-field"><span class="muted small">&nbsp;</span><span><button class="btn sm primary" onclick="rgBoardOpenFromForm()">Open case</button></span></label></div></div>' +
+      '<label class="rg-field"><span class="muted small">&nbsp;</span><span><button class="btn sm primary" data-act="rgBoardOpenFromForm">Open case</button></span></label></div></div>' +
     cards;
 }
 
@@ -1989,7 +1988,7 @@ function rgCaseHtml(c, now) {
       '<span class="muted small">' + escHtml(s.owner) + " · SLA " + rgMin(s.sla) +
       (done ? "" : left >= 0 ? " · " + left + " min left" : " · " + (-left) + " min over") + "<br>" + escHtml(s.what) + "</span></div>" +
       (done || c.status === "released" || c.status === "terminated" ? "" :
-        '<button class="btn sm" onclick="rgCaseAction(' + rgArgs(c.id, "step", s.id) + ')">Mark done</button>') + "</div>";
+        '<button class="btn sm" data-act="rgCaseAction" data-args=\'' + '[' + rgArgs(c.id, "step", s.id) + ']' + '\'' + '">Mark done</button>') + "</div>";
   }).join("");
   const openMin = rgCaseOpenMinutes(c, now);
   const over = rgCaseOverdue(c, now);
@@ -2003,11 +2002,11 @@ function rgCaseHtml(c, now) {
       (c.notes ? " · " + escHtml(c.notes) : "") + "</p>" +
     '<div class="rg-steps">' + steps + "</div>" +
     '<div class="bt-cta-row"><label class="muted small">Owner <input class="search" style="width:130px" value="' + escHtml(c.owner || "") + '"' +
-      ' onchange="rgSetOwner(' + rgArgs(c.id) + ',this.value)" aria-label="Case owner"></label> ' +
-      (c.status === "open" ? '<button class="btn sm" onclick="rgCaseAction(' + rgArgs(c.id, "ack") + ')">Acknowledge</button> ' : "") +
-      (c.status !== "released" && c.status !== "terminated" && c.status !== "escalated" ? '<button class="btn sm" onclick="rgCaseAction(' + rgArgs(c.id, "escalate") + ')">Escalate</button> ' : "") +
-      (c.status !== "released" && c.status !== "terminated" ? '<button class="btn sm primary" onclick="rgCaseAction(' + rgArgs(c.id, "release") + ')">Release</button> ' +
-      '<button class="btn sm danger" onclick="rgCaseAction(' + rgArgs(c.id, "terminate") + ')">Terminate</button>' : "") + "</div></div>";
+      ' data-change="rgSetOwner" data-last="value" data-args=\'' + '[' + rgArgs(c.id) + ']' + '\'' + ' aria-label="Case owner"></label> ' +
+      (c.status === "open" ? '<button class="btn sm" data-act="rgCaseAction" data-args=\'' + '[' + rgArgs(c.id, "ack") + ']' + '\'' + '">Acknowledge</button> ' : "") +
+      (c.status !== "released" && c.status !== "terminated" && c.status !== "escalated" ? '<button class="btn sm" data-act="rgCaseAction" data-args=\'' + '[' + rgArgs(c.id, "escalate") + ']' + '\'' + '">Escalate</button> ' : "") +
+      (c.status !== "released" && c.status !== "terminated" ? '<button class="btn sm primary" data-act="rgCaseAction" data-args=\'' + '[' + rgArgs(c.id, "release") + ']' + '\'' + '">Release</button> ' +
+      '<button class="btn sm danger" data-act="rgCaseAction" data-args=\'' + '[' + rgArgs(c.id, "terminate") + ']' + '\'' + '">Terminate</button>' : "") + "</div></div>";
 }
 
 /* ---------------- guardrails + counterfactuals ---------------- */
@@ -2024,21 +2023,21 @@ function rgGuardHtml() {
   const rows = RG_CONTROLS.map(function (k) {
     const on = !!c.controls[k.id];
     const pat = rgHasPattern(k.pattern)
-      ? '<button class="btn sm ghost" onclick="openPattern(' + rgArgs(k.pattern) + ')">' + escHtml(k.pattern) + "</button>"
+      ? '<button class="btn sm ghost" data-act="openPattern" data-args=\'' + '[' + rgArgs(k.pattern) + ']' + '\'' + '>' + escHtml(k.pattern) + "</button>"
       : '<span class="mono small">' + escHtml(k.pattern) + "</span>";
     return "<tr><td><label class=\"filter-item\"><input type=\"checkbox\" " + (on ? "checked" : "") +
-        ' onchange="rgToggle(' + rgArgs("controls", k.id) + ',this.checked)"> <b>' + escHtml(k.label) + "</b></label>" +
+        ' data-change="rgToggle" data-last="checked" data-args=\'' + '[' + rgArgs("controls", k.id) + ']' + '\'' + '"> <b>' + escHtml(k.label) + "</b></label>" +
         '<br><span class="muted small">' + escHtml(k.desc) + "</span></td>" +
       "<td>" + escHtml(k.layer) + "</td>" +
       '<td class="mono small">`' + escHtml(k.prim) + "`</td><td>" + pat +
-        ' <button class="btn sm ghost" onclick="rgControlDetail(' + rgArgs(k.id) + ')">why</button></td></tr>';
+        ' <button class="btn sm ghost" data-act="rgControlDetail" data-args=\'' + '[' + rgArgs(k.id) + ']' + '\'' + '>why</button></td></tr>';
   }).join("");
   let abl = "";
   if (rogueState.ablating) {
     const pct = Math.round((rogueState.ablProgress || 0) * 100);
     abl = '<div class="panel" style="margin-bottom:12px"><h3>Counterfactuals <span class="muted small">running…</span></h3>' +
       '<div class="bt-progress"><div class="bt-progress-fill" style="width:' + pct + '%"></div></div>' +
-      '<p class="muted small">' + pct + '% · <button class="btn sm danger" onclick="rgCancelAblation()">Stop</button></p></div>';
+      '<p class="muted small">' + pct + '% · <button class="btn sm danger" data-act="rgCancelAblation">Stop</button></p></div>';
   } else if (rogueState.ablations) {
     abl = rgAblationHtml();
   } else {
@@ -2046,7 +2045,7 @@ function rgGuardHtml() {
       '<p class="muted small" style="margin-top:0">Re-runs the simulation once per control — with that control off, and with <i>only</i> that control on — ' +
       "plus once per detector off. The delta against the current configuration is that control's contribution. " +
       "Chunked so the tab stays responsive; cancel any time.</p>" +
-      '<button class="btn primary" onclick="rgRunAblations()">▶ Run counterfactuals</button></div>';
+      '<button class="btn primary" data-act="rgRunAblations">▶ Run counterfactuals</button></div>';
   }
   return '<div class="panel" style="margin-bottom:12px"><h3>From run to runtime <span class="muted small">what the simulation earned the right to recommend</span></h3>' +
       '<p class="muted small" style="margin-top:0">Every control below is a runtime primitive in the OpenShell style — a sealed sandbox, a scoped capability token, ' +
@@ -2190,7 +2189,7 @@ function rgAblationHtml() {
       '<h4 style="margin:12px 0 6px">Solo contribution <span class="muted small">only this control on, everything else off</span></h4>' +
       '<div class="tbl-wrap"><table class="tbl"><thead><tr><th>Counterfactual</th><th>Harm</th><th>Prevented</th><th>Escaped</th><th>SLA</th></tr></thead>' +
       "<tbody>" + solo.map(soloRow).join("") + "</tbody></table></div>" +
-      '<div class="bt-cta-row"><button class="btn sm" onclick="rgRunAblations()">↻ Re-run counterfactuals</button></div></div>';
+      '<div class="bt-cta-row"><button class="btn sm" data-act="rgRunAblations">↻ Re-run counterfactuals</button></div></div>';
 }
 
 /* ---------------- export ---------------- */
@@ -2324,7 +2323,7 @@ function initRogue() {
     el("rogueMain").innerHTML = '<div class="empty-state"><div class="empty-ico">🛑</div>' +
       '<div class="empty-t">Rogue Agents could not start</div>' +
       '<div class="empty-b">Something went wrong while loading (' + escHtml(String(e && e.message || e)).slice(0, 140) + '). The catalog is unaffected.</div>' +
-      '<button class="btn sm primary" onclick="initRogue()">Retry</button></div>';
+      '<button class="btn sm primary" data-act="initRogue">Retry</button></div>';
   }
 }
 

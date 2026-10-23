@@ -68,6 +68,142 @@ function uxApply() {
   root.dataset.uxdensity = uxPrefs.density === "compact" ? "compact" : "comfortable";
   root.dataset.uxfs = [13, 14, 15, 16].indexOf(Number(uxPrefs.fs)) >= 0 ? String(uxPrefs.fs) : "13";
 }
+
+/* ---------------- delegated actions (no inline on* handlers) ------------
+   Content-Security Policy ships without script-src 'unsafe-inline', so no
+   element may carry an inline onclick/onchange/... attribute. Interactive
+   markup declares intent instead; the three delegated listeners below do
+   the calling:
+     data-act="fn"       click -> fn(...first, ...staticArgs, ...last)
+                         (+ event iff the element carries data-ev)
+     data-args="[&quot;a&quot;,1]"
+                         static args as entity-escaped JSON. Placeholders
+                         like ${id} resolve at render time inside template
+                         literals, exactly like the old inline string did.
+     data-first / data-last = "el|value|checked"
+                         prepend/append the element, its .value or its
+                         .checked (covers foo(this), foo(this.value) and
+                         foo('a',this.value); a dynamic value in the
+                         middle gets a named shim instead)
+     data-change="fn" / data-input="fn"
+                         same arg convention for change/input events
+     data-key="fn"       keydown -> fn(event, el, ...staticArgs)
+     data-keys="Enter, " on a data-act element: those keys re-fire its
+                         click action (cards and rows are divs, so Enter
+                         and Space need this; Space is preventDefaulted
+                         so the page doesn't scroll, as before)
+     data-noblur         mousedown here never takes focus (palette rows
+                         under the search input)
+   Actions resolve through window, so no registry is needed. A link with a
+   plain left click never navigates (the old `return false`); a modified
+   click skips the action and follows the href (the old goTo idiom), so
+   open-in-new-tab keeps working. The event object is passed only when the
+   element opts in with data-ev (an unasked-for extra argument would flip
+   optional trailing flags like dpSet's `soft`). Missing names and malformed
+   args log a console error — the e2e suite fails on those — instead of
+   dying silent. */
+function actArgs(el) {
+  const raw = el.getAttribute("data-args") || "[]";
+  try {
+    const v = JSON.parse(raw);
+    if (Array.isArray(v)) return v;
+  } catch (e) { /* reported below */ }
+  console.error("bad data-args JSON on", el, raw);
+  return null;
+}
+/* Build a data-args payload at render time: JSON-stringify each value and
+   HTML-escape the whole array, so the result is a single-quoted attribute
+   that survives any JS string context and decodes to valid JSON.
+   Usage (single-quoted JS): data-args=' + dataArgs("tab", id) + '
+   Usage (template literal): data-args="${dataArgs("tab", id)}" */
+function dataArgs() {
+  return escHtml("[" + Array.prototype.map.call(arguments, function (x) {
+    return JSON.stringify(String(x));
+  }).join(",") + "]");
+}
+function actPrepend(el) {
+  const w = el.getAttribute("data-first");
+  if (w === "value") return [el.value];
+  if (w === "checked") return [el.checked];
+  if (w === "el") return [el];
+  return [];
+}
+function actAppend(el) {
+  const w = el.getAttribute("data-last");
+  if (w === "value") return [el.value];
+  if (w === "checked") return [el.checked];
+  if (w === "el") return [el];
+  return [];
+}
+function actFire(el, fn, e) {
+  const args = actArgs(el);
+  if (!args) return false;
+  const call = actPrepend(el).concat(args, actAppend(el));
+  if (el.hasAttribute("data-ev")) call.push(e);
+  try {
+    fn.apply(el, call);
+    return true;
+  } catch (err) {
+    console.error("action " + (el.getAttribute("data-act") || el.getAttribute("data-change") ||
+      el.getAttribute("data-input") || "?") + " failed", err);
+    return false;
+  }
+}
+/* Fire every data-* action from the event target up to the document,
+   innermost first — a link inside a card behaves exactly like nested
+   inline handlers did (both fire). stopPropagation() in one action stops
+   the rest, like a real bubble. */
+function actBubble(e, attr, fire) {
+  let node = (e.target && e.target.closest) ? e.target : null;
+  let el = node ? node.closest("[" + attr + "]") : null;
+  while (el) {
+    if (e.cancelBubble) return;
+    const name = el.getAttribute(attr);
+    const fn = (typeof window[name] === "function") ? window[name] : null;
+    if (!fn) { console.error("unknown action: " + name, el); return; }
+    fire(el, fn, e);
+    if (e.cancelBubble) return;
+    el = el.parentElement ? el.parentElement.closest("[" + attr + "]") : null;
+  }
+}
+document.addEventListener("click", function (e) {
+  actBubble(e, "data-act", function (el, fn, ev) {
+    const mod = ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey;
+    if (el.tagName === "A" && mod) return; /* modified: browser follows href */
+    const ok = actFire(el, fn, ev);
+    if (ok && el.tagName === "A" && !mod) ev.preventDefault();
+  });
+});
+["change", "input"].forEach(function (type) {
+  document.addEventListener(type, function (e) {
+    actBubble(e, "data-" + type, function (el, fn, ev) { actFire(el, fn, ev); });
+  });
+});
+document.addEventListener("keydown", function (e) {
+  const t = (e.target && e.target.closest) ? e.target : null;
+  /* Keyboard-activable cards/rows: the focused element itself carries both
+     attributes (a focused child link keeps its native behaviour). */
+  const card = t ? t.closest("[data-act][data-keys]") : null;
+  if (card && e.target === card &&
+      !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) &&
+      (card.getAttribute("data-keys") || "").split(",").indexOf(e.key) >= 0) {
+    e.preventDefault();
+    const fn = window[card.getAttribute("data-act")];
+    if (typeof fn !== "function") { console.error("unknown action: " + card.getAttribute("data-act"), card); return; }
+    actFire(card, fn, e);
+    return;
+  }
+  actBubble(e, "data-key", function (el, fn, ev) {
+    const args = actArgs(el);
+    if (!args) return;
+    try { fn.apply(el, [ev, el].concat(args)); }
+    catch (err) { console.error("key action " + el.getAttribute("data-key") + " failed", err); }
+  });
+});
+document.addEventListener("mousedown", function (e) {
+  const t = (e.target && e.target.closest) ? e.target : null;
+  if (t && t.closest("[data-noblur]")) e.preventDefault();
+});
 function uxSave() {
   try { localStorage.setItem(UX_STORE, JSON.stringify(uxPrefs)); } catch (e) {}
   uxApply();
@@ -110,13 +246,13 @@ function uxPaintPanel() {
   const p = document.getElementById("uxPanel");
   if (!p || !p.classList.contains("open")) return;
   const dens = ["comfortable", "compact"].map(d =>
-    `<label class="ux-opt"><input type="radio" name="uxdens" value="${d}" ${uxPrefs.density === d ? "checked" : ""} onchange="uxSetDensity(this.value)">` +
+    `<label class="ux-opt"><input type="radio" name="uxdens" value="${d}" ${uxPrefs.density === d ? "checked" : ""} data-change="uxSetDensity" data-first="value">` +
     `<span><b>${d === "comfortable" ? "Comfortable" : "Compact"}</b><i>${d === "comfortable" ? "roomy cards, easier scanning" : "denser lists, more on screen"}</i></span></label>`).join("");
   const fss = [13, 14, 15, 16].map(f =>
-    `<label class="ux-opt"><input type="radio" name="uxfs" value="${f}" ${Number(uxPrefs.fs) === f ? "checked" : ""} onchange="uxSetFs(this.value)">` +
+    `<label class="ux-opt"><input type="radio" name="uxfs" value="${f}" ${Number(uxPrefs.fs) === f ? "checked" : ""} data-change="uxSetFs" data-first="value">` +
     `<span><b style="font-size:${f}px">${f}px</b><i>${f === 13 ? "default" : f < 15 ? "easier reading" : "large text"}</i></span></label>`).join("");
   p.innerHTML = '<div class="ux-head"><b>Display</b>' +
-    '<button class="iconbtn" type="button" onclick="uxPanelToggle(false)" aria-label="Close display preferences">✕</button></div>' +
+    '<button class="iconbtn" type="button" data-act="uxPanelToggle" data-args="[false]" aria-label="Close display preferences">✕</button></div>' +
     '<div class="ux-sec">Density</div>' + dens +
     '<div class="ux-sec">Text size</div>' + fss +
     uxPerfSection() +
@@ -198,9 +334,9 @@ function uxDataSection() {
     (storeOk() ? "" : '<div class="ux-warn">Storage is blocked in this browser — work will not persist after reload.</div>') +
     "</div>" +
     '<div class="ux-btns">' +
-    '<button class="btn sm" type="button" onclick="backupAll()"' + (u.count ? "" : " disabled") + ">⤓ Back up all</button>" +
-    '<button class="btn sm" type="button" onclick="restoreAll()">⤒ Restore…</button>' +
-    '<button class="btn sm" type="button" onclick="trimState()">Trim history</button>' +
+    '<button class="btn sm" type="button" data-act="backupAll"' + (u.count ? "" : " disabled") + ">⤓ Back up all</button>" +
+    '<button class="btn sm" type="button" data-act="restoreAll">⤒ Restore…</button>' +
+    '<button class="btn sm" type="button" data-act="trimState">Trim history</button>' +
     "</div>";
 }
 document.addEventListener("mousedown", function (e) {
@@ -397,6 +533,18 @@ function paneEnsure(tab) {
   if (s === "starting") return;
   if (tabLoaders[tab]) tabLoaders[tab]();
 }
+
+/* Named shims for the old multi-statement inline handlers: delegation
+   calls one function per element, so each compound gets a name. */
+function closeDetailGo(tab) { closeDetail(); switchTab(tab); }
+function closeDetailHelp() { closeDetail(); skHelpOpen(); }
+function closeDetailTour() { closeDetail(); onbShow(true); }
+function replayTour() { skHelpClose(); onbShow(true); }
+/* A dialog overlay that closes only when its own backdrop is clicked
+   (the old if(event.target===this)closeDetail()). Needs data-ev: the
+   dispatcher passes the event only to opted-in actions. */
+function dlgSelfClose(e) { if (e && e.target === this) closeDetail(); }
+function blurOnEnter(e, el) { if (e && e.key === "Enter" && el) el.blur(); }
 
 function switchTab(tab) {
   const prev = currentTab;
@@ -679,6 +827,10 @@ window.addEventListener("offline", netPaint);
    versa), tabs and panes disagree — e.g. a tab button with no pane, or a
    first-run tour looping over an app the user already knows. Banner offers
    a cache-busting reload instead of failing silently. */
+/* Hard reload that busts a stale service-worker cache. */
+function freshReload() {
+  try { location.href = location.pathname + "?v=" + Date.now() + location.hash; } catch (e) {}
+}
 function shellFreshCheck() {
   try {
     const skTabs = (typeof SK_TABS !== "undefined" ? SK_TABS : []);
@@ -705,7 +857,7 @@ function shellFreshCheck() {
       b = document.createElement("div");
       b.id = "freshBanner";
       b.innerHTML = `<b>Update available.</b><span>This page is a stale cached copy (mismatch: ${bad.map(escHtml).join(", ")}). </span>` +
-        `<button class="btn sm primary" onclick="location.href=location.pathname+'?v='+Date.now()+location.hash">Reload fresh copy</button>`;
+        `<button class="btn sm primary" data-act="freshReload">Reload fresh copy</button>`;
       document.body.appendChild(b);
     }
     return false;
@@ -896,8 +1048,8 @@ function notifLogOpen(open) {
     p.setAttribute("role", "dialog");
     p.setAttribute("aria-label", "Notification history");
     p.innerHTML = '<div class="notif-log-head"><b>Notifications</b>' +
-      '<span><button class="iconbtn" type="button" onclick="notifLogClear()">clear</button>' +
-      '<button class="iconbtn" type="button" onclick="notifLogToggle()" aria-label="Close notification history">✕</button></span></div>' +
+      '<span><button class="iconbtn" type="button" data-act="notifLogClear">clear</button>' +
+      '<button class="iconbtn" type="button" data-act="notifLogToggle" aria-label="Close notification history">✕</button></span></div>' +
       '<div class="notif-log-body" id="notifLogBody"></div>';
     document.body.appendChild(p);
   }
@@ -957,11 +1109,39 @@ function markSaveFailed(key, label) {
 /* ---------------- active-filter chips (catalog panes) --------------------
    paintActiveChips(id, chips) renders removable filter pills. Each chip is
    { label, title, fn } — fn is a global function name + JS-escaped argument. */
+/* Parse an old-style "fn('a', 1)" action string into a [name, argsJSON]
+   pair for delegated buttons (emptyState actions, filter chips). Returns
+   null when the string is not a plain call with literal arguments — the
+   caller then renders an inert button and logs, instead of eval-ing. */
+function actParse(fnSrc) {
+  const m = /^([A-Za-z_$][\w$]*)\((.*)\)$/.exec(String(fnSrc || "").trim());
+  if (!m) return null;
+  const args = [];
+  if (m[2].trim() !== "") {
+    const parts = m[2].split(/\s*,\s*/);
+    for (const p of parts) {
+      const s = /^'([\s\S]*)$/.exec(p);
+      if (s && s[1].slice(-1) === "'" && s[1].indexOf("'") === s[1].length - 1) {
+        args.push(JSON.stringify(s[1].slice(0, -1)));
+      } else if (/^(null|true|false|-?\d+)$/.test(p)) {
+        args.push(p);
+      } else {
+        return null;
+      }
+    }
+  }
+  return { act: m[1], json: "[" + args.join(",") + "]" };
+}
+function actButtonAttrs(fnSrc) {
+  const parsed = actParse(fnSrc);
+  if (!parsed) { console.error("unparseable action: " + fnSrc); return ""; }
+  return 'data-act="' + parsed.act + '" data-args=\'' + escHtml(parsed.json) + '\'';
+}
 function emptyState(icon, title, body, actionLabel, actionFn) {
   return `<div class="empty-state"><div class="empty-ico">${icon}</div>` +
     `<div class="empty-t">${escHtml(title)}</div>` +
     (body ? `<div class="empty-b">${body}</div>` : "") +
-    (actionLabel && actionFn ? `<button class="btn sm primary" onclick="${escHtml(actionFn)}">${escHtml(actionLabel)}</button>` : "") +
+    (actionLabel && actionFn ? `<button class="btn sm primary" ${actButtonAttrs(actionFn)}>${escHtml(actionLabel)}</button>` : "") +
     `</div>`;
 }
 function escJs(s) { return String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
@@ -971,7 +1151,7 @@ function paintActiveChips(id, chips) {
   if (!box) return;
   box.innerHTML = (chips || []).map(c =>
     `<span class="fchip" title="${escHtml(c.title || c.label)}">${escHtml(c.label)}` +
-    `<button type="button" onclick="${escHtml(c.fn)}" aria-label="Remove filter ${escHtml(c.label)}">×</button></span>`).join("");
+    `<button type="button" ${actButtonAttrs(c.fn)} aria-label="Remove filter ${escHtml(c.label)}">×</button></span>`).join("");
   box.style.display = chips && chips.length ? "" : "none";
 }
 
@@ -1215,24 +1395,24 @@ function onbShow(force) {
     o.setAttribute("aria-label", "Welcome — choose a starting path");
     o.innerHTML =
       `<div class="onb-box">` +
-      `<button class="onb-x" onclick="onbGo(null)" aria-label="Close welcome tour">✕</button>` +
+      `<button class="onb-x" data-act="onbGo" data-args="[null]" aria-label="Close welcome tour">✕</button>` +
       `<div class="onb-kicker">AI AGENT PATTERNS &amp; GUARDRAILS</div>` +
       `<h2 class="onb-title">What are you designing today?</h2>` +
       `<p class="onb-sub">This is an advisory workbench, not a dashboard. Pick the job — the app lines up the catalog, the planner and the copilot behind it.</p>` +
       `<div class="onb-cards">` +
       `<div class="onb-card"><div class="onb-ico">🧭</div><b>Ship an agent safely</b>` +
       `<span>Answer 4 intake questions → readiness score, recommended stack, rollout plan, risks and ADR.</span>` +
-      `<button class="btn primary" onclick="onbGo('deploy')">Start the deployment plan</button></div>` +
+      `<button class="btn primary" data-act="onbGo" data-args="[&quot;deploy&quot;]">Start the deployment plan</button></div>` +
       `<div class="onb-card"><div class="onb-ico">🧩</div><b>Architect the system</b>` +
       `<span>Compose stages and controls → live coverage, cost, threat exposure and cascade analysis.</span>` +
-      `<button class="btn primary" onclick="onbGo('blueprint')">Open the blueprint builder</button></div>` +
+      `<button class="btn primary" data-act="onbGo" data-args="[&quot;blueprint&quot;]">Open the blueprint builder</button></div>` +
       `<div class="onb-card"><div class="onb-ico">⧉</div><b>Study how agents fail</b>` +
       `<span>${catN("patterns", 107)} patterns, ${catN("scenarios", 43)} scenarios, ${catN("cascades", 180)} cascades — how small faults cross boundaries and amplify.</span>` +
-      `<button class="btn primary" onclick="onbGo('cascades')">Explore the cascade catalog</button></div>` +
+      `<button class="btn primary" data-act="onbGo" data-args="[&quot;cascades&quot;]">Explore the cascade catalog</button></div>` +
       `</div>` +
-      `<div class="onb-foot"><button class="btn sm ghost" onclick="onbGo('copilot')">Just ask Fox - Architect instead →</button>` +
+      `<div class="onb-foot"><button class="btn sm ghost" data-act="onbGo" data-args="[&quot;copilot&quot;]">Just ask Fox - Architect instead →</button>` +
       `<span style="flex:1"></span>` +
-      `<button class="btn sm" onclick="onbGo(null)">Skip — I'll explore</button></div>` +
+      `<button class="btn sm" data-act="onbGo" data-args="[null]">Skip — I'll explore</button></div>` +
       `</div>`;
     o.addEventListener("mousedown", e => { if (e.target === o) onbGo(null); });
     o.addEventListener("keydown", onbTrapTab);
@@ -1442,7 +1622,7 @@ function mmRenderAll(root) {
 
 /* Build a <pre class="mermaid"> block with an enlarge button */
 function diagramHtml(src, title) {
-  return `<div class="diagram-wrap"><button class="design-expand" onclick="openZoom(this)" title="Open large with zoom">⤢ enlarge</button>` +
+  return `<div class="diagram-wrap"><button class="design-expand" data-act="openZoom" data-first="el" title="Open large with zoom">⤢ enlarge</button>` +
     `<pre class="mermaid" data-src="${escHtml(src)}">${escHtml(src)}</pre></div>`;
 }
 
@@ -1483,6 +1663,8 @@ function zoomApply() {
   el("zoomInner").style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
 }
 function zoomBy(f) { zoomState.scale = Math.min(8, Math.max(0.1, zoomState.scale * f)); zoomApply(); }
+function zoomIn() { zoomBy(1.2); }
+function zoomOut() { zoomBy(1 / 1.2); }
 function zoomFit() {
   const stage = el("zoomStage"), svg = el("zoomInner").querySelector("svg");
   if (!svg || !stage.clientWidth) return;
@@ -1661,6 +1843,13 @@ function dlCopyWorkLink(tab, id) {
   if (!tab || !id) return;
   copyText(location.origin + location.pathname + "#" + tab + "/" + encodeURIComponent(id), "Link");
 }
+/* Deep-link shim for delegation (the old inline handler built the
+   project link address inline). */
+function dlCopyProject() {
+  if (typeof dlCopyWorkLink !== "function") return;
+  const p = (typeof projGet === "function" && projGet()) || {};
+  if (p.id) dlCopyWorkLink("overview", "proj:" + p.id);
+}
 function dlOpen(tab, id, fromHash) {
   if (!tab || !id || !document.getElementById(tab + "Pane")) return false;
   const target = "#" + tab + "/" + encodeURIComponent(id);
@@ -1713,9 +1902,9 @@ function copyText(text, label) {
 }
 function dlShareRow() {
   if (!dlShare) return "";
-  return '<button class="btn sm ghost" type="button" onclick="dlCopyLink()" title="Copy a link that opens this item directly">🔗 Copy link</button>' +
-    '<button class="btn sm ghost" type="button" onclick="dlCopyId()" title="Copy the catalog id">⧉ Copy id</button>' +
-    '<button class="btn sm ghost" type="button" onclick="dlCopySummary()" title="Copy this drawer as Markdown">⧉ Copy as Markdown</button>';
+  return '<button class="btn sm ghost" type="button" data-act="dlCopyLink" title="Copy a link that opens this item directly">🔗 Copy link</button>' +
+    '<button class="btn sm ghost" type="button" data-act="dlCopyId" title="Copy the catalog id">⧉ Copy id</button>' +
+    '<button class="btn sm ghost" type="button" data-act="dlCopySummary" title="Copy this drawer as Markdown">⧉ Copy as Markdown</button>';
 }
 function dlCopyLink() {
   if (!dlShare) return;

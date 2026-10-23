@@ -85,13 +85,13 @@ def gzip_cached(path, st):
     return out
 
 
-# Same-origin hardening applied to every response. The app is inline-handler
-# heavy and the print view writes an inline <style>, so script-src/style-src
-# keep 'unsafe-inline'; every string the app interpolates into HTML goes
-# through escHtml (or a scheme-whitelisted link builder), which is what makes
-# that tenable. No third-party script source: Mermaid is vendored.
+# Same-origin hardening applied to every response. Inline event handlers are
+# gone (all interaction goes through the delegated data-act dispatcher, and
+# the boot check lives in js/bootcheck.js), so script-src needs no
+# 'unsafe-inline'. style-src keeps it: the app sets element styles inline
+# and the print view writes an inline <style> block.
 CSP = ("default-src 'self'; "
-       "script-src 'self' 'unsafe-inline'; "
+       "script-src 'self'; "
        "style-src 'self' 'unsafe-inline'; "
        "img-src 'self' data:; font-src 'self' data:; "
        "connect-src 'self'; worker-src 'self'; "

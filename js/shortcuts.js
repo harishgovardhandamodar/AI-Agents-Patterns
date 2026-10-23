@@ -78,7 +78,7 @@ function initShortcuts() {
     <div class="sk-rows">${SK_HELP.map(([k, t]) =>
       `<div class="sk-row"><kbd>${escHtml(k)}</kbd><span>${escHtml(t)}</span></div>`).join("")}</div>
     <div class="pal-foot">Tip: the palette searches patterns, scenarios, cascades, tabs, templates and your saved blueprints.
-      <a href="#" onclick="skHelpClose();onbShow(true);return false;">↺ Replay the welcome tour</a></div>
+      <a href="#" data-act="replayTour">↺ Replay the welcome tour</a></div>
   </div>`;
   d.addEventListener("mousedown", e => { if (e.target === d) skHelpClose(); });
   document.body.appendChild(d);

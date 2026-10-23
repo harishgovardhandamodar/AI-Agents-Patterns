@@ -170,12 +170,12 @@ function resSummary(s) {
 function resBarHtml(pane) {
   const sets = resFor(pane);
   return '<span class="res-bar">' +
-    '<button class="btn sm ghost" onclick="resSavePrompt(\'' + pane + '\')" title="Save the current filters as a named research set">💾 Save set</button>' +
+    '<button class="btn sm ghost" data-act="resSavePrompt" data-args="' + dataArgs(pane) + '" title="Save the current filters as a named research set">💾 Save set</button>' +
     (sets.length
       ? '<span class="res-sets">' + sets.map(function (s) {
           return '<span class="chip res-set" title="' + escHtml(resSummary(s)) + '">' +
-            '<button class="res-set-btn" onclick="resApply(\'' + s.id + '\')" title="' + escHtml(resSummary(s)) + '">' + escHtml(s.name) + "</button>" +
-            '<button class="res-set-x" onclick="resDelete(\'' + s.id + '\')" title="Delete this research set" aria-label="Delete research set ' + escHtml(s.name) + '">×</button>' +
+            '<button class="res-set-btn" data-act="resApply" data-args="' + dataArgs(s.id) + '" title="' + escHtml(resSummary(s)) + '">' + escHtml(s.name) + "</button>" +
+            '<button class="res-set-x" data-act="resDelete" data-args="' + dataArgs(s.id) + '" title="Delete this research set" aria-label="Delete research set ' + escHtml(s.name) + '">×</button>' +
             "</span>";
         }).join("") + "</span>"
       : "") +

@@ -13,6 +13,7 @@ const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = readFileSync(join(ROOT, "js/rogue.js"), "utf8");
 
 function stubShell(extra) {
+  const escHtml = (s) => String(s == null ? "" : s);
   return Object.assign({
     console, tabLoaders: {}, window: {},
     localStorage: {
@@ -20,7 +21,14 @@ function stubShell(extra) {
       getItem(k) { return this._d[k] == null ? null : this._d[k]; },
       setItem(k, v) { this._d[k] = String(v); },
     },
-    escHtml: (s) => String(s == null ? "" : s),
+    escHtml,
+    /* dataArgs lives in js/app.js in the browser (always loaded first);
+       the vm harness provides the identical implementation. */
+    dataArgs: function () {
+      return escHtml("[" + Array.prototype.map.call(arguments, function (x) {
+        return JSON.stringify(String(x));
+      }).join(",") + "]");
+    },
     setTimeout, clearTimeout, setInterval, clearInterval,
     Date, Math, JSON, Array, Object, Number, String, Boolean,
     isFinite, parseInt, parseFloat,

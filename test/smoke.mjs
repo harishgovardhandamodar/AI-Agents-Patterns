@@ -67,12 +67,12 @@ async function main() {
   const port = await freePort();
   const server = spawn("python3", ["serve.py", String(port)], { cwd: ROOT, stdio: "ignore" });
   const base = `http://127.0.0.1:${port}/`;
+  let browser = null;
   try {
     if (!(await waitForServer(base))) throw new Error(`server on ${base} did not come up`);
 
     const launch = { headless: "new", args: ["--no-sandbox"] };
     if (process.env.CHROME_PATH) launch.executablePath = process.env.CHROME_PATH;
-    let browser;
     try {
       browser = await puppeteer.launch(launch);
     } catch (e) {
@@ -94,7 +94,9 @@ async function main() {
     if (!TAB_IDS.length) throw new Error("no data-tab buttons found in index.html");
     const results = [];
     for (const id of TAB_IDS) {
-      await page.evaluate((t) => switchTab(t), id);
+      // Real clicks, not direct switchTab() calls: this exercises the
+      // delegated data-act path end to end for every tab button.
+      await page.click(`.app-tab[data-tab="${id}"]`);
       await sleep(500);
       const n = await page.evaluate((t) => {
         const pane = document.getElementById(t + "Pane");
@@ -102,6 +104,34 @@ async function main() {
       }, id);
       results.push([id, n]);
     }
+
+    // Every rendered data-* action must resolve: the name is a function and
+    // data-args parses as JSON (placeholders resolved at render time). A
+    // typo or a malformed payload would otherwise die silently on click.
+    const actCheck = await page.evaluate(() => {
+      const bad = [];
+      document.querySelectorAll("[data-act],[data-change],[data-input],[data-key]").forEach((el) => {
+        ["data-act", "data-change", "data-input", "data-key"].forEach((a) => {
+          const name = el.getAttribute(a);
+          if (name && typeof window[name] !== "function") {
+            bad.push(`${a}="${name}" is not a function ` +
+              `(in #${(el.closest(".pane") || {}).id || "?"})`);
+          }
+        });
+        const raw = el.getAttribute("data-args");
+        if (raw != null) {
+          try {
+            const v = JSON.parse(raw);
+            if (!Array.isArray(v)) bad.push(`data-args not an array: ${raw.slice(0, 80)}`);
+          } catch {
+            bad.push(`data-args not JSON: ${raw.slice(0, 120)}`);
+          }
+        }
+      });
+      return bad;
+    });
+    for (const b of actCheck.slice(0, 12)) errors.push("dead action: " + b);
+    if (actCheck.length > 12) errors.push(`... and ${actCheck.length - 12} more dead actions`);
 
     // Core a11y invariants from iterations 84-86.
     const a11y = await page.evaluate(() => ({
@@ -195,8 +225,6 @@ async function main() {
     const empty = results.filter(([, n]) => n <= 0).map(([id]) => id);
     if (empty.length) errors.push(`panes rendered empty: ${empty.join(", ")}`);
 
-    await browser.close();
-
     if (errors.length) {
       console.error(`FAIL: ${errors.length} problem(s)`);
       for (const e of errors) console.error("  " + e);
@@ -206,6 +234,11 @@ async function main() {
         `${wf.steps.length} workflow steps, 0 errors.`);
     }
   } finally {
+    // Close the browser even when an assertion throws midway — a leaked
+    // Chrome keeps the event loop alive and CI hangs until the timeout.
+    if (browser) {
+      try { await browser.close(); } catch { /* already gone */ }
+    }
     server.kill("SIGTERM");
   }
 }

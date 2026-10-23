@@ -132,6 +132,6 @@ function helpOpen(which) {
       (terms.length ? `<div class="dsec"><h4>Terms used above</h4>` +
         terms.map(g => `<p style="margin:4px 0"><b>${escHtml(g[0])}</b> — ${escHtml(g[1])}</p>`).join("") + `</div>` : "");
   }
-  body += `<div class="dsec"><p class="muted small"><a href="#" onclick="helpOpen('glossary');return false;">Full glossary (${GLOSSARY.length} terms)</a> · <a href="#" onclick="closeDetail();skHelpOpen();return false;">Keyboard shortcuts</a> · <a href="#" onclick="closeDetail();onbShow(true);return false;">Replay the welcome tour</a></p></div>`;
+  body += `<div class="dsec"><p class="muted small"><a href="#" data-act="helpOpen" data-args="[&quot;glossary&quot;]">Full glossary (${GLOSSARY.length} terms)</a> · <a href="#" data-act="closeDetailHelp">Keyboard shortcuts</a> · <a href="#" data-act="closeDetailTour">Replay the welcome tour</a></p></div>`;
   openDetail(title, "guide", body);
 }

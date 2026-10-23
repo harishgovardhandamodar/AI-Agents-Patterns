@@ -126,9 +126,9 @@ function cpCopyMsg(i) {
   else showNotif("Clipboard unavailable — select the text manually", { kind: "warn" });
 }
 function cpActionsHtml(m, i, isLast) {
-  if (m.role === "user") return `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this question">⧉ copy</button></div>`;
-  let h = `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this answer">⧉ copy</button>`;
-  if (isLast) h += `<button type="button" onclick="cpRegen(${i})" title="Ask the same question again"${cpBusy ? " disabled" : ""}>↻ regenerate</button>`;
+  if (m.role === "user") return `<div class="cp-actions"><button type="button" data-act="cpCopyMsg" data-args='[${i}]' title="Copy this question">⧉ copy</button></div>`;
+  let h = `<div class="cp-actions"><button type="button" data-act="cpCopyMsg" data-args='[${i}]' title="Copy this answer">⧉ copy</button>`;
+  if (isLast) h += `<button type="button" data-act="cpRegen" data-args='[${i}]' title="Ask the same question again"${cpBusy ? " disabled" : ""}>↻ regenerate</button>`;
   return h + "</div>";
 }
 function cpFollowHtml(m) {
@@ -139,7 +139,7 @@ function cpFollowHtml(m) {
        { q: "What should I implement first, and why?", t: "What first?" },
        { q: "How do I test that these controls actually hold?", t: "How to test?" }];
   return `<div class="cp-follow"><span class="muted small">Follow up:</span> ` + qs.map((f, k) =>
-    `<button type="button" onclick="cpFollowAsk(${k})" data-fq="${escHtml(f.q)}">${escHtml(f.t)}</button>`).join("") + `</div>`;
+    `<button type="button" data-act="cpFollowAsk" data-args='[${k}]' data-fq="${escHtml(f.q)}">${escHtml(f.t)}</button>`).join("") + `</div>`;
 }
 function cpFollowAsk(k) {
   const log = el("cpLog");

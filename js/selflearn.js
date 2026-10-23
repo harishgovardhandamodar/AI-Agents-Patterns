@@ -70,12 +70,6 @@ const selflearnState = {
   booted: false
 };
 
-function slArgs() {
-  return escHtml(Array.prototype.slice.call(arguments)
-    .map(function (x) { return JSON.stringify(String(x)); })
-    .join(","));
-}
-
 function slLoadCfg() {
   try {
     const raw = localStorage.getItem(SL_CFG_STORE);
@@ -93,6 +87,8 @@ function slSaveCfg() {
 }
 
 function slBase() { return "http://localhost:" + selflearnState.cfg.port; }
+/* Deep-link shim for delegation (window.open is not a window global). */
+function slOpenLab() { window.open(slBase() + "/"); }
 
 /* ---------------- status probe ---------------- */
 
@@ -146,10 +142,10 @@ function slStatusHtml() {
 function slConceptRows() {
   return SL_CONCEPTS.map(function (c) {
     const pats = c.patterns.map(function (p) {
-      return '<button class="btn sm ghost" onclick="openPattern(' + slArgs(p) + ')">' + escHtml(p) + "</button>";
+      return '<button class="btn sm ghost" data-act="openPattern" data-args="' + dataArgs(p) + '">' + escHtml(p) + "</button>";
     }).join(" ");
     const scns = c.scenarios.map(function (s) {
-      return '<button class="btn sm ghost" onclick="goTo(' + slArgs("scenarios", s) + ')">' + escHtml(s) + "</button>";
+      return '<button class="btn sm ghost" data-act="goTo" data-args="' + dataArgs("scenarios", s) + '">' + escHtml(s) + "</button>";
     }).join(" ");
     return "<tr><td><b>" + escHtml(c.label) + "</b><br><span class=\"muted small\">" + escHtml(c.what) + "</span></td>" +
       "<td>" + pats + "</td><td>" + scns + "</td></tr>";
@@ -165,8 +161,8 @@ function renderSelflearn() {
       "<div><h2>🧬 Self-Learning</h2>" +
       '<p class="muted small">The add-on bridge to the Self-Learning Agent Lab — continual learning, task-scoped adaptation, and the evaluation discipline that keeps them honest.</p></div>' +
       '<div class="bt-head-btns">' +
-        '<button class="btn" onclick="slProbe()">↻ Check lab</button>' +
-        '<button class="btn primary" onclick="window.open(' + slArgs(slBase() + "/") + ')">Open the lab ↗</button>' +
+        '<button class="btn" data-act="slProbe">↻ Check lab</button>' +
+        '<button class="btn primary" data-act="slOpenLab">Open the lab ↗</button>' +
       "</div>" +
     "</div>" +
     '<div class="panel" style="margin-bottom:12px"><h3>Add-on status <span class="muted small">the lab is a separate service — this tab bridges to it</span></h3>' +
@@ -176,9 +172,9 @@ function renderSelflearn() {
       "run locally with <span class=\"mono\">" + escHtml(SL_LAB.run) + "</span> or <span class=\"mono\">" + escHtml(SL_LAB.compose) + "</span>.</p>" +
       '<div class="rg-form-grid"><label class="rg-field"><span class="muted small">Lab port</span>' +
         '<input class="search" type="number" min="1" max="65535" value="' + selflearnState.cfg.port + '"' +
-        ' onchange="slSetPort(this.value)" aria-label="Lab port"></label>' +
+        ' data-change="slSetPort" data-first="value" aria-label="Lab port"></label>' +
       '<label class="rg-field"><span class="muted small">&nbsp;</span><span>' +
-        (up ? '<button class="btn sm primary" onclick="window.open(' + slArgs(slBase() + "/") + ')">Open dashboard ↗</button>'
+        (up ? '<button class="btn sm primary" data-act="slOpenLab">Open dashboard ↗</button>'
           : '<span class="muted small">Start the lab, then check again — everything below works without it.</span>') +
       "</span></label></div></div>" +
     '<div class="panel" style="margin-bottom:12px"><h3>Concept bridge <span class="muted small">lab mechanism → what the catalog already covers — click through to the record</span></h3>' +
@@ -202,7 +198,7 @@ function initSelflearn() {
     el("slMain").innerHTML = '<div class="empty-state"><div class="empty-ico">🧬</div>' +
       '<div class="empty-t">Self-Learning could not start</div>' +
       '<div class="empty-b">Something went wrong while loading (' + escHtml(String(e && e.message || e)).slice(0, 140) + '). The catalog is unaffected.</div>' +
-      '<button class="btn sm primary" onclick="initSelflearn()">Retry</button></div>';
+      '<button class="btn sm primary" data-act="initSelflearn">Retry</button></div>';
   }
 }
 

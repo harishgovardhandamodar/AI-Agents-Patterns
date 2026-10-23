@@ -238,7 +238,7 @@ function palRender() {
   list.innerHTML = palHits.map((h, i) => {
     const head = (h.grp != null && h.grp !== lastGrp) ? `<div class="pal-grp">${h.grp === 0 ? "Recent" : "Browse"}</div>` : "";
     lastGrp = h.grp == null ? lastGrp : h.grp;
-    return head + `<div class="pal-item ${i === palSel ? "sel" : ""}" data-i="${i}" onmousedown="event.preventDefault()" onclick="palPick(${i})">
+    return head + `<div class="pal-item ${i === palSel ? "sel" : ""}" data-i="${i}" data-noblur data-act="palPick" data-args='[${i}]'>
       <span class="pal-kind k-${h.it.kind}">${escHtml(PAL_KINDS[h.it.kind].label)}</span>
       <span class="pal-title">${palHi(h.it.title, q)}</span>
       <span class="pal-sub">${escHtml(h.it.sub || "")}</span>
@@ -248,6 +248,8 @@ function palRender() {
   if (sel) sel.scrollIntoView({ block: "nearest" });
 }
 
+/* Input shim for delegation (the old inline oninput assigned + rendered). */
+function palInputReset() { palSel = 0; palRender(); }
 function palPick(i) {
   const h = palHits[i != null ? i : palSel];
   if (!h) return;
@@ -314,7 +316,7 @@ function initPalette() {
   d.setAttribute("aria-modal", "true");
   d.setAttribute("aria-label", "Command palette");
   d.innerHTML = `<div class="pal-box">
-    <input id="palInput" class="pal-input" aria-label="Search everything" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" oninput="palSel=0;palRender()" autocomplete="off">
+    <input id="palInput" class="pal-input" aria-label="Search everything" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" data-input="palInputReset" autocomplete="off">
     <div id="palList" class="pal-list"></div>
     <div class="pal-foot"><span><b>↑↓</b> move · <b>Enter</b> open · <b>&gt;</b> commands · <b>pat: scn: cas:</b> scope · <b>Esc</b> close</span></div>
   </div>`;
