@@ -22,8 +22,10 @@ function initGuardrail() {
 }
 
 function persistGuard() {
+  let ok = false;
   try {
     localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+    ok = true;
   } catch (e) {
     /* Storage full: drop oldest analyses (keep the 20 newest) and retry once
        instead of failing silently — a collection that can't save looks saved. */
@@ -31,10 +33,12 @@ function persistGuard() {
     renderGuardCollection();
     try {
       localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+      ok = true;
       showNotif("Browser storage was full — trimmed the collection to the 20 newest analyses", { kind: "warn" });
-    } catch (e2) { showNotif("Could not persist collection (storage unavailable)", { kind: "error" }); }
+    } catch (e2) { ok = false; }
   }
-  if (typeof markSaved === "function") markSaved("guard");
+  if (ok) { if (typeof markSaved === "function") markSaved("guard"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("guard", "Guardrail collection");
   if (typeof projTouch === "function") projTouch();
 }
 function seedExample() {

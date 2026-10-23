@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, "feat/**"]
+    branches: [main, "feat/**", "analysis/**"]
   pull_request:
 
 jobs:
@@ -27,7 +27,8 @@ jobs:
   e2e:
     name: headless smoke
     runs-on: ubuntu-latest
-    continue-on-error: true
+    env:
+      CI: "true"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -39,5 +40,5 @@ jobs:
           python-version: "3.x"
       - name: Install (full, with Chromium)
         run: npm ci
-      - name: Headless smoke (12 tabs, 0 errors)
+      - name: Headless smoke (15 tabs, 0 errors)
         run: npm run test:e2e

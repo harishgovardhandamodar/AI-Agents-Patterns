@@ -46,6 +46,16 @@ function btArgs() {
 }
 
 function btInit() {
+  /* Fail loudly if the bench's option tables no longer match the planner's:
+     a silent drift means the bench measures a configuration space the
+     deploy tab cannot actually produce. */
+  const drift = (typeof btCheckDimSync === "function") ? btCheckDimSync() : [];
+  if (drift.length) {
+    console.error("Battle Bench dimensions drifted from the Deployment Planner: " + drift.join("; "));
+    if (typeof showNotif === "function") {
+      showNotif("Battle Bench config drifted from the Deployment Planner — results may be invalid. See console.", { kind: "error" });
+    }
+  }
   btState.context = btContext();
   /* Seed the configuration panel with the default experiment set, and
      adopt the user's saved ones if they have any. */

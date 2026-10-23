@@ -223,7 +223,7 @@ tools/book_pdf.py          PDF post-pass (pypdf): reads link destinations, write
 book/AGENTIC-PATTERNS-AND-GUARDRAILS.md   generated book (114 chapters, 10 parts)
 book/Agentic-Design-Patterns-and-Guardrails.pdf   rendered book (424 pp, 129 diagrams, 132 linked contents entries)
 book/ROGUE-AGENTS.md   generated supplement (7 parts + appendices, 14 diagrams, rogue readings of all 54 scenarios + 7 theme case studies)
-book/Rogue-Agents.pdf      rendered supplement (38 pp, 14 diagrams, 46 linked contents entries)
+book/Rogue-Agents.pdf      rendered supplement (39 pp, 14 diagrams, 46 linked contents entries)
 book/SELF-LEARNING-AGENTS.md   generated supplement (6 parts + appendices, 12 diagrams, lab inventory + landscape + catalog bridge + the learning loop in detail)
 book/Self-Learning-Agents.pdf   rendered supplement (36 pp, 12 diagrams, 30 linked contents entries)
 design/*.md                10 UML/architecture docs (56 Mermaid diagrams total)
@@ -235,11 +235,11 @@ docker-compose.yml         default deployment (LAN + host Tailscale)
 docker-compose.tailscale.yml   dedicated Tailscale node (+ HTTPS URL)
 tailscale/serve.json       Tailscale Serve config for the sidecar deployment
 .env.example               APP_PORT, TS_AUTHKEY, TS_HOSTNAME
-package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / book / book:rogue / check
+package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / book / book:rogue / check / check:all
 eslint.config.mjs          flat ESLint config; no-undef over the app's shared global namespace
 test/data.test.mjs         catalog integrity, schema guard, coverage freshness, SW precache sync
 test/smoke.mjs             headless smoke (boots the server, walks all 15 tabs + the workflow journey, asserts 0 errors)
-.github/workflows/ci.yml   CI: lint + data integrity (blocking), headless smoke (non-blocking)
+.github/workflows/ci.yml   CI: lint + data integrity, headless smoke (both blocking)
 ```
 
 Load order matters and is fixed in `index.html`: `app.js` defines the shell (`switchTab`, `mmRender`, `openDetail`, `openZoom`, the `tabLoaders` registry), `player.js` defines the reusable `LivePlayer` widget, then each tab module registers its `init*` and `tabLoaders` entry. Cross-module calls are guarded with `typeof … === "function"` so a module can fail without taking the shell down.
@@ -273,7 +273,7 @@ The reference book's chapter template was matched section-for-section; where it 
 - **First load is ~1.37 MB, not ~4.9 MB.** `serve.py` gzips compressible types and caches each compression on `(mtime, size)`, sends the vendored Mermaid with `immutable` caching, and revalidates everything else with `Last-Modified`/`If-Modified-Since` (cheap 304s). Repeat visits transfer ~0.02 MB.
 - **Offline shell.** `sw.js` precaches the whole app (html, css, the 27 scripts, the vendored Mermaid, all `data/*.json` and `design/*.md` — 44 entries) and serves same-origin GETs network-first with a cache fallback. It never touches `/api/*` (the LLM proxy and the diagnostics beacon). After one visit the app works with no network at all; the offline chip reads *Offline · cached*. Bump `VERSION` in `sw.js` to force every client to re-precache.
 - **Perf budget** is printed in the Display panel (⛭ display): requests this session, how many were answered locally, bytes actually pulled over the wire, and the size of the offline cache — so the wins above are visible, not claims.
-- **Tests & lint (no build step added):** `npm test` runs a dependency-free `node:test` suite over the catalog — id uniqueness, full referential integrity, a required/unexpected-key schema guard (it catches typos like the historical `proteations`), coverage.json freshness (recomputed from the catalogs), and that `sw.js`'s precache list matches the files on disk. `npm run lint` runs ESLint with `no-undef` across every `js/*.js`, treating the app's own top-level declarations as shared globals so genuine typos fail and cross-file calls don't. `npm run test:e2e` boots the real server and walks all 15 tabs headlessly (skips cleanly when no browser is present). `npm run check` runs lint + tests. CI (`.github/workflows/ci.yml`) gates on lint + data integrity, with the headless smoke as a non-blocking job.
+- **Tests & lint (no build step added):** `npm test` runs a dependency-free `node:test` suite over the catalog — id uniqueness, full referential integrity, a required/unexpected-key schema guard (it catches typos like the historical `proteations`), coverage.json freshness (recomputed from the catalogs), bench/planner dimension sync, and that `sw.js`'s precache list matches the files on disk. `npm run lint` runs ESLint with `no-undef` across every `js/*.js`, treating the app's own top-level declarations as shared globals so genuine typos fail and cross-file calls don't. `npm run test:e2e` boots the real server and walks all 15 tabs headlessly; it skips cleanly when no browser is present locally, but under `CI=1` a missing browser fails the run. `npm run check` runs lint + tests; `npm run check:all` adds the headless smoke. CI (`.github/workflows/ci.yml`) gates on lint + data integrity **and** the headless smoke.
 
 ## Extending it
 
@@ -281,7 +281,7 @@ The reference book's chapter template was matched section-for-section; where it 
 - **Add a scenario:** append to `data/scenarios.json`; set `traceId` to link a mock run.
 - **Add a trace:** append to `data/traces.json`; give each step a `node` matching a node id in `flow`, and keep node ids non-overlapping (zero-pad numeric ids, e.g. `N01`, `N02`, so `N1` never matches inside `N10`).
 - **Add a design doc:** add the file under `design/` and register it in `DESIGN_DOCS` at the top of `js/app.js`.
-- **Add a battle-bench configuration:** `btDefaultConfigs()` in `js/bench.js` (or import a saved one in the tab's config editor) — new configs automatically get cases for all 54 scenarios. Add a *dimension* by extending `btConfig` **and** the Deployment Plan's option table; the drift check fails until both agree.
+- **Add a battle-bench configuration:** `btDefaultConfigs()` in `js/bench.js` (or import a saved one in the tab's config editor) — new configs automatically get cases for all 54 scenarios. Add a *dimension* by extending `btConfig` **and** the Deployment Plan's option table; `btCheckDimSync` runs when the bench initialises (and in `npm test`), so a mismatch is loud until both agree.
 - **Add a battle-bench adapter:** `btRegisterAdapter({ id, label, needsModel, run(case) → result })` — the oracle, runner, store and UI pick it up unchanged.
 - **Add any served file:** add it to the `PRECACHE` list in `sw.js` too — `npm test` fails if the offline shell misses a file under `js/`, `data/`, `design/` or `css/`.
 - **Regenerate derived data:** after editing scenarios, run `npm run gen` (`tools/gen_cascades.py && tools/gen_coverage.py`); the integrity test fails if `data/coverage.json` is stale.

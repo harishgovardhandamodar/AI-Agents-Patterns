@@ -76,8 +76,13 @@ const bpState = { name: "", comps: [], notes: "", q: "", cat: "", lib: [], est: 
 
 /* ---------------- persistence ---------------- */
 function bpSave() {
-  try { localStorage.setItem(BP_STORE, JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes, est: bpState.est })); } catch (e) {}
-  if (typeof markSaved === "function") markSaved("bp");
+  let ok = false;
+  try {
+    const raw = JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes, est: bpState.est });
+    ok = (typeof storeSet === "function") ? storeSet(BP_STORE, raw) : false;
+  } catch (e) { ok = false; }
+  if (ok) { if (typeof markSaved === "function") markSaved("bp"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("bp", "Blueprint");
   if (typeof projTouch === "function") projTouch();
 }
 function bpSaveLib() {

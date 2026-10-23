@@ -20,6 +20,7 @@ Endpoints (all read-only proxies, no secrets, no auth):
     GET  /api/llm/health   -> backend status + default model + readiness
     GET  /api/llm/models   -> model list from the active backend
     GET  /api/llm/config   -> non-secret configuration for the UI
+    GET  /api/selflearn/health?port=8220 -> Self-Learning Lab reachability
     POST /api/llm/chat     -> streaming chat completion (SSE passthrough)
 
 Backends are tried in order (axiom first, then Fox-Services — see LLM_PRIMARY).
@@ -184,6 +185,54 @@ def health():
     }
 
 
+# ---------------------------------------------------- self-learning bridge
+# The Self-Learning Lab (../self-learning-agents) runs on its own port and
+# ships no CORS headers, so a browser probe would be blocked by `connect-src
+# 'self'`. Probe it server-side instead: same-origin for the browser, and it
+# reaches the lab on the machine that serves this app (which is also where
+# the sibling checkout runs). Only a loopback host is ever contacted — the
+# query string selects a port, never a host — so this cannot be used as an
+# open relay to arbitrary addresses.
+SELFLEARN_PORT = int(os.environ.get("SELFLEARN_PORT", "8220"))
+
+
+def selflearn_health(port, timeout=2.0):
+    out = {"ok": False, "port": port, "checked_at": time.time()}
+    if not isinstance(port, int) or port < 1 or port > 65535:
+        out["error"] = "invalid port"
+        return out
+    t0 = time.time()
+    conn = None
+    try:
+        conn = http.client.HTTPConnection("127.0.0.1", port, timeout=timeout)
+        conn.request("GET", "/api/health",
+                     headers={"Accept": "application/json", "Connection": "close"})
+        resp = conn.getresponse()
+        raw = resp.read(4096)
+        out["status"] = resp.status
+        out["latency_ms"] = int((time.time() - t0) * 1000)
+        if resp.status < 500:
+            out["ok"] = True
+            try:
+                data = json.loads(raw.decode("utf-8", "replace"))
+                if isinstance(data, dict):
+                    out["service"] = data.get("status") or data.get("name")
+            except Exception:
+                pass
+        else:
+            out["error"] = "HTTP %s" % resp.status
+    except Exception as e:
+        out["error"] = type(e).__name__
+        out["latency_ms"] = int((time.time() - t0) * 1000)
+    finally:
+        if conn is not None:
+            try:
+                conn.close()
+            except Exception:
+                pass
+    return out
+
+
 # ---------------------------------------------------------------- server
 class Handler(http.server.SimpleHTTPRequestHandler):
     protocol_version = "HTTP/1.1"
@@ -342,6 +391,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             })
         if path == "/api/llm/models":
             return self._models()
+        if path == "/api/selflearn/health":
+            # Always 200 (like /api/llm/models) so an offline lab shows as
+            # `ok:false`, not as a console error in the browser.
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            raw_port = (q.get("port") or [str(SELFLEARN_PORT)])[0]
+            try:
+                port = int(raw_port)
+            except (TypeError, ValueError):
+                port = 0
+            return self._json(selflearn_health(port))
         return super().do_GET()
 
     def do_POST(self):

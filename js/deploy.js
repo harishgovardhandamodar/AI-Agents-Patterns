@@ -110,8 +110,13 @@ function dpLoad() {
   } catch (e) { /* ignore corrupt state */ }
 }
 function dpSave() {
-  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus })); } catch (e) {}
-  if (typeof markSaved === "function") markSaved("dp");
+  let ok = false;
+  try {
+    const raw = JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus });
+    ok = (typeof storeSet === "function") ? storeSet(DP_STORE, raw) : false;
+  } catch (e) { ok = false; }
+  if (ok) { if (typeof markSaved === "function") markSaved("dp"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("dp", "Deployment plan");
   if (typeof projTouch === "function") projTouch();
 }
 function dpReset() {

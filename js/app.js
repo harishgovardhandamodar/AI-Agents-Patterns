@@ -914,14 +914,27 @@ const saveTimes = (function () {
   try { return JSON.parse(localStorage.getItem("aap.saved.v1") || "{}"); }
   catch (e) { return {}; }
 })();
+/* One warning per tool until a later write succeeds: saves fire on every
+   keystroke, so an unconditional failure toast would bury the UI. */
+const saveFailNotified = {};
 
 function markSaved(key) {
+  saveFailNotified[key] = false;
   saveTimes[key] = Date.now();
   try { localStorage.setItem("aap.saved.v1", JSON.stringify(saveTimes)); } catch (e) {}
   paintSaveStamps();
   /* A tool just changed state, so the workflow rail and the "Next:" box
      may now be wrong. Repaint them (iteration 107). */
   if (typeof wfPaintRail === "function") wfPaintRail();
+}
+
+function markSaveFailed(key, label) {
+  if (saveFailNotified[key]) return;
+  saveFailNotified[key] = true;
+  if (typeof showNotif === "function") {
+    showNotif(label + " could not be saved — browser storage is full or blocked. " +
+      "Export a backup before closing this tab.", { kind: "error" });
+  }
 }
 
 /* ---------------- active-filter chips (catalog panes) --------------------

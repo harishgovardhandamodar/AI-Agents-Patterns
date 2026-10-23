@@ -22,7 +22,7 @@ Full coverage is a **property of case derivation**, not a hand-maintained list: 
 
 A `btConfig` is a plain object: autonomy tier, spend caps, approval gates, injection shield, sandboxing, logging, plus the action and data classes the agent may touch. Two shipped configs (`baseline`, `strict`) plus a hardened variant anchor the default panel; `btConfigSpace()` enumerates the full dimension product for exhaustive runs.
 
-The dimensions are **derived from `deploy.js`'s option tables**, and `btCheckDimSync()` fails loudly if the two ever disagree — the bench's model of the app's configuration space is checked against the app's own source, so a change to one without the other is a test failure, not a silent skew. Configs hash (`btConfigHash`) so every result row is stamped with exactly what was tested, and every run is comparable across time.
+The dimensions are **derived from `deploy.js`'s option tables**, and `btCheckDimSync()` fails loudly if the two ever disagree — it runs when the bench initialises and in `npm test`, so the bench's model of the app's configuration space is checked against the app's own source, and a change to one without the other is a test failure, not a silent skew. Configs hash (`btConfigHash`) so every result row is stamped with exactly what was tested, and every run is comparable across time.
 
 ## Adapters: the same cases, three ways of answering
 

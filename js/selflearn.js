@@ -9,9 +9,10 @@
  * this catalog's own patterns and failure scenarios. Everything below works
  * with the lab stopped; only the status dot needs it running.
  *
- * The status probe uses a no-cors fetch: the lab ships no CORS headers, so
- * the response body can never be read cross-origin — but an opaque response
- * still proves the port answers, which is all a status dot needs.
+ * The status probe goes through this app's same-origin `/api/selflearn/health`
+ * endpoint (serve.py), which checks the lab from the server's loopback. The
+ * lab ships no CORS headers, so probing it directly from the browser would be
+ * blocked by `connect-src 'self'` and the dot would always read "down".
  */
 "use strict";
 
@@ -98,15 +99,19 @@ function slProbe() {
   if (root) root.innerHTML = '<span class="chip">probing…</span>';
   const ctrl = ("AbortController" in window) ? new AbortController() : null;
   const timer = setTimeout(function () { try { if (ctrl) ctrl.abort(); } catch (e) {} }, 4000);
-  fetch(slBase() + "/api/health", {
-    mode: "no-cors",
+  fetch("/api/selflearn/health?port=" + encodeURIComponent(selflearnState.cfg.port), {
     signal: ctrl && ctrl.signal ? ctrl.signal : undefined
-  }).then(function () {
+  }).then(function (res) {
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    return res.json();
+  }).then(function (data) {
     clearTimeout(timer);
-    selflearnState.status = "up";
+    selflearnState.status = data && data.ok ? "up" : "down";
     selflearnState.checkedAt = new Date();
     renderSelflearn();
-    showNotif("Self-Learning Lab is up on :" + selflearnState.cfg.port);
+    if (selflearnState.status === "up") {
+      showNotif("Self-Learning Lab is up on :" + selflearnState.cfg.port);
+    }
   }).catch(function () {
     clearTimeout(timer);
     selflearnState.status = "down";

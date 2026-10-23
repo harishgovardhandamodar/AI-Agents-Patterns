@@ -22,8 +22,9 @@ function cpSave() {
   };
   /* Cap history so one long chat can't fill browser storage (which would
      silently break every other save in the app). Trim oldest first. */
-  if (!trim(40) && !trim(20)) showNotif("Chat history too large to persist — oldest messages were dropped from storage", { kind: "warn" });
-  if (typeof markSaved === "function") markSaved("cp");
+  const ok = trim(40) || trim(20);
+  if (ok) { if (typeof markSaved === "function") markSaved("cp"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("cp", "Copilot chat");
 }
 function cpRestore() {
   try {

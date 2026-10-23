@@ -2,8 +2,9 @@
 // every tab, asserting no page/console errors and that each pane renders.
 //
 // Requires an installed Chrome/Chromium. If puppeteer (or a browser) is not
-// available this exits 0 with a SKIP line, so it never blocks a dev without
-// the browser toolchain — `npm test` (the data suite) stays dependency-free.
+// available this exits 0 with a SKIP line locally, so it never blocks a dev
+// without the browser toolchain — but under CI=1 a missing browser FAILS the
+// run, so the e2e job cannot go green while skipping its whole purpose.
 //
 //   npm run test:e2e
 //   CHROME_PATH=/usr/bin/google-chrome npm run test:e2e
@@ -39,12 +40,21 @@ async function waitForServer(url, timeoutMs = 15000) {
   return false;
 }
 
+function skip(msg) {
+  if (process.env.CI) {
+    console.error(`FAIL: ${msg} (CI must run the real browser suite — install puppeteer with its Chrome download)`);
+    process.exitCode = 1;
+  } else {
+    console.log(`SKIP: ${msg}`);
+  }
+}
+
 async function main() {
   let puppeteer;
   try {
     ({ default: puppeteer } = await import("puppeteer"));
   } catch {
-    console.log("SKIP: puppeteer is not installed (npm i -D puppeteer), or run the data suite via `npm test`.");
+    skip("puppeteer is not installed (npm i -D puppeteer), or run the data suite via `npm test`.");
     return;
   }
 
@@ -60,7 +70,7 @@ async function main() {
     try {
       browser = await puppeteer.launch(launch);
     } catch (e) {
-      console.log(`SKIP: no browser available (${e.message.split("\n")[0]}). Set CHROME_PATH to a Chrome binary.`);
+      skip(`no browser available (${e.message.split("\n")[0]}). Set CHROME_PATH to a Chrome binary.`);
       return;
     }
 
@@ -94,6 +104,21 @@ async function main() {
     if (a11y.main !== 1) errors.push("expected exactly one <main id=maincontent>");
     if (a11y.nestedMain !== 0) errors.push("no <main> may be nested inside <main>");
     if (a11y.tabs !== TAB_IDS.length) errors.push(`expected ${TAB_IDS.length} role=tab, got ${a11y.tabs}`);
+
+    // The Self-Learning status probe must reach the lab through this app's
+    // same-origin proxy (a direct localhost fetch is blocked by connect-src).
+    const sl = await page.evaluate(async () => {
+      try {
+        const r = await fetch("/api/selflearn/health?port=8220");
+        const j = await r.json();
+        return { status: r.status, ok: typeof j.ok === "boolean" };
+      } catch (e) {
+        return { status: 0, ok: false, error: e.message };
+      }
+    });
+    if (sl.status !== 200 || !sl.ok) {
+      errors.push(`self-learning health proxy broken (status=${sl.status}, ok=${sl.ok}${sl.error ? ", " + sl.error : ""})`);
+    }
 
     // ---- the workflow (iterations 101-120) --------------------------
     // A single journey that crosses the authoring tools: the planner's
