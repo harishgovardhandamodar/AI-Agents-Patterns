@@ -95,12 +95,14 @@ const palMem = { recent: [], used: {} };
   } catch (e) {}
 })();
 function palMemSave() {
+  let ok = false;
   try {
     const used = {};
     Object.keys(palMem.used).slice(-200).forEach(k => { used[k] = Math.min(9, palMem.used[k] || 0); });
     palMem.used = used;
-    localStorage.setItem(PAL_STORE, JSON.stringify(palMem));
-  } catch (e) {}
+    ok = (typeof storeSet === "function") ? storeSet(PAL_STORE, JSON.stringify(palMem)) : false;
+  } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("palette", "Palette history");
 }
 function palUseKey(it) { return it.kind + ":" + it.id; }
 
@@ -260,9 +262,24 @@ function palPick(i) {
   PAL_KINDS[h.it.kind].run(h.it);
 }
 
+/* Focus discipline for the modal: remember who opened it, trap Tab inside
+   while it is open, and hand focus back on close — otherwise keyboard and
+   screen-reader users are dropped at <body> with no way back. */
+let palOpener = null;
+function palTrapTab(e) {
+  const o = el("palOverlay");
+  if (!o || !o.classList.contains("open") || e.key !== "Tab") return;
+  const f = o.querySelectorAll("input, button, [tabindex]");
+  const list = Array.prototype.filter.call(f, n => !n.disabled && n.tabIndex >= 0);
+  if (!list.length) return;
+  const first = list[0], last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
 function palOpen() {
   const o = el("palOverlay");
   if (!o) return;
+  palOpener = document.activeElement;
   o.classList.add("open");
   const inp = el("palInput");
   inp.value = ""; palSel = 0; palRender(); inp.focus();
@@ -270,6 +287,10 @@ function palOpen() {
 function palClose() {
   const o = el("palOverlay");
   if (o) o.classList.remove("open");
+  if (palOpener && document.contains(palOpener)) {
+    try { palOpener.focus(); } catch (e) {}
+  }
+  palOpener = null;
 }
 
 function palKey(e) {
@@ -298,6 +319,7 @@ function initPalette() {
     <div class="pal-foot"><span><b>↑↓</b> move · <b>Enter</b> open · <b>&gt;</b> commands · <b>pat: scn: cas:</b> scope · <b>Esc</b> close</span></div>
   </div>`;
   d.addEventListener("mousedown", e => { if (e.target === d) palClose(); });
+  d.addEventListener("keydown", palTrapTab);
   document.body.appendChild(d);
   document.addEventListener("keydown", palKey);
 }

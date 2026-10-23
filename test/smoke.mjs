@@ -15,7 +15,13 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const TAB_IDS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard", "discovery", "bench", "rogue", "selflearn"];
+// The tab list is not duplicated here: index.html owns it (the .app-tab
+// buttons), so a new tab is walked automatically and a removed one cannot
+// linger as a stale expectation. roles are still asserted below.
+async function tabIds(base) {
+  const html = await (await fetch(base)).text();
+  return [...html.matchAll(/data-tab="([a-z0-9]+)"/g)].map((m) => m[1]);
+}
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -84,6 +90,8 @@ async function main() {
     await page.goto(base, { waitUntil: "load" });
     await sleep(2500);
 
+    const TAB_IDS = await tabIds(base);
+    if (!TAB_IDS.length) throw new Error("no data-tab buttons found in index.html");
     const results = [];
     for (const id of TAB_IDS) {
       await page.evaluate((t) => switchTab(t), id);

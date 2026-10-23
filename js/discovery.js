@@ -39,7 +39,9 @@ function discLoad() {
   } catch (e) {}
 }
 function discSave() {
-  try { localStorage.setItem(DISC_STORE, JSON.stringify({ cfg: discState.cfg, run: discState.run, compare: discState.compare })); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(DISC_STORE, JSON.stringify({ cfg: discState.cfg, run: discState.run, compare: discState.compare })) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("discovery", "Discovery Lab state");
 }
 
 /* deterministic RNG so runs (and the on/off comparison) are reproducible */
@@ -311,7 +313,9 @@ function discDrafts() {
   } catch (e) { return []; }
 }
 function discDraftSave(list) {
-  try { localStorage.setItem(DISC_DRAFT_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(DISC_DRAFT_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("discovery", "Discovery drafts");
   if (typeof projTouch === "function") projTouch();
 }
 

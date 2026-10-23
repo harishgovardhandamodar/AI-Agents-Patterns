@@ -17,7 +17,9 @@ function liveLocal() {
   } catch (e) { return []; }
 }
 function liveLocalSave(list) {
-  try { localStorage.setItem(LIVE_LOCAL_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(LIVE_LOCAL_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("live", "Live traces");
   if (typeof projTouch === "function") projTouch();
 }
 

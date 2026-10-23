@@ -18,7 +18,6 @@ const BLAST_ORDER = ["single-request", "single-agent", "service", "tenant", "fle
 
 function casAll() { return (DATA.cascades && DATA.cascades.cascades) || []; }
 function casById(id) { return casAll().find(function (c) { return c.id === id; }); }
-function casTaxonomy() { return (DATA.cascades && DATA.cascades.taxonomy) || {}; }
 function casDomain(c) { return c.domain || "general"; }
 function casBlastRank(c) { const i = BLAST_ORDER.indexOf(c.blastRadius); return i < 0 ? 0 : i; }
 function casImpactRank(c) { return ({ critical: 4, high: 3, medium: 2, low: 1 })[c.impact] || 0; }
@@ -117,7 +116,12 @@ function setCasView(v) {
   if (v === "mitigation") renderMitigation();
 }
 function mitLoad() { try { return JSON.parse(localStorage.getItem(MIT_STORE) || "{}"); } catch (e) { return {}; } }
-function mitSave(m) { try { localStorage.setItem(MIT_STORE, JSON.stringify(m)); } catch (e) {} if (typeof projTouch === "function") projTouch(); }
+function mitSave(m) {
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(MIT_STORE, JSON.stringify(m)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("mit", "Mitigation backlog");
+  if (typeof projTouch === "function") projTouch();
+}
 function mitKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 90); }
 
 /* Aggregate every cascade's controls into a de-duplicated, scored backlog. */

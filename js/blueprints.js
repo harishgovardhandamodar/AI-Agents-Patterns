@@ -86,7 +86,9 @@ function bpSave() {
   if (typeof projTouch === "function") projTouch();
 }
 function bpSaveLib() {
-  try { localStorage.setItem(BP_LIB_STORE, JSON.stringify(bpState.lib)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(BP_LIB_STORE, JSON.stringify(bpState.lib)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("bp", "Blueprint library");
 }
 function bpLoad() {
   try {
@@ -210,7 +212,6 @@ function bpApplyTemplate(k) {
     () => { bpState.comps = tcomps.slice(); bpSave(); bpRender(); bpRenderPalette(); });
   showNotif("Template applied — " + tname, { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
-function bpRemoveFamily(k) { /* no-op hook for future; kept for stable API */ }
 
 /* ---------------- guardrail coverage ---------------- */
 function bpCoverage() {

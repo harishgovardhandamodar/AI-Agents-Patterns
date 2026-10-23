@@ -297,7 +297,6 @@ function rgRnd(seed) {
 
 function rgClamp(x, a, b) { return x < a ? a : x > b ? b : x; }
 function rgPct(x, d) { return (x * 100).toFixed(d == null ? 1 : d) + "%"; }
-function rgRound(x, d) { return x == null || !isFinite(x) ? "—" : (Math.round(x * 10) / 10).toLocaleString(); }
 function rgMin(m) {
   if (m == null || !isFinite(m)) return "—";
   if (m < 60) return Math.round(m) + " min";
@@ -406,7 +405,9 @@ function rgNormalizeCfg(raw) {
 }
 
 function rgSaveCfg() {
-  try { localStorage.setItem(RG_CFG_STORE, JSON.stringify(rogueState.cfg)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(RG_CFG_STORE, JSON.stringify(rogueState.cfg)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("rogue", "Rogue Agents config");
   if (typeof projTouch === "function") projTouch();
 }
 function rgLoadCfg() {
@@ -1202,9 +1203,13 @@ function rgBoardLoad() {
   } catch (e) {}
 }
 function rgBoardSave() {
+  let ok = false;
   try {
-    localStorage.setItem(RG_BOARD_STORE, JSON.stringify({ cases: rogueState.board, halted: rogueState.fleetHalted, at: Date.now() }));
-  } catch (e) {}
+    ok = (typeof storeSet === "function")
+      ? storeSet(RG_BOARD_STORE, JSON.stringify({ cases: rogueState.board, halted: rogueState.fleetHalted, at: Date.now() }))
+      : false;
+  } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("rogue", "Quarantine board");
   if (typeof projTouch === "function") projTouch();
 }
 
@@ -1516,7 +1521,10 @@ async function rgRunLive() {
     run.ms = Date.now() - t0;
     rogueState.run = run;
     rogueState.ablations = null;
-    try { localStorage.setItem(RG_RUN_STORE, JSON.stringify(run)); } catch (e) {}
+    try {
+      const runOk = (typeof storeSet === "function") ? storeSet(RG_RUN_STORE, JSON.stringify(run)) : false;
+      if (!runOk && typeof markSaveFailed === "function") markSaveFailed("rogue", "Rogue Agents run");
+    } catch (e) { /* storeSet already reported */ }
     if (typeof projTouch === "function") projTouch();
     rogueState.view = "results";
     showNotif("Live run " + run.id + ": " + run.detected + "/" + run.rogues + " detected (" +
@@ -1785,7 +1793,10 @@ function rgRun() {
   run.ms = Date.now() - t0;
   rogueState.run = run;
   rogueState.ablations = null;
-  try { localStorage.setItem(RG_RUN_STORE, JSON.stringify(run)); } catch (e) {}
+  try {
+    const runOk = (typeof storeSet === "function") ? storeSet(RG_RUN_STORE, JSON.stringify(run)) : false;
+    if (!runOk && typeof markSaveFailed === "function") markSaveFailed("rogue", "Rogue Agents run");
+  } catch (e) { /* storeSet already reported */ }
   if (typeof projTouch === "function") projTouch();
   rogueState.view = "results";
   renderRogue();

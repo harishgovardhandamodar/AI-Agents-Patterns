@@ -390,7 +390,10 @@ function paneRunNow(tab) {
 }
 function paneEnsure(tab) {
   const s = paneInited[tab];
-  if (!s && PANE_INIT[tab]) { paneRunNow(tab); paneSkeletonOff(tab); return; }
+  /* Kick off a not-yet-built pane's init and leave the skeleton up until it
+     finishes (paneRunNow clears it on completion) — removing it here would
+     flash a blank pane during the load. */
+  if (!s && PANE_INIT[tab]) { paneRunNow(tab); return; }
   if (s === "starting") return;
   if (tabLoaders[tab]) tabLoaders[tab]();
 }
@@ -678,10 +681,24 @@ window.addEventListener("offline", netPaint);
    a cache-busting reload instead of failing silently. */
 function shellFreshCheck() {
   try {
-    const tabs = (typeof SK_TABS !== "undefined" ? SK_TABS : []);
-    const missing = tabs.filter(t => !document.getElementById(t + "Pane"));
-    const orphan = [...document.querySelectorAll(".pane")].map(p => p.id.replace(/Pane$/, "")).filter(t => tabs.indexOf(t) < 0);
-    const bad = missing.concat(orphan.map(t => t + " (unwired)"));
+    const skTabs = (typeof SK_TABS !== "undefined" ? SK_TABS : []);
+    const domTabs = Array.prototype.map.call(
+      document.querySelectorAll(".app-tab"), function (t) { return t.dataset.tab; });
+    const missing = skTabs.filter(t => !document.getElementById(t + "Pane"));
+    const orphan = [...document.querySelectorAll(".pane")].map(p => p.id.replace(/Pane$/, "")).filter(t => skTabs.indexOf(t) < 0);
+    /* The tab registry lives in three places — the DOM buttons, SK_TABS
+       (keyboard nav + this check), and tabLoaders (per-tab init). A tab in
+       one but not the others is skipped by shortcuts, never initialised, or
+       an invisible button: all silent breakage, so all reported here. */
+    const noBtn = skTabs.filter(t => domTabs.indexOf(t) < 0);
+    const noSk = domTabs.filter(t => skTabs.indexOf(t) < 0);
+    const noLoader = skTabs.filter(t =>
+      !(typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders[t] === "function"));
+    const bad = missing.concat(orphan.map(t => t + " (unwired)"))
+      .concat(noBtn.map(t => t + " (no tab button)"))
+      .concat(noSk.map(t => t + " (not in SK_TABS — shortcuts skip it)"))
+      .concat(noLoader.map(t => t + " (no tabLoaders entry — never initialises)"));
+    if (!bad.length) return true;
     if (!bad.length) return true;
     let b = document.getElementById("freshBanner");
     if (!b) {
@@ -983,9 +1000,6 @@ function storeSet(key, val) {
   try { localStorage.setItem(key, val); return true; }
   catch (e) { return false; }
 }
-function storeDel(key) {
-  try { localStorage.removeItem(key); } catch (e) {}
-}
 /* Writability probe for support: BLOCKED means saves, flags and runs will
    not persist in this browser (private mode, disabled/blocked storage). */
 let storeOkCache = null;
@@ -1221,16 +1235,35 @@ function onbShow(force) {
       `<button class="btn sm" onclick="onbGo(null)">Skip — I'll explore</button></div>` +
       `</div>`;
     o.addEventListener("mousedown", e => { if (e.target === o) onbGo(null); });
+    o.addEventListener("keydown", onbTrapTab);
     document.body.appendChild(o);
   }
+  onbOpener = document.activeElement;
   o.classList.add("open");
   const f = o.querySelector(".onb-card button");
   if (f) f.focus();
+}
+/* Same focus discipline as the palette: trap Tab while open, hand focus
+   back to whoever was there when the tour opened. */
+let onbOpener = null;
+function onbTrapTab(e) {
+  const o = document.getElementById("onbOverlay");
+  if (!o || !o.classList.contains("open") || e.key !== "Tab") return;
+  const list = Array.prototype.filter.call(
+    o.querySelectorAll("button, [tabindex]"), n => !n.disabled && n.tabIndex >= 0);
+  if (!list.length) return;
+  const first = list[0], last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 function onbGo(tab) {
   onbMarkSeen();
   const o = document.getElementById("onbOverlay");
   if (o) o.classList.remove("open");
+  if (onbOpener && document.contains(onbOpener)) {
+    try { onbOpener.focus(); } catch (e) {}
+  }
+  onbOpener = null;
   if (tab) { switchTab(tab); focusPane(tab); }
 }
 document.addEventListener("keydown", function (e) {
@@ -1623,18 +1656,6 @@ function goToActionFor(tab, id) {
    discovery run and a project could not be linked, bookmarked or shared.
    These are the ids that make them addressable, and the share rows that
    put them in front of the user. */
-function dlWorkShareHtml() {
-  try {
-    if (typeof projGet === "function") {
-      const p = projGet();
-      if (p && p.id) {
-        return '<button class="btn sm ghost" type="button" onclick="dlCopyWorkLink(\'overview\',\'proj:' + p.id + '\')" title="Link to this project">🔗 Copy project link</button>';
-      }
-    }
-  } catch (e) { /* project module unavailable */ }
-  return "";
-}
-
 /* Copy a link to any addressable destination, not just the open drawer. */
 function dlCopyWorkLink(tab, id) {
   if (!tab || !id) return;

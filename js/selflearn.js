@@ -86,7 +86,9 @@ function slLoadCfg() {
   } catch (e) {}
 }
 function slSaveCfg() {
-  try { localStorage.setItem(SL_CFG_STORE, JSON.stringify(selflearnState.cfg)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(SL_CFG_STORE, JSON.stringify(selflearnState.cfg)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("selflearn", "Self-Learning config");
   if (typeof projTouch === "function") projTouch();
 }
 

@@ -862,7 +862,9 @@ function btRuns() {
   } catch (e) { return []; }
 }
 function btRunsSave(list) {
-  try { localStorage.setItem(BT_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(BT_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("bench", "Battle Bench runs");
 }
 function btConfigs() {
   try {
@@ -871,7 +873,9 @@ function btConfigs() {
   } catch (e) { return []; }
 }
 function btConfigsSave(list) {
-  try { localStorage.setItem(BT_CFG_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(BT_CFG_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("bench", "Battle Bench configs");
 }
 
 /* Run a set of cases through an adapter. `onProgress` is called after
@@ -987,7 +991,6 @@ function btSaveRun(run, results) {
   return run;
 }
 function btLoadRuns() { return btRuns(); }
-function btClearRuns() { btRunsSave([]); }
 
 /* Compare two runs: which cases changed verdict. This is the point of
    storing runs — a model swap or a config change must be diffable. */

@@ -478,10 +478,3 @@ function initProject() {
   });
   window.addEventListener("pagehide", function () { projSnapshotTools(); });
 }
-
-/* Repaint everything that shows project-derived state. */
-function projRefreshAll() {
-  projPaintChip();
-  if (typeof dashRender === "function") dashRender();
-  if (typeof window.rpPaintProjectNote === "function") window.rpPaintProjectNote();
-}

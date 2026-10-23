@@ -144,7 +144,9 @@ function pinLoad() {
   } catch (e) {}
 }
 function pinSave() {
-  try { localStorage.setItem(PIN_STORE, JSON.stringify(pinState)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(PIN_STORE, JSON.stringify(pinState)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("pins", "Pinned items");
   if (typeof projTouch === "function") projTouch();
 }
 function pinHas(kind, id) { return (pinState[kind] || []).indexOf(id) >= 0; }

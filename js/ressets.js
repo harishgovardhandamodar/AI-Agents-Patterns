@@ -103,7 +103,9 @@ function resAll() {
   } catch (e) { return []; }
 }
 function resSaveAll(list) {
-  try { localStorage.setItem(RES_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(RES_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("ressets", "Research sets");
   if (typeof projTouch === "function") projTouch();
 }
 function resFor(pane) {
