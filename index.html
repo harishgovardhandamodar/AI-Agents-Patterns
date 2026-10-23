@@ -49,6 +49,8 @@
   <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
   <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="discoveryPane" data-tab="discovery" onclick="switchTab('discovery')">🧪 Discovery Lab</div>
   <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="benchPane" data-tab="bench" onclick="switchTab('bench')">⚔ Battle Bench</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="roguePane" data-tab="rogue" onclick="switchTab('rogue')">🛑 Rogue Agents</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="selflearnPane" data-tab="selflearn" onclick="switchTab('selflearn')">🧬 Self-Learning</div>
 </div>
 </div>
 
@@ -327,6 +329,18 @@
     <div id="benchMain"></div>
   </div>
 </section>
+<!-- ======================= ROGUE AGENTS ======================= -->
+<section class="pane" id="roguePane" role="tabpanel" aria-label="rogue">
+  <div class="ov-wrap">
+    <div id="rogueMain"></div>
+  </div>
+</section>
+<!-- ======================= SELF-LEARNING (ADD-ON) ======================= -->
+<section class="pane" id="selflearnPane" role="tabpanel" aria-label="selflearn">
+  <div class="ov-wrap">
+    <div id="slMain"></div>
+  </div>
+</section>
 </main><!-- /#maincontent: every .pane must live inside this grid — outside it the
      pane renders below the 100vh app shell, i.e. off-screen -->
 </div><!-- /#main -->
@@ -388,6 +402,8 @@
 <script src="js/bench.js"></script>
 <script src="js/adversary.js"></script>
 <script src="js/benchui.js"></script>
+<script src="js/rogue.js"></script>
+<script src="js/selflearn.js"></script>
 <script>
 /* Inline boot check (runs from index.html itself, so it works even when a
    module file is stale, blocked or 404s): every expected entry point must
@@ -395,7 +411,7 @@
 window.addEventListener("load", function () {
   setTimeout(function () {
     try {
-      var need = [["initDiscovery", "Discovery Lab"], ["initLanding", "Overview landing"], ["initCopilot", "Fox - Architect"], ["renderGuardReport", "Guardrail Lab"]];
+      var need = [["initDiscovery", "Discovery Lab"], ["initLanding", "Overview landing"], ["initCopilot", "Fox - Architect"], ["renderGuardReport", "Guardrail Lab"], ["initRogue", "Rogue Agents"], ["initSelflearn", "Self-Learning"]];
       var missing = need.filter(function (x) { return typeof window[x[0]] !== "function"; });
       if (!missing.length) return;
       var b = document.getElementById("freshBanner");

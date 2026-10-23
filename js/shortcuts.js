@@ -4,7 +4,7 @@
    palette's own input). The palette (js/palette.js) owns its own keys. */
 "use strict";
 
-const SK_TABS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard", "discovery", "bench"];
+const SK_TABS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard", "discovery", "bench", "rogue", "selflearn"];
 
 const SK_HELP = [
   ["Ctrl / ⌘ + K", "Open the command palette (search everything)"],

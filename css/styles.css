@@ -1622,18 +1622,18 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
    model-generated diagram) puts behind it — light halo in light mode, dark
    halo in dark mode. Subtle on matching backgrounds, decisive on clashes. */
 html.light .diagram-wrap svg text {
-  paint-order: stroke; stroke: #ffffff !important; stroke-width: 2px; stroke-opacity: .9;
+  paint-order: stroke; stroke: #ffffff !important; stroke-width: 1px; stroke-opacity: .7;
 }
 html.light .diagram-wrap .nodeLabel, html.light .diagram-wrap .edgeLabel,
 html.light .diagram-wrap .label, html.light .diagram-wrap .pieTitleText {
-  text-shadow: 0 0 3px #fff, 0 0 7px #fff;
+  text-shadow: 0 0 2px #fff;
 }
 html:not(.light) .diagram-wrap svg text {
-  paint-order: stroke; stroke: #0d1117 !important; stroke-width: 2px; stroke-opacity: .9;
+  paint-order: stroke; stroke: #0d1117 !important; stroke-width: 1px; stroke-opacity: .7;
 }
 html:not(.light) .diagram-wrap .nodeLabel, html:not(.light) .diagram-wrap .edgeLabel,
 html:not(.light) .diagram-wrap .label {
-  text-shadow: 0 0 3px #0d1117, 0 0 7px #0d1117;
+  text-shadow: 0 0 2px #0d1117;
 }
 
 /* discovery lab */
@@ -1975,6 +1975,7 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
    cell per case — because "17 failed" is a number and "these four
    configurations fail on these nine scenarios" is a result. */
 #benchPane .ov-wrap { overflow: auto; max-width: 1500px; }
+#roguePane .ov-wrap { overflow: auto; max-width: 1500px; }
 .bt-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .bt-head h2 { margin: 0 0 3px; font-size: 17px; }
 .bt-head-btns { margin-left: auto; display: flex; gap: 6px; }
@@ -2001,7 +2002,10 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
 
 .bt-fail-sum { cursor: pointer; font-size: 12px; color: var(--orange); margin: 10px 0 4px; }
 .bt-fails { margin: 6px 0 0; }
-.bt-fail {
+/* div-only: the table's td.bt-fail cells must stay table-cells — a bare
+   .bt-fail rule with display:flex here used to knock every ✗ cell out of
+   the grid and stack fails across rows. */
+div.bt-fail {
   display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap;
   padding: 5px 8px; border-left: 2px solid var(--orange);
   background: var(--bg); border-radius: 0 6px 6px 0; margin-bottom: 4px; font-size: 12px;
@@ -2021,9 +2025,11 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
 
 .bt-matrix { width: 100%; border-collapse: collapse; font-size: 12px; }
 .bt-matrix th, .bt-matrix td { border: 1px solid var(--border); padding: 3px 6px; }
-.bt-mh { text-align: left; font-weight: 500; color: var(--text2); background: var(--bg2); position: sticky; left: 0; z-index: 1; }
-.bt-mh-l { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; }
+.bt-mh { text-align: left; font-weight: 500; color: var(--text2); background: var(--bg2); }
+.bt-mh-l { max-width: 320px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; cursor: pointer; position: sticky; left: 0; z-index: 1; }
 .bt-mh-l:hover { color: var(--accent); }
+.bt-mh-c { font-size: 11px; max-width: 140px; white-space: normal; vertical-align: bottom; }
+.bt-col-bad { color: var(--red); font-weight: 700; white-space: nowrap; }
 .bt-cell { text-align: center; cursor: pointer; font-weight: 600; width: 30px; }
 .bt-pass { color: var(--green); background: color-mix(in srgb, var(--green) 12%, transparent); }
 .bt-fail { color: var(--red); background: color-mix(in srgb, var(--red) 14%, transparent); }
@@ -2057,3 +2063,57 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
 .bt-adv-tables .tbl th, .bt-adv-tables .tbl td { border: 1px solid var(--border); padding: 4px 7px; text-align: left; }
 .bt-adv-tables .tbl th { color: var(--text3); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: .04em; }
 .bt-adv-tables .tbl td:first-child { width: 34%; }
+
+/* --- staged sub-views (setup → results → adversary → compare) --- */
+.bt-tabs { margin-bottom: 12px; }
+.bt-tabs .seg-btn { padding: 5px 14px; }
+.bt-tab-n {
+  display: inline-block; min-width: 18px; text-align: center;
+  font-size: 10.5px; font-weight: 600; color: var(--text2);
+  background: var(--bg3); border-radius: 9px; padding: 0 5px; margin-left: 4px;
+}
+.seg-btn.active .bt-tab-n { color: var(--text); }
+
+/* --- failures as columns, not stacked rows --- */
+.bt-fail-tbl { margin-top: 6px; }
+.bt-fail-row { cursor: pointer; }
+.bt-fail-row:hover td { background: var(--bg2); }
+
+/* --- results toolbar, matrix scroll, outcome extras --- */
+.bt-toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.bt-toolbar .search { width: auto; }
+#btQ { flex: 1; min-width: 140px; max-width: 280px; }
+.bt-matrix-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 8px; }
+.bt-matrix { min-width: 680px; }
+.bt-cell:focus, .bt-mh-l:focus { outline: 2px solid var(--accent); outline-offset: -2px; }
+.bt-sev-row { display: flex; gap: 6px; flex-wrap: wrap; margin: 10px 0 0; }
+.bt-cfg-tbl { margin-top: 10px; }
+.bt-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; min-width: 90px; }
+.bt-bar-fill { display: block; height: 100%; background: var(--green); }
+.bt-cfg-last { margin: 3px 0 0; }
+.bt-cta-row { margin-top: 10px; }
+.btn.sm.ghost.danger { color: var(--red); }
+.btn.sm.ghost.danger:hover { border-color: var(--red); background: var(--bg3); }
+
+/* ---- Rogue Agents tab ---- */
+.rg-form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin-top: 10px; }
+.rg-field { display: flex; flex-direction: column; gap: 3px; }
+.rg-field .search { width: 100%; }
+.rg-check { display: block; margin: 4px 0; }
+.rg-thr { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+.rg-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
+.rg-kpi { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; background: var(--bg2); }
+.rg-kpi-v { font-size: 16px; font-weight: 650; }
+.rg-kpi.good .rg-kpi-v { color: var(--green); }
+.rg-kpi.bad .rg-kpi-v { color: var(--red); }
+.rg-case-h { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rg-case-h .muted { margin-left: auto; }
+.rg-steps { display: grid; gap: 6px; margin: 8px 0; }
+.rg-step-row { display: flex; align-items: flex-start; gap: 8px; }
+.rg-step-row .btn { margin-left: auto; flex: none; }
+.rg-step { flex: none; font-size: 11px; border: 1px solid var(--border); border-radius: 20px; padding: 2px 9px; margin-top: 1px; }
+.rg-step.done { color: var(--green); border-color: var(--green); }
+.rg-step.ok { color: var(--text2); }
+.rg-step.risk { color: var(--orange); border-color: var(--orange); }
+.rg-step.breached { color: var(--red); border-color: var(--red); }
+.rg-halt { border: 1px solid var(--red); border-radius: 8px; padding: 10px 12px; margin-bottom: 12px; background: color-mix(in srgb, var(--red) 8%, transparent); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }

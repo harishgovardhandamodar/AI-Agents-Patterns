@@ -109,7 +109,7 @@ const PAL_TABS = [
   ["scenarios", "Failure Scenarios"], ["cascades", "Cascade Explorer"], ["coverage", "Coverage"],
   ["deploy", "Deployment Planner"], ["blueprint", "Blueprints"], ["live", "Live View"],
   ["design", "Design & Architecture"], ["guard", "Guardrail Lab"], ["discovery", "Discovery Lab"],
-  ["bench", "Battle Bench"]
+  ["bench", "Battle Bench"], ["rogue", "Rogue Agents"], ["selflearn", "Self-Learning"]
 ];
 
 let palItems = null;

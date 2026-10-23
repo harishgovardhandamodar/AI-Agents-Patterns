@@ -226,3 +226,45 @@ test("service worker precaches exactly the app shell", () => {
   const absent = expected.filter((p) => !listed.includes(p));
   assert.deepEqual(absent, [], `these files are not precached (add them to sw.js PRECACHE):\n  ${absent.join("\n  ")}`);
 });
+
+
+// A semicolon inside a sequenceDiagram message ends the statement in
+// Mermaid 10.9, so the whole diagram fails with "Syntax error in text"
+// (this is how design/10's live-fire figure broke). Flowchart labels may
+// carry semicolons; sequence messages may not.
+test("sequenceDiagram messages contain no semicolons", () => {
+  const bad = [];
+  for (const f of readdirSync(join(ROOT, "design")).filter((f) => f.endsWith(".md"))) {
+    const text = readFileSync(join(ROOT, "design", f), "utf8");
+    for (const m of text.matchAll(/```mermaid\n(.*?)```/gs)) {
+      const lines = m[1].split("\n");
+      if (!lines.some((l) => l.trim() === "sequenceDiagram")) continue;
+      lines.forEach((line, i) => {
+        const at = line.indexOf(":");
+        if (at > 0 && line.slice(at).includes(";")) bad.push(`${f}:${i} ${line.trim().slice(0, 80)}`);
+      });
+    }
+  }
+  assert.deepEqual(bad, [], `semicolons inside sequence messages break Mermaid:\n  ${bad.join("\n  ")}`);
+});
+
+
+// The Self-Learning tab bridges to lab mechanisms with catalog links. A
+// renamed pattern or scenario id would silently unlink the bridge, so every
+// id referenced from js/selflearn.js must resolve in the catalog.
+test("self-learning bridge references resolve in the catalog", () => {
+  const src = readFileSync(join(ROOT, "js", "selflearn.js"), "utf8");
+  const collect = (key) => {
+    const out = [];
+    for (const m of src.matchAll(new RegExp(key + ":\\s*\\[([^\\]]*)\\]", "g"))) {
+      for (const q of m[1].matchAll(/"([^"]+)"/g)) out.push(q[1]);
+    }
+    return out;
+  };
+  const patIds = new Set(patterns.map((p) => p.id));
+  const scnIds = new Set(scenarios.map((s) => s.id));
+  const badP = collect("patterns").filter((id) => !patIds.has(id));
+  const badS = collect("scenarios").filter((id) => !scnIds.has(id));
+  assert.deepEqual(badP, [], `selflearn.js references unknown patterns:\n  ${badP.join("\n  ")}`);
+  assert.deepEqual(badS, [], `selflearn.js references unknown scenarios:\n  ${badS.join("\n  ")}`);
+});

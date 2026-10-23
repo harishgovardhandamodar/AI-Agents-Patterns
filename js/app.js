@@ -15,7 +15,9 @@ const DESIGN_DOCS = [
   { id: "06-threat-model", file: "design/06-threat-model.md", title: "Threat Model & Protections Map", group: "Safety", answers: "STRIDE view, attack trees, defense-in-depth map" },
   { id: "07-architect-analysis", file: "design/07-architect-analysis.md", title: "Architect Value Map & Cascade Taxonomy", group: "Architecture", answers: "Why the app advises, not just describes — and the four cascade classes" },
   { id: "08-runtime-offline", file: "design/08-runtime-offline.md", title: "Runtime, Offline & Delivery", group: "Dynamics", answers: "Phased boot, vendored Mermaid, the offline service worker, caching, headers and CI gates" },
-  { id: "09-battle-bench", file: "design/09-battle-bench.md", title: "Battle Bench — Testing Agents", group: "Safety", answers: "How the catalog tests itself: cases, adapters, the oracle, the adversary" }
+  { id: "09-battle-bench", file: "design/09-battle-bench.md", title: "Battle Bench — Testing Agents", group: "Safety", answers: "How the catalog tests itself: cases, adapters, the oracle, the adversary" },
+  { id: "10-rogue-agents", file: "design/10-rogue-agents.md", title: "Rogue Agents — Detection & Quarantine", group: "Safety", answers: "Simulated insider threat: six rogue archetypes, three detectors, the quarantine workflow, live fire" },
+  { id: "11-self-learning-addon", file: "design/11-self-learning-addon.md", title: "Self-Learning Add-on — Bridging the Lab", group: "Architecture", answers: "The sibling lab on :8220: status bridge, concept map, and the data flow the supplement book is built from" }
 ];
 
 /* ---------------- theme ---------------- */
@@ -1796,7 +1798,9 @@ async function loadAll() {
       has("initDeploy") && ["deploy", "Deployment Plan", () => initDeploy()],
       has("initBlueprint") && ["blueprint", "Blueprints", () => initBlueprint()],
       has("initDiscovery") && ["discovery", "Discovery Lab", () => initDiscovery()],
-      has("initBench") && ["bench", "Battle Bench", () => initBench()]
+      has("initBench") && ["bench", "Battle Bench", () => initBench()],
+      has("initRogue") && ["rogue", "Rogue Agents", () => initRogue()],
+      has("initSelflearn") && ["selflearn", "Self-Learning", () => initSelflearn()]
     ].filter(Boolean);
     PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; });
     const paneRun = async p => {
