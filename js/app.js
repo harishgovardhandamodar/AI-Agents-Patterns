@@ -1304,17 +1304,18 @@ function mmEnsure() {
   if (window.mermaid) return Promise.resolve(window.mermaid);
   if (mmLibPromise) return mmLibPromise;
   mmLibPromise = new Promise((resolve, reject) => {
-    const load = (src, onFail) => {
-      const s = document.createElement("script");
-      s.async = true;
-      s.src = src;
-      s.onload = () => (window.mermaid ? resolve(window.mermaid) : onFail());
-      s.onerror = onFail;
-      document.head.appendChild(s);
-    };
-    const cdn = () => load("https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js",
-      () => reject(new Error("mermaid unavailable (offline?)")));
-    load("js/vendor/mermaid.min.js", cdn);
+    const s = document.createElement("script");
+    s.async = true;
+    /* The vendored copy is the only source: loading a diagram renderer from
+       a third-party CDN would break the offline/air-gapped promise and hand
+       every diagram view to an outside host. If the file is missing the
+       install is broken — say so instead of phoning home. */
+    s.src = "js/vendor/mermaid.min.js";
+    s.onload = () => (window.mermaid
+      ? resolve(window.mermaid)
+      : reject(new Error("js/vendor/mermaid.min.js loaded but defined no mermaid global")));
+    s.onerror = () => reject(new Error("js/vendor/mermaid.min.js missing — diagrams need the vendored copy"));
+    document.head.appendChild(s);
   });
   return mmLibPromise;
 }

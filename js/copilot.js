@@ -57,7 +57,17 @@ function cpMd(text) {
   s = s.replace(/^#{1,6}\s+(.*)$/gm, "<h4>$1</h4>");
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  /* Links come from model output, so the scheme is whitelisted: only http(s)
+     and same-app fragments become anchors. Anything else (javascript:, data:,
+     file:, bare words the model meant as text) renders as inert text — the
+     label survives, the navigation doesn't. */
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, text, url) {
+    const u = String(url);
+    if (/^(https?:\/\/|#)/i.test(u) && !/[\s<>]/.test(u)) {
+      return '<a href="' + u + '" target="_blank" rel="noopener">' + text + "</a>";
+    }
+    return text + ' <span class="muted small">(' + u + ")</span>";
+  });
   // pipe tables -> .tbl (same styling as the catalog drawers)
   s = s.replace(/^((?:\|[^\n]*\|\s*\n)+)/gm, function (block) {
     const rows = block.trim().split("\n");

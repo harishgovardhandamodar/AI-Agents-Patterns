@@ -53,6 +53,11 @@ import time
 import urllib.parse
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5175
+# Bind host. The default ("", all interfaces) keeps the documented LAN /
+# Tailscale use working — any client on the network gets the app — but it
+# also exposes the /api/llm/* model relay to those clients, so a startup
+# warning says so. Set HOST=127.0.0.1 for a loopback-only single-user setup.
+HOST = os.environ.get("HOST", "")
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------- static delivery
@@ -81,11 +86,12 @@ def gzip_cached(path, st):
 
 
 # Same-origin hardening applied to every response. The app is inline-handler
-# heavy (76 on* attributes) and the print view writes an inline <style>, so
-# script-src/style-src keep 'unsafe-inline'; the jsdelivr entry preserves the
-# documented Mermaid CDN fallback (the vendored copy stays authoritative).
+# heavy and the print view writes an inline <style>, so script-src/style-src
+# keep 'unsafe-inline'; every string the app interpolates into HTML goes
+# through escHtml (or a scheme-whitelisted link builder), which is what makes
+# that tenable. No third-party script source: Mermaid is vendored.
 CSP = ("default-src 'self'; "
-       "script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; "
+       "script-src 'self' 'unsafe-inline'; "
        "style-src 'self' 'unsafe-inline'; "
        "img-src 'self' data:; font-src 'self' data:; "
        "connect-src 'self'; worker-src 'self'; "
@@ -527,7 +533,13 @@ class Server(socketserver.ThreadingTCPServer):
 
 
 if __name__ == "__main__":
-    with Server(("", PORT), Handler) as httpd:
+    if HOST in ("", "0.0.0.0", "::"):
+        sys.stderr.write(
+            "WARNING: serving on all interfaces — any host that can reach this "
+            "port can use the /api/llm/* relay and the /api/selflearn/health "
+            "loopback probe. Set HOST=127.0.0.1 to listen on loopback only.\n")
+        sys.stderr.flush()
+    with Server((HOST, PORT), Handler) as httpd:
         print(f"AI Agent Patterns & Guardrails → http://localhost:{PORT}")
         b = ", ".join("%s(%s)" % (x["name"], x["url"]) for x in _backend_list())
         print(f"LLM proxy: model={DEFAULT_MODEL} backends=[{b}]")

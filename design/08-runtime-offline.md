@@ -47,7 +47,7 @@ flowchart LR
 
 ## Diagrams: vendored first, one queue
 
-Mermaid ships under `js/vendor/mermaid.min.js`, so diagrams render on a LAN-only or air-gapped host; the CDN is loaded **only if the vendored copy is missing**. Every render — including `mermaid.initialize`, which resets shared global state — passes through a single promise chain (`mmQueue`), because concurrent `run()` calls corrupt each other's label measurement. A node whose SVG is absent gets an inline `.mm-err-note` instead of a silent blank, and a heal pass re-runs only nodes whose layout raced the fonts.
+Mermaid ships under `js/vendor/mermaid.min.js`, so diagrams render on a LAN-only or air-gapped host with no third-party fetch; if the vendored copy is missing the diagram panes say so instead of phoning a CDN. Every render — including `mermaid.initialize`, which resets shared global state — passes through a single promise chain (`mmQueue`), because concurrent `run()` calls corrupt each other's label measurement. A node whose SVG is absent gets an inline `.mm-err-note` instead of a silent blank, and a heal pass re-runs only nodes whose layout raced the fonts.
 
 ```mermaid
 flowchart TB
