@@ -35,23 +35,15 @@
 </header>
 
 <div class="tabs-wrap">
-<div class="app-tabs" id="appTabs" role="tablist" aria-label="Main sections">
-  <div class="app-tab active" role="tab" aria-selected="true" tabindex="0" aria-controls="overviewPane" data-tab="overview" data-act="switchTab" data-args="[&quot;overview&quot;]">📊 Overview</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="copilotPane" data-tab="copilot" data-act="switchTab" data-args="[&quot;copilot&quot;]">🤖 Fox - Architect</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="patternsPane" data-tab="patterns" data-act="switchTab" data-args="[&quot;patterns&quot;]">◆ Patterns <span class="badge" id="patBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="scenariosPane" data-tab="scenarios" data-act="switchTab" data-args="[&quot;scenarios&quot;]">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="cascadesPane" data-tab="cascades" data-act="switchTab" data-args="[&quot;cascades&quot;]">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="coveragePane" data-tab="coverage" data-act="switchTab" data-args="[&quot;coverage&quot;]">📊 Coverage &amp; Gaps</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="deployPane" data-tab="deploy" data-act="switchTab" data-args="[&quot;deploy&quot;]">🧭 Deployment Plan</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="blueprintPane" data-tab="blueprint" data-act="switchTab" data-args="[&quot;blueprint&quot;]">🧩 Blueprints</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="livePane" data-tab="live" data-act="switchTab" data-args="[&quot;live&quot;]">▶ Live View <span class="badge" id="traceBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="designPane" data-tab="design" data-act="switchTab" data-args="[&quot;design&quot;]">📐 Design &amp; Architecture</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="guardPane" data-tab="guard" data-act="switchTab" data-args="[&quot;guard&quot;]">🛡 Guardrail Lab</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="discoveryPane" data-tab="discovery" data-act="switchTab" data-args="[&quot;discovery&quot;]">🧪 Discovery Lab</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="benchPane" data-tab="bench" data-act="switchTab" data-args="[&quot;bench&quot;]">⚔ Battle Bench</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="roguePane" data-tab="rogue" data-act="switchTab" data-args="[&quot;rogue&quot;]">🛑 Rogue Agents</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="selflearnPane" data-tab="selflearn" data-act="switchTab" data-args="[&quot;selflearn&quot;]">🧬 Self-Learning</div>
+<div class="app-tabs" id="appTabs" role="tablist" aria-label="Sections">
+  <div class="app-tab grp active" role="tab" aria-selected="true" tabindex="0" data-group="overview" data-act="switchGroup" data-args="[&quot;overview&quot;]">📊 Overview</div>
+  <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="catalog" data-act="switchGroup" data-args="[&quot;catalog&quot;]">◆ Catalog</div>
+  <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="design" data-act="switchGroup" data-args="[&quot;design&quot;]">🧭 Design</div>
+  <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="labs" data-act="switchGroup" data-args="[&quot;labs&quot;]">🧪 Labs</div>
+  <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="agents" data-act="switchGroup" data-args="[&quot;agents&quot;]">🛡 Agents</div>
+  <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="architect" data-act="switchGroup" data-args="[&quot;architect&quot;]">🤖 Architect</div>
 </div>
+<div class="app-tabs subtabs" id="subTabs" role="tablist" aria-label="Tabs in this section"></div>
 </div>
 
 <main id="maincontent">

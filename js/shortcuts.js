@@ -11,7 +11,7 @@ const SK_HELP = [
   ["/", "Open the command palette (same, one hand)"],
   ["[ / ]", "Previous / next tab"],
   ["Alt + ← / →", "Previous / next tab (same)"],
-  ["Alt + 1…9, 0, −, =", "Jump to tab 1–13 in top-bar order"],
+  ["Alt + 1…6", "Jump to section 1–6 (Overview, Catalog, Design, Labs, Agents, Architect)"],
   ["?", "This help"],
   ["Esc", "Close palette, drawer, or this help"]
 ];
@@ -58,10 +58,9 @@ function skKey(e) {
     switchTab(SK_TABS[j]);
     return;
   }
-  if (e.altKey && !e.ctrlKey && !e.metaKey && /^[0-9-=]$/.test(e.key)) {
-    const map = { "1": 0, "2": 1, "3": 2, "4": 3, "5": 4, "6": 5, "7": 6, "8": 7, "9": 8, "0": 9, "-": 10, "=": 11 };
-    const i = map[e.key];
-    if (i != null && SK_TABS[i]) { e.preventDefault(); switchTab(SK_TABS[i]); }
+  if (e.altKey && !e.ctrlKey && !e.metaKey && /^[1-6]$/.test(e.key)) {
+    const g = (typeof TAB_GROUPS !== "undefined" && TAB_GROUPS[Number(e.key) - 1]) || null;
+    if (g) { e.preventDefault(); switchGroup(g.id); }
   }
 }
 

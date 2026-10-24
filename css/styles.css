@@ -91,10 +91,14 @@ button { font: inherit; color: inherit; }
 /* ---------- app tabs ---------- */
 /* wrapper stays put while the strip scrolls: it owns the overflow chevrons */
 .tabs-wrap {
-  position: relative; min-width: 0; display: flex;
+  position: relative; min-width: 0; display: flex; flex-direction: column;
   background: var(--bg2); border-bottom: 1px solid var(--border);
 }
 .tabs-wrap .app-tabs { flex: 1 1 auto; min-width: 0; border-bottom: none; background: transparent; scroll-padding-inline: 38px; }
+/* second row: the active section's tabs — smaller and quieter than sections */
+.app-tabs.subtabs { padding-top: 0; background: var(--bg); border-bottom: 1px solid var(--border); }
+.app-tab.grp { font-weight: 600; }
+.app-tab.sub { font-size: 11px; padding: 4px 10px; }
 .tabnav {
   position: absolute; top: 0; bottom: 0; width: 34px; z-index: 2;
   display: none; align-items: center; justify-content: center;

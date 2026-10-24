@@ -84,7 +84,20 @@ A server is needed because the Design tab fetches `design/*.md` (`file://` would
 
 ---
 
-## The fifteen tabs
+## Six sections, fifteen tabs
+
+The top strip holds six sections; the strip beneath holds the active
+section's tabs (each section remembers its last tab). Panes, hashes and deep
+links still use the fifteen tab ids, so every saved link keeps working:
+
+| Section | Tabs |
+|---|---|
+| 📊 Overview | Overview |
+| ◆ Catalog | Patterns · Scenarios · Cascades · Coverage & Gaps · Live View |
+| 🧭 Design | Deployment Plan · Blueprints |
+| 🧪 Labs | Guardrail Lab · Discovery Lab · Battle Bench |
+| 🛡 Agents | Rogue Agents · Self-Learning |
+| 🤖 Architect | Fox - Architect · Design & Architecture |
 
 | Tab | What it does |
 |---|---|
@@ -108,7 +121,7 @@ A server is needed because the Design tab fetches `design/*.md` (`file://` would
 scenarios, cascades, tabs, templates, saved blueprints, **projects, research sets
 and workflow commands** — plus one-shot **commands** (`>` prefix), scoped prefixes
 (`pat:`/`scn:`/`cas:`/`proj:`/`stage:`), recents and usage learning.
-`?` shows keyboard shortcuts; `Alt+1…9/0/-/=` jump between tabs; `ⓘ guide` opens a
+`?` shows keyboard shortcuts; `Alt+1…6` jump between the six sections; `ⓘ guide` opens a
 contextual guide for the current tab (with glossary). `Ctrl+Z` / `Ctrl+Shift+Z`
 undo and redo destructive actions (including mitigation owners, risk
 acknowledgements and copilot regeneration); the 🔔 bell keeps a notification

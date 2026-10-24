@@ -15,14 +15,9 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-// The tab list is not duplicated here: index.html owns it (the .app-tab
-// buttons), so a new tab is walked automatically and a removed one cannot
-// linger as a stale expectation. roles are still asserted below.
-async function tabIds(base) {
-  const html = await (await fetch(base)).text();
-  return [...html.matchAll(/data-tab="([a-z0-9]+)"/g)].map((m) => m[1]);
-}
-
+// The tab list is not duplicated here: TAB_GROUPS on the page owns it, so a
+// new tab or section is walked automatically and a removed one cannot linger
+// as a stale expectation. Roles are still asserted below.
 function freePort() {
   return new Promise((resolve, reject) => {
     const s = createServer();
@@ -90,19 +85,25 @@ async function main() {
     await page.goto(base, { waitUntil: "load" });
     await sleep(2500);
 
-    const TAB_IDS = await tabIds(base);
-    if (!TAB_IDS.length) throw new Error("no data-tab buttons found in index.html");
+    // Two-level tabs: walk every section, then every subtab inside it, with
+    // real clicks (not direct switchTab() calls) to exercise the delegated
+    // data-act path end to end for group buttons and subtab buttons alike.
+    const GROUPS = await page.evaluate(() =>
+      (typeof TAB_GROUPS !== "undefined" ? TAB_GROUPS : []).map(g => ({ id: g.id, tabs: g.tabs.slice() })));
+    if (!GROUPS.length) throw new Error("TAB_GROUPS not found on the page");
     const results = [];
-    for (const id of TAB_IDS) {
-      // Real clicks, not direct switchTab() calls: this exercises the
-      // delegated data-act path end to end for every tab button.
-      await page.click(`.app-tab[data-tab="${id}"]`);
-      await sleep(500);
-      const n = await page.evaluate((t) => {
-        const pane = document.getElementById(t + "Pane");
-        return pane ? pane.querySelectorAll("*").length : -1;
-      }, id);
-      results.push([id, n]);
+    for (const g of GROUPS) {
+      await page.click(`.app-tab[data-group="${g.id}"]`);
+      await sleep(400);
+      for (const id of g.tabs) {
+        await page.click(`#subTabs .app-tab[data-tab="${id}"]`);
+        await sleep(500);
+        const n = await page.evaluate((t) => {
+          const pane = document.getElementById(t + "Pane");
+          return pane ? pane.querySelectorAll("*").length : -1;
+        }, id);
+        results.push([id, n]);
+      }
     }
 
     // Every rendered data-* action must resolve: the name is a function and
@@ -141,7 +142,9 @@ async function main() {
     }));
     if (a11y.main !== 1) errors.push("expected exactly one <main id=maincontent>");
     if (a11y.nestedMain !== 0) errors.push("no <main> may be nested inside <main>");
-    if (a11y.tabs !== TAB_IDS.length) errors.push(`expected ${TAB_IDS.length} role=tab, got ${a11y.tabs}`);
+    const groupCount = await page.evaluate(() => document.querySelectorAll('#appTabs [role="tab"]').length);
+    if (groupCount !== GROUPS.length) errors.push(`expected ${GROUPS.length} section buttons, got ${groupCount}`);
+    if (a11y.tabs < GROUPS.length) errors.push(`expected at least ${GROUPS.length} role=tab, got ${a11y.tabs}`);
 
     // The Self-Learning status probe must reach the lab through this app's
     // same-origin proxy (a direct localhost fetch is blocked by connect-src).
@@ -230,7 +233,7 @@ async function main() {
       for (const e of errors) console.error("  " + e);
       process.exitCode = 1;
     } else {
-      console.log(`OK: ${TAB_IDS.length} tabs rendered, single <main>, ${a11y.tabs} role=tab, ` +
+      console.log(`OK: ${results.length} tabs across ${GROUPS.length} sections rendered, single <main>, ${a11y.tabs} role=tab, ` +
         `${wf.steps.length} workflow steps, 0 errors.`);
     }
   } finally {

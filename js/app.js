@@ -546,10 +546,87 @@ function replayTour() { skHelpClose(); onbShow(true); }
 function dlgSelfClose(e) { if (e && e.target === this) closeDetail(); }
 function blurOnEnter(e, el) { if (e && e.key === "Enter" && el) el.blur(); }
 
+/* ---------------- two-level tabs: 6 sections, 15 tabs ----------------
+   The top strip holds section buttons; the strip beneath holds that
+   section's tabs. Panes, tab ids, hashes and deep links are unchanged — only
+   the bar is grouped — so every data-act="switchTab"/goTo call, the palette
+   and the drawer links keep working with the same ids. */
+const TAB_GROUPS = [
+  { id: "overview", label: "📊 Overview", tabs: ["overview"] },
+  { id: "catalog", label: "◆ Catalog", tabs: ["patterns", "scenarios", "cascades", "coverage", "live"] },
+  { id: "design", label: "🧭 Design", tabs: ["deploy", "blueprint"] },
+  { id: "labs", label: "🧪 Labs", tabs: ["guard", "discovery", "bench"] },
+  { id: "agents", label: "🛡 Agents", tabs: ["rogue", "selflearn"] },
+  { id: "architect", label: "🤖 Architect", tabs: ["copilot", "design"] },
+];
+const SUBTAB_LABELS = {
+  overview: "📊 Overview",
+  copilot: "🤖 Fox - Architect",
+  patterns: '◆ Patterns <span class="badge" id="patBadge">–</span>',
+  scenarios: '⚠ Scenarios <span class="badge" id="scnBadge">–</span>',
+  cascades: '⧉ Cascades <span class="badge" id="casBadge">–</span>',
+  coverage: "📊 Coverage &amp; Gaps",
+  deploy: "🧭 Deployment Plan",
+  blueprint: "🧩 Blueprints",
+  live: '▶ Live View <span class="badge" id="traceBadge">–</span>',
+  design: "📐 Design &amp; Architecture",
+  guard: "🛡 Guardrail Lab",
+  discovery: "🧪 Discovery Lab",
+  bench: "⚔ Battle Bench",
+  rogue: "🛑 Rogue Agents",
+  selflearn: "🧬 Self-Learning"
+};
+let currentGroup = "";
+function groupOfTab(tab) {
+  for (const g of TAB_GROUPS) if (g.tabs.indexOf(tab) >= 0) return g.id;
+  return "";
+}
+function groupLabel(gid) {
+  const g = TAB_GROUPS.find(x => x.id === gid);
+  return g ? g.label : gid;
+}
+function lastSubGet() {
+  try { return JSON.parse(localStorage.getItem("aap.grouptabs") || "{}"); }
+  catch (e) { return {}; }
+}
+function lastSubSet(map) {
+  try { localStorage.setItem("aap.grouptabs", JSON.stringify(map)); } catch (e) {}
+}
+function renderSubTabs(gid) {
+  const bar = el("subTabs");
+  const g = TAB_GROUPS.find(x => x.id === gid);
+  if (!bar || !g) return;
+  currentGroup = gid;
+  bar.innerHTML = g.tabs.map(t =>
+    '<div class="app-tab sub' + (t === currentTab ? " active" : "") + '" role="tab" aria-selected="' +
+    (t === currentTab ? "true" : "false") + '" tabindex="' + (t === currentTab ? "0" : "-1") +
+    '" aria-controls="' + t + 'Pane" data-tab="' + t + '" data-act="switchTab" data-args="[&quot;' + t + '&quot;]">' +
+    (SUBTAB_LABELS[t] || t) + "</div>").join("");
+  if (typeof paintBadges === "function") paintBadges();
+}
+function switchGroup(gid) {
+  const g = TAB_GROUPS.find(x => x.id === gid);
+  if (!g) return;
+  const mem = lastSubGet();
+  const t = (mem[gid] && g.tabs.indexOf(mem[gid]) >= 0) ? mem[gid] : g.tabs[0];
+  switchTab(t);
+}
 function switchTab(tab) {
   const prev = currentTab;
   currentTab = tab;
-  document.querySelectorAll(".app-tab").forEach(t => {
+  const grp = groupOfTab(tab);
+  if (grp) {
+    const mem = lastSubGet();
+    if (mem[grp] !== tab) { mem[grp] = tab; lastSubSet(mem); }
+    if (grp !== currentGroup) renderSubTabs(grp);
+  }
+  document.querySelectorAll("#appTabs .app-tab").forEach(t => {
+    const on = t.dataset.group === grp;
+    t.classList.toggle("active", on);
+    t.setAttribute("aria-selected", on ? "true" : "false");
+    t.tabIndex = on ? 0 : -1;
+  });
+  document.querySelectorAll("#subTabs .app-tab").forEach(t => {
     const on = t.dataset.tab === tab;
     t.classList.toggle("active", on);
     t.setAttribute("aria-selected", on ? "true" : "false");
@@ -568,15 +645,15 @@ function switchTab(tab) {
   pane.classList.add("visible");
   if (typeof paneEnsure === "function") paneEnsure(tab);
   else if (tabLoaders[tab]) tabLoaders[tab]();
-  /* keep the active tab on screen in the overflowing strip */
-  const active = document.querySelector(".app-tab.active");
+  /* keep the active subtab on screen in its strip */
+  const active = document.querySelector('#subTabs .app-tab[data-tab="' + tab + '"]');
   if (active && typeof active.scrollIntoView === "function") {
     try { active.scrollIntoView({ inline: "nearest", block: "nearest" }); } catch (e) {}
   }
   if (typeof updateTabNav === "function") setTimeout(updateTabNav, 240);
   if (tab !== prev) {
     const label = active ? active.textContent.replace(/\s+/g, " ").replace(/^[^\w(]+/, "").trim() : tab;
-    announce(label + " tab");
+    announce(groupLabel(grp) + " · " + label);
   }
   if (typeof window.__diagDiscWatch === "function") window.__diagDiscWatch(tab === "discovery");
   if (tab === "discovery" && typeof window.__diagDisc === "function") setTimeout(window.__diagDisc, 600);
@@ -590,7 +667,9 @@ function switchTab(tab) {
 /* keyboard navigation inside the tab bar (role=tablist): arrows move,
    Enter/Space activate — same behaviour screen readers expect. */
 function tabKeyNav(e) {
-  const tabs = [...document.querySelectorAll(".app-tab")];
+  /* Arrows stay inside the strip they started in (sections or tabs). */
+  const strip = (e.target && e.target.closest) ? e.target.closest(".app-tabs") : null;
+  const tabs = strip ? [...strip.querySelectorAll(".app-tab")] : [...document.querySelectorAll("#subTabs .app-tab")];
   const i = tabs.indexOf(e.target.closest(".app-tab"));
   if (i < 0) return;
   let j = -1;
@@ -600,7 +679,7 @@ function tabKeyNav(e) {
   else if (e.key === "End") j = tabs.length - 1;
   if (j >= 0) {
     e.preventDefault();
-    switchTab(tabs[j].dataset.tab);
+    tabs[j].click();
     tabs[j].focus();
   }
 }
@@ -608,10 +687,10 @@ function tabKeyNav(e) {
 document.addEventListener("keydown", e => { if (e.target.closest && e.target.closest(".app-tabs")) tabKeyNav(e); });
 
 /* ---------------- tab bar: active tab in view + overflow chevrons ----------------
-   With 12 tabs the strip overflows on every common laptop width; without an
-   affordance whole panes (Coverage … Discovery) are unreachable by mouse.
-   The wrapper (.tabs-wrap) holds two chevrons outside the scroller so they
-   stay put, and switchTab() scrolls the active tab into view. */
+   The section strip is short, but a narrow window can still overflow it; the
+   chevrons keep every section reachable by mouse. The wrapper (.tabs-wrap)
+   holds two chevrons outside the scroller so they stay put, and switchTab()
+   scrolls the active tab into view. */
 function tabScrollBy(dir) {
   const bar = el("appTabs");
   if (!bar) return;
@@ -834,21 +913,38 @@ function freshReload() {
 function shellFreshCheck() {
   try {
     const skTabs = (typeof SK_TABS !== "undefined" ? SK_TABS : []);
-    const domTabs = Array.prototype.map.call(
-      document.querySelectorAll(".app-tab"), function (t) { return t.dataset.tab; });
+    const groups = (typeof TAB_GROUPS !== "undefined" ? TAB_GROUPS : []);
+    const grouped = groups.reduce((acc, g) => acc.concat(g.tabs), []);
     const missing = skTabs.filter(t => !document.getElementById(t + "Pane"));
     const orphan = [...document.querySelectorAll(".pane")].map(p => p.id.replace(/Pane$/, "")).filter(t => skTabs.indexOf(t) < 0);
-    /* The tab registry lives in three places — the DOM buttons, SK_TABS
-       (keyboard nav + this check), and tabLoaders (per-tab init). A tab in
-       one but not the others is skipped by shortcuts, never initialised, or
-       an invisible button: all silent breakage, so all reported here. */
-    const noBtn = skTabs.filter(t => domTabs.indexOf(t) < 0);
-    const noSk = domTabs.filter(t => skTabs.indexOf(t) < 0);
+    /* The tab registry lives in four places — the group map, the DOM strips,
+       SK_TABS (keyboard nav + this check), and tabLoaders (per-tab init). */
+    const noBtn = skTabs.filter(t => grouped.indexOf(t) < 0);
+    const noSk = grouped.filter(t => skTabs.indexOf(t) < 0);
+    const emptyGroups = groups.filter(g => !g.tabs.length).map(g => g.id + " (empty section)");
     const noLoader = skTabs.filter(t =>
       !(typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders[t] === "function"));
+    /* The strips themselves: section buttons must match the group map, and
+       the visible subtab strip must match the active section. */
+    const domGroups = Array.prototype.map.call(
+      document.querySelectorAll("#appTabs .app-tab"), function (t) { return t.dataset.group; });
+    const badStrip = [];
+    const wantGroups = groups.map(g => g.id);
+    wantGroups.filter(g => domGroups.indexOf(g) < 0).forEach(g => badStrip.push(g + " (no section button)"));
+    domGroups.filter(g => wantGroups.indexOf(g) < 0).forEach(g => badStrip.push((g || "?") + " (unwired section button)"));
+    if (typeof currentGroup === "string" && currentGroup) {
+      const g = groups.find(x => x.id === currentGroup);
+      const domSubs = Array.prototype.map.call(
+        document.querySelectorAll("#subTabs .app-tab"), function (t) { return t.dataset.tab; });
+      if (g && JSON.stringify(domSubs) !== JSON.stringify(g.tabs)) {
+        badStrip.push(currentGroup + " (subtab strip does not match the section)");
+      }
+    }
     const bad = missing.concat(orphan.map(t => t + " (unwired)"))
-      .concat(noBtn.map(t => t + " (no tab button)"))
+      .concat(noBtn.map(t => t + " (no section maps it)"))
       .concat(noSk.map(t => t + " (not in SK_TABS — shortcuts skip it)"))
+      .concat(emptyGroups)
+      .concat(badStrip)
       .concat(noLoader.map(t => t + " (no tabLoaders entry — never initialises)"));
     if (!bad.length) return true;
     if (!bad.length) return true;
@@ -864,6 +960,18 @@ function shellFreshCheck() {
   } catch (e) { return true; }
 }
 /* Live catalog counts for UI copy — never hardcode 107/43/180 in strings. */
+function paintBadges() {
+  /* Badge spans live inside the lazily rendered subtab strip, so every
+     write is null-guarded; renderSubTabs repaints after building. */
+  try {
+    if (typeof DATA === "undefined" || !DATA || !DATA.patterns) return;
+    const set = (id, v) => { const b = el(id); if (b) b.textContent = v; };
+    set("patBadge", DATA.patterns.patterns.length);
+    set("scnBadge", DATA.scenarios.scenarios.length);
+    set("traceBadge", DATA.traces.traces.length);
+    set("casBadge", (DATA.cascades && DATA.cascades.cascades.length) || "…");
+  } catch (e) {}
+}
 function catN(kind, fallback) {
   try {
     if (kind === "patterns" && DATA.patterns) return DATA.patterns.patterns.length;
@@ -1992,10 +2100,7 @@ async function loadAll() {
     DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: null, coverage: cova };
     const paintCounts = () => {
       el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces · ${DATA.cascades ? DATA.cascades.cascades.length : "…"} cascades`;
-      el("patBadge").textContent = pats.patterns.length;
-      el("scnBadge").textContent = scns.scenarios.length;
-      el("traceBadge").textContent = trcs.traces.length;
-      if (el("casBadge")) el("casBadge").textContent = DATA.cascades ? DATA.cascades.cascades.length : "…";
+      paintBadges();
     };
     paintCounts();
     /* Phase 2 — kick off cascades now so it downloads while the first panes
@@ -2055,6 +2160,7 @@ async function loadAll() {
     if (typeof initPalette === "function") await safeInit("palette", async () => initPalette());
     if (typeof initShortcuts === "function") await safeInit("shortcuts", async () => initShortcuts());
     if (typeof initTabBar === "function") await safeInit("tab bar", async () => initTabBar());
+    if (typeof renderSubTabs === "function") renderSubTabs("overview");
     if (typeof initProject === "function") await safeInit("projects", async () => initProject());
     if (typeof dashRender === "function") await safeInit("dashboard", async () => dashRender());
     if (typeof initLanding === "function") await safeInit("landing", async () => initLanding());

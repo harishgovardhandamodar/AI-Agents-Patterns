@@ -121,7 +121,7 @@ let palHits = [];
 function palBuild() {
   if (palItems) return palItems;
   const items = [];
-  PAL_TABS.forEach(([id, name]) => items.push({ kind: "tab", id: id, title: name, sub: "tab" }));
+  PAL_TABS.forEach(([id, name]) => items.push({ kind: "tab", id: id, title: name, sub: "tab · " + groupLabel(groupOfTab(id) || "") }));
   if (typeof DATA !== "undefined" && DATA.patterns) {
     DATA.patterns.patterns.forEach(p => items.push({ kind: "pattern", id: p.id, title: p.name, sub: p.id + " · " + p.cat, hay: (p.name + " " + p.id + " " + (p.summary || "") + " " + (p.domains || []).join(" ")).toLowerCase() }));
     DATA.scenarios.scenarios.forEach(s => items.push({ kind: "scenario", id: s.id, title: s.title, sub: s.id + " · " + s.severity + " · " + s.domain, hay: (s.title + " " + s.id + " " + (s.description || "") + " " + s.domain).toLowerCase() }));
