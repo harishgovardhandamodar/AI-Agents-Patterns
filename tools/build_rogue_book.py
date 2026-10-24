@@ -26,6 +26,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_book import CSS, HTML_SHELL, Doc, esc, inline_html, load_catalog
+from rogue_book_prose import ROGUE_DELIB
 
 ROOT = Path(__file__).resolve().parent.parent
 BOOK_DIR = ROOT / "book"
@@ -272,6 +273,20 @@ def council(body, items):
         f"<li><b>{esc(role)}:</b> {inline_html(text)}</li>" for role, text in items) + "</ul>")
 
 
+def deliberate(body, key):
+    """Council deliberation: researchers debate before the verdict."""
+    items = ROGUE_DELIB.get(key)
+    if not items:
+        sys.exit(f"tools/build_rogue_book.py: no council deliberation for `{key}` in tools/rogue_book_prose.py")
+    body.m("**Council deliberation.**")
+    body.m()
+    for voice, text in items:
+        body.m(f"- **{voice}:** {text}")
+    body.m()
+    body.h("<p><b>Council deliberation.</b></p><ul>" + "".join(
+        f"<li><b>{esc(voice)}:</b> {inline_html(text)}</li>" for voice, text in items) + "</ul>")
+
+
 def scen_titles(cat, ids, n=4):
     by_id = {s["id"]: s for s in cat["scenarios"]}
     return "; ".join(f"*{by_id[i]['title']}*" for i in ids[:n])
@@ -312,6 +327,16 @@ def main():
     for arch in {a for _, a, _ in SCEN_ROAD.values()}:
         if arch not in ext["archetypes"]:
             sys.exit(f"tools/build_rogue_book.py: archetype `{arch}` not in js/rogue.js")
+    _need = {"The six archetypes", "Anatomy of a compromise", "Seven themed swarms, one engine",
+             "The two roads", "Signals and the baseline that cannot be moved", "The three detectors",
+             "What the reference campaign measured", "The quarantine workflow",
+             "Ten controls, each a runtime primitive", "What carries the result",
+             "Reading the 54 scenarios as rogue stories", "Domain coverage: all 26 domains",
+             "Setup, results, board, guardrails", "Live fire", "The honest caveat",
+             "Twelve safe-operation patterns",
+             "preface", "introduction", "conclusion", "case-study"}
+    if set(ROGUE_DELIB) != _need:
+        sys.exit(f"tools/build_rogue_book.py: deliberation keys drifted (missing={sorted(_need - set(ROGUE_DELIB))}, extra={sorted(set(ROGUE_DELIB) - _need)})")
     figs = extract_figures()
 
     doc = Doc()
@@ -363,6 +388,7 @@ def main():
         "suggestions advice is from personal experiments ran on my personal setup "
         "only and does not represent the organisation I work for."
     )
+    deliberate(body, "preface")
 
     # -- introduction ---------------------------------------------------- #
     entries.append(("front", 'Introduction: the agent that stops being yours', h(1, 'Introduction: the agent that stops being yours')))
@@ -403,6 +429,7 @@ def main():
         "You cannot keep every rogue out of the swarm; you can decide, in advance and on the "
         "clock, exactly what happens to one once found."
     )
+    deliberate(body, "introduction")
     council(body, [
         ("Red team", "Dormancy is the whole game: the sim grants warmup ticks of perfect behaviour before activation, and so should you assume of any real compromise. Any detector tuned to punish early weirdness while trusting established agents has the problem backwards — age in the swarm is not evidence of loyalty."),
         ("Blue team", "The insider framing justifies the book's two most expensive recommendations: an immutable audit trail (because you will need to reconstruct what the trusted agent did) and a memory scrub on release (because the trusted agent's context is the crime scene). Both look like overhead until the first incident, then like the only things that mattered."),
@@ -463,6 +490,7 @@ def main():
             f'<pre class="mermaid" data-src="{esc(figs[fi])}">{esc(figs[fi])}</pre>'
             f"<figcaption>{esc(a['label'])}: how the shape turns into harm — and where the workflow stops it.</figcaption></figure>"
         )
+    deliberate(body, "The six archetypes")
     council(body, [
         ("Red team", "Hijack and drift are the patient shapes: the shift multipliers near 1.0 on most classes mean the swarm baseline barely moves, so the confirming detector is usually goal-misalignment and it arrives late — drift averages over an hour. If you must be loud, be loud once: exfil's 3.4× external weight trips the behavioural detector in minutes, so exfiltrate in the same window as a legitimate bulk job."),
         ("Blue team", "The archetype table is a staffing argument: exfil and abuse are caught in single-digit minutes by the two fast detectors, so the budget goes to patience — longer persist windows for drift, pair-burst accounting for collusion — not to faster exfil signatures. And collusion's 1-in-9 recall on the goal detector is not a failure; it is the shape telling you the pair, not the agent, is the unit of analysis."),
@@ -496,6 +524,7 @@ def main():
         "allowed to be slow, because it carries the relapse edge — and the edge is measured, "
         "not assumed: long runs with the scrub off end with most contained rogues relapsing."
     )
+    deliberate(body, "Anatomy of a compromise")
     council(body, [
         ("Red team", "The lifecycle's soft joint is dormant-to-active: warmup ticks are free reconnaissance — behave perfectly, learn the baseline, then move once. The second soft joint is released-to-active: if the operator's remediation skips the scrub, you come back wearing a clean verdict with a dirty memory."),
         ("Blue team", "Defend the two automatic transitions and deliberate the slow one. Isolate and revoke must not wait for a human — the 5-minute SLA exists because peer spread starts in minutes. Release must wait for a human plus a scrub proof, because the relapse edge is the only transition the adversary controls after losing."),
@@ -529,6 +558,7 @@ def main():
           pct(tg[t["id"]]["sla"], 0)]
          for t in ext["themes"]],
     )
+    deliberate(body, "Seven themed swarms, one engine")
     council(body, [
         ("Red team", "Uniform 9/9 across themes tells you the detectors key off mathematics, not vocabulary — renaming write to order entry buys no stealth. The attack surface that differs per theme is the grant structure: prescriber holds e-script authority the way payer holds payment authority, so study the theme's grants, not its labels."),
         ("Blue team", "Theme parity is a deployment argument: one detector tuning, one response workflow, seven domains. When the eighth domain arrives, the work is four role mixes and six tool names — an afternoon — not a new detection science."),
@@ -551,6 +581,7 @@ def main():
         "misoptimization and dynamics. Teams that budget only for the injected road defend "
         "against the minority case."
     )
+    deliberate(body, "The two roads")
     council(body, [
         ("Red team", "The emergent road is the better cover: no payload to catch at the boundary, no exploit to signature. Metric-gaming and threshold-splitting look exactly like good engineering until you compare against the goal — which is why the goal-misalignment detector, not the perimeter, is the instrument that sees this road."),
         ("Blue team", "Split the program in two and fund both. Injected-road defenses are binary and auditable (was the grant scoped? was egress denied?); emergent-road defenses are statistical and need baselines, history and patience. One team, two skill sets, one incident workflow where they meet."),
@@ -580,6 +611,7 @@ def main():
         "feature convicts — the detectors fuse them, and persistence (default two ticks) is "
         "what separates a burst from a campaign."
     )
+    deliberate(body, "Signals and the baseline that cannot be moved")
     council(body, [
         ("Red team", "Seven features is seven budgets to stay under. The cheapest evasion is dilution: spread the campaign across features so no single z crosses threshold, and never repeat the same class twice in a row — repetition runs are the feature most rogues trip by accident. The expensive evasion is patience: drift shows the level-shift detector needs a sustained push, so move slower than the EMA window."),
         ("Blue team", "Features are chosen to be mutually covering, not individually clever: volume features catch haste, ratio features catch stealth. The design rule is that defeating any two features still leaves five — verify this by ablation, the way the tab ablates controls. And guard the baseline computation itself: median plus MAD is the whole reason a 3%-rogue swarm cannot normalize its own deviance."),
@@ -624,6 +656,7 @@ def main():
         "that no detector confirms is, by definition, the shape your instrumentation cannot "
         "see — the matrix above is the coverage map, and its gaps are the monitoring backlog."
     )
+    deliberate(body, "The three detectors")
     council(body, [
         ("Red team", "Each detector has a documented blind spot and the book just published all three: hold every score under threshold and the behavioural detector never fires; keep making progress on paper goals and the misalignment detector stays quiet; talk through legitimate channels at normal rates and the pair detector sees nothing. The defense assumes you cannot do all three while still doing damage — verify that assumption against your own tools."),
         ("Blue team", "Thresholds are the whole game and they are settable for a reason: 3.0σ and 2.5σ buy zero false positives on clean swarms across all seven themes. Tighten them and false positives arrive first (the reference sweep shows six at tight settings); loosen them and drift walks out the door. Re-tune per theme, and re-run the clean-swarm check every time."),
@@ -669,6 +702,7 @@ def main():
         "with zero false positives on the reference run — enforcement changes what the "
         "detectors see next, so the two halves must be measured together, never separately."
     )
+    deliberate(body, "What the reference campaign measured")
     council(body, [
         ("Red team", "The preset matrix tells you where the program is soft: detect-only is a security theater with perfect recall and zero containment — if your organization reports detections but funds no response workflow, you live in that row. Enforce-only is the opposite trap: zero blast, nine residents. Audit which row you actually inhabit before buying anything."),
         ("Blue team", "The 0% SLA of detect-only is the strongest argument in this book for automated response: human-speed remediation cannot meet machine-speed deadlines, and the compliance math counts that honestly. The guarded 100% is not a claim of safety — it is proof the workflow is wired, the same honest caveat the tab prints."),
@@ -697,6 +731,7 @@ def main():
         f'<pre class="mermaid" data-src="{esc(figs[4])}">{esc(figs[4])}</pre>'
         "<figcaption>The six-step incident: isolate, revoke, snapshot, scrub, hand off, remediate.</figcaption></figure>"
     )
+    deliberate(body, "The quarantine workflow")
     CH("Ten controls, each a runtime primitive")
     body.p(
         "Every control is something the runtime does, not something the model promises. "
@@ -722,6 +757,7 @@ def main():
         "stopping this one — and because the audit-off ablation shows what happens without "
         "evidence: the snapshot step becomes impossible and SLA compliance falls to 72%."
     )
+    deliberate(body, "Ten controls, each a runtime primitive")
     council(body, [
         ("Red team", "The workflow's weak steps are the human ones: handoff at 120 minutes and remediation at 24 hours are where cases go to stall. A rogue that survives isolate and revoke — the unlikely one, but plan for it — wins by outlasting attention, not by outrunning the runtime. Attack the queue, not the gate: flood the board and watch triage degrade."),
         ("Blue team", "Automate the first four steps completely and staff the last two honestly. The reference 100% SLA holds because isolate-through-scrub need no human; every organization that misses its SLA misses it at handoff. And treat the snapshot as load-bearing evidence infrastructure: without the audit trail it is not late, it is impossible."),
@@ -784,6 +820,7 @@ def main():
                f"Without it: harm {off.get('harm')}, escaped {off.get('esc')}, SLA {pct(off.get('sla'), 0)} "
                f"({'load-bearing' if lb else 'redundant in the full stack'}). "
                f"Alone: prevents {solo.get('prevented')}.</p>")
+    deliberate(body, "What carries the result")
     council(body, [
         ("Red team", "The ablation tables are a shopping list: every control marked redundant-here is a control you can switch off without the reference swarm noticing — so switch off the ones your threat model doesn't need and spend the complexity budget where your rogues actually live. And note the detectors' rows: removing goal-misalignment lets two rogues walk out; the cheapest attack on this whole apparatus is still blinding one sensor."),
         ("Blue team", "Do not read redundant-here as removable: redundancy in the full stack is defense in depth doing its job. Read the solo column before removing anything — approval and egress each prevent whole harm classes alone, which is exactly what you want left standing when two other controls fail on the same day. Load-bearing is a property of the stack, not of the control."),
@@ -817,6 +854,7 @@ def main():
             "rogues relapse. Read the pattern for the mechanism, the ablation for the price of "
             "skipping it."
         )
+    deliberate(body, "Twelve safe-operation patterns")
     council(body, [
         ("Red team", "Twelve patterns is twelve specifications to read before attacking: each names its own failure modes, and the failure modes are the attack plan. The catalog hands you the blue team's playbook with the weak pages marked — return the favor by assuming your adversary has read it too."),
         ("Blue team", "Deploy patterns as code paths, not as documents: sandboxed execution means the spawn call literally cannot see credentials, not that a policy says it shouldn't. Every pattern chapter above lists failure modes first — implement the failure mode's negation, then the pattern, in that order."),
@@ -889,6 +927,7 @@ def main():
         "them, they fail by themselves, and measurement is the whole program there. Domains on "
         "the injected road expect boundary defenses to matter most."
     )
+    deliberate(body, "Domain coverage: all 26 domains")
     council(body, [
         ("Red team", "Single-scenario domains are where the catalog is thinnest and your adversary's homework is easiest: one story means one defended shape, and everything adjacent is uncovered. If you operate in iot, procurement, hr or legal, assume the catalog has not yet imagined your rogue."),
         ("Blue team", "The domain table is a coverage argument for staffing, not just reading: finance and engineering have six stories each and still miss shapes, so a domain with one story is not covered, it is sampled. Use the archetype column to pick which sim archetype to rehearse per domain you operate in."),
@@ -915,6 +954,7 @@ def main():
         "owners, the same kill switch, but nobody's money is moving. Close the loop in guardrails: "
         "toggle a control, re-run the counterfactuals, and keep only what the numbers defend."
     )
+    deliberate(body, "Setup, results, board, guardrails")
     council(body, [
         ("Red team", "The tab's honest outputs are also reconnaissance: thresholds, persist windows and SLA deadlines are printed in the open. Assume your adversary has run the same unmanaged preset you have and knows exactly how long they have between activation and quarantine on your settings."),
         ("Blue team", "The four views are defense in depth for attention: setup constrains the experiment, results fuse the evidence, the board paces the response, guardrails prevents control rot. Skipping any one view reintroduces the failure it guards — results without setup is anecdote, a board without guardrails is triage without learning."),
@@ -947,6 +987,7 @@ def main():
         "the guardrails note reminds you the counterfactuals re-run simulated — read their "
         "deltas as control effects, not model effects."
     )
+    deliberate(body, "Live fire")
     council(body, [
         ("Red team", "Live fire is the adversary previewing your preview: the same model family that writes the campaigns may write the real attack. Study what it reaches for — which tools, which grants, how fast it ramps — because its preferences are data about the model's own priors, and your real adversary may share them."),
         ("Blue team", "Keep live fire fenced exactly as the tab fences it: caps on, fallbacks flagged, badges honest. The failure mode to fear is a 'live' label on a simulated run, because every decision downstream of it is calibrated to a threat that was never there. The tab refuses to start over total model failure for precisely this reason."),
@@ -982,6 +1023,8 @@ def main():
         "Use the book to practice the response, not to enumerate the enemy."
     )
 
+    deliberate(body, "The honest caveat")
+
     # -- Part VII: case studies ------------------------------------------ #
     body.chapter_break()
     entries.append(("part", "Part VII: Case studies", h(1, "Part VII: Case studies")))
@@ -996,6 +1039,7 @@ def main():
         body.p("*Incident (reconstruction).* " + incident)
         body.p("*Detection and containment.* " + detection)
         body.p("*Impact.* " + impact)
+        deliberate(body, "case-study")
         council(body, lessons)
         return label
 
@@ -1180,6 +1224,7 @@ def main():
         "Mermaid as the app, and a measured reference campaign in Part II and Part III."
     )
     entries.append(("back", "Conclusion", h(1, "Conclusion")))
+    deliberate(body, "conclusion")
     body.p(
         "Operate as if any agent can become a rogue: scope every grant, default-deny every "
         "egress, bound every fan-out, gate every irreversible action, detect deviation and "

@@ -22,7 +22,7 @@ The arrow from the tab to the lab is deliberately thin: a reachability probe and
 ```mermaid
 flowchart TB
   subgraph TAB2["js/selflearn.js — static, offline-first"]
-    PROBE["Status probe<br/>no-cors fetch :8220/api/health<br/>opaque = up"]
+    PROBE["Status probe<br/>same-origin /api/selflearn/health?port=<br/>serve.py checks lab loopback (4 s timeout)"]
     LINKS["Deep links<br/>dashboard · run.sh · compose"]
     BRIDGE["Concept bridge<br/>12 mechanisms → patterns + scenarios"]
     CFG["Port config<br/>localStorage · re-probe"]
@@ -37,28 +37,31 @@ flowchart TB
 sequenceDiagram
   autonumber
   participant T as Self-Learning tab
+  participant S as This app (serve.py)
   participant L as Lab :8220
   participant O as Operator
 
-  T->>L: GET /api/health (no-cors, 4 s timeout)
+  T->>S: GET /api/selflearn/health?port=8220 (same-origin, 4 s timeout)
+  S->>L: GET /api/health on loopback
   alt port answers
-    L-->>T: opaque response (body unreadable by design)
+    S-->>T: {ok: true}
     T->>T: status = up — show Open dashboard
   else refused / timeout
+    S-->>T: {ok: false}
     T->>T: status = down — show run instructions
   end
   O->>T: Check lab / change port
-  T->>L: probe again
+  T->>S: probe again
 ```
 
-The lab ships no CORS headers, so the response body can never be read cross-origin — and the tab never tries. An opaque response proves the port answers; anything else proves nothing except that the lab is not there right now. Richer live embedding (run lists, metric tables inside this tab) waits on a one-line CORS allowance on the lab side; until then the dashboard link is the integration.
+The lab ships no CORS headers, so the browser never contacts it directly — and the tab never tries. The same-origin proxy proves the port answers from the server's loopback; anything else proves nothing except that the lab is not there right now. Richer live embedding (run lists, metric tables inside this tab) waits on a one-line CORS allowance on the lab side; until then the dashboard link is the integration.
 
 ## Data flow: the book reads both repos
 
 ```mermaid
 flowchart LR
   subgraph ADDON["sibling checkout"]
-    R["reference/*.json<br/>15 concepts · 36 works<br/>bands · calibration"]
+    R["reference/*.json<br/>21 concepts · 51 works · 9 axes<br/>bands · calibration"]
     D["design/*.md figures<br/>context · suite · landscape"]
     S["app/streams.py + evolvers.py<br/>18 scenarios · 6 evolvers"]
   end

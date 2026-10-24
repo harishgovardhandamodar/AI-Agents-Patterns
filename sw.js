@@ -14,7 +14,7 @@
  * Bump VERSION whenever the shell changes; activate() drops older caches.
  * The precache list is kept in sync by test/data.test.mjs.
  */
-const VERSION = "aap-v9";
+const VERSION = "aap-v10";
 
 const PRECACHE = [
   "index.html",
@@ -48,6 +48,7 @@ const PRECACHE = [
   "js/benchui.js",
   "js/rogue.js",
   "js/selflearn.js",
+  "js/books.js",
   "js/bootcheck.js",
   "js/vendor/mermaid.min.js",
   "data/patterns.json",

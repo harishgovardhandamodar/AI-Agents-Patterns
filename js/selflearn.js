@@ -12,7 +12,7 @@
  * The status probe goes through this app's same-origin `/api/selflearn/health`
  * endpoint (serve.py), which checks the lab from the server's loopback. The
  * lab ships no CORS headers, so probing it directly from the browser would be
- * blocked by `connect-src 'self'` and the dot would always read "down".
+ * blocked — the dot would always read "down" without the proxy.
  */
 "use strict";
 
@@ -27,7 +27,7 @@ const SL_LAB = {
   model: "fox-services :8210",
   run: "./run.sh",
   compose: "docker compose up --build -d",
-  paper: "arXiv:2610.25863 — “Are Self-Evolving Agents Continual Learners?”"
+  paper: "arXiv:2610.25858 — “Are Self-Evolving Agents Continual Learners?”"
 };
 
 /* Concept → what it is → where the catalog already covers it. Pattern and

@@ -26,6 +26,7 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+from book_prose import APP_DELIB, PART_DELIB, PATTERN_DELIB
 
 ROOT = Path(__file__).resolve().parent.parent
 BOOK_DIR = ROOT / "book"
@@ -348,6 +349,12 @@ def pattern_council_points(p, ctx):
     return red, blue, op
 
 
+def deliberation(doc, items):
+    """Council deliberation: four researchers debate before the verdict."""
+    doc.heading(2, "Council deliberation")
+    doc.ul([f"**{voice}:** {text}" for voice, text in items])
+
+
 def write_chapter(doc, ctx, cat):
     p = ctx["pattern"]
     num, part = ctx["num"], ctx["part"]
@@ -485,6 +492,10 @@ def write_chapter(doc, ctx, cat):
     else:
         doc.p("No cross-references are catalogued for this pattern.")
 
+    # -- council deliberation: four researchers debate the pattern's tension -- #
+    if p["id"] not in PATTERN_DELIB:
+        sys.exit(f"tools/build_book.py: no council deliberation for pattern `{p['id']}` in tools/book_prose.py")
+    deliberation(doc, PATTERN_DELIB[p["id"]])
     # -- council reading ---------------------------------------------------- #
     # Same device as the supplement: three argued perspectives built only from
     # this chapter's own records — the top failure and the scenario that proves
@@ -521,6 +532,10 @@ def write_part(doc, part, cat):
         f"{'s' if len(cas) != 1 else ''}. Each chapter below follows the same order "
         "and shape as every other part."
     )
+    if part["key"] not in PART_DELIB:
+        sys.exit(f"tools/build_book.py: no council deliberation for part `{part['key']}` in tools/book_prose.py")
+    doc.id_base = slug(f"Part {part['n']}")
+    deliberation(doc, PART_DELIB[part["key"]])
     doc.table(
         ["Chapter", "Pattern", "Domains"],
         [[str(c["num"]), c["pattern"]["name"], ", ".join(c["pattern"]["domains"])] for c in part["contexts"]],
@@ -1891,6 +1906,9 @@ def write_app_chapter(doc, ctx, part, stats):
     doc.heading(2, "References")
     doc.ul(ch["refs"])
 
+    if ctx["title"] not in APP_DELIB:
+        sys.exit(f"tools/build_book.py: no council deliberation for Part X chapter `{ctx['title']}` in tools/book_prose.py")
+    deliberation(doc, APP_DELIB[ctx["title"]])
     if ctx["title"] in APP_COUNCIL:
         doc.heading(2, "Council reading")
         red, blue, op = APP_COUNCIL[ctx["title"]]
@@ -1902,6 +1920,12 @@ def write_app_chapter(doc, ctx, part, stats):
 
 
 def write_book(cat):
+    _pids = {p["id"] for p in cat["patterns"]}
+    if set(PATTERN_DELIB) != _pids:
+        sys.exit(f"tools/build_book.py: deliberation drift (missing={sorted(_pids - set(PATTERN_DELIB))}, extra={sorted(set(PATTERN_DELIB) - _pids)})")
+    _keys = {pt["key"] for pt in cat["parts"]}
+    if set(k for k in PART_DELIB if k not in ("preface", "conclusion")) != _keys:
+        sys.exit("tools/build_book.py: part deliberation keys drifted from categories")
     doc = Doc()
     parts = cat["parts"]
 
@@ -1985,6 +2009,7 @@ def write_book(cat):
         "catalog and the next edition carries it."
     )
     doc.p(f"— {AUTHOR}")
+    deliberation(doc, PART_DELIB["preface"])
 
     doc.p(
         "The final part steps outside the catalog and into the application that "
@@ -2224,6 +2249,7 @@ def write_book(cat):
         "its live form too, where every diagram above is a running page you can "
         "filter, replay and export."
     )
+    deliberation(doc, PART_DELIB["conclusion"])
 
     doc.pagebreak()
     doc.heading(1, "Colophon")

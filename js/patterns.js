@@ -260,3 +260,8 @@ function openPattern(id) {
     <div class="dsec"><h4>Category context</h4>${diagramHtml(P.categoryDiagrams[p.cat] || "", cat.name)}<p class="small muted">${escHtml(cat.desc || "")}</p></div>`;
   openDetail(p.name, cat.name || p.cat, html, { tab: "patterns", id: p.id, title: p.name });
 }
+
+/* Registered so the shell-freshness check and tab shortcuts see this tab as
+   initialised (SK_TABS ↔ DOM ↔ tabLoaders must agree). Re-runs the idempotent
+   filter build + render on every visit, like the other catalog tabs. */
+tabLoaders.patterns = function () { initPatterns(); };

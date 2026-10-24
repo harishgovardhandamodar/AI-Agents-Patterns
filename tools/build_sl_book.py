@@ -26,6 +26,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_book import CSS, HTML_SHELL, Doc, esc, inline_html, load_catalog, pattern_council_points
+from build_book import CSS, HTML_SHELL, Doc, esc, inline_html, load_catalog, pattern_council_points
+from sl_book_prose import KIND_ESSAYS, PROSE, WORK_NOTES
 
 ROOT = Path(__file__).resolve().parent.parent
 BOOK_DIR = ROOT / "book"
@@ -173,6 +175,24 @@ def council(body, items):
         f"<li><b>{esc(role)}:</b> {inline_html(text)}</li>" for role, text in items) + "</ul>")
 
 
+def voices(body, key):
+    """Council deliberation block: four researchers debate before the verdict."""
+    items = PROSE.get(key, [])
+    if not items:
+        sys.exit(f"tools/build_sl_book.py: no council prose for `{key}` in tools/sl_book_prose.py")
+    voices_items(body, items)
+
+
+def voices_items(body, items, header="**Council deliberation.**"):
+    body.m(header)
+    body.m()
+    for voice, text in items:
+        body.m(f"- **{voice}:** {text}")
+    body.m()
+    body.h("<p><b>Council deliberation.</b></p><ul>" + "".join(
+        f"<li><b>{esc(voice)}:</b> {inline_html(text)}</li>" for voice, text in items) + "</ul>")
+
+
 def main():
     cat = load_catalog()
     by_pat = {p["id"]: p for p in cat["patterns"]}
@@ -196,6 +216,17 @@ def main():
     missing = sorted(set(SL_SCENARIOS) - scen_ids)
     if missing:
         sys.exit(f"tools/build_sl_book.py: scenarios not in this catalog: {missing}")
+    _need = {"intro", "ch1", "ch2", "ch3", "ch4", "ch5", "ch6", "ch7",
+             "ch8", "ch9", "ch10", "ch11", "ch15", "ch16", "ch17", "ch18",
+             "ch19", "conclusion"}
+    if _need - set(PROSE):
+        sys.exit(f"tools/build_sl_book.py: council prose missing keys {sorted(_need - set(PROSE))}")
+    _wids = {w.get("id") for w in landscape.get("works", [])}
+    if set(WORK_NOTES) != _wids:
+        sys.exit(f"tools/build_sl_book.py: researcher notes drifted (missing={sorted(_wids - set(WORK_NOTES))}, extra={sorted(set(WORK_NOTES) - _wids)})")
+    _kinds = {w.get("kind", "paper") for w in landscape.get("works", [])}
+    if _kinds - set(KIND_ESSAYS):
+        sys.exit(f"tools/build_sl_book.py: kind essays missing {sorted(_kinds - set(KIND_ESSAYS))}")
     figs = extract_sib_figs()
     if len(figs) < 12:
         sys.exit(f"tools/build_sl_book.py: expected at least 12 placed figures, got {len(figs)}")
@@ -282,6 +313,7 @@ def main():
         f"agent, {n_eme} where the learning itself goes wrong. Part V reads every one of them; "
         "the lab exists next to this catalog because the catalog already knew the failure modes."
     )
+    voices(body, "intro")
     council(body, [
         ("Red team", "Learning after deployment means the adversary gets to teach: poison the stream and the agent distills your lesson as its own. Any evaluation that grades only final accuracy, without per-boundary checkpoints, cannot tell who taught what — demand the checkpoints before you trust the curve."),
         ("Blue team", "Scope every lesson to the task family that earned it and condition every retrieval on the live workflow: task-scoping plus workflow-conditioning is the whole paper's mechanism in one sentence, and the reference bands show scoped beating unscoped where it matters."),
@@ -326,6 +358,7 @@ def main():
         "benchmark the grader. The protocol measures learning and nothing else, which is why its "
         "numbers transfer further than richer-looking alternatives."
     )
+    voices(body, "ch1")
     council(body, [
         ("Red team", "The protocol's honesty is its attack surface: binary feedback is gameable (metric-gaming is a catalogued scenario, not a hypothesis), and a hold-out is only disjoint until someone trains on it. Audit the hold-out boundary the way you audit a grant boundary."),
         ("Blue team", "Checkpoints are the audit trail of learning: without A[t,k] at every boundary, interference and forgetting are invisible and every claim about continual learning is unfalsifiable. Keep the seed log with the same care as the incident log."),
@@ -365,6 +398,7 @@ def main():
         f'<pre class="mermaid" data-src="{esc(figs[2][0])}">{esc(figs[2][0])}</pre>'
         f"<figcaption>{esc(figs[2][1])}</figcaption></figure>"
     )
+    voices(body, "ch2")
     council(body, [
         ("Red team", "Every metric here can be gamed without improving anything: inflate P_k by overfitting the block, hide F_k by never revisiting old families, flatter Term with a weak seed baseline. The suite's answer is the band table — your number against fifty measured iterations, not against zero."),
         ("Blue team", "Read S before P: plasticity without stability is a demo that forgets. The reference bands report both with error bars, and a cell whose stability error bar crosses zero has not proven it can keep anything."),
@@ -392,6 +426,7 @@ def main():
         "proven it can learn undisturbed — which is to say, it has proven nothing about "
         "deployment, where the stream is interleaved, recurring, long and inconvenient all at once."
     )
+    voices(body, "ch3")
     council(body, [
         ("Red team", "If you control the stream order, you control the result: schedule confusable pairs adjacently and watch retrieval collide; interleave to starve the router. The hard-order stream is the closest thing to an adversarial evaluation the suite ships — run it before you believe any blocked number."),
         ("Blue team", "Demand the full ordering battery for every claim: a scoped lesson that survives blocked but dies interleaved is a router failure wearing a memory success costume. The suite's thirteen shapes exist because one shape is a anecdote."),
@@ -443,6 +478,7 @@ def main():
         f'<pre class="mermaid" data-src="{esc(figs[9][0])}">{esc(figs[9][0])}</pre>'
         f"<figcaption>{esc(figs[9][1])}</figcaption></figure>"
     )
+    voices(body, "ch4")
     body.p(
         "Read the two diagrams as one machine. The sequence shows the handoffs — who calls whom, "
         "and what crosses each boundary (cluster id, scope key, injection, action, grade). The "
@@ -498,6 +534,7 @@ def main():
         "threshold; GEPA adds a character budget and an update cadence. Compare implementations "
         "by their parameters and you can predict their failure modes before running them."
     )
+    voices(body, "ch5")
     council(body, [
         ("Red team", "Evolvers that rewrite policy in prose (GEPA) or memory (reasoning bank) are prompt-injection surfaces that persist: poison the reflection once and every downstream block inherits it. Attack the lesson store, not the lesson."),
         ("Blue team", "Scope lessons per family and verify retrievals against the live workflow: the scoped evolver exists because unscoped memory is a broadcast channel for mistakes. The ceiling to beat is oracle capture, not any absolute score."),
@@ -538,6 +575,7 @@ def main():
         "passes blocked but fails compound has exactly one of the two mechanisms, and the "
         "streams tell you which."
     )
+    voices(body, "ch6")
     council(body, [
         ("Red team", "Fences are drawn where the lab thinks families end; real deployments redraw families constantly. A lesson fenced to 'invoicing' leaks the moment the router misclassifies the task — attack the router's taxonomy and the scope follows."),
         ("Blue team", "Condition retrieval on the live workflow explicitly, not on embedding similarity alone: collision happens exactly when similarity is high and the workflow differs. Log the workflow key with every retrieval so collisions are auditable, not mysterious."),
@@ -570,6 +608,7 @@ def main():
         "yesterday's truths. Forgetting is not the opposite of the bank; it is the bank's "
         "garbage collector, and a bank without one is a landfill with an index."
     )
+    voices(body, "ch7")
     council(body, [
         ("Red team", "Compound interest works for whoever deposits first: plant the reasoning early and every retrieval pays you dividends for the rest of the horizon. Banks without provenance are just shared delusions with an index."),
         ("Blue team", "Provenance on every lesson, TTL on every memory, verification on every distillation: the bank compounds what you put in, so audit deposits the way you audit code review — because that is what they are."),
@@ -611,6 +650,7 @@ def main():
              "The deployment shape: nine domains plus their drifting variants test whether learning survives contact with a new environment." if drift == "domain" else
              "The composition shape: interleaved, recurring, long-horizon and adversarial orderings test what the single shapes cannot — routing under mixing, return after interruption, compounding over time, survival of inconvenience.")
         )
+    voices(body, "ch8")
     council(body, [
         ("Red team", "Eighteen scenarios is eighteen rehearsals your adversary has also read — all deterministic, all replayable, all in the open. The compound shapes are the attacker's menu: pick the ordering the target never tested (usually hard-order or long-horizon) and the untested shape is where their numbers stop meaning anything."),
         ("Blue team", "Cover the shapes in deployment order, not numerical order: blocked first for the mechanism, then the shape your stream actually takes, then hard-order as the adversary's vote. A suite that only runs blocked is a demo with eighteen names."),
@@ -651,6 +691,7 @@ def main():
         f'<pre class="mermaid" data-src="{esc(figs[11][0])}">{esc(figs[11][0])}</pre>'
         f"<figcaption>{esc(figs[11][1])}</figcaption></figure>"
     )
+    voices(body, "ch9")
     council(body, [
         ("Red team", "Statistics are a costume that small samples wear: twenty iterations with wide std bars prove nothing except that the number moves. Demand the bands, the effect size and the Holm correction together — a naked mean is a rumour."),
         ("Blue team", "Sweep the axes you claim robustness over: if deployment varies the order, sweep the order (hard-order exists for this). A result that holds at seed 7..26 but dies at 27 was never a result."),
@@ -673,6 +714,7 @@ def main():
     if isinstance(notes, dict):
         for k, v in notes.items():
             body.p(f"*{k}*: {v}")
+    voices(body, "ch10")
     council(body, [
         ("Red team", "Bands are history, not physics: they describe what scoped and GEPA did on these streams at these seeds. Change the stream and the band is a rumour — re-sweep before you cite it, or your baseline is someone else's weather."),
         ("Blue team", "Judge runs as measured / above / below against the bands, never against zero: the suite's verdict vocabulary exists so a regression reads as 'below band', not as a feeling. Wire the verdict into CI so the gate bites."),
@@ -707,6 +749,7 @@ def main():
         "the reading alongside the delta — cost, direction and interpretation travel together, "
         "or not at all."
     )
+    voices(body, "ch11")
     council(body, [
         ("Red team", "The delta is the finding and the absolute is the costume: simulated baselines flatter, live baselines humble. Anyone quoting the simulated number without the calibration delta is selling the costume."),
         ("Blue team", "Calibrate every simulated claim against live hold-outs before it leaves the lab: the validation file records exactly this, and the advice says what transfers and what does not. No calibration, no claim."),
@@ -717,8 +760,62 @@ def main():
     body.chapter_break()
     entries.append(("part", "Part IV: The landscape",
                     h(1, "Part IV: The landscape")))
-    CH("Six dimensions")
     dims = landscape.get("dimensions", [])
+    concepts = landscape.get("concepts", [])
+    works = landscape.get("works", [])
+    n_dims, n_concepts, n_works = len(dims), len(concepts), len(works)
+
+    def lab_assess(w):
+        given = w.get("align") or {}
+        a = {}
+        for d in dims:
+            key = d["id"] if isinstance(d, dict) else str(d)
+            opts = d.get("options", []) if isinstance(d, dict) else []
+            v = given.get(key)
+            a[key] = v if (v in opts or v == "unknown") else "unknown"
+        falsifiable = (a.get("evaluation") == "yes" and a.get("holdout") == "yes")
+        partial = (a.get("evaluation") in ("yes", "partial") and a.get("holdout") == "yes")
+        verdict = ("falsifiable" if falsifiable else
+                   "partially falsifiable" if partial else
+                   "not falsifiable by its own protocol")
+        bits = []
+        if a.get("evaluation") != "yes":
+            if a.get("evaluation") == "partial":
+                bits.append("it measures some effect of learning, but not interference or "
+                            "forgetting across a changing stream")
+            else:
+                bits.append("it does not measure interference or forgetting across a changing stream")
+        if a.get("holdout") != "yes":
+            bits.append("it is not graded on instances it was not trained on")
+        why = ("it measures degradation across a changing stream on a disjoint hold-out, "
+               "so a change that made things worse would have been caught") if not bits \
+            else "because " + " and ".join(bits)
+        return a, verdict, falsifiable, why
+
+    def work_reading(w, a, verdict):
+        surf = a.get("surface", "unknown")
+        if verdict == "falsifiable":
+            base = ("Clears both gates — degradation measured on a disjoint hold-out — so read it "
+                    "as the comparison set for any new continual-learning claim, not as background.")
+        elif verdict == "partially falsifiable":
+            base = ("Measures something real but not the full cross-stream bill — cite its numbers as "
+                    "suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints "
+                    "before repeating the claim.")
+        else:
+            base = ("No interference measurement or no disjoint hold-out — treat it as a design prior "
+                    "(borrow the mechanism), never as evidence that the mechanism learns continually.")
+        surf_note = {
+            "memory": "Memory design to borrow, evaluation to redo on your own stream.",
+            "prompt": "Prompt/program design to borrow; assume its cross-block bill is unmeasured until you measure it.",
+            "skills": "Skill-library design to borrow; check whether skills are fenced per family or broadcast.",
+            "workflow": "Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.",
+            "code": "Self-rewriting design; demand the admission gate (who can reject a bad edit) before the demo.",
+            "weights": "Weight-changing work sits outside this lab's frozen-weight protocol — transfer the idea, not the number.",
+            "nothing": "No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.",
+        }.get(surf, "")
+        return f"{base} {surf_note}".strip()
+
+    CH(f"{n_dims} dimensions")
     if isinstance(dims, dict):
         drows = [[k, str(v)] for k, v in dims.items()]
     else:
@@ -727,28 +824,62 @@ def main():
     body.table(["Dimension", "What it separates"], drows)
     body.p(
         "Dimensions are what make a literature review falsifiable instead of vibes: every "
-        "work below is placed on all six, so a claim like 'nobody evaluates degradation' is "
+        f"work below is placed on all {n_dims}, so a claim like 'nobody evaluates degradation' is "
         "answerable by counting, not by remembering."
     )
+    DIM_NOTES = {
+        "surface": "The surface decides what can compound and what can corrupt. A prompt rewrite broadcasts to every family; a fenced memory write reaches one. When a vendor says 'self-improving', this axis names the noun.",
+        "isolation": "The axis this lab exists to move. 'Yes' means a lesson earned on family A cannot fire on family B; 'partial' means fenced in some paths and leaking in others; 'no' means the broadcast channel is open. Scoped is the lab's 'yes'.",
+        "retrieval": "Retrieval is where interference enters: similarity alone returns the right topic with the wrong workflow (the BFCL catalogue collision). The lab's answer is cluster plus workflow conditioning — an explicit key before similarity is consulted.",
+        "evaluation": "The first falsifiability gate. 'Yes' means interference or forgetting was measured across a changing stream with per-boundary checkpoints; 'partial' means some learning effect was measured but not the cross-stream bill; 'no' means the claim was never exposed to drift.",
+        "holdout": "The second gate. A disjoint hold-out separates learning from memorising the eval set. Without it, plasticity and terminal advantage are the same number as overfitting, and no checkpoint table can rescue them.",
+        "evidence": "What kind of source backs the claim — peer-reviewed, preprint, vendor writeup, blog, open source. The field skews preprint, which revises fast and verifies slowly; the identifier check runs in the test suite instead of living in someone's memory.",
+        "forgetting": "Added with the 2025 memory wave: does the work say what is discarded as memory grows — explicit eviction, summarise-only, or nothing? A bank without garbage collection is a landfill with an index; TTL decay is the lab's control.",
+        "efficiency": "Does the work report what learning costs — memory growth, tokens, calls? The suite's cost ledger prices gain per 100 prompt units because a win bought with 10x harness is a bad trade, and most of the field never prices it.",
+        "scope": "One agent's memory or memory shared across agents? Shared stores add routing, per-role scopes and cross-agent conflict — the multi-agent memory paradigm — which single-agent numbers do not cover.",
+    }
     for d in dims:
         if not isinstance(d, dict):
             continue
+        did, label = d.get("id", ""), d.get("label", d.get("id", ""))
         body.p(
-            f"*{d.get('label', d.get('id', ''))}* asks: {d.get('question', '')} "
-            f"Options run {', '.join(d.get('options', [])[:4])} and beyond — the point is that "
-            "every work gets an explicit cell, including 'unknown', instead of the reviewer's "
-            "benefit of the doubt."
+            f"*{label}* (`{did}`) asks: {d.get('question', '')} "
+            f"Options run {', '.join(d.get('options', [])[:5])} — plus 'unknown', which is always legal. "
+            + DIM_NOTES.get(did, "Every work gets an explicit cell instead of the reviewer's benefit of the doubt.")
         )
     council(body, [
-        ("Red team", "Six dimensions with an explicit 'unknown' option is a map of the reviewer's ignorance as much as the field's: sort the works table by 'unknown' count and the least-examined claims surface first. That column is where the next paper — or the next incident — already lives."),
-        ("Blue team", "Hold every new work to all six cells before it enters the landscape: a work with no degradation measurement is a demo, one with no hold-out is a rumour, one with unknown evidence kind is unread. The merge pipeline exists so the bar does not move when the pile grows."),
-        ("Operator", "Use the dimensions as procurement questions, not just review axes: ask the vendor which cell their system prompt rewrites, whether lessons are fenced per family, how retrieval keys the workflow. 'Unknown' six times over is a pricing signal, not a technical detail."),
+        ("Red team", f"{n_dims} dimensions with an explicit 'unknown' option is a map of the reviewer's ignorance as much as the field's: sort the works table by 'unknown' count and the least-examined claims surface first. That column is where the next paper — or the next incident — already lives."),
+        ("Blue team", f"Hold every new work to all {n_dims} cells before it enters the landscape: a work with no degradation measurement is a demo, one with no hold-out is a rumour, one with unknown evidence kind is unread. The merge pipeline exists so the bar does not move when the pile grows."),
+        ("Operator", "Use the dimensions as procurement questions, not just review axes: ask the vendor which surface their system rewrites, whether lessons are fenced per family, how retrieval keys the workflow, what forgetting is explicit, what learning costs, and whether the memory is shared. 'Unknown' across the row is a pricing signal, not a technical detail."),
     ])
-    CH("Fifteen concepts")
+    CH(f"{n_concepts} concepts")
     body.table(["Concept", "Kind", "Gloss"],
-               [[c["id"], c.get("kind", ""), c.get("gloss", "")] for c in landscape.get("concepts", [])])
+               [[c["id"], c.get("kind", ""), c.get("gloss", "")] for c in concepts])
+    CONCEPT_NOTES = {
+        "self-improvement": "The umbrella bet: the agent changes itself and is judged on the result. Everything below is a narrower claim about what changes and how it is judged.",
+        "continual-learning": "The lab's own paradigm: learning over a stream that keeps changing, priced in interference and forgetting. A 'self-improving' agent without a stream is a demo with better vocabulary.",
+        "test-time-adaptation": "Adaptation at inference rather than training time — the deployment shape of continual learning, and the reason the lab grades on hold-outs instead of training tasks.",
+        "multi-agent-memory": "Memory shared, routed or traced across agents. Single-agent isolation results do not transfer here; cross-agent conflict is its own interference axis.",
+        "experience-evolution": "Forward learning from the experience stream itself: each interaction updates the reusable repertoire. ReasoningBank is the lab's instance of this bet.",
+        "experience-replay": "Past episodes stored and replayed as guidance. Cheap, compounding, and exactly how poison accumulates — provenance and TTL are the controls.",
+        "reflection": "The agent writes what went wrong and reuses the text. GEPA and Reflexion both live here; the difference is whether the prose is fenced per family or broadcast.",
+        "skill-library": "Reusable capabilities accumulated as named units (Voyager's skills). The open question is admission: who can reject a bad skill, and what re-tests it?",
+        "memory-management": "What the agent keeps and how it decides what fits. The 2025 memory wave (Mem0, A-MEM, MemInsight, MemoryOS) turned this from plumbing into the research surface.",
+        "memory-policy-learning": "Learning how to manage memory — store, retrieve, update, discard — not just what to remember. MemRL is the sharpest instance: the memory policy itself is the learned artefact.",
+        "prompt-optimisation": "The prompt or program compiled from data and feedback (DSPy, GEPA). Powerful inside one block, and the lab's measurements show why it forgets across blocks: a shared prompt is a shared fate.",
+        "verifier-feedback": "A checker or environment decides success and only success is learned from. Binary task-success in this lab is the minimal verifier — coarse on purpose, because partial credit is where gaming hides.",
+        "self-refine-loop": "Generate, critique, revise inside one task. Improves the single answer; says nothing about the next task unless the critique is stored, fenced and re-tested.",
+        "agent-computer": "Redesigning the action space and feedback so the model can act well (SWE-agent's interfaces). Often the highest-leverage change — and orthogonal to whether the agent learns.",
+        "hierarchical-memory": "Memory in levels — segments, pages, traces — with different retention per level. Structure is the forgetting policy made explicit.",
+        "selective-forgetting": "Forgetting as designed operation: heat eviction, preemptive summarisation, redundancy pruning. The lab's TTL control is the minimal instance.",
+        "catastrophic-forgetting": "The problem that prices everything: new families overwrite old competence. F_k in the metrics chapter is its meter.",
+        "transfer": "The problem's kinder face: what helps (or harms) across families. Forward and backward transfer meter it; scoping decides its sign.",
+        "credit-assignment": "Which part of a long trajectory deserves credit. Sparse binary feedback makes this hard — and makes verifier design the real work.",
+        "harness": "The scaffolding as the artefact: tools, prompts, state under optimisation. The harness-evolution papers are this practice becoming the research program.",
+        "memory-benchmarks": "Benchmarks that grade memory, not single answers — LoCoMo, LongMemEval, the Letta leaderboard. Read them as the field's emerging hold-outs, and check whether they stream or merely quiz.",
+    }
     kinds = defaultdict(list)
-    for c in landscape.get("concepts", []):
+    for c in concepts:
         kinds[c.get("kind", "?")].append(c["id"])
     for kind in sorted(kinds):
         body.p(
@@ -758,29 +889,51 @@ def main():
              "The problems are the reasons the mechanisms exist; a mechanism with no problem is a solution looking for a stream." if kind == "problem" else
              "The practices are what operators actually do; judge them by whether they survive contact with a real stream.")
         )
+    for c in concepts:
+        cid = c["id"]
+        note = CONCEPT_NOTES.get(cid)
+        if note:
+            body.p(f"**{c.get('label', cid)}** (`{cid}`, {c.get('kind', '?')}) — {c.get('gloss', '')} {note}")
     council(body, [
-        ("Red team", "Fifteen concepts is fifteen places to hide a weak definition: if 'self-improvement' covers everything from a changed prompt to a rewritten codebase, it explains nothing. Pin every claim to the concept id, then check the id means one thing."),
-        ("Blue team", "Use the concept kinds as review checklists: paradigms need protocols, mechanisms need measurements, failure modes need drills. A concept with no kind is a vibe — send it back."),
-        ("Operator", "Teach the fifteen glosses before the thirty-six works: a team that shares vocabulary argues about evidence, and a team that does not argues about words."),
+        ("Red team", f"{n_concepts} concepts is {n_concepts} places to hide a weak definition: if 'self-improvement' covers everything from a changed prompt to a rewritten codebase, it explains nothing. Pin every claim to the concept id, then check the id means one thing."),
+        ("Blue team", "Use the concept kinds as review checklists: paradigms need protocols, mechanisms need measurements, problems need meters, practices need drills. A concept with no kind is a vibe — send it back."),
+        ("Operator", f"Teach the {n_concepts} glosses before the {n_works} works: a team that shares vocabulary argues about evidence, and a team that does not argues about words."),
     ])
-    CH("Thirty-six works, verified")
-    works = landscape.get("works", [])
+    CH(f"{n_works} works, verified")
     body.table(["Work", "Venue · year", "Mechanism"],
                [[w.get("title", w["id"]), f"{w.get('venue', '')} · {w.get('year', '')}", w.get("mechanism", "")]
                 for w in works])
     body.p(
         "Every identifier above was verified against its source and corrected where wrong — "
         "the lab's own test suite caches the arXiv verification and re-checks it, because a "
-        "landscape with four wrong references is a rumour about the field, not a map of it."
+        "landscape with wrong references is a rumour about the field, not a map of it."
     )
+    verdict_counts = Counter()
+    assessed = []
+    for w in works:
+        a, verdict, _, why = lab_assess(w)
+        verdict_counts[verdict] += 1
+        assessed.append((w, a, verdict, why))
+    n_fals = verdict_counts.get("falsifiable", 0)
+    n_part = verdict_counts.get("partially falsifiable", 0)
+    n_not = verdict_counts.get("not falsifiable by its own protocol", 0)
     venues = Counter((w.get("venue") or "unrecorded") for w in works)
     years = sorted({w.get("year") for w in works if w.get("year")})
+    body.p(
+        f"On the current snapshot of {n_works} works: **{n_fals}** are falsifiable, **{n_part}** are "
+        f"partially falsifiable, **{n_not}** are not falsifiable by their own protocol. "
+        "That is the gap this lab works in — and the works that clear the bar are all recent "
+        "harness-evolution work, including the paper this lab is built on."
+    )
     body.p(
         "The pile skews " + ", ".join(f"{v} ({n})" for v, n in venues.most_common(4)) +
         f", spanning {years[0]}–{years[-1]}. Read the skew, not just the count: a field that "
         "publishes mostly preprints revises fast and verifies slowly, which is exactly why the "
         "identifier check runs in the test suite instead of living in someone's memory."
     )
+    fals_ids = sorted(w["id"] for w, _, v, _ in assessed if v == "falsifiable")
+    if fals_ids:
+        body.p(f"*Falsifiable ({len(fals_ids)}):* {', '.join(fals_ids)}. Read these first when someone claims continual learning — they are the only ones whose protocol could have caught them being wrong.")
     body.m("```mermaid")
     body.m(figs[5][0])
     body.m("```")
@@ -790,10 +943,60 @@ def main():
         f'<pre class="mermaid" data-src="{esc(figs[5][0])}">{esc(figs[5][0])}</pre>'
         f"<figcaption>{esc(figs[5][1])}</figcaption></figure>"
     )
+    KIND_ORDER = ["paper", "benchmark", "framework", "product", "writeup", "blog"]
+    KIND_INTRO = {
+        "paper": "Peer-reviewed and preprint papers: the mechanisms the lab compares itself against. Read the alignment row before the abstract — it says what the paper's own protocol could have caught.",
+        "benchmark": "Benchmarks and suites: the field's emerging hold-outs. A benchmark that streams families with per-boundary checkpoints tests continual learning; one that quizzes single answers tests memory retrieval.",
+        "framework": "Open-source frameworks: where the mechanisms ship as code. They standardise the harness — which is why harness drift (EvoHarnessBench) hits them first.",
+        "product": "Products: memory and coding agents under production load. Vendor writeups describe behaviour; the alignment row records what was actually measured.",
+        "writeup": "Essays and surveys that frame the field: the bitter lesson, the effective-agent playbooks, the memory-mechanism surveys. Design priors, not learning evidence — borrow the framing, redo the measurement.",
+        "blog": "Practitioner notes: short, opinionated, and often the first place a failure mode is named. Treat as field reports to verify, not results to cite.",
+    }
+    by_kind = defaultdict(list)
+    for item in assessed:
+        by_kind[item[0].get("kind", "paper")].append(item)
+    for kind in KIND_ORDER + sorted(set(by_kind) - set(KIND_ORDER)):
+        items = sorted(by_kind.get(kind, []), key=lambda t: (t[0].get("year") or 0, t[0]["id"]))
+        if not items:
+            continue
+        body.m(f"### {kind.title()}s ({len(items)})")
+        body.h(f"<h3>{esc(kind.title())}s ({len(items)})</h3>")
+        if kind in KIND_INTRO:
+            body.p(KIND_INTRO[kind])
+        if kind in KIND_ESSAYS:
+            voices_items(body, KIND_ESSAYS[kind])
+        for w, a, verdict, why in items:
+            wid = w["id"]
+            body.m(f"#### {w.get('title', wid)}")
+            body.h(f"<h4>{esc(w.get('title', wid))}</h4>")
+            url = w.get("url", "")
+            body.m(f"*{wid}* — {w.get('authors', '')}, {w.get('venue', '')} · {w.get('year', '')} · {w.get('kind', '')}. {url}")
+            body.h(f"<p><code>{esc(wid)}</code> — {esc(str(w.get('authors', '')))}, {esc(str(w.get('venue', '')))} · {esc(str(w.get('year', '')))} · {esc(str(w.get('kind', '')))}. {esc(url)}</p>")
+            body.m(f"**What it does.** {w.get('summary', '')}")
+            body.h(f"<p><b>What it does.</b> {esc(str(w.get('summary', '')))}</p>")
+            body.m(f"**Mechanism.** {w.get('mechanism', '')}")
+            body.h(f"<p><b>Mechanism.</b> {esc(str(w.get('mechanism', '')))}</p>")
+            align_str = " · ".join(f"{k}={a.get(k, 'unknown')}" for k in
+                                   ["surface", "isolation", "retrieval", "evaluation", "holdout",
+                                    "evidence", "forgetting", "efficiency", "scope"] if k in a)
+            body.m(f"**Alignment.** {align_str}.")
+            body.h(f"<p><b>Alignment.</b> {esc(align_str)}.</p>")
+            body.m(f"**Verdict: {verdict}** — {why}.")
+            body.h(f"<p><b>Verdict: {esc(verdict)}</b> — {esc(why)}.</p>")
+            conc = ", ".join(f"`{c}`" for c in (w.get("concepts") or [])) or "—"
+            pats = ", ".join(f"`{p}`" for p in (w.get("patterns") or [])) or "—"
+            body.m(f"**Concepts.** {conc} **Catalog patterns.** {pats}")
+            body.h(f"<p><b>Concepts.</b> {conc} <b>Catalog patterns.</b> {pats}</p>")
+            body.m(f"**Lab reading.** {work_reading(w, a, verdict)}")
+            body.h(f"<p><b>Lab reading.</b> {esc(work_reading(w, a, verdict))}</p>")
+            if wid not in WORK_NOTES:
+                sys.exit(f"tools/build_sl_book.py: no researcher note for work `{wid}` in tools/sl_book_prose.py")
+            body.p(f"**Researcher note.** {WORK_NOTES[wid]}")
+            body.m()
     council(body, [
-        ("Red team", "Thirty-six verified references is a moat around a claim: attack the two filter questions instead — no measured degradation, no disjoint hold-out, no falsifiability. Most 'self-learning' demos fail both, loudly, in under a minute of reading."),
+        (f"Red team", f"{n_works} verified references is a moat around a claim: attack the two filter questions instead — no measured degradation, no disjoint hold-out, no falsifiability. Most 'self-learning' demos fail both, loudly, in under a minute of reading."),
         ("Blue team", "Run every new paper through the same two gates before it enters your landscape: measured degradation, disjoint hold-out. The merge pipeline exists so the bar stays where it is when the pile grows."),
-        ("Operator", "When a vendor cites a work, ask which box it landed in: evaluated-and-held-out, or merely published. The landscape table answers in one row — use it live in the meeting, not after."),
+        ("Operator", "When a vendor cites a work, ask which box it landed in: evaluated-and-held-out, or merely published. The per-work verdict above answers in one line — use it live in the meeting, not after."),
     ])
 
     # -- Part V ---------------------------------------------------------- #
@@ -821,6 +1024,7 @@ def main():
         body.m(f"**Council on {p['name']}.** Red team: {red} Blue team: {blue} Operator: {op}")
         body.m()
         body.h(f"<p><b>Council on {esc(p['name'])}.</b> Red team: {esc(red)} Blue team: {esc(blue)} Operator: {esc(op)}</p>")
+    voices(body, "ch15")
     council(body, [
         ("Red team", "Sixteen patterns is sixteen specifications to read before attacking the lab: each names failure modes, and the failure modes are the attack plan. The lab's own four breakages — interference, forgetting, collision, overwriting — map onto them exactly."),
         ("Blue team", "Deploy the memory patterns as a stack, not a menu: episodic checkpoints plus scoped consolidation plus TTL forgetting is defense in depth for learning itself. Any one of them alone is a single point of amnesia."),
@@ -850,6 +1054,7 @@ def main():
              "The majority road: the learning itself goes wrong, and only measurement sees it — deviation, misalignment, bands, hold-outs." if road == "emergent" else
              "Both roads at once: the scenarios that refuse the distinction, and the ones to rehearse first because either defense alone misses them.")
         )
+    voices(body, "ch16")
     council(body, [
         ("Red team", "Fourteen scenarios is fourteen rehearsals your adversary has also read: the catalog is public, the spin-up is deterministic, and the spawn-fleet shape needs no exploit — just delegation without a cap."),
         ("Blue team", "Pair each scenario with its lab stream: reward-hack with the hard-order stream, distill-collapse with long-horizon, scope-escape with the domain streams. A scenario without a stream is a story; with one, it is a regression test."),
@@ -870,6 +1075,7 @@ def main():
         "iteration loop runs mechanism sweep, unit and API tests and the browser UI audit fifty "
         "times and stops at the first failure — a gate nobody can afford to run is not a gate."
     )
+    voices(body, "ch17")
     council(body, [
         ("Red team", "Fifty rounds of green is fifty rounds of the same seeds if nobody rotates them: the loop's strength is repetition, its weakness is ritual. Vary the profiles and the ports, or the gate tests the gate, not the lab."),
         ("Blue team", "Run core weekly and full before every release: mechanism sweep for the evolvers, unit plus API for the contracts, UI audit for the dashboard humans actually touch. A gate that stops at the first failure is only useful if someone reads the name it stops on."),
@@ -901,6 +1107,7 @@ def main():
         f'<pre class="mermaid" data-src="{esc(figs[7][0])}">{esc(figs[7][0])}</pre>'
         f"<figcaption>{esc(figs[7][1])}</figcaption></figure>"
     )
+    voices(body, "ch18")
     council(body, [
         ("Red team", "The tab links out to :8220 and trusts whatever answers: DNS-rebind the lab host and the dashboard link is yours. The tab's honesty — links, not data — is also its limit; verify the lab is yours before you open it."),
         ("Blue team", "Keep the bridge read-only: no-cors status, outbound links, catalog records. The day the tab executes lab runs it inherits the lab's threat model — until then it has almost none, and that is a feature."),
@@ -916,6 +1123,7 @@ def main():
         "contact with the inconvenient order. Enforcement lives outside the model, in readable "
         "code — audit that, not the score."
     )
+    voices(body, "ch19")
     council(body, [
         ("Red team", "The caveat is the attack plan restated politely: fixed task families, six hand-written evolvers, bands that belong to these seeds. Anyone who changes the streams invalidates the bands — including you, the moment you deploy somewhere new."),
         ("Blue team", "Comparative numbers are the honest yield: which evolver holds which stream, what each ordering costs, whether the workflow survives inconvenience. Absolute scores are weather; deltas are climate. Report climate."),
@@ -957,6 +1165,7 @@ def main():
     )
     body.heading(1, "Conclusion")
     entries.append(("back", "Conclusion", "conclusion"))
+    voices(body, "conclusion")
     body.p(
         "Operate learning agents the way the protocol measures them: scope every lesson, "
         "condition every retrieval, checkpoint every boundary, hold out what you grade on, "

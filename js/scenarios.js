@@ -168,3 +168,8 @@ function openScenario(id) {
       <button class="btn sm" data-act="closeDetailGo" data-args="[&quot;coverage&quot;]">📊 See coverage &amp; gaps</button></div>`}`;
   openDetail(s.title, `${s.severity} · ${s.domain}`, html, { tab: "scenarios", id: s.id, title: s.title });
 }
+
+/* Registered so the shell-freshness check and tab shortcuts see this tab as
+   initialised (SK_TABS ↔ DOM ↔ tabLoaders must agree). Re-runs the idempotent
+   filter build + render on every visit, like the other catalog tabs. */
+tabLoaders.scenarios = function () { initScenarios(); };

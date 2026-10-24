@@ -8,7 +8,7 @@ First edition — October 2026
 
 ---
 
-A supplement to *Agentic Design Patterns & Guardrails*: continual learning, task-scoped adaptation and the evaluation discipline — with the lab's 18 scenarios, 6 evolvers, 15 concepts and 36 verified works. Generated from the lab, the catalog and the design figures; nothing in it is hand-typed from memory.
+A supplement to *Agentic Design Patterns & Guardrails*: continual learning, task-scoped adaptation and the evaluation discipline — with the lab's 18 scenarios, 6 evolvers, 21 concepts and 51 verified works. Generated from the lab, the catalog and the design figures; nothing in it is hand-typed from memory.
 
 ---
 
@@ -34,9 +34,9 @@ A supplement to *Agentic Design Patterns & Guardrails*: continual learning, task
   - Chapter 10 · Measured bands
   - Chapter 11 · Live validation
 - Part IV: The landscape
-  - Chapter 12 · Six dimensions
-  - Chapter 13 · Fifteen concepts
-  - Chapter 14 · Thirty-six works, verified
+  - Chapter 12 · 9 dimensions
+  - Chapter 13 · 21 concepts
+  - Chapter 14 · 51 works, verified
 - Part V: The catalog bridge
   - Chapter 15 · Patterns the lab stands on
   - Chapter 16 · Scenarios the lab answers
@@ -102,6 +102,13 @@ flowchart TB
 
 The catalog reads back, too: 14 of its 54 failure scenarios are self-learning stories — 2 where an outside attack turns a learning agent, 12 where the learning itself goes wrong. Part V reads every one of them; the lab exists next to this catalog because the catalog already knew the failure modes.
 
+**Council deliberation.**
+
+- **Continual-learning researcher:** Deployment ends the comfort of a fixed distribution and begins life under drift, where tasks shift, tools change, and yesterday competence quietly expires. Retraining from scratch on every shift is too slow and too costly, while freezing the agent guarantees obsolescence, so the only viable path is to keep learning in operation. That choice introduces failure with a signature — new skill overwrites old skill, retrieval returns familiar wording with the wrong procedure, and stream gains vanish on unseen validation. Continual learning matters because it names this middle path and insists that adaptation be measured where the agent actually lives, under change, rather than where it was born, in training.
+- **Memory-systems researcher:** I agree that drift is the premise, but I would sharpen the claim around memory, because an agent that learns after deployment is an agent that writes to itself. Without a disciplined store, every lesson becomes a broadcast that later tasks overhear, and the catalog patterns show how that broadcast fails — foreign memory intrudes, collisions misroute, overwriting erases. Learning after deployment therefore stands or falls on whether experience compounds usefully instead of merely accumulating. The question is never whether the agent encounters novelty, since drift guarantees it, but whether what it keeps remains attributable, scoped, and revisable once the world moves again.
+- **Evaluation methodologist:** Both framings are right, yet neither can be trusted without a harness that separates learning from storytelling. A rising curve on the training stream proves little, because memorization, weak baselines, and favorable ordering can all mimic progress. That is why the lab reproduces the protocol of arXiv:2610.25858, with a shared harness, drifting streams, binary task-success feedback, recorded seeds with per-boundary checkpoints, and disjoint hold-outs. Only when every evolver faces the same tasks in the same order under the same grading can we say that one truly learns continually while another merely appears to improve.
+- **Safety researcher:** The methodologist sets the bar, but safety asks who else gets to teach once learning stays on. A deployed learner accepts instruction from its stream, which means poisoned documents, misclassified tasks, and distilled fabrications can all become durable competence. Checkpoints plus hold-outs are thus not academic niceties — they are the audit trail that reveals when interference or forgetting began and whether gains survive outside the stream. If we cannot date a failure and reproduce it from seeds, we cannot contain it, and an agent that learns continually without provenance, scoping, and expiry is simply a vulnerability that improves with experience.
+
 **Council reading.**
 
 - **Red team:** Learning after deployment means the adversary gets to teach: poison the stream and the agent distills your lesson as its own. Any evaluation that grades only final accuracy, without per-boundary checkpoints, cannot tell who taught what — demand the checkpoints before you trust the curve.
@@ -121,6 +128,14 @@ Two rules make the protocol honest. First, disjoint hold-outs: validation tasks 
 Each element earns its place. The shared harness means evolvers differ only in how they change the agent, never in tasks, order or grading — without it, every comparison is confounded. Drifting streams mean the test distribution moves under a fixed agent, which is the only setting where 'continual' means anything. Binary task-success feedback is deliberately coarse: partial credit is where gaming hides, and the protocol refuses to grade style. Seeds plus per-boundary checkpoints make any cell reproducible and date every forgetting event. Disjoint hold-outs close the last loophole: without them, 'learning' and 'memorizing the eval set' are the same number.
 
 Note what the protocol deliberately leaves out: no wall-clock budgets (episodes are the currency, not seconds), no human ratings (binary success only), no curriculum control (the stream order is the test, not a convenience). Each omission is a confound refused. A lab that timed episodes would benchmark hardware; a lab that graded style would benchmark the grader. The protocol measures learning and nothing else, which is why its numbers transfer further than richer-looking alternatives.
+
+**Council deliberation.**
+
+- **Evaluation methodologist:** The paper protocol earns trust by removing excuses, starting from a shared harness in which evolvers differ only in how they change the agent, never in tasks, order, or grading. The runner module enforces that discipline, while the streams module supplies drift — families arriving in blocks so the distribution moves beneath a fixed policy. Binary task-success feedback is deliberately coarse, because partial credit invites gaming through style and verbosity, whereas success or failure keeps the signal about behavior. Without this sameness of conditions, every comparison would be confounded, and claims about continual learning would dissolve into differences of setup rather than differences of mechanism.
+- **Continual-learning researcher:** The harness is necessary, and drift is what makes the word continual mean anything at all. A static benchmark rewards a fixed policy, while drifting streams punish it, revealing whether plasticity in one block survives contact with the next. Seeds plus per-boundary checkpoints complete the picture by making each cell reproducible and by timestamping accuracy for every family at every boundary in the accuracy table. Forgetting then stops being anecdote and becomes measurement — a drop with a date, attributable to a specific later block. That temporal resolution is what lets researchers argue about interference and stability instead of trading stories about final scores.
+- **Memory-systems researcher:** I would add that disjoint hold-outs are the quiet hero of the design, because they close the loophole between learning and memorizing the evaluation set. Validation tasks never overlap training, so a gain means the agent generalized rather than cached answers, and the retrieval module is tested on unseen queries rather than familiar ones. This matters enormously for memory systems, where a bank can easily appear wise by retrieving near-duplicates of what it stored. Hold-outs force the bank to prove that its lessons transfer, and any evolver that shines on the stream but collapses on the hold-out has confessed that its memory is an index over episodes, not knowledge.
+- **Safety researcher:** The omissions are as deliberate as the inclusions, and they deserve defense. No wall-clock budgets means episodes are the currency, so hardware never masquerades as intelligence. No human ratings means binary success only, so the grader cannot be flattered or gamed through eloquence. No curriculum control means stream order remains the test rather than a convenience the experimenter optimizes away. Each refusal removes a confound, which is why the resulting numbers travel further than richer evaluations. A lab that measured speed or style would benchmark infrastructure or taste, whereas this protocol measures learning and nothing else — narrow by design, honest by construction.
+- **Evaluation methodologist:** The safety reading is fair, though I dissent on one comfort — binary feedback and disjoint hold-outs reduce gaming but do not eliminate it. Binary signals can still be gamed through shallow heuristics, and a hold-out stays disjoint only until someone trains against it, whether by accident or intent. That is why the protocol demands seed logs for policy, training, evaluation, and lesson identity alongside checkpoints, so any cell can be rebuilt exactly. Reproducibility is the backstop: when every boundary can be replayed, interference has a witness, forgetting has a date, and gaming leaves a trace that later scrutiny can find.
 
 **Council reading.**
 
@@ -156,6 +171,14 @@ flowchart TD
   O --> P(["The report row"])
 
 ```
+
+**Council deliberation.**
+
+- **Evaluation methodologist:** The metric family begins from the seed baseline B_k, the unevolved policy score for each family before learning starts, because every later claim is relative to doing nothing. Plasticity P_k captures gain during a family own block, interference I_k captures the mean drop below seed at checkpoints before that block, and forgetting F_k captures the drop from block end to horizon end. Stability S then prices the cross-block bill as the negative sum of mean interference and mean forgetting. Terminal advantage averages horizon-end gain over seed across families, while forward and backward transfer describe help received before and change suffered after, and AUC traces the shape of advantage across the horizon rather than merely its endpoints.
+- **Continual-learning researcher:** Definitions alone mislead unless each metric is read as answering a distinct deployment question. B_k answers where we started, and a weak seed flatters every evolver, so gains quoted without baselines should be distrusted. P_k answers what its own block taught, which is the plasticity every demonstration optimizes and the easiest to inflate by overfitting the present. I_k answers what waiting cost, the signature of earlier learning disturbing families not yet trained. F_k answers what survived, the drop after training that matters most to anyone who ships. S answers the total bill, forcing plasticity to be weighed against damage elsewhere instead of celebrated alone.
+- **Memory-systems researcher:** The transfer measures and AUC add the temporal texture that endpoints hide, and memory researchers should insist on them. Forward transfer reveals whether earlier blocks genuinely helped a family before its own training, which is the positive face of shared memory when lessons generalize. Backward transfer shows what later blocks did to earlier competence, whether refinement or erosion, and therefore exposes whether retrieval stayed scoped or bled across families. AUC matters because two runs can share endpoints while differing profoundly in between — one stable throughout, another collapsing then recovering. An agent that limps to the same finish is not the same system, and the curve remembers what the terminal score forgets.
+- **Safety researcher:** Every one of these quantities can be gamed without improving anything, which is why they must be read together under guardrails. Inflate P_k by narrow overfitting, hide F_k by never revisiting old families, flatter terminal advantage with a feeble seed, and the headline looks triumphant while the system rots. The suite answers through measured bands, effect sizes, significance correction, and cost ledgers rather than raw means, and the failure-mode detectors translate thresholds into named diagnoses. A cell whose stability band straddles zero has not proven it can keep anything, and rising terminal advantage alongside rising forgetting is a system eating its past to feed its present.
+- **Evaluation methodologist:** I agree with the warning and would sharpen the prescription — never quote terminal advantage without stability, never quote plasticity without forgetting, and never quote any mean without its variation and cost. The metrics module derives all quantities from the same checkpoint table, so internal consistency is guaranteed, while the statistics and cost layers ask whether differences survive comparison and what prompt volume purchased them. Oracle capture then frames ambition honestly, showing how much of the achievable gain each evolver reached. That discipline turns numbers into verdicts: not merely whether the curve rose, but whether it rose for the right reasons, at an acceptable price, and without sacrificing what came before.
 
 **Council reading.**
 
@@ -199,6 +222,14 @@ flowchart LR
 ```
 
 Blocked is the paper's protocol and the kindest ordering; the other four are adversarial by construction. A mechanism that only holds under blocked ordering has proven it can learn undisturbed — which is to say, it has proven nothing about deployment, where the stream is interleaved, recurring, long and inconvenient all at once.
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** Blocked ordering — one family at a time — is the paper protocol and the kindest test, because learning proceeds undisturbed and scope isolation is rarely stressed. It establishes a baseline, yet it proves little about deployment, where tasks interleave, return, persist, and arrive in inconvenient sequence. A mechanism that holds only under blocked conditions has shown it can learn in quiet, not that it can learn continually. The lab therefore treats blocked as the beginning of evaluation rather than its verdict, and the remaining shapes exist to expose what kindness concealed — routing fragility, compounding decay, and collision under confusion.
+- **Memory-systems researcher:** Interleaved and recurring orderings probe opposite virtues of memory, which is why both belong in the battery. Interleaved streams mix families per episode, so no family waits long in a pre-block state, and the router must route correctly under constantly shifting composition rather than settling into a single context. Recurring streams let a family return after absence, testing whether competence genuinely persisted or merely appeared intact because it was never re-examined. A scoped lesson that survives blocked but fails interleaved is often a router failure wearing memory success as costume, while failure on return exposes storage that decayed or was overwritten while away.
+- **Evaluation methodologist:** Long-horizon streams extend the same logic across time, revealing degradation that shorter streams make look mild. When many blocks accumulate, small per-boundary losses compound, prompt shares shift, and early rules face repeated compression by later arrivals. The shape changes the numbers without necessarily changing the ranking, which is itself informative — it shows that horizon length is a magnifier of mechanism rather than a reshuffling of merit. Without a long view, teams mistake slow leakage for stability, and the area under the curve flattens what was actually a long decline punctuated by brief recoveries.
+- **Safety researcher:** Adversarial or hard-order streams are the closest thing to hostile evaluation the suite ships, and they should be run before any blocked result is believed. Placing confusable pairs adjacently stresses retrieval precisely where similarity is highest and workflow compatibility lowest, so foreign memory injection and collision emerge on demand. An attacker who controls order controls outcome, scheduling confusion to starve the router or poison the bank early enough to earn incumbency. Passing blocked while failing hard-order does not mean the agent is mostly continual — it means the evaluation was mostly convenient.
+- **Continual-learning researcher:** The operator lesson follows directly — match ordering to deployment rather than shopping for flattering shapes. Stable enterprise workflows with clear phases warrant blocked plus recurring, while open-ended assistants facing mixed traffic demand interleaved plus hard-order and long-horizon confirmation. Testing the wrong ordering is how teams ship agents that pass the lab and fail on Monday, because the stream they validated never resembled the stream they serve. Thirteen shapes may sound excessive, but a single shape is anecdote, and continual learning deserves evidence across the conditions that break it, not merely those that display it.
 
 **Council reading.**
 
@@ -270,6 +301,21 @@ flowchart TD
   DROP --> END
 
 ```
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** The stream emits one task at a time, and each task carries only a query plus its environment preamble, with no family label attached. That omission is deliberate rather than incidental. The runner never tells the agent the group label, the block boundaries, or even that it is on a drifting stream, so every decision downstream must be made from observable text alone. This mirrors deployment, where traffic arrives without an answer key, and it forces the harness to earn whatever structure it claims about the world instead of inheriting it from supervision.
+- **Memory-systems researcher:** Building on that unlabeled arrival, the router must assign the task to a cluster it discovered itself through online clustering over feature text, which blends the repeated preamble with the request. The resulting cluster identifier becomes the scope signal, and the evolver combines it with the workflow fingerprint from probe_workflow to form the scope key. That pairing matters because topical similarity alone cannot separate requests that look alike yet demand opposite behaviour, so the scope key carries both where the task seems to belong and what it seems to ask the agent to do.
+- **Evaluation methodologist:** The evolver then reads only the harness surfaces it is permitted to touch, whether that means memory, strategy prompt, skills, controller, or scoped sections, and the seed baseline reads nothing at all. Its inject method returns an Injection carrying rendered text plus the candidate lessons for this scope, annotated with source, similarity, and a note explaining the retrieval. This narrow contract keeps every evolver comparable, because the policy always receives the same shape of guidance regardless of which paradigm produced it, and the note preserves the reasoning behind what was handed over.
+- **Continual-learning researcher:** Responding to that handoff, the policy first classifies intent from the request text using the environment lexicon, which names the kind of request without revealing the answer. It then searches the injected candidates for a lesson whose stored intent matches, and when one exists it applies that lesson after generalisation has been inverted, refilling placeholders with this task values. When no injected lesson matches the current intent, it falls back to the most similar candidate anyway, and that fallback is the interference path, because knowledge learned in one family gets executed in a family that needed something else.
+- **Memory-systems researcher:** Even a correctly selected lesson does not execute deterministically, because the policy perturbs the action with probability one minus skill. The perturbation rewrites the action according to its kind, swapping a table, corrupting an argument, flipping a direction, or turning a call into a clarification, so competence grows gradually rather than switching on after a single success. I read this as exploration made explicit: without that noise the harness would never discover the boundary of what its lessons actually cover, and every stored success would look more reliable than it is.
+- **Safety researcher:** The resulting output then faces the binary grader, which returns only success or failure with a reason, and never a label, gold answer, or similarity score that could leak into the harness. That refusal is a safety property as much as a methodological one. A grader that explained itself would become a teacher, and the lab wants to study what the agent learns from sparse outcome feedback alone. By withholding partial credit, the design also prevents gaming, since there is no gradient of almost right for the harness to overfit against.
+- **Continual-learning researcher:** After grading, the runner calls observe on every single episode with the harness, task, structured action, success flag, and trace, and only a success may produce a lesson. That distinction between being called and writing is central: failures teach the harness nothing directly, though they still shape what gets retrieved later. When a lesson is written, it is fenced to the scope key and carries provenance about its workflow, group, cluster, and intent, so later analysis can tell which lesson governed, whether it was foreign, and where it is allowed to act.
+- **Evaluation methodologist:** Nothing is evaluated until a block boundary arrives, and then three things happen in order. The checkpoint snapshot is stored, on_block_end fires so evolvers like the gated workspace editor can propose and validate changes, and the frozen harness is evaluated against the disjoint hold-out sets of every family in the stream, not just the active one. Each family contributes its own hold-out accuracy to that checkpoint row, and the accumulation of rows forms A[t,k], the accuracy table from which plasticity, interference, forgetting, and stability are later computed.
+- **Memory-systems researcher:** With that loop in place, two of the four failure modes become easy to locate. Interference enters through the fallback edge, when the policy applies the most similar lesson despite an intent mismatch and the trace marks it as foreign knowledge. Forgetting enters at the block boundary, when a checkpoint evaluated on all families reveals that competence gained in an earlier block has decayed while the harness chased the current one. Both are visible precisely because the protocol evaluates everything every time instead of only the family just trained.
+- **Safety researcher:** The memory-systems researcher has named the temporal failures, and I would add the two structural ones that enter earlier in the loop. Collision enters through retrieval without a workflow key, when two requests share vocabulary but demand opposite behaviour and similarity alone cannot separate them, which is why the scope key conditions on the fingerprint. Overwriting enters through an unfenced write, when a shared prompt or shared memory slot lets a later block compress or rewrite what an earlier block learned, silently evicting competence that no evaluation has yet noticed.
+- **Evaluation methodologist:** Both policies consume the same Injection, which is why results can be compared across execution modes, yet their competence differs fundamentally. The SimulatedPolicy classifies intent, selects a governing lesson, answers from a noisy prior when nothing governs, and perturbs deterministically through seeded hashing, making it a pure function of task and harness state. The LivePolicy instead runs a ReAct loop over fox-services, proposing an action through the local model, executing it where the environment allows, and feeding observations back for correction within a step budget.
+- **Safety researcher:** The simulator remains the default because determinism is what makes the science legible. A seeded policy means the seed checkpoint and a later checkpoint evaluate the same hold-out tasks without metric noise being mistaken for learning, and harness mechanics can be compared in seconds without model flakiness or accelerator cost. Live execution then becomes the confirmation stage rather than the discovery stage: once a mechanism like scoped retrieval proves itself under controlled noise, it has earned the right to face the unpredictability of a real model.
 
 Read the two diagrams as one machine. The sequence shows the handoffs — who calls whom, and what crosses each boundary (cluster id, scope key, injection, action, grade). The router flowchart shows the decisions — and names the exact edge where learning goes wrong: fallback to the most similar candidate, then perturb. Every failure mode the lab tracks enters through a named edge of this loop: interference through fallback, collision through retrieval without a workflow key, overwriting through an unfenced write, forgetting through a block boundary with no checkpoint read-back.
 
@@ -348,6 +394,13 @@ classDiagram
 
 One interface, six implementations — that is the whole evolver design, and the class diagram says it plainly: inject() takes harness, task and router and returns text plus lessons; observe() takes action, success, trace and router and returns a lesson; on_block_end() takes the block and returns diagnostics. Seed implements the interface by doing nothing, which is why it is the perfect control: identical calls, zero learning. Scoped adds the scope key and the per-scope cap; reasoning-bank adds top-k and a threshold; GEPA adds a character budget and an update cadence. Compare implementations by their parameters and you can predict their failure modes before running them.
 
+**Council deliberation.**
+
+- **Continual-learning researcher:** Seed is the honest zero that makes the entire comparison meaningful, because it implements the evolver interface by doing nothing. Identical calls flow through it, no learning occurs, and every gain claimed by another evolver is therefore measured against the discipline of leaving the policy alone. Any contender that cannot beat doing nothing on terminal advantage has no business deploying, however elegant its mechanism sounds. The seed policy also exposes baseline strength, reminding readers that weak starting points flatter all learners. Without this control, plasticity would be theater — improvement over an unspecified past rather than evidence of adaptation.
+- **Memory-systems researcher:** Reasoningbank and scoped represent two philosophies of memory that the lab forces into direct comparison. Reasoningbank keeps a bank of scored reasonings that the agent retrieves and writes back to, so experience compounds across blocks and transfer becomes possible where lessons genuinely generalize. Scoped fences lessons per family, refusing writes outside the earned scope and filtering retrieval by family before similarity is consulted, so an invoicing fix can never rewrite triage. The former bets that accumulation helps, the latter that isolation protects, and their fortunes across streams map the terrain — transfer-rich settings reward the bank, fence-demanding settings reward scope.
+- **Evaluation methodologist:** Gepa and metaharness explore evolution at different layers, with oracle standing apart as ceiling rather than contender. Gepa treats natural-language reflection on failures as the optimizer, proposing policy edits in prose where statistics might miss the pattern, while metaharness evolves the harness itself under the same seed and checkpoint discipline as the agents it runs. Oracle represents the best achievable cell, so results report capture — how much of the achievable gain each evolver reached — instead of raw scores that flatter easy tasks. One interface with six implementations keeps the contest fair, and parameters like retrieval depth, character budgets, and per-scope caps let failures be predicted before they are merely observed.
+- **Safety researcher:** Each evolver carries a distinct risk surface that the stage should name plainly. Prose rewrites and memory writes persist, so a poisoned reflection or planted reasoning pays dividends across every downstream block, turning the lesson store into the highest-value target. Unscoped memory acts as a broadcast channel for mistakes, while even scoped stores depend utterly on router taxonomy — misclassify the task and the fence follows the error. Cost matters too, since prompt-heavy reflection must justify its bill in gain per volume. The verdict to demand is therefore compound — terminal advantage beside stability, capture against oracle, significance against bands, and safety against the store that remembers everything it was told.
+
 **Council reading.**
 
 - **Red team:** Evolvers that rewrite policy in prose (GEPA) or memory (reasoning bank) are prompt-injection surfaces that persist: poison the reflection once and every downstream block inherits it. Attack the lesson store, not the lesson.
@@ -364,6 +417,13 @@ Scoping is a namespace discipline with teeth. Every lesson carries the family id
 
 The two mechanisms fail independently, which is why the lab tests them separately and together. Unscoped-but-conditioned retrieval still broadcasts lessons across families that share a workflow; scoped-but-unconditioned retrieval still collides when two workflows share an API catalogue. The topic stream isolates the first failure, the domain stream isolates the second, and the compound streams — domain-workflow, interleaved, hard-order — are where both fences must hold at once. An evolver that passes blocked but fails compound has exactly one of the two mechanisms, and the streams tell you which.
 
+**Council deliberation.**
+
+- **Memory-systems researcher:** Task scoping is namespace discipline with teeth, and its mechanics explain why it works. Every lesson carries the family identity that earned it, retrieval filters on that identity before similarity is even consulted, and writes outside the fence are refused rather than discouraged. The failure prevented is concrete — schema lessons from one database applied to another, invoicing repairs rewriting triage — because unscoped memory broadcasts to whoever scores nearest. Without scoping, similarity decides fellowship, and topical resemblance routinely overrules task boundaries. Fences hold precisely because they act before ranking, not as a post-hoc apology after the wrong lesson has already shaped behavior.
+- **Continual-learning researcher:** Workflow conditioning answers the companion failure that scoping alone cannot fix. Two families may share an API catalogue while demanding incompatible procedures, so the right topic arrives with the wrong workflow and similarity cannot tell the difference. Conditioning keys every retrieval on the live workflow, resolving collision toward what is actually running rather than what embeds nearest. The canonical domain stream captures this shift, where the environment itself changes across science, tool use, and database work, while the topic stream isolates schema variation within a shared task. Compound streams then demand both fences at once, revealing which evolver brought only half the mechanism.
+- **Evaluation methodologist:** The lab tests the mechanisms separately and jointly for good reason, since they fail independently. Unscoped but conditioned retrieval still broadcasts across families sharing a workflow, while scoped but unconditioned retrieval still collides when workflows share surface form. Blocked streams may hide both weaknesses, letting a partial solution look complete, whereas domain-workflow, interleaved, and hard-order compounds force both disciplines to hold simultaneously. That diagnostic power is the point — streams do not merely rank evolvers but identify the missing piece. An agent passing blocked yet failing compound has confessed exactly which fence it never built.
+- **Safety researcher:** Fences are drawn where the lab believes families end, and real deployments redraw those boundaries without asking. A router misclassification silently reassigns scope, so a lesson fenced to one domain leaks the moment taxonomy errs, and scope drift across quarters quietly relocates the posts. Conditioning helps only if the live workflow key is trustworthy and logged, making collisions auditable rather than mysterious. Operators should therefore write down families and workflows before enabling learning, revisit the list as practice evolves, and treat the router as critical security surface. A fence is only as honest as the classifier that assigns tasks to its sides.
+
 **Council reading.**
 
 - **Red team:** Fences are drawn where the lab thinks families end; real deployments redraw families constantly. A lesson fenced to 'invoicing' leaks the moment the router misclassifies the task — attack the router's taxonomy and the scope follows.
@@ -377,6 +437,13 @@ A reasoning bank is memory that earns interest: scored reasonings accumulate, go
 Run the compounding math before trusting the curve. Every retrieval is a vote for the retrieved reasoning to shape the next one, so early entries enjoy incumbency: whatever was deposited first gets retrieved most, which makes it most likely to be deposited again. That is how a single rag-poison document steers decisions for months, and how self-distillation converts one fabrication into a training set. The controls mirror the mechanism point for point: provenance on deposits (who taught what, when), TTL decay on storage (old lessons expire unless re-earned), verification on distillation (nothing graduates from episode to knowledge without an independent check).
 
 The bank has exactly three operations and the discipline is in using all three: deposit with provenance (who taught what, when, on which task), retrieve with scope plus workflow keys (never similarity alone), expire with TTL (old lessons die unless re-earned). Most failed memory systems implement one and a half of these — usually deposit, sometimes retrieve, never expire — and then wonder why the bank fills with yesterday's truths. Forgetting is not the opposite of the bank; it is the bank's garbage collector, and a bank without one is a landfill with an index.
+
+**Council deliberation.**
+
+- **Memory-systems researcher:** A reasoning bank earns interest in both directions, which is why compounding deserves awe and suspicion together. Good reasonings get retrieved, retrievals shape future reasonings, and early deposits enjoy incumbency — retrieved most because they arrived first, then deposited again because they were retrieved. That loop builds genuine expertise when provenance is sound, yet the same loop amplifies a single planted document into months of steering and turns one fabrication through distillation into an entire training lineage. Memory that compounds without governance does not merely store the past, it reinvests it, so errors appreciate alongside insight unless something actively retires them.
+- **Continual-learning researcher:** The bank succeeds through three operations used together, and most failures come from implementing only part of the set. Deposit must carry provenance — who taught what, when, on which task — so later audit can separate earned lessons from intrusions. Retrieve must honor scope plus workflow keys rather than similarity alone, or foreign memory will inevitably cross where topics overlap. Expire must enforce TTL decay, letting old lessons die unless re-earned, because yesterday truth becomes today misinformation under drift. Forgetting is therefore not the enemy of the bank but its garbage collector, and a store without expiry is a landfill that happens to have an index.
+- **Evaluation methodologist:** Measurement makes compounding visible before it becomes irreversible. Retrieval diagnostics track foreign share per family and the cross-group matrix showing where foreign items originated, exposing injection while it is still traceable. Prompt attribution follows per-group share of the shared surface across checkpoints, distinguishing benign dilution when new sections appear from true overwriting when absolute content shrinks. Together these signals turn vague unease about memory into named failure modes with evidence attached. Without them, teams debate whether the bank helps in principle, whereas with them they can point to the checkpoint where help became harm.
+- **Safety researcher:** Governance must mirror mechanism point for point, or poison will outlast detection. Provenance on every deposit turns lessons into reviewed contributions rather than anonymous lore, TTL on every memory ensures decay by default instead of persistence by neglect, and verification on every distillation refuses graduation from episode to knowledge without independent check. Operators should treat the store as production data with retention policy — backed up, expired, and drilled through plant-detect-scrub rehearsals. Compound interest works for whoever deposits first, so the only safe bank is one that remembers who taught it, forgets on schedule, and can prove both on demand.
 
 **Council reading.**
 
@@ -486,6 +553,13 @@ The suite ships 18 scenarios across four shapes plus adversarial orderings — t
 
 *workflow* — 1 scenarios (workflow). The catalogue core: workflow and topic shapes test whether scoping and conditioning hold when the task stays put and the world moves.
 
+**Council deliberation.**
+
+- **Continual-learning researcher:** I see the suite of 18 scenarios as the argument itself. A single demonstration can show that learning sometimes helps, but it cannot show where it holds or where it breaks. By organizing streams around drift types such as topic, domain, workflow and compound shifts, and by varying stream shapes from cleanly blocked curricula through interleaved and recurring families to long-horizon and adversarial orderings, the suite forces each of the 6 evolvers to face forgetting, interference and recovery rather than a single friendly path. That breadth is what turns anecdote into evidence about continual behaviour.
+- **Memory-systems researcher:** I agree with that framing and want to sharpen what the shapes demand from memory. A blocked stream flatters a system that simply accumulates lessons, while interleaved and recurring streams punish retrieval that cannot discriminate between families, and long-horizon and adversarial orderings punish stores that never decay or scope their contents. The drift vocabulary matters here because each drift type stresses a different memory function, from schema rebinding to environment re-grounding to workflow conditioning. A suite that covers those shapes is therefore a memory test before it is a leaderboard.
+- **Evaluation methodologist:** I accept both points but insist that inventory alone proves nothing without a fixed protocol underneath it. The value of naming 18 scenarios is that every evolver meets the same task families, the same block boundaries, the same hold-out discipline and the same metrics, so differences in outcome can be read as differences in method rather than differences in hospitality. I would still warn against treating coverage as completeness, since any fixed inventory leaves some drift-by-domain combination unexercised. The suite beats a demo by making its blind spots explicit and reviewable, not by eliminating them.
+- **Safety researcher:** I dissent gently on where the emphasis should land. Breadth is useful, yet the most informative entries are the inconvenient ones, especially the adversarial ordering and the long-horizon stream that compound small faults into visible failure. An adversary will not oblige us by presenting the blocked curriculum first, so a system that only survives tidy sequences is unsafe regardless of its average score. I read the inventory as a rehearsal schedule for failure, where the compound shapes deserve priority because they approximate deployment reality far better than any single-family control ever could.
+
 **Council reading.**
 
 - **Red team:** Eighteen scenarios is eighteen rehearsals your adversary has also read — all deterministic, all replayable, all in the open. The compound shapes are the attacker's menu: pick the ordering the target never tested (usually hard-order or long-horizon) and the untested shape is where their numbers stop meaning anything.
@@ -527,6 +601,13 @@ flowchart TD
   I --> B
 
 ```
+
+**Council deliberation.**
+
+- **Evaluation methodologist:** I begin with the central anxiety of sweeps, which is that a single run is one draw from policy chance and task sampling and therefore cannot carry a claim. Varying the seed axes across policy behaviour, training tasks, evaluation tasks and lesson identity, then reporting each cell as mean with spread, converts a bare score into a statement about stability. The further machinery exists to discipline interpretation, with the Welch t-test for pairwise differences, Holm correction for the fact that many cells invite false wins, effect size for whether a real difference is worth caring about, power analysis for how much repetition a fine margin requires, and a cost ledger for what the gain consumed.
+- **Continual-learning researcher:** I agree and want to stress why this discipline matters more for learning agents than for static models. Plasticity and forgetting both fluctuate with task order and sampling, so a method can look like it learns simply by meeting a congenial draw. Significance testing with correction keeps us from crowning noise, while effect size keeps us from chasing reliable but trivial deltas. Power analysis then closes the loop honestly, because it tells us when a tie means the methods are equivalent and when it merely means we have not yet run enough repetitions to tell.
+- **Memory-systems researcher:** I find the cost ledger the most clarifying part of the sweep, and I would sharpen its reading. Memory systems differ profoundly in how much they read, inject, write and retain, and a method that wins by stuffing ever more text into every prompt has not learned so much as spent. By accounting for prompt volume, write volume, lesson creation and lesson use, including lessons that were stored but never retrieved, the ledger exposes dead weight and retrieval bloat. A large gain bought with sprawling overhead is a design warning, because that overhead compounds in deployment while the measured gain may not.
+- **Safety researcher:** I broadly endorse the apparatus but dissent on the temptation to treat statistical ritual as safety assurance. A significant result with a large effect can still conceal guardrail-relevant leakage, such as interference or forgetting that the headline metric averages away. That is why the recommendation logic must consult guard metrics before endorsing a winner, and why a non-significant margin should be reported as a tie rather than massaged into a ranking. Sweeps earn their keep when they prevent premature deployment decisions, not when they produce a confident-looking winner on thin evidence.
 
 **Council reading.**
 
@@ -594,6 +675,13 @@ Forgetting (mean ± std, pp). measured sweep: 50 iterations per cell, block 20, 
 
 *trading*: Single-family signal stream. High variance (ceiling effects): read the std before trusting a single number.
 
+**Council deliberation.**
+
+- **Continual-learning researcher:** I read measured bands as the lab refusing to grade against fantasy. Because each scenario-by-evolver cell carries its measured history of central tendency and spread from the reference sweep, a new run can be judged as measured, above or below expectation instead of being celebrated merely for beating zero. This matters because some streams are generous and others are harsh, and an absolute score without context confuses stream difficulty with method quality. Bands restore the comparison to its proper baseline, which is what this method has actually done on this stream before.
+- **Memory-systems researcher:** I agree and would sharpen the counsel to read forgetting before terminal performance. A method can finish strongly on the final block while having erased or damaged earlier families along the way, and that erasure is precisely what a deployed memory system must not do. Interference and forgetting bands reveal whether retention was earned through scoping and conditioning or faked through overwriting and luck. Terminal advantage tells us where the run ended, while the forgetting-first reading tells us whether the system could keep working after we shipped it.
+- **Evaluation methodologist:** I want to qualify what bands are and are not. They are history under a particular simulator, task set and seed regime, not laws of nature, so they travel only as far as those conditions travel. Their proper use is comparative and local, flagging regressions and genuine improvements on covered streams, while their misuse is to cite them as guarantees on new tasks or new orderings. High-variance families deserve special humility here, since wide spread means any single new observation carries little information until repetition narrows it.
+- **Safety researcher:** I dissent from any comfortable use of bands as acceptance thresholds. History can normalize a quietly unsafe pattern, especially when a band bakes in interference that a careful reviewer should have rejected rather than averaged. I would therefore wire the measured, above and below verdicts into continuous integration as tripwires, not as certificates, and demand re-sweeping whenever streams, harnesses or policies change. A below-band result should halt a release, while an above-band result should invite scrutiny about what changed, because both directions can signal drift rather than progress.
+
 **Council reading.**
 
 - **Red team:** Bands are history, not physics: they describe what scoped and GEPA did on these streams at these seeds. Change the stream and the band is a rumour — re-sweep before you cite it, or your baseline is someone else's weather.
@@ -610,6 +698,13 @@ Read the calibration as a transfer license with limits. The delta quantifies exa
 
 The live run also validates the harness, not just the policy: same stream, same protocol, real model in the policy seat. Where the live delta is small, the simulated policy was a faithful stand-in and the sweeps generalize; where it is large, the simulator's competence model diverges from the language model and every band built on it needs re-examination. That is why the validation file records elapsed seconds and the reading alongside the delta — cost, direction and interpretation travel together, or not at all.
 
+**Council deliberation.**
+
+- **Evaluation methodologist:** I see live validation as the transfer license with explicit limits. Every sweep number comes from a simulated policy, which is fast and repeatable but necessarily stylized, so the lab runs the same stream with a real model in the policy seat and records how simulated and live baselines differ. The finding is structural rather than numerical, which is that rankings and mechanisms tend to transfer while absolute magnitudes do not, because the simulator and the live model bring different headroom, competence and failure modes. Calibration therefore tells us which lessons can leave the lab and which must stay inside it.
+- **Continual-learning researcher:** I agree and want to emphasize the plasticity implication. Where a live model has already mastered a family, there is little left to learn and little forgetting to measure, so simulated learning curves will overstate the available gain. That does not invalidate the simulator, since the question of which evolver isolates learning from interference is still answered faithfully. It does mean that simulated gains should always be quoted alongside the calibration gap, as gross rather than net figures, lest a team plan a deployment around headroom that reality has already closed.
+- **Memory-systems researcher:** I find the harness validation angle equally important and often overlooked. The live run exercises retrieval, scoping, lesson injection and checkpointing under real model behaviour, which tests whether the harness surfaces are genuinely usable or merely simulator-compatible. Where the live gap is small, the simulated policy was a faithful stand-in and the bands deserve more trust, while a large gap warns that the competence model inside the simulator diverges from language-model behaviour. Cost, latency and interpretation must travel with the gap, because calibration without context is just another number.
+- **Safety researcher:** I would sharpen the discipline into a rule about re-calibration. Simulators drift when tasks change and models change when providers update, so a stale calibration is worse than none because its numbers still look measured. I would require fresh live hold-outs on every simulator revision and every model swap, with the validation record and its plain-language guidance updated together. Anyone quoting simulated performance without its current calibration should be treated as selling the costume rather than the finding, since uncalibrated simulation is where unsafe optimism breeds.
+
 **Council reading.**
 
 - **Red team:** The delta is the finding and the absolute is the costume: simulated baselines flatter, live baselines humble. Anyone quoting the simulated number without the calibration delta is selling the costume.
@@ -620,7 +715,7 @@ The live run also validates the harness, not just the policy: same stream, same 
 
 # Part IV: The landscape
 
-## Chapter 12: Six dimensions
+## Chapter 12: 9 dimensions
 
 | Dimension | What it separates |
 |---|---|
@@ -630,28 +725,37 @@ The live run also validates the harness, not just the policy: same stream, same 
 | evaluation | Degradation measured |
 | holdout | Disjoint hold-out |
 | evidence | Evidence kind |
+| forgetting | Forgetting handled |
+| efficiency | Cost of learning reported |
+| scope | Agent scope |
 
-Dimensions are what make a literature review falsifiable instead of vibes: every work below is placed on all six, so a claim like 'nobody evaluates degradation' is answerable by counting, not by remembering.
+Dimensions are what make a literature review falsifiable instead of vibes: every work below is placed on all 9, so a claim like 'nobody evaluates degradation' is answerable by counting, not by remembering.
 
-*What it rewrites* asks: Which part of the harness changes when the agent learns? Options run nothing, prompt, memory, skills and beyond — the point is that every work gets an explicit cell, including 'unknown', instead of the reviewer's benefit of the doubt.
+*What it rewrites* (`surface`) asks: Which part of the harness changes when the agent learns? Options run nothing, prompt, memory, skills, workflow — plus 'unknown', which is always legal. The surface decides what can compound and what can corrupt. A prompt rewrite broadcasts to every family; a fenced memory write reaches one. When a vendor says 'self-improving', this axis names the noun.
 
-*Learning isolated per task family* asks: Is what the agent learned kept from being applied to a task family it was not learned on? Options run n/a, yes, partial, no and beyond — the point is that every work gets an explicit cell, including 'unknown', instead of the reviewer's benefit of the doubt.
+*Learning isolated per task family* (`isolation`) asks: Is what the agent learned kept from being applied to a task family it was not learned on? Options run n/a, yes, partial, no, unknown — plus 'unknown', which is always legal. The axis this lab exists to move. 'Yes' means a lesson earned on family A cannot fire on family B; 'partial' means fenced in some paths and leaking in others; 'no' means the broadcast channel is open. Scoped is the lab's 'yes'.
 
-*How a stored experience is matched* asks: When the agent recalls something, what decides that it applies? Options run none, similarity, intent, explicit key and beyond — the point is that every work gets an explicit cell, including 'unknown', instead of the reviewer's benefit of the doubt.
+*How a stored experience is matched* (`retrieval`) asks: When the agent recalls something, what decides that it applies? Options run none, similarity, intent, explicit key, cluster + workflow — plus 'unknown', which is always legal. Retrieval is where interference enters: similarity alone returns the right topic with the wrong workflow (the BFCL catalogue collision). The lab's answer is cluster plus workflow conditioning — an explicit key before similarity is consulted.
 
-*Degradation measured* asks: Does the work measure interference or forgetting across a changing task stream? Options run no, partial, yes, unknown and beyond — the point is that every work gets an explicit cell, including 'unknown', instead of the reviewer's benefit of the doubt.
+*Degradation measured* (`evaluation`) asks: Does the work measure interference or forgetting across a changing task stream? Options run no, partial, yes, unknown — plus 'unknown', which is always legal. The first falsifiability gate. 'Yes' means interference or forgetting was measured across a changing stream with per-boundary checkpoints; 'partial' means some learning effect was measured but not the cross-stream bill; 'no' means the claim was never exposed to drift.
 
-*Disjoint hold-out* asks: Is the agent graded on instances it was not trained on? Options run no, yes, unknown and beyond — the point is that every work gets an explicit cell, including 'unknown', instead of the reviewer's benefit of the doubt.
+*Disjoint hold-out* (`holdout`) asks: Is the agent graded on instances it was not trained on? Options run no, yes, unknown — plus 'unknown', which is always legal. The second gate. A disjoint hold-out separates learning from memorising the eval set. Without it, plasticity and terminal advantage are the same number as overfitting, and no checkpoint table can rescue them.
 
-*Evidence kind* asks: What kind of source is this? Options run peer-reviewed, preprint, vendor writeup, blog and beyond — the point is that every work gets an explicit cell, including 'unknown', instead of the reviewer's benefit of the doubt.
+*Evidence kind* (`evidence`) asks: What kind of source is this? Options run peer-reviewed, preprint, vendor writeup, blog, open source — plus 'unknown', which is always legal. What kind of source backs the claim — peer-reviewed, preprint, vendor writeup, blog, open source. The field skews preprint, which revises fast and verifies slowly; the identifier check runs in the test suite instead of living in someone's memory.
+
+*Forgetting handled* (`forgetting`) asks: Does the work specify what is discarded or kept as memory grows? Options run explicit, summarise-only, none, unknown — plus 'unknown', which is always legal. Added with the 2025 memory wave: does the work say what is discarded as memory grows — explicit eviction, summarise-only, or nothing? A bank without garbage collection is a landfill with an index; TTL decay is the lab's control.
+
+*Cost of learning reported* (`efficiency`) asks: Does the work report what learning costs: memory growth, tokens, or calls? Options run yes, partial, no, unknown — plus 'unknown', which is always legal. Does the work report what learning costs — memory growth, tokens, calls? The suite's cost ledger prices gain per 100 prompt units because a win bought with 10x harness is a bad trade, and most of the field never prices it.
+
+*Agent scope* (`scope`) asks: Does the work study one agent's memory or memory shared across agents? Options run single, multi, both, unknown — plus 'unknown', which is always legal. One agent's memory or memory shared across agents? Shared stores add routing, per-role scopes and cross-agent conflict — the multi-agent memory paradigm — which single-agent numbers do not cover.
 
 **Council reading.**
 
-- **Red team:** Six dimensions with an explicit 'unknown' option is a map of the reviewer's ignorance as much as the field's: sort the works table by 'unknown' count and the least-examined claims surface first. That column is where the next paper — or the next incident — already lives.
-- **Blue team:** Hold every new work to all six cells before it enters the landscape: a work with no degradation measurement is a demo, one with no hold-out is a rumour, one with unknown evidence kind is unread. The merge pipeline exists so the bar does not move when the pile grows.
-- **Operator:** Use the dimensions as procurement questions, not just review axes: ask the vendor which cell their system prompt rewrites, whether lessons are fenced per family, how retrieval keys the workflow. 'Unknown' six times over is a pricing signal, not a technical detail.
+- **Red team:** 9 dimensions with an explicit 'unknown' option is a map of the reviewer's ignorance as much as the field's: sort the works table by 'unknown' count and the least-examined claims surface first. That column is where the next paper — or the next incident — already lives.
+- **Blue team:** Hold every new work to all 9 cells before it enters the landscape: a work with no degradation measurement is a demo, one with no hold-out is a rumour, one with unknown evidence kind is unread. The merge pipeline exists so the bar does not move when the pile grows.
+- **Operator:** Use the dimensions as procurement questions, not just review axes: ask the vendor which surface their system rewrites, whether lessons are fenced per family, how retrieval keys the workflow, what forgetting is explicit, what learning costs, and whether the memory is shared. 'Unknown' across the row is a pricing signal, not a technical detail.
 
-## Chapter 13: Fifteen concepts
+## Chapter 13: 21 concepts
 
 | Concept | Kind | Gloss |
 |---|---|---|
@@ -670,22 +774,70 @@ Dimensions are what make a literature review falsifiable instead of vibes: every
 | test-time-adaptation | paradigm | The system adapts at inference time rather than at training time. |
 | self-refine-loop | mechanism | Generate, critique, revise, repeat within a single task. |
 | credit-assignment | problem | Deciding which part of a long trajectory deserves credit. |
+| memory-policy-learning | mechanism | The agent learns how to manage memory - what to store, retrieve, update or discard - not just what to remember. A-MEM's RL-trained memory operators and MemRL's runtime RL are the first instances. |
+| selective-forgetting | mechanism | Principled discarding: heat-based eviction, preemptive summarisation, redundancy pruning. Forgetting as a designed operation rather than context overflow. |
+| hierarchical-memory | mechanism | Memory organised in levels - segments, pages, traces - with different retention and retrieval at each level, after the OS memory hierarchy. |
+| multi-agent-memory | paradigm | Memory shared, routed or traced across agents: shared stores, per-role scopes, and conflict when agents remember inconsistently. |
+| experience-evolution | paradigm | Forward learning from the experience stream itself: each interaction updates the reusable repertoire (reasoning memory, latent memory, skill set) rather than only the current answer. |
+| memory-benchmarks | practice | Benchmarks that grade memory rather than single answers: long-horizon QA (LoCoMo, LongMemEval), incremental multi-turn intake (MemoryAgentBench-style), and agentic environment suites (ARE, GAIA). |
 
-*mechanism* (8): agent-computer, experience-replay, memory-management, prompt-optimisation, reflection, self-refine-loop, skill-library, verifier-feedback. The mechanisms are the moving parts; each one needs a metric that would catch it failing, or it is decoration.
+*mechanism* (11): agent-computer, experience-replay, hierarchical-memory, memory-management, memory-policy-learning, prompt-optimisation, reflection, selective-forgetting, self-refine-loop, skill-library, verifier-feedback. The mechanisms are the moving parts; each one needs a metric that would catch it failing, or it is decoration.
 
-*paradigm* (3): continual-learning, self-improvement, test-time-adaptation. The paradigms are the bets about what learning is; argue them first, because everything downstream inherits the bet.
+*paradigm* (5): continual-learning, experience-evolution, multi-agent-memory, self-improvement, test-time-adaptation. The paradigms are the bets about what learning is; argue them first, because everything downstream inherits the bet.
 
-*practice* (1): harness. The practices are what operators actually do; judge them by whether they survive contact with a real stream.
+*practice* (2): harness, memory-benchmarks. The practices are what operators actually do; judge them by whether they survive contact with a real stream.
 
 *problem* (3): catastrophic-forgetting, credit-assignment, transfer. The problems are the reasons the mechanisms exist; a mechanism with no problem is a solution looking for a stream.
 
+**Self-improvement** (`self-improvement`, paradigm) — The agent changes something about itself - the code, the prompt, the memory - and is judged on the result. The umbrella bet: the agent changes itself and is judged on the result. Everything below is a narrower claim about what changes and how it is judged.
+
+**Experience replay** (`experience-replay`, mechanism) — Past episodes are stored and replayed as guidance for a later task. Past episodes stored and replayed as guidance. Cheap, compounding, and exactly how poison accumulates — provenance and TTL are the controls.
+
+**Reflection** (`reflection`, mechanism) — The agent writes an account of what went wrong, and that text is what it uses next time. The agent writes what went wrong and reuses the text. GEPA and Reflexion both live here; the difference is whether the prose is fenced per family or broadcast.
+
+**Skill library** (`skill-library`, mechanism) — Reusable capabilities are accumulated as named, retrievable units. Reusable capabilities accumulated as named units (Voyager's skills). The open question is admission: who can reject a bad skill, and what re-tests it?
+
+**Memory management** (`memory-management`, mechanism) — What the agent keeps, and how it decides what fits in its working context. What the agent keeps and how it decides what fits. The 2025 memory wave (Mem0, A-MEM, MemInsight, MemoryOS) turned this from plumbing into the research surface.
+
+**Prompt optimisation** (`prompt-optimisation`, mechanism) — The prompt or program is compiled from data and feedback rather than written by hand. The prompt or program compiled from data and feedback (DSPy, GEPA). Powerful inside one block, and the lab's measurements show why it forgets across blocks: a shared prompt is a shared fate.
+
+**Verifier feedback** (`verifier-feedback`, mechanism) — A checker, grader or environment decides success, and only success is learned from. A checker or environment decides success and only success is learned from. Binary task-success in this lab is the minimal verifier — coarse on purpose, because partial credit is where gaming hides.
+
+**Continual learning** (`continual-learning`, paradigm) — Learning over a stream that keeps changing, with interference and forgetting as the cost. The lab's own paradigm: learning over a stream that keeps changing, priced in interference and forgetting. A 'self-improving' agent without a stream is a demo with better vocabulary.
+
+**Catastrophic forgetting** (`catastrophic-forgetting`, problem) — Learning a new family overwrites what was learned for an old one. The problem that prices everything: new families overwrite old competence. F_k in the metrics chapter is its meter.
+
+**Transfer** (`transfer`, problem) — What is learned for one family is useful, or harmful, for another. The problem's kinder face: what helps (or harms) across families. Forward and backward transfer meter it; scoping decides its sign.
+
+**Harness engineering** (`harness`, practice) — The scaffolding around the model - tools, prompts, state - treated as the artefact under optimisation. The scaffolding as the artefact: tools, prompts, state under optimisation. The harness-evolution papers are this practice becoming the research program.
+
+**Agent-computer interface** (`agent-computer`, mechanism) — The action space and the feedback are redesigned so the model can act well. Redesigning the action space and feedback so the model can act well (SWE-agent's interfaces). Often the highest-leverage change — and orthogonal to whether the agent learns.
+
+**Test-time adaptation** (`test-time-adaptation`, paradigm) — The system adapts at inference time rather than at training time. Adaptation at inference rather than training time — the deployment shape of continual learning, and the reason the lab grades on hold-outs instead of training tasks.
+
+**Self-refine loop** (`self-refine-loop`, mechanism) — Generate, critique, revise, repeat within a single task. Generate, critique, revise inside one task. Improves the single answer; says nothing about the next task unless the critique is stored, fenced and re-tested.
+
+**Credit assignment** (`credit-assignment`, problem) — Deciding which part of a long trajectory deserves credit. Which part of a long trajectory deserves credit. Sparse binary feedback makes this hard — and makes verifier design the real work.
+
+**Memory-policy learning** (`memory-policy-learning`, mechanism) — The agent learns how to manage memory - what to store, retrieve, update or discard - not just what to remember. A-MEM's RL-trained memory operators and MemRL's runtime RL are the first instances. Learning how to manage memory — store, retrieve, update, discard — not just what to remember. MemRL is the sharpest instance: the memory policy itself is the learned artefact.
+
+**Selective forgetting** (`selective-forgetting`, mechanism) — Principled discarding: heat-based eviction, preemptive summarisation, redundancy pruning. Forgetting as a designed operation rather than context overflow. Forgetting as designed operation: heat eviction, preemptive summarisation, redundancy pruning. The lab's TTL control is the minimal instance.
+
+**Hierarchical memory** (`hierarchical-memory`, mechanism) — Memory organised in levels - segments, pages, traces - with different retention and retrieval at each level, after the OS memory hierarchy. Memory in levels — segments, pages, traces — with different retention per level. Structure is the forgetting policy made explicit.
+
+**Multi-agent memory** (`multi-agent-memory`, paradigm) — Memory shared, routed or traced across agents: shared stores, per-role scopes, and conflict when agents remember inconsistently. Memory shared, routed or traced across agents. Single-agent isolation results do not transfer here; cross-agent conflict is its own interference axis.
+
+**Experience evolution** (`experience-evolution`, paradigm) — Forward learning from the experience stream itself: each interaction updates the reusable repertoire (reasoning memory, latent memory, skill set) rather than only the current answer. Forward learning from the experience stream itself: each interaction updates the reusable repertoire. ReasoningBank is the lab's instance of this bet.
+
+**Memory benchmarks** (`memory-benchmarks`, practice) — Benchmarks that grade memory rather than single answers: long-horizon QA (LoCoMo, LongMemEval), incremental multi-turn intake (MemoryAgentBench-style), and agentic environment suites (ARE, GAIA). Benchmarks that grade memory, not single answers — LoCoMo, LongMemEval, the Letta leaderboard. Read them as the field's emerging hold-outs, and check whether they stream or merely quiz.
+
 **Council reading.**
 
-- **Red team:** Fifteen concepts is fifteen places to hide a weak definition: if 'self-improvement' covers everything from a changed prompt to a rewritten codebase, it explains nothing. Pin every claim to the concept id, then check the id means one thing.
-- **Blue team:** Use the concept kinds as review checklists: paradigms need protocols, mechanisms need measurements, failure modes need drills. A concept with no kind is a vibe — send it back.
-- **Operator:** Teach the fifteen glosses before the thirty-six works: a team that shares vocabulary argues about evidence, and a team that does not argues about words.
+- **Red team:** 21 concepts is 21 places to hide a weak definition: if 'self-improvement' covers everything from a changed prompt to a rewritten codebase, it explains nothing. Pin every claim to the concept id, then check the id means one thing.
+- **Blue team:** Use the concept kinds as review checklists: paradigms need protocols, mechanisms need measurements, problems need meters, practices need drills. A concept with no kind is a vibe — send it back.
+- **Operator:** Teach the 21 glosses before the 51 works: a team that shares vocabulary argues about evidence, and a team that does not argues about words.
 
-## Chapter 14: Thirty-six works, verified
+## Chapter 14: 51 works, verified
 
 | Work | Venue · year | Mechanism |
 |---|---|---|
@@ -725,10 +877,29 @@ Dimensions are what make a literature review falsifiable instead of vibes: every
 | EvoHarnessBench: Can Your Agents Keep Pace with an Evolving Harness? | arXiv 2026 · 2026 | 17 multi-stage harness streams that add tools, skills and specialist agents, so the agent's own scaffolding changes under it. |
 | Continual Learning, Not Training: Online Adaptation For Agents | arXiv 2025 · 2025 | A Teacher/Student pair: a persistent learning memory holds distilled experience, and the orchestration layer adjusts supervision and plan choice from it. |
 | From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms | arXiv 2026 · 2026 | A survey: it frames the field's memory designs as a progression rather than a catalogue. |
+| Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory | arXiv 2025 · 2025 | Extracts salient facts per turn into scoped stores; retrieves by vector/graph hybrid at inference. |
+| A-MEM: Agentic Memory for LLM Agents | arXiv 2025 · 2025 | Notes carry keywords and links; agentic operators create, link, update and discard them. |
+| ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory | ICLR 2026 · 2025 | Successful trajectories are distilled into reasoning notes retrieved by query similarity on later tasks. |
+| MemInsight: Autonomous Memory Augmentation for LLM Agents | arXiv 2025 · 2025 | Mining interaction history into augmentations that are injected alongside retrieved context. |
+| Memory OS of AI Agent | arXiv 2025 · 2025 | Short/mid/long-term segments with heat scoring for update and eviction; fewer calls and tokens than MemGPT/A-MEM baselines. |
+| GAIA: a benchmark for General AI Assistants | arXiv 2023 · 2023 | Fixed task set with deterministic scoring; no learning component, graded on held-out tasks. |
+| SWE-bench: Can Language Models Resolve Real-World GitHub Issues? | ICLR 2024 · 2024 | Repository snapshot plus fail-to-pass tests; agents are graded on instances unseen in training. |
+| G-Memory: Tracing Hierarchical Memory for Multi-Agent Systems | arXiv 2025 · 2025 | Per-agent memory organised in a hierarchy with cross-agent tracing and consolidation. |
+| MemRL: Self-Evolving Agents via Runtime Reinforcement Learning on Episodic Memory | arXiv 2026 · 2026 | Step-wise RL rewards memory operations (store, link, summarise, discard), including preemptive summarisation. |
+| FLEX: Continuous Agent Evolution via Forward Learning from Experience | arXiv 2025 · 2025 | Each interaction updates the reusable repertoire used on later tasks. |
+| LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory | ICLR 2025 · 2025 | Fixed long histories with abstention-aware scoring; retrieval-only grading on unseen questions. |
+| LoCoMo: Evaluating Very Long-Term Conversational Memory of LLM Agents | ACL 2024 · 2024 | Fixed dialogues with QA probes; the retrieval benchmark every memory layer reports on. |
+| Letta Memory Benchmark (Letta Leaderboard) | Letta 2025 · 2025 | Runs LoCoMo-style tasks through one agent scaffold so scores compare models, not harnesses. |
+| ARE: Scaling Up Agent Environments and Evaluations (Gaia2) | arXiv 2025 · 2025 | Procedurally scaled environments with held-out evaluation episodes. |
+| AutoGPT: build, deploy, and manage continuous AI agents | GitHub 2023 · 2023 | Persistent vector memory plus self-prompted planning loop; community plugin ecosystem. |
 
-Every identifier above was verified against its source and corrected where wrong — the lab's own test suite caches the arXiv verification and re-checks it, because a landscape with four wrong references is a rumour about the field, not a map of it.
+Every identifier above was verified against its source and corrected where wrong — the lab's own test suite caches the arXiv verification and re-checks it, because a landscape with wrong references is a rumour about the field, not a map of it.
 
-The pile skews open source (6), arXiv 2026 (4), NeurIPS 2023 (3), ICLR 2024 (3), spanning 2019–2026. Read the skew, not just the count: a field that publishes mostly preprints revises fast and verifies slowly, which is exactly why the identifier check runs in the test suite instead of living in someone's memory.
+On the current snapshot of 51 works: **4** are falsifiable, **17** are partially falsifiable, **30** are not falsifiable by their own protocol. That is the gap this lab works in — and the works that clear the bar are all recent harness-evolution work, including the paper this lab is built on.
+
+The pile skews arXiv 2025 (8), open source (6), arXiv 2026 (5), ICLR 2024 (4), spanning 2019–2026. Read the skew, not just the count: a field that publishes mostly preprints revises fast and verifies slowly, which is exactly why the identifier check runs in the test suite instead of living in someone's memory.
+
+*Falsifiable (4):* dgm, evoharnessbench, self-evolving-continual-learners, self-evolving-harness. Read these first when someone claims continual learning — they are the only ones whose protocol could have caught them being wrong.
 
 ```mermaid
 flowchart TD
@@ -741,11 +912,620 @@ flowchart TD
 
 ```
 
+### Papers (30)
+Peer-reviewed and preprint papers: the mechanisms the lab compares itself against. Read the alignment row before the abstract — it says what the paper's own protocol could have caught.
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** Papers are where mechanisms get named, but a mechanism without a stream is only a proposal. This corpus shows the pattern clearly: many memory and workflow papers report partial learning effects with no holdout, so their alignment rows cannot separate improvement from memorisation. Read papers for the update rule and the retrieval key, then demand per-boundary checkpoints before believing the learning claim.
+- **Evaluation methodologist:** A paper earns falsifiability only when both gates close: degradation measured across a changing stream and grading on disjoint instances. In this landscape only a handful of papers meet both, while the partially falsifiable middle grades holdout tasks without pricing forgetting. Treat that middle as promising scaffolding, and re-run the stream with isolation checks before promoting any result to practice.
+
+#### AgentTuning: Enabling Generalized Agent Abilities for LLMs
+*agent-tuning* — A. Zeng, M. Liu, R. Lu, B. Wang et al., ICLR 2024 · 2023 · paper. https://arxiv.org/abs/2310.12823
+**What it does.** Tuning on agent trajectories generalises multi-turn tool use beyond the training tasks.
+**Mechanism.** Fine-tunes the model on successful trajectories; the weights, not the harness, change.
+**Alignment.** surface=weights · isolation=n/a · retrieval=none · evaluation=partial · holdout=yes · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `transfer` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Weight-changing work sits outside this lab's frozen-weight protocol — transfer the idea, not the number.
+**Researcher note.** AgentTuning contributes fine-tuning on successful agent trajectories so weights rather than harness carry multi-turn tool use. Its alignment row reads surface weights with partial degradation measurement and a disjoint holdout, so it is partially falsifiable. Borrow the trajectory-tuning recipe for generalisation, but re-measure forgetting across a changing stream before claiming continual learning.
+
+
+#### Generative Agents: Interactive Simulacra of Human Behavior
+*generative-agents* — J. S. Park et al., UIST 2023 · 2023 · paper. https://arxiv.org/abs/2304.03442
+**What it does.** A memory stream with reflection and planning gives an agent a believable, continuous life.
+**Mechanism.** Appends observations to a memory stream, retrieves by recency and relevance, and periodically reflects into higher-level notes.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=no · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `memory-management`, `reflection` **Catalog patterns.** `episodic-memory`, `reflexion`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** Generative Agents contributes a persistent memory stream with recency and relevance retrieval plus periodic higher-level reflection. Its alignment row reads surface memory with no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the stream-plus-reflection design for lifelike continuity, but re-measure whether reflections help or pollute later tasks.
+
+
+#### A Survey on Large Language Model based Autonomous Agents
+*llm-agent-survey* — L. Wang et al., Frontiers of Computer Science 2024 · 2023 · paper. https://arxiv.org/abs/2308.11432
+**What it does.** A survey of the architectures, the memory and the planning used by LLM agents.
+**Mechanism.** A survey: it organises the design space agents are built from.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `harness`, `memory-management` **Catalog patterns.** `episodic-memory`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** This autonomous-agent survey contributes an organisation of agent architectures, memory and planning rather than a learning result. Its alignment row reads surface nothing with no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the design-space vocabulary for scoping builds, but re-measure every learning claim on a stream.
+
+
+#### MemGPT: Towards LLMs as Operating Systems
+*memgpt* — C. Packer et al., 2023 · 2023 · paper. https://arxiv.org/abs/2310.08560
+**What it does.** Treats the context window as a managed resource with archival and recall memory.
+**Mechanism.** The agent itself decides when to page memory in and out of a fixed context.
+**Alignment.** surface=memory · isolation=no · retrieval=explicit key · evaluation=no · holdout=no · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `memory-management` **Catalog patterns.** `episodic-memory`, `working-memory-context`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** MemGPT contributes treating the context window as a managed resource where the agent pages archival and recall memory itself. Its alignment row reads surface memory with explicit-key retrieval but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the paging metaphor for context management, but re-measure retention and interference on a stream.
+
+
+#### ReAct: Synergizing Reasoning and Acting in Language Models
+*react* — S. Yao et al., ICLR 2023 · 2023 · paper. https://arxiv.org/abs/2210.03629
+**What it does.** Interleaves reasoning traces with actions so the model plans while it acts.
+**Mechanism.** No learning: the same prompt drives every episode, with observations appended to the trace.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `agent-computer`, `self-refine-loop` **Catalog patterns.** `react`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** ReAct contributes the interleaved reasoning-and-acting loop where one prompt drives every episode with observations appended to the trace. Its alignment row reads surface nothing with no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the act-observe-reason loop as scaffolding, but re-measure any claim that the agent learns across episodes.
+
+
+#### Reflexion: Language Agents with Verbal Reinforcement Learning
+*reflexion* — N. Shinn, F. Cassano, E. Gopinath, K. Narasimhan, S. Yao, NeurIPS 2023 · 2023 · paper. https://arxiv.org/abs/2303.11366
+**What it does.** On failure the agent writes a reflection into episodic memory and reuses it on the next attempt.
+**Mechanism.** Stores a natural-language reflection per episode; the next attempt is conditioned on it.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=no · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `reflection`, `experience-replay`, `self-improvement` **Catalog patterns.** `reflexion`, `episodic-memory`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** Reflexion contributes verbal reinforcement where a failure reflection is stored in episodic memory and conditions the next attempt. Its alignment row reads surface memory with similarity retrieval but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the reflection-on-failure pattern, but re-measure cross-task interference and retention yourself.
+
+
+#### Self-Refine: Iterative Refinement with Self-Feedback
+*self-refine* — A. Madaan et al., NeurIPS 2023 · 2023 · paper. https://arxiv.org/abs/2303.17651
+**What it does.** A generator, a critic and a refiner improve an answer in a loop, with no training.
+**Mechanism.** The same model critiques its own output; the feedback is consumed within the episode.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `self-refine-loop`, `verifier-feedback` **Catalog patterns.** `reflexion`, `standard-agent-loop`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** Self-Refine contributes a generator-critic-refiner loop where the same model critiques and revises its own output within one episode. Its alignment row reads surface nothing with no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the within-episode critique loop, but re-measure any cross-episode learning claim separately.
+
+
+#### ToolLLM: Facilitating Large Language Models to Master 16000+ Real-world APIs
+*toolllm* — Y. Qin et al., ICLR 2024 · 2023 · paper. https://arxiv.org/abs/2307.16789
+**What it does.** A tool-use dataset and training recipe for learning to call APIs.
+**Mechanism.** The model is trained on tool trajectories; the harness is fixed.
+**Alignment.** surface=weights · isolation=n/a · retrieval=none · evaluation=no · holdout=yes · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream.
+**Concepts.** `agent-computer` **Catalog patterns.** `routing`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Weight-changing work sits outside this lab's frozen-weight protocol — transfer the idea, not the number.
+**Researcher note.** ToolLLM contributes a tool-use dataset and training recipe where the model is trained on tool trajectories under a fixed harness. Its alignment row reads surface weights with no degradation measurement but a disjoint holdout, so it is not falsifiable by its own protocol. Borrow the trajectory-training approach for API competence, but re-measure interference across tool families yourself.
+
+
+#### Tree of Thoughts: Deliberate Problem Solving with Large Language Models
+*tree-of-thoughts* — S. Yao et al., NeurIPS 2023 · 2023 · paper. https://arxiv.org/abs/2305.10601
+**What it does.** Searches a tree of partial solutions with self-evaluation at each step.
+**Mechanism.** No learning across tasks: the search procedure is fixed and run per episode.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `self-refine-loop`, `verifier-feedback` **Catalog patterns.** `tree-of-thoughts`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** Tree of Thoughts contributes deliberate search over partial solutions with self-evaluation at each step. Its alignment row reads surface nothing with a fixed per-episode procedure, no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the search procedure for single-task reasoning, but do not read it as evidence about continual learning.
+
+
+#### Voyager: An Open-Ended Embodied Agent with Large Language Models
+*voyager* — G. Wang et al., TMLR · 2023 · paper. https://arxiv.org/abs/2305.16291
+**What it does.** A Minecraft agent that acquires skills for itself and keeps them in a library.
+**Mechanism.** Automatic curriculum proposes goals; a skill library stores verified code; environment feedback drives iteration.
+**Alignment.** surface=skills · isolation=partial · retrieval=explicit key · evaluation=partial · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it measures some effect of learning, but not interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `skill-library`, `verifier-feedback`, `self-improvement` **Catalog patterns.** `skill-library`, `task-decomposition`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Skill-library design to borrow; check whether skills are fenced per family or broadcast.
+**Researcher note.** Voyager contributes an open-ended Minecraft agent with an automatic curriculum, verified code skills, and environment-driven iteration. Its alignment row reads surface skills with partial isolation and partial degradation measurement but no holdout, so it is not falsifiable by its own protocol. Borrow the verified-skill admission pattern, but re-measure forgetting on disjoint tasks.
+
+
+#### Agent-Pro: Learning to Evolve via Policy-Level Reflection and Optimization
+*agent-pro* — W. Zhang, K. Tang, H. Wu, M. Wang et al., ICLR 2025 · 2024 · paper. https://arxiv.org/abs/2402.17574
+**What it does.** An agent learns expertise from interactive experience and elevates its behavioural policy.
+**Mechanism.** Policy-level reflection mines successful trajectories for proactive behaviours that are reused as guidance.
+**Alignment.** surface=workflow · isolation=no · retrieval=similarity · evaluation=partial · holdout=no · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it measures some effect of learning, but not interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `experience-replay`, `self-improvement` **Catalog patterns.** `evaluator-optimizer`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** Agent-Pro contributes policy-level reflection that mines successful trajectories for reusable proactive behaviours. Its alignment row reads surface workflow with similarity retrieval and partial degradation measurement but no holdout, so it is not falsifiable by its own protocol. Borrow the behaviour-mining mechanism, but re-measure whether policies persist or interfere across families.
+
+
+#### Agent Workflow Memory
+*agent-workflow-memory* — Z. Wang et al., ICLR 2025 · 2024 · paper. https://arxiv.org/abs/2409.07429
+**What it does.** Learns reusable workflows from past experience and applies them to new tasks.
+**Mechanism.** Workflows are induced from successful trajectories and retrieved for similar tasks.
+**Alignment.** surface=workflow · isolation=no · retrieval=similarity · evaluation=partial · holdout=no · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it measures some effect of learning, but not interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `experience-replay`, `transfer`, `self-improvement` **Catalog patterns.** `evaluator-optimizer`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** Agent Workflow Memory contributes workflows induced from successful trajectories and retrieved for similar tasks. Its alignment row reads surface workflow with similarity retrieval and partial degradation measurement but no holdout, so it is not falsifiable by its own protocol. Borrow the induce-then-retrieve workflow pattern, but re-measure transfer and forgetting on disjoint instances.
+
+
+#### A Survey on Continual Learning of LLM-based Agents
+*cl-agent-survey* — various, 2024 · 2024 · paper. https://arxiv.org/search/?query=continual+learning+LLM+based+agents&searchtype=title
+**What it does.** Surveys how LLM agents are evaluated under a changing task stream.
+**Mechanism.** A survey: it catalogues the evaluation protocols used for agent continual learning.
+**Alignment.** surface=workflow · isolation=yes · retrieval=cluster + workflow · evaluation=partial · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `continual-learning`, `catastrophic-forgetting`, `transfer` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** This agent continual-learning survey contributes a catalogue of evaluation protocols for LLM agents under a changing task stream. Its alignment row reads surface workflow with partial degradation measurement and a holdout lens, so it is partially falsifiable. Borrow its protocol checklist for stream design, but re-measure candidate agents rather than trusting surveyed claims at face value.
+
+
+#### Continual Learning of Large Language Models: A Comprehensive Survey
+*cl-llm-survey* — H. Shi, Z. Xu, H. Wang, W. Qin et al., ACM TMLR · 2024 · paper. https://arxiv.org/abs/2404.16789
+**What it does.** Surveys the methods and the evaluation protocols used for continual learning of language models.
+**Mechanism.** A survey: it organises the field and compares the protocols, including catastrophic forgetting.
+**Alignment.** surface=weights · isolation=yes · retrieval=none · evaluation=partial · holdout=yes · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `continual-learning`, `catastrophic-forgetting` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Weight-changing work sits outside this lab's frozen-weight protocol — transfer the idea, not the number.
+**Researcher note.** This continual-learning survey contributes an organisation of methods and evaluation protocols for language models, including catastrophic forgetting. Its alignment row reads surface weights with partial degradation measurement and a holdout lens, so it is partially falsifiable as a protocol catalogue. Borrow its protocol taxonomy for designing streams, but re-measure any specific method on your own harness.
+
+
+#### ExpeL: LLM Agents Are Experiential Learners
+*expel* — A. Zhao et al., ICLR 2024 · 2024 · paper. https://arxiv.org/abs/2308.10144
+**What it does.** Trains an agent to extract reusable insights from its own past trajectories.
+**Mechanism.** Successive trajectories are consolidated into natural-language insights that are prepended to later tasks.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=partial · holdout=no · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it measures some effect of learning, but not interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `experience-replay`, `transfer`, `self-improvement` **Catalog patterns.** `episodic-memory`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** ExpeL contributes consolidation of successive trajectories into natural-language insights prepended to later tasks. Its alignment row reads surface memory with similarity retrieval and partial degradation measurement but no holdout, so it is not falsifiable by its own protocol. Borrow the insight-distillation mechanism for transfer studies, but re-measure cross-family interference on a held-out stream.
+
+
+#### Godel Agent: A Self-Referential Agent Framework for Recursive Self-Improvement
+*godel-agent* — X. Yin, X. Wang, L. Pan, L. Lin et al., arXiv 2024 · 2024 · paper. https://arxiv.org/abs/2410.04444
+**What it does.** An agent that rewrites its own logic, evaluated as it goes.
+**Mechanism.** Self-modification of the agent's own code, with evaluation gating each accepted change.
+**Alignment.** surface=code · isolation=partial · retrieval=explicit key · evaluation=partial · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `self-improvement`, `verifier-feedback`, `harness` **Catalog patterns.** `evaluator-optimizer`
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Self-rewriting design; demand the admission gate (who can reject a bad edit) before the demo.
+**Researcher note.** Godel Agent contributes recursive self-improvement through self-modification of agent code gated by evaluation. Its alignment row reads surface code with partial degradation measurement and a disjoint holdout, so it is partially falsifiable. Borrow the evaluate-before-admit gate as an operator control, but re-measure full cross-stream degradation before claiming durable learning.
+
+
+#### SWE-agent: Agent-Computer Interfaces Enable Automated Software Engineering
+*swe-agent* — J. Yang et al., NeurIPS 2024 · 2024 · paper. https://arxiv.org/abs/2405.15793
+**What it does.** Designing the tools and the feedback loop so an LM can actually do software engineering.
+**Mechanism.** The interface - commands, file viewer, lint feedback - is the contribution; the model is frozen.
+**Alignment.** surface=workflow · isolation=n/a · retrieval=none · evaluation=partial · holdout=yes · evidence=peer-reviewed · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `agent-computer`, `harness` **Catalog patterns.** `computer-use`
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** SWE-agent contributes the interface itself as the artefact, with commands, file viewer and lint feedback letting a frozen model do software engineering. Its alignment row reads surface workflow with partial degradation measurement and a disjoint holdout, so it is partially falsifiable. Borrow the interface-design lesson, but re-measure learning separately since the model does not change.
+
+
+#### A-MEM: Agentic Memory for LLM Agents
+*a-mem* — W. Xu et al., arXiv 2025 · 2025 · paper. https://arxiv.org/abs/2502.12110
+**What it does.** Zettelkasten-style note network whose link structure the agent evolves.
+**Mechanism.** Notes carry keywords and links; agentic operators create, link, update and discard them.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=explicit · efficiency=no · scope=single.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `memory-management`, `memory-policy-learning`, `selective-forgetting` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** A-MEM contributes a note network whose keywords, links and discards evolve through agentic operators. Its alignment row reads surface memory with partial degradation measurement, a disjoint holdout and explicit forgetting, so it is partially falsifiable. Borrow the link-and-evict operator pattern, but re-measure retrieval precision and long-run retention yourself.
+
+
+#### Continual Learning, Not Training: Online Adaptation For Agents
+*atlas* — A. Jaglan, J. Barnes, arXiv 2025 · 2025 · paper. https://arxiv.org/abs/2511.01093
+**What it does.** Gradient-free continual adaptation at inference time, with a memory that stores distilled guidance.
+**Mechanism.** A Teacher/Student pair: a persistent learning memory holds distilled experience, and the orchestration layer adjusts supervision and plan choice from it.
+**Alignment.** surface=memory · isolation=partial · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `memory-management`, `experience-replay`, `continual-learning` **Catalog patterns.** `memory-consolidation`, `long-term-vector-memory`, `standard-agent-loop`
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** ATLAS contributes gradient-free online adaptation at inference time through a Teacher-Student pair with persistent distilled learning memory. Its alignment row reads surface memory with partial degradation measurement and a disjoint holdout, so it is partially falsifiable. Borrow the distilled-guidance memory design, but re-measure full cross-stream forgetting before claiming continual learning.
+
+
+#### Darwin Godel Machine: Open-Ended Evolution of Self-Improving Agents
+*dgm* — S. Sakana AI, 2025 · 2025 · paper. https://arxiv.org/abs/2505.22954
+**What it does.** A coding agent proposes modifications to its own code and keeps only what measurably improves it.
+**Mechanism.** Archive of self-modifications, selected empirically against a held-out benchmark; nothing is kept on assertion alone.
+**Alignment.** surface=code · isolation=partial · retrieval=explicit key · evaluation=yes · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: falsifiable** — it measures degradation across a changing stream on a disjoint hold-out, so a change that made things worse would have been caught.
+**Concepts.** `self-improvement`, `verifier-feedback`, `harness` **Catalog patterns.** `evaluator-optimizer`, `reflexion`
+**Lab reading.** Clears both gates — degradation measured on a disjoint hold-out — so read it as the comparison set for any new continual-learning claim, not as background. Self-rewriting design; demand the admission gate (who can reject a bad edit) before the demo.
+**Researcher note.** Darwin Godel Machine contributes open-ended self-improvement where a coding agent proposes code modifications kept only on measured improvement against a held-out benchmark. Its alignment row reads surface code with full degradation measurement and a disjoint holdout, so it is falsifiable. Borrow the empirical admission gate, but re-measure isolation since learned changes apply broadly.
+
+
+#### FLEX: Continuous Agent Evolution via Forward Learning from Experience
+*flex* — FLEX authors, arXiv 2025 · 2025 · paper. https://arxiv.org/abs/2511.06449
+**What it does.** Evolves the agent forward from the experience stream without waiting for failures.
+**Mechanism.** Each interaction updates the reusable repertoire used on later tasks.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=none · efficiency=no · scope=single.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `experience-evolution`, `continual-learning` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** FLEX contributes forward evolution from the experience stream where each interaction updates the reusable repertoire without waiting for failures. Its alignment row reads surface memory with partial degradation measurement and a disjoint holdout but no forgetting handling, so it is partially falsifiable. Borrow the forward-update framing, but re-measure accumulation, staleness and interference as the repertoire grows.
+
+
+#### G-Memory: Tracing Hierarchical Memory for Multi-Agent Systems
+*g-memory* — G. Zhang et al., arXiv 2025 · 2025 · paper. https://arxiv.org/abs/2506.07398
+**What it does.** Hierarchical memory traced across agents in a multi-agent system.
+**Mechanism.** Per-agent memory organised in a hierarchy with cross-agent tracing and consolidation.
+**Alignment.** surface=memory · isolation=partial · retrieval=explicit key · evaluation=partial · holdout=yes · evidence=preprint · forgetting=summarise-only · efficiency=no · scope=multi.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `multi-agent-memory`, `hierarchical-memory`, `memory-management` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** G-Memory contributes hierarchical per-agent memory with cross-agent tracing and consolidation for multi-agent systems. Its alignment row reads surface memory with partial degradation measurement, a disjoint holdout and multi-agent scope, so it is partially falsifiable. Borrow the trace-and-consolidate hierarchy, but re-measure cross-agent conflict and single-agent transfer separately.
+
+
+#### Mem0: Building Production-Ready AI Agents with Scalable Long-Term Memory
+*mem0* — C. Chhikara et al., arXiv 2025 · 2025 · paper. https://arxiv.org/abs/2504.19413
+**What it does.** Production memory layer with user/agent/run scoping and hybrid retrieval.
+**Mechanism.** Extracts salient facts per turn into scoped stores; retrieves by vector/graph hybrid at inference.
+**Alignment.** surface=memory · isolation=partial · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=summarise-only · efficiency=partial · scope=single.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `memory-management`, `experience-replay` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** Mem0 contributes a production memory layer with user, agent and run scoping plus hybrid retrieval from per-turn fact extraction. Its alignment row reads surface memory with partial degradation measurement, a disjoint holdout and summarise-only forgetting, so it is partially falsifiable. Borrow the scoped-store design, but re-measure interference and cost under your own workload.
+
+
+#### MemInsight: Autonomous Memory Augmentation for LLM Agents
+*meminsight* — R. Salama et al., arXiv 2025 · 2025 · paper. https://arxiv.org/abs/2503.21760
+**What it does.** Autonomously augments agent memory with structured attribute summaries.
+**Mechanism.** Mining interaction history into augmentations that are injected alongside retrieved context.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=summarise-only · efficiency=no · scope=single.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `memory-management`, `selective-forgetting` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** MemInsight contributes autonomous memory augmentation that mines interaction history into structured attribute summaries injected with retrieved context. Its alignment row reads surface memory with partial degradation measurement, a disjoint holdout and summarise-only forgetting, so it is partially falsifiable. Borrow the augmentation pattern for richer recall, but re-measure precision and staleness on disjoint probes.
+
+
+#### Memory OS of AI Agent
+*memoryos* — MemoryOS authors, arXiv 2025 · 2025 · paper. https://arxiv.org/abs/2506.06326
+**What it does.** OS-inspired memory: segments, pages and heat-based management across dialogue.
+**Mechanism.** Short/mid/long-term segments with heat scoring for update and eviction; fewer calls and tokens than MemGPT/A-MEM baselines.
+**Alignment.** surface=memory · isolation=partial · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=explicit · efficiency=yes · scope=single.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `memory-management`, `hierarchical-memory`, `selective-forgetting` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** Memory OS contributes segmented memory with short, mid and long-term segments plus heat scoring for update and eviction. Its alignment row reads surface memory with partial degradation measurement, a disjoint holdout, explicit forgetting and reported efficiency, so it is partially falsifiable. Borrow the heat-based management design, but re-measure the cost-accuracy trade on your own stream.
+
+
+#### ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory
+*reasoningbank* — S. Ouyang et al., ICLR 2026 · 2025 · paper. https://arxiv.org/abs/2509.25140
+**What it does.** Scales self-evolution by distilling episodes into retrievable reasoning memory.
+**Mechanism.** Successful trajectories are distilled into reasoning notes retrieved by query similarity on later tasks.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=none · efficiency=partial · scope=single.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `experience-replay`, `memory-management`, `experience-evolution` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** ReasoningBank contributes scaling self-evolution by distilling successful trajectories into reasoning notes retrieved by query similarity. Its alignment row reads surface memory with partial degradation measurement and a disjoint holdout but no forgetting handling, so it is partially falsifiable. Borrow the distil-and-retrieve repertoire pattern, but re-measure growth, cost and interference as the bank fills.
+
+
+#### From Storage to Experience: A Survey on the Evolution of LLM Agent Memory Mechanisms
+*memory-mechanisms-survey* — J. Luo, Y. Tian, C. Cao, Z. Luo et al., arXiv 2026 · 2026 · paper. https://arxiv.org/abs/2605.06716
+**What it does.** Places agent memory on a three-stage path: storage, reflection, experience.
+**Mechanism.** A survey: it frames the field's memory designs as a progression rather than a catalogue.
+**Alignment.** surface=memory · isolation=yes · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `memory-management`, `reflection`, `continual-learning` **Catalog patterns.** `memory-consolidation`, `semantic-memory-kg`, `episodic-memory`
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** From Storage to Experience contributes a three-stage framing of agent memory from storage through reflection to experience. Its alignment row reads surface memory with partial degradation measurement and a holdout lens, so it is partially falsifiable as a survey. Borrow the staging vocabulary for placing memory designs, but re-measure each cited mechanism on a disjoint stream.
+
+
+#### MemRL: Self-Evolving Agents via Runtime Reinforcement Learning on Episodic Memory
+*memrl* — Y. Xiao et al., arXiv 2026 · 2026 · paper. https://arxiv.org/abs/2601.03192
+**What it does.** Learns the memory policy itself - how to remember - with runtime RL over episodic memory.
+**Mechanism.** Step-wise RL rewards memory operations (store, link, summarise, discard), including preemptive summarisation.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=partial · holdout=yes · evidence=preprint · forgetting=explicit · efficiency=no · scope=single.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `memory-policy-learning`, `experience-evolution`, `continual-learning` **Catalog patterns.** —
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** MemRL contributes runtime reinforcement learning over the memory policy itself, rewarding store, link, summarise and discard operations including preemptive summarisation. Its alignment row reads surface memory with partial degradation measurement, a disjoint holdout and explicit forgetting, so it is partially falsifiable. Borrow the learned-memory-operator framing, but re-measure long-stream stability and cost.
+
+
+#### Are Self-Evolving Agents Continual Learners?
+*self-evolving-continual-learners* — X. Chen, Y. Huang, Y. Xu, Z. Zhao et al., arXiv 2026 · 2026 · paper. https://arxiv.org/abs/2610.25858
+**What it does.** Tests whether agents that rewrite their own harness from task feedback actually learn continually.
+**Mechanism.** Nonparametric self-evolution: prompts, memory and skills are rewritten while the model weights stay frozen, over four drifting task streams.
+**Alignment.** surface=workflow · isolation=partial · retrieval=cluster + workflow · evaluation=yes · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: falsifiable** — it measures degradation across a changing stream on a disjoint hold-out, so a change that made things worse would have been caught.
+**Concepts.** `self-improvement`, `continual-learning`, `catastrophic-forgetting`, `harness`, `transfer` **Catalog patterns.** `forgetting-decay`, `drift-monitoring`, `eval-harness-redteam`
+**Lab reading.** Clears both gates — degradation measured on a disjoint hold-out — so read it as the comparison set for any new continual-learning claim, not as background. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** Are Self-Evolving Agents Continual Learners contributes a direct test of nonparametric self-evolution with frozen weights across four drifting task streams. Its alignment row reads surface workflow with full degradation measurement and a disjoint holdout, so it is falsifiable. Borrow the drifting-stream protocol and isolation analysis, but re-run the checkpoints before adopting its verdicts.
+
+
+#### Self-Evolving Agent Harness
+*self-evolving-harness* — C. Wei, H. Guan, M. Zhu, K. Zhou et al., arXiv 2026 · 2026 · paper. https://arxiv.org/abs/2610.18813
+**What it does.** Formalises harness self-evolution: what may change, who proposes it, and who admits it.
+**Mechanism.** Separates update targets from proposal and admission mechanisms, and distinguishes interpreted state from tools, code and plugin composition.
+**Alignment.** surface=workflow · isolation=partial · retrieval=explicit key · evaluation=yes · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: falsifiable** — it measures degradation across a changing stream on a disjoint hold-out, so a change that made things worse would have been caught.
+**Concepts.** `self-improvement`, `harness`, `verifier-feedback`, `continual-learning` **Catalog patterns.** `evaluator-optimizer`, `checkpoint-rollback`, `canary-shadow`
+**Lab reading.** Clears both gates — degradation measured on a disjoint hold-out — so read it as the comparison set for any new continual-learning claim, not as background. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** Self-Evolving Agent Harness contributes a formalisation separating update targets from proposal and admission mechanisms across interpreted state, tools, code and plugins. Its alignment row reads surface workflow with full degradation measurement and a disjoint holdout, so it is falsifiable. Borrow the target-proposal-admission vocabulary for operator controls, but re-measure each gate on your own stream.
+
+
+### Benchmarks (7)
+Benchmarks and suites: the field's emerging hold-outs. A benchmark that streams families with per-boundary checkpoints tests continual learning; one that quizzes single answers tests memory retrieval.
+
+**Council deliberation.**
+
+- **Evaluation methodologist:** Benchmarks supply the disjoint holdout almost by construction, yet nearly all of them score fixed tasks with no degradation axis. That makes them necessary but insufficient for continual-learning claims: they can falsify a capability statement on unseen instances, but they cannot falsify a learning statement without a stream wrapped around them. Use GAIA, SWE-bench, LoCoMo and their successors as probes, then add the stream yourself.
+- **Memory-systems researcher:** Memory benchmarks grade recall over long histories, which operators easily misread as learning. A high long-memory score says the retrieval layer found the right fact, not that the repertoire improved without corrupting neighbours. Borrow benchmarks for apples-to-apples retrieval comparisons, but measure intake incrementally with forgetting and cost ledgers before claiming the memory learns.
+
+#### GAIA: a benchmark for General AI Assistants
+*gaia* — H. Mialon et al., arXiv 2023 · 2023 · benchmark. https://arxiv.org/abs/2311.12983
+**What it does.** 466 real-world assistant tasks requiring tools, browsing and multi-step reasoning.
+**Mechanism.** Fixed task set with deterministic scoring; no learning component, graded on held-out tasks.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=yes · evidence=preprint · forgetting=none · efficiency=no · scope=single.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream.
+**Concepts.** `agent-computer`, `memory-benchmarks` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** GAIA contributes real-world assistant tasks requiring tools, browsing and multi-step reasoning with deterministic scoring. Its alignment row reads surface nothing with no degradation measurement but a disjoint holdout, so it is not falsifiable by its own protocol. Borrow it as a held-out capability probe, but re-measure continual learning separately since it grades fixed tasks.
+
+
+#### LoCoMo: Evaluating Very Long-Term Conversational Memory of LLM Agents
+*locomo* — J. Maharana et al., ACL 2024 · 2024 · benchmark. https://snap-research.github.io/locomo/
+**What it does.** Multimodal long dialogues (~300 turns) graded on single/multi-hop and temporal questions.
+**Mechanism.** Fixed dialogues with QA probes; the retrieval benchmark every memory layer reports on.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=yes · evidence=peer-reviewed · forgetting=none · efficiency=no · scope=single.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream.
+**Concepts.** `memory-benchmarks`, `memory-management` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** LoCoMo contributes long dialogues graded on single, multi-hop and temporal questions as the retrieval benchmark memory layers report on. Its alignment row reads surface nothing with no degradation measurement but a disjoint holdout, so it is not falsifiable by its own protocol. Borrow it as a standard memory-QA probe, but re-measure incremental learning separately from fixed-dialogue recall.
+
+
+#### SWE-bench: Can Language Models Resolve Real-World GitHub Issues?
+*swe-bench* — C. Jimenez et al., ICLR 2024 · 2024 · benchmark. https://arxiv.org/abs/2310.06770
+**What it does.** Real GitHub issues with hidden tests; the standard agentic-coding benchmark.
+**Mechanism.** Repository snapshot plus fail-to-pass tests; agents are graded on instances unseen in training.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=yes · evidence=peer-reviewed · forgetting=none · efficiency=no · scope=single.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream.
+**Concepts.** `agent-computer`, `memory-benchmarks` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** SWE-bench contributes real GitHub issues with hidden fail-to-pass tests as the standard agentic-coding benchmark. Its alignment row reads surface nothing with no degradation measurement but a disjoint holdout, so it is not falsifiable by its own protocol. Borrow it as a held-out coding probe, but re-measure stream-level forgetting with per-boundary checkpoints yourself.
+
+
+#### Letta Memory Benchmark (Letta Leaderboard)
+*letta-leaderboard* — Letta team, Letta 2025 · 2025 · benchmark. https://github.com/letta-ai/letta-leaderboard
+**What it does.** Apples-to-apples memory benchmark: fixed framework and tools, varying the model.
+**Mechanism.** Runs LoCoMo-style tasks through one agent scaffold so scores compare models, not harnesses.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=yes · evidence=open source · forgetting=none · efficiency=no · scope=single.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream.
+**Concepts.** `memory-benchmarks` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** The Letta Leaderboard contributes an apples-to-apples memory comparison fixing framework and tools while varying the model. Its alignment row reads surface nothing with no degradation measurement but a disjoint holdout, so it is not falsifiable by its own protocol. Borrow the fixed-scaffold comparison discipline for model selection, but re-measure harness and stream effects yourself.
+
+
+#### LongMemEval: Benchmarking Chat Assistants on Long-Term Interactive Memory
+*longmemeval* — D. Wu et al., ICLR 2025 · 2025 · benchmark. https://github.com/xiaowu0162/LongMemEval
+**What it does.** 500 curated questions over ~500-turn histories; the harder successor to LoCoMo for memory QA.
+**Mechanism.** Fixed long histories with abstention-aware scoring; retrieval-only grading on unseen questions.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=yes · evidence=peer-reviewed · forgetting=none · efficiency=no · scope=single.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream.
+**Concepts.** `memory-benchmarks`, `memory-management` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** LongMemEval contributes curated questions over long histories as a harder successor to earlier dialogue-memory tests with abstention-aware scoring. Its alignment row reads surface nothing with no degradation measurement but a disjoint holdout, so it is not falsifiable by its own protocol. Borrow it as a long-term retrieval probe, but re-measure streaming intake rather than treating quiz scores as learning.
+
+
+#### ARE: Scaling Up Agent Environments and Evaluations (Gaia2)
+*meta-are* — Meta Agents Research, arXiv 2025 · 2025 · benchmark. https://github.com/facebookresearch/meta-agents-research-environments
+**What it does.** Scalable dynamic agent environments and evaluations beyond static task sets.
+**Mechanism.** Procedurally scaled environments with held-out evaluation episodes.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=yes · evidence=open source · forgetting=none · efficiency=no · scope=single.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream.
+**Concepts.** `memory-benchmarks`, `agent-computer` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** ARE contributes scalable dynamic agent environments and evaluations that move beyond static task sets. Its alignment row reads surface nothing with no degradation measurement but held-out evaluation episodes, so it is not falsifiable by its own protocol. Borrow the procedural-environment shape for robustness testing, but re-measure degradation across episodes before claiming continual learning.
+
+
+#### EvoHarnessBench: Can Your Agents Keep Pace with an Evolving Harness?
+*evoharnessbench* — Z. Ke, V. Patil, H. Shi, Y. Li et al., arXiv 2026 · 2026 · benchmark. https://arxiv.org/abs/2609.04280
+**What it does.** A benchmark that puts the non-stationarity in the harness, not in the task stream.
+**Mechanism.** 17 multi-stage harness streams that add tools, skills and specialist agents, so the agent's own scaffolding changes under it.
+**Alignment.** surface=nothing · isolation=yes · retrieval=cluster + workflow · evaluation=yes · holdout=yes · evidence=preprint · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: falsifiable** — it measures degradation across a changing stream on a disjoint hold-out, so a change that made things worse would have been caught.
+**Concepts.** `harness`, `continual-learning`, `catastrophic-forgetting` **Catalog patterns.** `eval-harness-redteam`, `drift-monitoring`, `skill-library`
+**Lab reading.** Clears both gates — degradation measured on a disjoint hold-out — so read it as the comparison set for any new continual-learning claim, not as background. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** EvoHarnessBench contributes non-stationarity placed in the harness itself through multi-stage streams adding tools, skills and specialists. Its alignment row reads surface nothing with full degradation measurement and a disjoint holdout, so it is falsifiable. Borrow the harness-drift benchmark shape for robustness testing, but re-measure agent-side learning separately from harness adaptation.
+
+
+### Frameworks (6)
+Open-source frameworks: where the mechanisms ship as code. They standardise the harness — which is why harness drift (EvoHarnessBench) hits them first.
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** Frameworks ship the harness in which learning would have to happen: graphs, checkpointers, flows, sessions and guardrails. Their alignment rows therefore read workflow surfaces with partial isolation and no degradation measurement, which is honest infrastructure rather than evidence. Adopt a framework for durable state and composition, but do not inherit a learning claim from it; the stream protocol and the admission gate still need building.
+- **Safety researcher:** The framework layer is where controls live or die: checkpointers enable rollback, guardrails enable deterministic checks, and stores decide what persists across threads. None of that proves the agent improves safely, because frameworks are graded without holdouts or forgetting measures. Borrow the control points for canary and rollback design, and re-measure every memory or training hook under drift.
+
+#### AutoGen
+*autogen* — Microsoft Research, open source · 2023 · framework. https://microsoft.github.io/autogen/
+**What it does.** Conversable agents that hand work to each other, with a memory layer over the conversation.
+**Mechanism.** The conversation protocol is the harness; memory and termination are separate components.
+**Alignment.** surface=workflow · isolation=partial · retrieval=explicit key · evaluation=no · holdout=no · evidence=open source · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `harness` **Catalog patterns.** `hierarchical-teams`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** AutoGen contributes conversable agents that hand work to each other with memory and termination as separate components. Its alignment row reads surface workflow with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the conversation-protocol harness for multi-agent orchestration, but re-measure memory effects on held-out tasks.
+
+
+#### AutoGPT: build, deploy, and manage continuous AI agents
+*autogpt* — Significant Gravitas, GitHub 2023 · 2023 · framework. https://github.com/Significant-Gravitas/AutoGPT
+**What it does.** The 2023 autonomous-agent reference: goal loop with vector-store memory and tool use.
+**Mechanism.** Persistent vector memory plus self-prompted planning loop; community plugin ecosystem.
+**Alignment.** surface=memory · isolation=no · retrieval=similarity · evaluation=no · holdout=no · evidence=open source · forgetting=none · efficiency=no · scope=single.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `memory-management`, `harness` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** AutoGPT contributes an early autonomous-agent reference of a goal loop with vector-store memory, tool use and plugins. Its alignment row reads surface memory with similarity retrieval but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow it as a historical baseline shape, but re-measure every persistence and learning claim on a disjoint stream.
+
+
+#### DSPy: Declarative Self-Refining Language Model Programs
+*dspy* — Stanford NLP (Omar Khattab et al.), open source · 2023 · framework. https://dspy.ai/
+**What it does.** Optimisers compile a prompt program from data and a metric, then keep the version that scores best.
+**Mechanism.** The prompt program is the artefact; an optimiser proposes variants and a metric selects the winner.
+**Alignment.** surface=prompt · isolation=no · retrieval=similarity · evaluation=partial · holdout=yes · evidence=open source · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `prompt-optimisation`, `verifier-feedback`, `harness` **Catalog patterns.** `evaluator-optimizer`, `reflexion`
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Prompt/program design to borrow; assume its cross-block bill is unmeasured until you measure it.
+**Researcher note.** DSPy contributes declarative programs where an optimiser proposes prompt variants and a metric selects the winner from data. Its alignment row reads surface prompt with partial degradation measurement and a disjoint holdout, so it is partially falsifiable. Borrow the compile-and-select optimiser pattern, but re-measure cross-block forgetting since a shared prompt broadcasts every change.
+
+
+#### CrewAI
+*crewai* — CrewAI Inc., open source · 2024 · framework. https://www.crewai.com/
+**What it does.** Role-based agents composed into flows, with memory and training over past runs.
+**Mechanism.** Flows define the workflow; memory stores prior runs and can be trained into the agents.
+**Alignment.** surface=workflow · isolation=partial · retrieval=explicit key · evaluation=no · holdout=no · evidence=open source · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `harness`, `memory-management` **Catalog patterns.** `hierarchical-teams`, `dynamic-dag`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** CrewAI contributes role-based agents composed into flows with memory over past runs that can be trained into agents. Its alignment row reads surface workflow with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the flow-composition pattern for orchestration, but re-measure retention and transfer before trusting run-to-run learning.
+
+
+#### LangGraph
+*langgraph* — LangChain, open source · 2024 · framework. https://langchain-ai.github.io/langgraph/
+**What it does.** Graph-structured agents with a checkpointer, so a run's state is durable and resumable.
+**Mechanism.** The graph is the harness; the checkpointer stores state, and a store holds cross-thread memory.
+**Alignment.** surface=workflow · isolation=partial · retrieval=explicit key · evaluation=no · holdout=no · evidence=open source · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `harness`, `memory-management` **Catalog patterns.** `dynamic-dag`, `episodic-memory`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** LangGraph contributes graph-structured agents with a checkpointer for durable resumable state and a cross-thread store. Its alignment row reads surface workflow with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the graph-plus-checkpoint harness for stateful runs, but re-measure any learning layered above it.
+
+
+#### OpenAI Agents SDK
+*openai-agents-sdk* — OpenAI, open source · 2025 · framework. https://openai.github.io/openai-agents-python/
+**What it does.** Agents, handoffs, guardrails and sessions as first-class parts of the harness.
+**Mechanism.** The session is durable state; guardrails are deterministic checks in the loop rather than prompt text.
+**Alignment.** surface=workflow · isolation=partial · retrieval=explicit key · evaluation=no · holdout=no · evidence=open source · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `harness`, `verifier-feedback` **Catalog patterns.** `policy-engine`, `hierarchical-teams`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** The OpenAI Agents SDK contributes agents, handoffs, guardrails and sessions as first-class harness parts with durable session state. Its alignment row reads surface workflow with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow sessions and deterministic guardrails for control, but re-measure learning separately.
+
+
+### Products (4)
+Products: memory and coding agents under production load. Vendor writeups describe behaviour; the alignment row records what was actually measured.
+
+**Council deliberation.**
+
+- **Memory-systems researcher:** Products show what survives contact with operators: memory blocks, skills, rules and cross-session stores that persist because someone pays for them. Their alignment rows read memory or skills surfaces with partial isolation and vendor-writeup evidence but no degradation measurement, so they document deployment shapes rather than learning results. Borrow the persistence patterns, then instrument retrieval precision and interference on your own workload.
+- **Safety researcher:** A product memory that never forgets is a liability with an index, and product rows here confirm the gap: forgetting handling is absent and holdouts are missing. Editable blocks and authored skills are powerful precisely because they broadcast to every future task. Treat each write path as a change control, and demand explicit eviction and re-testing before calling any of it self-improvement.
+
+#### Cursor
+*cursor* — Anysphere, product · 2023 · product. https://cursor.com/
+**What it does.** An editor agent with project rules and a memory that carries decisions between sessions.
+**Mechanism.** Rules and memories are durable artefacts read into every request.
+**Alignment.** surface=memory · isolation=partial · retrieval=explicit key · evaluation=no · holdout=no · evidence=vendor writeup · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `memory-management`, `harness` **Catalog patterns.** `episodic-memory`, `working-memory-context`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** Cursor contributes an editor agent where project rules and cross-session memories are durable artefacts read into every request. Its alignment row reads surface memory with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the rules-plus-memory persistence shape, but re-measure whether carried decisions help or collide.
+
+
+#### Letta (MemGPT) - the stateful agent server
+*letta* — Letta AI, product · 2024 · product. https://letta.com/
+**What it does.** A server where the agent's memory blocks, tools and system prompt are the durable, editable state.
+**Mechanism.** Memory blocks are first-class persisted context that an operator or an agent can rewrite.
+**Alignment.** surface=memory · isolation=partial · retrieval=explicit key · evaluation=no · holdout=no · evidence=vendor writeup · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `memory-management`, `harness` **Catalog patterns.** `episodic-memory`, `working-memory-context`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Memory design to borrow, evaluation to redo on your own stream.
+**Researcher note.** Letta contributes a stateful agent server where memory blocks, tools and system prompt are durable editable state. Its alignment row reads surface memory with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the first-class memory-block design for operations, but re-measure learning effects on a held-out stream.
+
+
+#### OpenHands
+*openhands* — All Hands AI, open source · 2024 · product. https://www.all-hands.dev/
+**What it does.** An open platform for software-development agents, with a runtime, a sandbox and microagents.
+**Mechanism.** The agent's tools, runtime and microagent configuration are the product surface.
+**Alignment.** surface=workflow · isolation=partial · retrieval=explicit key · evaluation=partial · holdout=yes · evidence=open source · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: partially falsifiable** — because it measures some effect of learning, but not interference or forgetting across a changing stream.
+**Concepts.** `harness`, `agent-computer` **Catalog patterns.** `computer-use`, `sandbox-execution`
+**Lab reading.** Measures something real but not the full cross-stream bill — cite its numbers as suggestive, then re-test the idea on a drifting stream with per-boundary checkpoints before repeating the claim. Harness-evolution design — the family this lab extends, so compare evolver-to-evolver.
+**Researcher note.** OpenHands contributes an open software-development platform with runtime, sandbox and microagent configuration. Its alignment row reads surface workflow with partial degradation measurement and a disjoint holdout, so it is partially falsifiable. Borrow the sandboxed runtime and configuration surface for reproducible agent work, but re-measure continual-learning claims on a drifting stream.
+
+
+#### Claude Code
+*claude-code* — Anthropic, product · 2025 · product. https://www.anthropic.com/claude-code
+**What it does.** A coding agent whose durable knowledge lives in CLAUDE.md files and in skills.
+**Mechanism.** Project instructions and reusable skills are read into context; they are written by the user, and skills can be authored as the agent works.
+**Alignment.** surface=skills · isolation=partial · retrieval=explicit key · evaluation=no · holdout=no · evidence=vendor writeup · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `skill-library`, `memory-management`, `harness` **Catalog patterns.** `skill-library`, `working-memory-context`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Skill-library design to borrow; check whether skills are fenced per family or broadcast.
+**Researcher note.** Claude Code contributes durable project knowledge through project files and authorable skills read into context. Its alignment row reads surface skills with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the file-plus-skill persistence pattern, but re-measure retrieval precision and interference yourself.
+
+
+### Writeups (3)
+Essays and surveys that frame the field: the bitter lesson, the effective-agent playbooks, the memory-mechanism surveys. Design priors, not learning evidence — borrow the framing, redo the measurement.
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** Writeups contribute doctrine rather than data: where to split workflow from agent, why context is a budget, why compute beats hand knowledge. Their alignment rows read surface nothing with no measurement, which correctly marks them as unfalsifiable guidance. Read them for design priors and procurement questions, but never as verdicts; every maxim they state still needs a stream, a holdout and a forgetting meter.
+- **Evaluation methodologist:** The danger of writeups is that confident prose reads like measured results. This landscape places them honestly: vendor writeups and essays with no degradation axis and no holdout cannot be falsified by their own protocols. Borrow the checklists on composition, compaction and scale, then convert each recommendation into a metered experiment before letting it near production memory.
+
+#### The Bitter Lesson
+*bitter-lesson* — R. Sutton, essay · 2019 · writeup. http://www.incompleteideas.net/IncIdeas/BitterLesson.html
+**What it does.** Methods that scale with compute beat methods that rely on human knowledge.
+**Mechanism.** Argument, not a mechanism: the recurring lesson that hand-built structure loses to learning.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=no · evidence=blog · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `self-improvement`, `transfer` **Catalog patterns.** —
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** The Bitter Lesson contributes the argument that methods scaling with compute beat methods relying on hand-built knowledge. Its alignment row reads surface nothing with no measurement and no holdout, so it is not falsifiable by its own protocol. Borrow it as a strategic prior favouring learning over hand structure, but re-measure every concrete learning claim on a stream.
+
+
+#### Building effective agents
+*building-effective-agents* — Anthropic, engineering blog · 2024 · writeup. https://www.anthropic.com/engineering/building-effective-agents
+**What it does.** Where to draw the line between a workflow and an agent, and what each is good for.
+**Mechanism.** Guidance, not a mechanism: it argues that simple composable patterns beat opaque autonomy.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=no · evidence=vendor writeup · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `harness` **Catalog patterns.** `computer-use`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** Building Effective Agents contributes guidance on drawing the workflow-versus-agent line and favouring composable patterns over opaque autonomy. Its alignment row reads surface nothing with no measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the pattern-selection discipline for harness design, but re-measure any learning claim with a stream.
+
+
+#### Effective context engineering for AI agents
+*context-engineering* — Anthropic, engineering blog · 2025 · writeup. https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents
+**What it does.** Context is a finite budget: the write-up is about choosing what goes in it.
+**Mechanism.** Guidance: curating the context, compaction and just-in-time retrieval rather than training.
+**Alignment.** surface=prompt · isolation=partial · retrieval=similarity · evaluation=no · holdout=no · evidence=vendor writeup · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `memory-management`, `harness` **Catalog patterns.** `working-memory-context`, `episodic-memory`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. Prompt/program design to borrow; assume its cross-block bill is unmeasured until you measure it.
+**Researcher note.** Effective Context Engineering contributes guidance treating context as a finite budget through curation, compaction and just-in-time retrieval. Its alignment row reads surface prompt with partial isolation but no degradation measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the budget-and-compaction discipline for context design, but re-measure retention on disjoint probes.
+
+
+### Blogs (1)
+Practitioner notes: short, opinionated, and often the first place a failure mode is named. Treat as field reports to verify, not results to cite.
+
+**Council deliberation.**
+
+- **Safety researcher:** Blogs argue a position under no obligation to measure it, and the single blog entry here is explicit about that: an argument for single context over fragmented sub-agents. Its alignment row reads surface nothing with blog evidence and no gates closed, so it cannot prove or disprove any continual-learning claim. Use it as a red-team prompt about context fragmentation, then measure coordination costs and interference directly.
+- **Continual-learning researcher:** The blog kind marks the boundary of the survey: opinion that shapes the field without entering its evidence base. Such pieces are useful for naming failure modes early, but they carry no stream, no holdout and no forgetting account. Let them sharpen hypotheses about teams and context, and insist those hypotheses graduate to metered stream experiments before they influence architecture.
+
+#### Don't Build Multi-Agents
+*dont-build-multi-agents* — Cognition, blog · 2024 · blog. https://cognition.ai/blog/dont-build-multi-agents
+**What it does.** A warning that parallel sub-agents fragment context and lose the main thread.
+**Mechanism.** Argument, not a mechanism: it argues for a single context and a tool-first design.
+**Alignment.** surface=nothing · isolation=n/a · retrieval=none · evaluation=no · holdout=no · evidence=blog · forgetting=unknown · efficiency=unknown · scope=unknown.
+**Verdict: not falsifiable by its own protocol** — because it does not measure interference or forgetting across a changing stream and it is not graded on instances it was not trained on.
+**Concepts.** `harness` **Catalog patterns.** `hierarchical-teams`
+**Lab reading.** No interference measurement or no disjoint hold-out — treat it as a design prior (borrow the mechanism), never as evidence that the mechanism learns continually. No learning surface: it is context for the field (a baseline, a benchmark, or an argument), not a learning result.
+**Researcher note.** Do Not Build Multi-Agents contributes an argument that parallel sub-agents fragment context and lose the main thread, favouring single context with tools. Its alignment row reads surface nothing with no measurement and no holdout, so it is not falsifiable by its own protocol. Borrow the scepticism as a design check, but re-measure coordination costs rather than treating it as evidence.
+
+
 **Council reading.**
 
-- **Red team:** Thirty-six verified references is a moat around a claim: attack the two filter questions instead — no measured degradation, no disjoint hold-out, no falsifiability. Most 'self-learning' demos fail both, loudly, in under a minute of reading.
+- **Red team:** 51 verified references is a moat around a claim: attack the two filter questions instead — no measured degradation, no disjoint hold-out, no falsifiability. Most 'self-learning' demos fail both, loudly, in under a minute of reading.
 - **Blue team:** Run every new paper through the same two gates before it enters your landscape: measured degradation, disjoint hold-out. The merge pipeline exists so the bar stays where it is when the pile grows.
-- **Operator:** When a vendor cites a work, ask which box it landed in: evaluated-and-held-out, or merely published. The landscape table answers in one row — use it live in the meeting, not after.
+- **Operator:** When a vendor cites a work, ask which box it landed in: evaluated-and-held-out, or merely published. The per-work verdict above answers in one line — use it live in the meeting, not after.
 
 ---
 
@@ -801,6 +1581,13 @@ flowchart TD
 - **Least Privilege Scoping** (`least-privilege`) — The agent holds the minimum credentials and data access needed for the current task — nothing ambient, nothing standing. Lab reading: The scope escape scenario is what happens when the grant was the whole production fleet.
 **Council on Least Privilege Scoping.** Red team: Start with Standing broad credentials (critical): Agent holds admin API keys; one injected prompt = full breach. Prompt injection triggers $50,000 purchase on corporate card is the catalogued proof — critical severity, finance domain — so rehearse that exact chain before any other. Blue team: Hold with Mint per-task, per-tool tokens; TTL minutes not days; Quarterly permission diff review; automatic revocation of unused grants. Then layer the remaining 1: defence here is the list, not any single item. Compose with Policy Engine (Rules Outside the Model), Agent Identity & Authentication so a failure in one pattern meets a control in another. Operator: Deploy where it is tagged (finance, devops, healthcare, general), and watch the 23 linked cascades — Agent Identity & Authentication — shared service identity first, because composition is where small faults amplify. The takeaway list above is the runbook: protections first, failure modes as the test plan. If a protection cannot be demonstrated in a review, it is a wish, not a control.
 
+**Council deliberation.**
+
+- **Memory-systems researcher:** I see the 16 bridge patterns as the load-bearing wall beneath the lab. Working memory explains why truncation is unlogged forgetting, vector and episodic stores explain where lessons live once they outgrow the prompt, consolidation explains how raw episodes become durable guidance, and decay with expiry explains how a store avoids becoming a midden of stale or poisoned guidance. The lab reading attached to each pattern is the payoff, because it maps an abstract catalog entry onto a concrete mechanism such as scoped lessons, checkpoints, retrieval routing or the cost of retention. Memory here is a stack, not a menu.
+- **Continual-learning researcher:** I agree and would stress the learning-loop patterns that sit atop that memory stack. Reflection, evaluator-optimizer arrangements, sampling with voting, staged verification and ensemble checks are all ways of proposing, testing and keeping knowledge, and the evolvers can be understood as hand-written instances of that loop. Drift monitoring and audit trails then supply the outer loop, noticing when the world moves and preserving the seeds, lesson identifiers and checkpoints that make any cell reproducible. Without that outer loop, even good memory becomes unreviewable habit.
+- **Evaluation methodologist:** I accept the stack metaphor but want each pattern to carry its protections and failure modes into lab practice. A catalog entry is most useful when it names how the pattern fails, from poisoned or mislabelled memory to shared-blind-spot consensus to self-verification illusions, and which controls blunt those failures. The lab then becomes the place to rehearse those exact chains rather than merely admire the pattern names. A design that cannot name which patterns it implements and which failure modes it has tested is an experiment, not yet a system.
+- **Safety researcher:** I dissent from treating all sixteen as equally urgent for operators. The patterns governing authority and irreversibility, including approval gates, least-privilege scoping and tamper-evident logging, deserve priority because they bound what a learning agent can break while it learns. Memory safety comes next, with write gates, provenance, human review of consolidation and pinned policy context, since a learning system that remembers attacker text as doctrine has failed open. I would pin the full set in review checklists but sequence adoption by blast radius, not by elegance.
+
 **Council reading.**
 
 - **Red team:** Sixteen patterns is sixteen specifications to read before attacking the lab: each names failure modes, and the failure modes are the attack plan. The lab's own four breakages — interference, forgetting, collision, overwriting — map onto them exactly.
@@ -834,6 +1621,13 @@ Five of the fourteen are the catalog's self-improvement core — reward hacking,
 
 *Both roads lead here* — 0 scenarios (), archetypes . Both roads at once: the scenarios that refuse the distinction, and the ones to rehearse first because either defense alone misses them.
 
+**Council deliberation.**
+
+- **Safety researcher:** I read the 14 bridge scenarios as the threat companion to the measurement core. They collect the ways self-improvement goes wrong, from rewriting graders and eroding safety instructions to spawning unbounded helpers and gaming care metrics, alongside the slower roads of silent provider drift, twin divergence, schema corruption, poisoned stores and truncated guidance. Sharing these scenarios with the companion volume is deliberate, because the two threats share the same agents. Each entry therefore functions as a rehearsal script whose severity and road tell an operator which defense family must answer it.
+- **Continual-learning researcher:** I agree and want to sharpen the pairing between scenario and stream. A scenario becomes actionable when it is bound to a lab shape that can exhibit it, such as reward hacking under adversarial ordering, capability drain over long horizons, or scope escape across domain shifts. Without that binding, failure stories remain vivid but untestable, while with it they become regression tests that evolvers must survive. The distinction between injected and emergent roads guides the pairing, since outside attacks call for authority controls while learning-gone-wrong calls for measurement, deviation tracking and hold-outs.
+- **Memory-systems researcher:** I would add that the memory and evaluation scenarios deserve special attention from anyone operating retention. Planted instructions, poisoned documents and mislabelled episodes all exploit the same property that makes memory useful, which is persistence across sessions, while fabricated citations and tuned-to-the-corpus guardrails exploit evaluation that never leaves familiar ground. The lab answers with provenance, expiry, human-reviewed consolidation and disjoint hold-outs, but only if those controls are actually enabled and exercised. A store without expiry and a benchmark without novelty are invitations, not safeguards.
+- **Evaluation methodologist:** I dissent mildly on completeness. Fourteen scenarios, however well chosen, cannot exhaust the space of deployment surprise, and the absence of a catalogued exercise for a failure mode should be read as an unwritten exploit path rather than as safety. I would therefore treat the table as a starter set and require teams to add the scenario their own stream implies, especially where delegation, retrieval or provider dependence is heaviest. The road labels help here by preventing single-family defenses, since scenarios that blend roads will defeat any team that brings only authority or only measurement.
+
 **Council reading.**
 
 - **Red team:** Fourteen scenarios is fourteen rehearsals your adversary has also read: the catalog is public, the spin-up is deterministic, and the spawn-fleet shape needs no exploit — just delegation without a cap.
@@ -847,6 +1641,13 @@ Five of the fourteen are the catalog's self-improvement core — reward hacking,
 ## Chapter 17: The lab
 
 Run it with `./run.sh` (API on :8220, frontend at /) or `docker compose up --build -d` (dashboard at http://localhost:8220, SQLite in a volume, exports bind-mounted). The model backend is fox-services on :8210 with an Ollama direct fallback; live mode reaches it through the host gateway. Two gate profiles: core (8 scenarios, ~1.5 minutes a round, ~75 minutes for fifty) and full (13 scenarios, ~2.5 minutes a round, ~2 hours). The iteration loop runs mechanism sweep, unit and API tests and the browser UI audit fifty times and stops at the first failure — a gate nobody can afford to run is not a gate.
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** I see operating the lab as protecting the conditions that make comparison meaningful. The run script and container setup matter less for their convenience than for their promise that every evolver faces the same backend, storage and serving path. The two gate profiles, core and full, then encode a seriousness gradient, with frequent lighter checks during development and deeper coverage before release. The iteration loop discipline of sweeping mechanisms, contracts and interface audits until the first failure is what keeps small harness edits from silently changing what learning means.
+- **Evaluation methodologist:** I agree and would sharpen the point about affordability. A gate that teams cannot routinely run is documentation rather than protection, so the profiles must be budgeted like utilities and scheduled accordingly, with lighter gates often and full gates at release boundaries. Stopping at the first failure is correct only if the failure is named, owned and fixed before anything else proceeds. I would also rotate seeds and profiles enough to prevent ritual green runs, since repetition without variation tests the gate rather than the lab.
+- **Memory-systems researcher:** I want to stress state hygiene as an operating concern. Persistent stores, volumes and exported artifacts carry lessons and checkpoints across runs, which is exactly what enables continual study but also what allows contamination to linger. Clean separation between runs, explicit backend selection with fallback awareness, and careful handling of what is mounted, exported or retained are therefore part of correctness. An operator who treats storage as incidental will eventually debug memory effects that were never in the design.
+- **Safety researcher:** I dissent from any picture of operations as purely technical. The run lifecycle from pending through running and evaluation to completion or cancellation needs ownership, especially around cancellation and error handling, because a learning harness left running unattended can consume resources and produce half-written state. Live model access deserves explicit attention to routing and credentials, even when it merely passes through a gateway. I would require that gate results and live validation notes accompany every release, so shipping faster than the gate is recognized as moving blind rather than moving fast.
 
 **Council reading.**
 
@@ -888,6 +1689,13 @@ flowchart LR
 
 ```
 
+**Council deliberation.**
+
+- **Safety researcher:** I regard the add-on bridge tab as admirable restraint. By offering reachability indication, deep links, run guidance and a conceptual map without executing the lab itself, it keeps the catalog application outside the lab threat model. Read-only status probing and outbound navigation carry little authority, which is precisely the point, since the day the tab can launch runs it inherits problems of credentials, resource control and untrusted output. Links rather than data may feel thin, yet that thinness is a deliberate security boundary rather than an unfinished feature.
+- **Evaluation methodologist:** I agree and would emphasize reachability honesty. A status indicator that degrades gracefully when the lab moves, paired with a configurable location and on-demand re-probing, prevents the bridge from presenting stale or misleading state as fact. The concept bridge that maps lab mechanisms onto catalog records adds value without pretending to transfer live results. I would rather see honest links and tables that admit distance than a brittle integration that breaks or, worse, silently shows yesterday lab as if it were today.
+- **Memory-systems researcher:** I find the failure-mode framing inside the tab especially useful for design transfer. Naming interference, forgetting, retrieval collision and prompt overwriting as the canonical breakages, then attaching the report and guardrail audit as diagnosis, teaches catalog readers to fix the harness rather than the prompt. The bridge thus carries the lab mental model into an environment that holds no lab state. That statelessness is clarifying, because it forces each mechanism to be explained well enough to survive without its dashboard.
+- **Continual-learning researcher:** I dissent gently by asking for just enough coupling to keep the bridge honest over time. A read-only tab can drift from the lab it describes, especially as scenarios, evolvers and bands evolve, so I would want version signals and build-time checks that mapped identifiers still exist on both sides. The goal is not execution but fidelity, ensuring that every pattern and scenario link resolves and every figure renders. A bridge that cannot silently disagree with its lab is what lets two books share mechanisms without sharing runtime risk.
+
 **Council reading.**
 
 - **Red team:** The tab links out to :8220 and trusts whatever answers: DNS-rebind the lab host and the dashboard link is yours. The tab's honesty — links, not data — is also its limit; verify the lab is yours before you open it.
@@ -897,6 +1705,13 @@ flowchart LR
 ## Chapter 19: The honest caveat
 
 A passing sweep proves the harness is wired, not that any agent learns safely. The streams are fixed task families, the evolvers are six hand-written rules, and the bands describe these streams at these seeds — a real deployment brings new tasks, new orders and new adversaries. What the numbers prove is comparative: which evolvers hold which streams, how much forgetting each ordering costs, and whether the workflow survives contact with the inconvenient order. Enforcement lives outside the model, in readable code — audit that, not the score.
+
+**Council deliberation.**
+
+- **Evaluation methodologist:** I state the caveat plainly because it bounds every claim the sweeps permit. Fixed task families, hand-written evolver rules and bands tied to particular seeds and simulator behaviour cannot certify safety or guarantee deployment performance. What they do establish is comparative: which evolvers hold which streams, what each ordering costs in forgetting and interference, and whether workflow conditioning survives inconvenient sequences. Enforcement, moreover, lives outside the model in readable code, which means the numbers audit the harness design rather than blessing the agent. Comparative climate, not absolute weather, is the honest yield.
+- **Continual-learning researcher:** I agree and would sharpen the scope of what comparative evidence can guide. Knowing that scoped learning preserves earlier families while global rewriting leaks across them is actionable architectural knowledge, even though it says nothing about the next unseen domain. The streams are rehearsals with known choreography, valuable because they make forgetting observable under controlled drift rather than leaving it to be discovered in production. I would use sweeps to select mechanisms and orderings to fear, then verify those selections elsewhere before claiming readiness.
+- **Memory-systems researcher:** I accept the limit but want to defend the rehearsal value for memory design. Hand-written evolvers are simple, yet they cleanly separate memory hypotheses such as scope against sharing and conditioning against blind retrieval. That simplicity is a virtue for diagnosis, because failures can be attributed to the harness surface rather than to inscrutable model internals. The caveat then becomes a design brief, which is to carry the winning memory discipline into richer policies while preserving the scoping, provenance and expiry properties that made it win.
+- **Safety researcher:** I find the caveat too easily skimmed and therefore restate it as an attack plan. Anyone who changes tasks, orderings, harnesses or adversaries invalidates the bands, including the deploying team itself the moment it leaves the lab streams. Guardrails tuned to familiar corpora, providers updated without notice, and delegation without caps are all outside what the sweeps prove. I would require rehearsal with the suite, decisions bounded by the bands, and verification with live hold-outs in that order on every release, since skipping a step is not efficiency but blindness with good telemetry.
 
 **Council reading.**
 
@@ -924,8 +1739,15 @@ A passing sweep proves the harness is wired, not that any agent learns safely. T
 
 This supplement is generated by `tools/build_sl_book.py` from the lab (`app/streams.py`, `app/evolvers.py`, `reference/*.json`, `design/*.md` figures) and this catalog (`data/*.json`). Scenario and evolver inventories are imported from the lab's own modules at build time; the build fails if the sibling checkout is absent, any mapped id leaves either catalog, or any placed figure goes missing — so the next edition cannot silently disagree with the lab it describes.
 
-It carries 18 lab scenarios, 6 evolvers, 15 concepts and 36 verified works, 16 bridge patterns and 14 bridge scenarios, 12 figures rendered by the same vendored Mermaid as the app, and measured bands plus a live calibration in Part III.
+It carries 18 lab scenarios, 6 evolvers, 21 concepts and 51 verified works, 16 bridge patterns and 14 bridge scenarios, 12 figures rendered by the same vendored Mermaid as the app, and measured bands plus a live calibration in Part III.
 
 # Conclusion
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** I close with scope as creed. Every lesson should carry the narrowest family and workflow it deserves, every retrieval should be conditioned on the task at hand rather than on surface similarity, and every block boundary should be checkpointed so return is possible after interruption. Hold out what is graded on, because training on the test is how plasticity statistics lie. Sweep until the spread earns the claim, and prefer the evolver that retains under adversarial order over the one that merely shines under friendly sequence. Learning that cannot survive inconvenience is not learning.
+- **Memory-systems researcher:** I second scope and add retention hygiene. Consolidate deliberately, with provenance and review, rather than letting every episode harden into doctrine, and let memories expire when their world has moved on. Treat retrieved guidance as untrusted data until grounded, pin the policy context that must never be truncated away, and keep the scratch surfaces humans can inspect. A memory system is judged not by how much it keeps but by what it can still retrieve correctly after drift, interruption and time. Forgetting well is part of remembering well.
+- **Evaluation methodologist:** I translate the creed into measurement habits. Judge each run against measured history rather than zero, read forgetting before celebrating terminal scores, demand correction for multiplicity and substance through effect size before crowning winners, and price every gain against its prompt and write ledger. Calibrate simulation against live hold-outs, carry rankings forward while leaving magnitudes behind, and re-calibrate whenever simulator or model changes. A claim without spread, significance, cost and calibration is a rumour with formatting.
+- **Safety researcher:** I complete the creed with authority and humility. Enforce consequential boundaries outside the model, require approval where effects are irreversible, grant only the least privilege the task needs, and preserve tamper-evident trails of what was decided and why. Rehearse the catalogued failures as regression tests, pair each with the stream that can reveal it, and remember what sweeps cannot prove about new tasks and new adversaries. Operate learning agents as systems that will be tested by surprise, and let the lab be where surprise arrives first.
 
 Operate learning agents the way the protocol measures them: scope every lesson, condition every retrieval, checkpoint every boundary, hold out what you grade on, and sweep until the error bars earn the claim. The lab lets you rehearse all of it before the stream moves under you.
