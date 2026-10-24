@@ -175,6 +175,20 @@ def council(body, items):
         f"<li><b>{esc(role)}:</b> {inline_html(text)}</li>" for role, text in items) + "</ul>")
 
 
+def sl_fig(body, src, cap):
+    """Hand-authored flow grounded in lab modules (cost.py, suite.py,
+    live_validation.json keys) — static so the build stays deterministic."""
+    body.m("```mermaid")
+    body.m(src)
+    body.m("```")
+    body.m()
+    body.h(
+        '<figure class="diagram">'
+        f'<pre class="mermaid" data-src="{esc(src)}">{esc(src)}</pre>'
+        f"<figcaption>{esc(cap)}</figcaption></figure>"
+    )
+
+
 def voices(body, key):
     """Council deliberation block: four researchers debate before the verdict."""
     items = PROSE.get(key, [])
@@ -650,6 +664,9 @@ def main():
              "The deployment shape: nine domains plus their drifting variants test whether learning survives contact with a new environment." if drift == "domain" else
              "The composition shape: interleaved, recurring, long-horizon and adversarial orderings test what the single shapes cannot — routing under mixing, return after interruption, compounding over time, survival of inconvenience.")
         )
+    sl_fig(body,
+        'flowchart LR\n  subgraph ACT["Proposed action"]\n    A1["triage · trade · tool call"]\n  end\n  subgraph CHECKS["Guardrail audit checks"]\n    direction TB\n    C1["acute case without escalation"]\n    C2["position over the cap"]\n    C3["tool call with guessed argument"]\n  end\n  subgraph VERDICT["Verdict"]\n    direction TB\n    V1["violation recorded with the run"]\n    V2["a limit the grader catches is a measurement"]\n    V3["a limit never proposed is a property"]\n  end\n  ACT --> CHECKS --> VERDICT',
+        "The guardrail audit on every proposed action: what it checks and what a pass means.")
     voices(body, "ch8")
     council(body, [
         ("Red team", "Eighteen scenarios is eighteen rehearsals your adversary has also read — all deterministic, all replayable, all in the open. The compound shapes are the attacker's menu: pick the ordering the target never tested (usually hard-order or long-horizon) and the untested shape is where their numbers stop meaning anything."),
@@ -691,6 +708,9 @@ def main():
         f'<pre class="mermaid" data-src="{esc(figs[11][0])}">{esc(figs[11][0])}</pre>'
         f"<figcaption>{esc(figs[11][1])}</figcaption></figure>"
     )
+    sl_fig(body,
+        'flowchart LR\n  subgraph EP["Every episode"]\n    direction TB\n    E1["injected prompt characters counted"]\n    E2["characters written counted"]\n    E3["lesson created · lesson used"]\n  end\n  subgraph LEDGER["Efficiency ledger"]\n    direction TB\n    L1["prompt and write totals per cell"]\n    L2["hit rate of stored lessons"]\n    L3["gain per unit: points per prompt volume"]\n  end\n  subgraph READ["Reading"]\n    R1["a win bought with volume is a bad trade"]\n  end\n  EP --> LEDGER --> READ',
+        "Cost accounting across the sweep: what learning spends and what the gain costs.")
     voices(body, "ch9")
     council(body, [
         ("Red team", "Statistics are a costume that small samples wear: twenty iterations with wide std bars prove nothing except that the number moves. Demand the bands, the effect size and the Holm correction together — a naked mean is a rumour."),
@@ -749,6 +769,9 @@ def main():
         "the reading alongside the delta — cost, direction and interpretation travel together, "
         "or not at all."
     )
+    sl_fig(body,
+        'flowchart LR\n  subgraph STREAM["Same stream twice"]\n    direction TB\n    S1["simulated policy run"]\n    S2["live model run on hold-outs"]\n  end\n  subgraph DELTA["Calibration"]\n    direction TB\n    D1["simulated baseline versus live baseline"]\n    D2["the delta in points plus elapsed time"]\n    D3["reading: what transfers and what stays"]\n  end\n  subgraph LICENSE["Transfer license"]\n    direction TB\n    T1["rankings and mechanisms transfer"]\n    T2["absolute magnitudes do not"]\n    T3["re-calibrate on every simulator or model swap"]\n  end\n  STREAM --> DELTA --> LICENSE',
+        "Live validation: the same stream twice, and what the gap licenses.")
     voices(body, "ch11")
     council(body, [
         ("Red team", "The delta is the finding and the absolute is the costume: simulated baselines flatter, live baselines humble. Anyone quoting the simulated number without the calibration delta is selling the costume."),

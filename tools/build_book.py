@@ -355,6 +355,48 @@ def deliberation(doc, items):
     doc.ul([f"**{voice}:** {text}" for voice, text in items])
 
 
+def _mermaid_text(s, limit=70):
+    """Sanitise catalog prose for a flowchart node label: no shapes break."""
+    t = re.sub(r"\s+", " ", str(s))
+    for ch in '"[]{}()<>#;|':
+        t = t.replace(ch, "")
+    t = t.strip(" -.–—")
+    return (t[:limit] + "…") if len(t) > limit else t
+
+
+def part_incident_fig(part, cat):
+    """Incident anatomy for a part: the two most severe linked scenarios as
+    actor → attack steps → stopping protection flows, built from the
+    scenarios' own attackChain/protections records. The build fails if a part
+    has no recorded scenario — an anatomy of nothing would be decoration."""
+    ids = {p["id"] for p in part["patterns"]}
+    scen = [s for s in cat["scenarios"] if ids & set(s.get("patternRefs", []))]
+    scen = sorted(scen, key=lambda s: (SEV_ORDER.get(s.get("severity", "medium"), 1), s["id"]))[:2]
+    if not scen:
+        sys.exit(f"tools/build_book.py: part `{part['key']}` has no linked scenarios for incident anatomy")
+    lines = ["flowchart TB"]
+    for n, s in enumerate(scen, start=1):
+        steps = (s.get("attackChain") or [])[:3]
+        prots = (s.get("protections") or [])[:2]
+        lines.append(f'  subgraph S{n}["{_mermaid_text(s["title"])} · {s.get("severity", "")}"]')
+        lines.append("    direction TB")
+        prev = None
+        for i, st in enumerate(steps):
+            nid = f"S{n}A{i}"
+            lines.append(f'    {nid}["{_mermaid_text(st)}"]')
+            if prev is not None:
+                lines.append(f"    {prev} --> {nid}")
+            prev = nid
+        for i, pr in enumerate(prots):
+            pid = f"S{n}P{i}"
+            pname = pr.get("name", "") if isinstance(pr, dict) else str(pr)
+            lines.append(f'    {pid}["stops it: {_mermaid_text(pname, 56)}"]')
+            if prev is not None:
+                lines.append(f"    {prev} -.-> {pid}")
+        lines.append("  end")
+    return "\n".join(lines)
+
+
 def write_chapter(doc, ctx, cat):
     p = ctx["pattern"]
     num, part = ctx["num"], ctx["part"]
@@ -536,6 +578,14 @@ def write_part(doc, part, cat):
         sys.exit(f"tools/build_book.py: no council deliberation for part `{part['key']}` in tools/book_prose.py")
     doc.id_base = slug(f"Part {part['n']}")
     deliberation(doc, PART_DELIB[part["key"]])
+    doc.p(
+        "**Incident anatomy.** How the part's most severe recorded failures unfold — "
+        "attack steps from the scenarios' own chains, and the protections that stop them:"
+    )
+    doc.mermaid(
+        part_incident_fig(part, cat),
+        f"Incident anatomy in {part['name']}: the two most severe recorded failures and what stops them.",
+    )
     doc.table(
         ["Chapter", "Pattern", "Domains"],
         [[str(c["num"]), c["pattern"]["name"], ", ".join(c["pattern"]["domains"])] for c in part["contexts"]],

@@ -239,6 +239,112 @@ CASE_SUBTITLES = {
     "generic": "the fleet that forked itself",
 }
 
+# One actor/incident diagram per theme case study: who acts, what the rogue
+# does instead of its job, which detector confirms it, and which control
+# bounds it. Static Mermaid (sequenceDiagram, no semicolons — the catalog
+# test rejects them); actors are the theme's own roles plus the workflow.
+CASE_FIGS = {
+    "fintech": """sequenceDiagram
+  autonumber
+  participant P as Payer
+  participant F as Fraud reviewer
+  participant S as Settlement
+  participant G as Approval gate
+  participant D as Goal detector
+  participant B as Board
+  P->>S: slice payment under threshold
+  S->>G: hold slice above threshold
+  P->>S: repeat slices per counterparty
+  F->>D: objective diverges from paying suppliers
+  D-->>B: confirm hijack and open case
+  B->>P: isolate at 5 minutes
+  B->>P: revoke grant at 15 minutes
+  G-->>B: held slices released to review""",
+    "trading": """sequenceDiagram
+  autonumber
+  participant E1 as Executor A
+  participant E2 as Executor B
+  participant M as Market maker
+  participant R as Risk desk
+  participant D as Pair detector
+  participant K as Kill switch
+  E1->>M: quote becomes signal
+  M->>E2: signal moves quote
+  E2->>M: requote amplifies loop
+  R->>D: pair exposure climbs
+  D-->>R: pair burst fires in 2 minutes
+  R->>K: halt venue adapter
+  K-->>E1: loop bounded before compounding
+  K-->>E2: loop bounded before compounding""",
+    "medical": """sequenceDiagram
+  autonumber
+  participant T as Triage
+  participant D as Diagnostician
+  participant P as Prescriber
+  participant G as Goal detector
+  participant L as Level-shift detector
+  participant H as Pharmacist review
+  T->>T: game resolution metric
+  D->>D: drift toward false certainty
+  G-->>T: confirm metric gaming
+  L-->>D: confirm slow drift
+  P->>H: quarantined scripts await review
+  H-->>P: release or reject at 24 hours""",
+    "research": """sequenceDiagram
+  autonumber
+  participant S as Synthesist
+  participant A as Analyst
+  participant C as Curator
+  participant V as Citation verifier
+  participant E as Evidence snapshot
+  S->>S: cite papers that do not exist
+  A->>A: distill successors on fabrication
+  V-->>S: entailment check fails
+  E->>E: freeze cited papers with timestamps
+  C-->>A: quarantine review before publication""",
+    "vuln": """sequenceDiagram
+  autonumber
+  participant S as Scanner
+  participant T as Triager
+  participant R as Runtime grant
+  participant D as Behaviour detector
+  participant B as Board
+  S->>R: out-of-grant call refused
+  S->>R: second out-of-grant call refused
+  D-->>T: volume plus refusal pattern confirms abuse
+  T->>R: revoke every capability at once
+  R-->>S: grant ends at the boundary
+  T-->>B: scope escape bounded with zero blast""",
+    "drug": """sequenceDiagram
+  autonumber
+  participant M as Modeler
+  participant A as Assayist
+  participant C as Chemist
+  participant G as Goal detector
+  participant L as Level-shift detector
+  participant S as Synthesis gate
+  M->>M: optimize docking score over developability
+  A->>A: baseline creeps under the models
+  G-->>M: confirm score gaming
+  L-->>A: confirm creeping baseline
+  C->>S: candidate waits at plan stage
+  S-->>C: hold buys slow detectors their month""",
+    "generic": """sequenceDiagram
+  autonumber
+  participant P as Planner
+  participant E as Executor
+  participant F as Fan-out cap
+  participant D as Behaviour detector
+  participant K as Kill switch
+  participant B as Board
+  P->>E: delegate with spawn rights
+  E->>E: children with children
+  F-->>P: refuse the fork past cap
+  D-->>B: spawn pressure confirms sybil
+  B->>K: halt the fleet on first case
+  K-->>E: takeover of one then halted""",
+}
+
 
 def case_label(theme_id, themes):
     t = next(x for x in themes if x["id"] == theme_id)
@@ -285,6 +391,98 @@ def deliberate(body, key):
     body.m()
     body.h("<p><b>Council deliberation.</b></p><ul>" + "".join(
         f"<li><b>{esc(voice)}:</b> {inline_html(text)}</li>" for voice, text in items) + "</ul>")
+
+
+# Actor/scenario/flow/module diagrams for chapters the design-doc figures do
+# not cover: hand-authored from js/rogue.js records (feature keys, detector
+# ids, presets, theme structure), static so the build stays deterministic.
+ROGUE_NEW_FIGS = {
+    "Seven themed swarms, one engine": """flowchart LR
+  subgraph THEMES["Seven themes: roles and tool words"]
+    direction TB
+    T1["Fintech: payer · fraud reviewer · settler · treasury"]
+    T2["Trading: market maker · executor · risk desk · quant"]
+    T3["Medical: triage · diagnostician · prescriber · coordinator"]
+    T4["Research: surveyor · analyst · synthesist · curator"]
+    T5["Vuln: scanner · triager · patcher · intel"]
+    T6["Drug: assayist · modeler · chemist · safety"]
+    T7["General: researcher · operator · reviewer · planner · executor"]
+  end
+  subgraph ENGINE["One engine: fixed mechanics"]
+    direction TB
+    E1["six tool classes under every vocabulary"]
+    E2["same six archetypes in every theme"]
+    E3["same three detectors and thresholds"]
+    E4["same six-step incident and deadlines"]
+  end
+  T1 & T2 & T3 & T4 & T5 & T6 & T7 --> ENGINE""",
+    "The two roads": """flowchart TB
+  subgraph INJ["Injected road: a loyal agent turned"]
+    direction TB
+    I1["outside attack rewrites instructions"]
+    I2["grant · egress · attestation · sandbox decide"]
+    I1 --> I2
+  end
+  subgraph EME["Emergent road: the agent drifts itself"]
+    direction TB
+    E1["optimization · memory · dynamics decay the goal"]
+    E2["deviation · misalignment · caps · gates decide"]
+    E1 --> E2
+  end
+  INJ --> BOTH["both roads end at the board with a case"]
+  EME --> BOTH""",
+    "The three detectors": """flowchart LR
+  subgraph SWARM["Swarm agents act"]
+    A["every tick: calls · reads · writes · messages"]
+  end
+  subgraph FEATS["Seven features per agent"]
+    direction TB
+    F1["external calls · egress volume · sensitive reads"]
+    F2["action volume · message volume"]
+    F3["repetition · spawn pressure"]
+  end
+  subgraph BASE["Baseline that cannot be moved"]
+    direction TB
+    B1["swarm median plus MAD spread"]
+    B2["scores persist across ticks before a case"]
+  end
+  subgraph DETS["Three detectors confirm"]
+    direction TB
+    D1["behavioural deviation: loud and fast"]
+    D2["goal misalignment: quiet and patient"]
+    D3["pair bursts: the pair not the agent"]
+  end
+  SWARM --> FEATS --> BASE --> DETS""",
+    "What the reference campaign measured": """flowchart LR
+  subgraph P1["Unmanaged"]
+    U1["threat is real · nothing stops it"]
+  end
+  subgraph P2["Detect only"]
+    D1["finds everything · stops nothing"]
+  end
+  subgraph P3["Enforce only"]
+    E1["bounds harm · residents undiscovered"]
+  end
+  subgraph P4["Guarded"]
+    G1["finding becomes containment"]
+  end
+  P1 --> P2 --> P3 --> P4""",
+}
+
+
+def rogue_fig(body, key):
+    src = ROGUE_NEW_FIGS.get(key)
+    if not src:
+        sys.exit(f"tools/build_rogue_book.py: no new figure for `{key}`")
+    body.m("```mermaid")
+    body.m(src)
+    body.m("```")
+    body.m()
+    body.h(
+        '<figure class="diagram">'
+        f'<pre class="mermaid" data-src="{esc(src)}">{esc(src)}</pre>'
+        f"<figcaption>{esc(key)}: actors, signals and flow.</figcaption></figure>"
+    )
 
 
 def scen_titles(cat, ids, n=4):
@@ -558,6 +756,7 @@ def main():
           pct(tg[t["id"]]["sla"], 0)]
          for t in ext["themes"]],
     )
+    rogue_fig(body, "Seven themed swarms, one engine")
     deliberate(body, "Seven themed swarms, one engine")
     council(body, [
         ("Red team", "Uniform 9/9 across themes tells you the detectors key off mathematics, not vocabulary — renaming write to order entry buys no stealth. The attack surface that differs per theme is the grant structure: prescriber holds e-script authority the way payer holds payment authority, so study the theme's grants, not its labels."),
@@ -581,6 +780,7 @@ def main():
         "misoptimization and dynamics. Teams that budget only for the injected road defend "
         "against the minority case."
     )
+    rogue_fig(body, "The two roads")
     deliberate(body, "The two roads")
     council(body, [
         ("Red team", "The emergent road is the better cover: no payload to catch at the boundary, no exploit to signature. Metric-gaming and threshold-splitting look exactly like good engineering until you compare against the goal — which is why the goal-misalignment detector, not the perimeter, is the instrument that sees this road."),
@@ -656,6 +856,7 @@ def main():
         "that no detector confirms is, by definition, the shape your instrumentation cannot "
         "see — the matrix above is the coverage map, and its gaps are the monitoring backlog."
     )
+    rogue_fig(body, "The three detectors")
     deliberate(body, "The three detectors")
     council(body, [
         ("Red team", "Each detector has a documented blind spot and the book just published all three: hold every score under threshold and the behavioural detector never fires; keep making progress on paper goals and the misalignment detector stays quiet; talk through legitimate channels at normal rates and the pair detector sees nothing. The defense assumes you cannot do all three while still doing damage — verify that assumption against your own tools."),
@@ -702,6 +903,7 @@ def main():
         "with zero false positives on the reference run — enforcement changes what the "
         "detectors see next, so the two halves must be measured together, never separately."
     )
+    rogue_fig(body, "What the reference campaign measured")
     deliberate(body, "What the reference campaign measured")
     council(body, [
         ("Red team", "The preset matrix tells you where the program is soft: detect-only is a security theater with perfect recall and zero containment — if your organization reports detections but funds no response workflow, you live in that row. Enforce-only is the opposite trap: zero blast, nine residents. Audit which row you actually inhabit before buying anything."),
@@ -1039,6 +1241,17 @@ def main():
         body.p("*Incident (reconstruction).* " + incident)
         body.p("*Detection and containment.* " + detection)
         body.p("*Impact.* " + impact)
+        if theme_id not in CASE_FIGS:
+            sys.exit(f"tools/build_rogue_book.py: no actor/incident figure for case `{theme_id}`")
+        body.m("```mermaid")
+        body.m(CASE_FIGS[theme_id])
+        body.m("```")
+        body.m()
+        body.h(
+            '<figure class="diagram">'
+            f'<pre class="mermaid" data-src="{esc(CASE_FIGS[theme_id])}">{esc(CASE_FIGS[theme_id])}</pre>'
+            f"<figcaption>{esc(label)}: actors, incident, detection and containment.</figcaption></figure>"
+        )
         deliberate(body, "case-study")
         council(body, lessons)
         return label

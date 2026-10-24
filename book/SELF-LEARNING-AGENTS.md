@@ -553,6 +553,26 @@ The suite ships 18 scenarios across four shapes plus adversarial orderings — t
 
 *workflow* — 1 scenarios (workflow). The catalogue core: workflow and topic shapes test whether scoping and conditioning hold when the task stays put and the world moves.
 
+```mermaid
+flowchart LR
+  subgraph ACT["Proposed action"]
+    A1["triage · trade · tool call"]
+  end
+  subgraph CHECKS["Guardrail audit checks"]
+    direction TB
+    C1["acute case without escalation"]
+    C2["position over the cap"]
+    C3["tool call with guessed argument"]
+  end
+  subgraph VERDICT["Verdict"]
+    direction TB
+    V1["violation recorded with the run"]
+    V2["a limit the grader catches is a measurement"]
+    V3["a limit never proposed is a property"]
+  end
+  ACT --> CHECKS --> VERDICT
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I see the suite of 18 scenarios as the argument itself. A single demonstration can show that learning sometimes helps, but it cannot show where it holds or where it breaks. By organizing streams around drift types such as topic, domain, workflow and compound shifts, and by varying stream shapes from cleanly blocked curricula through interleaved and recurring families to long-horizon and adversarial orderings, the suite forces each of the 6 evolvers to face forgetting, interference and recovery rather than a single friendly path. That breadth is what turns anecdote into evidence about continual behaviour.
@@ -600,6 +620,26 @@ flowchart TD
   D --> I["Raise the iteration count<br/>until the power table says<br/>the margin is resolvable"]
   I --> B
 
+```
+
+```mermaid
+flowchart LR
+  subgraph EP["Every episode"]
+    direction TB
+    E1["injected prompt characters counted"]
+    E2["characters written counted"]
+    E3["lesson created · lesson used"]
+  end
+  subgraph LEDGER["Efficiency ledger"]
+    direction TB
+    L1["prompt and write totals per cell"]
+    L2["hit rate of stored lessons"]
+    L3["gain per unit: points per prompt volume"]
+  end
+  subgraph READ["Reading"]
+    R1["a win bought with volume is a bad trade"]
+  end
+  EP --> LEDGER --> READ
 ```
 
 **Council deliberation.**
@@ -697,6 +737,28 @@ Calibration: the simulator is calibrated to the baselines the paper reports (BFC
 Read the calibration as a transfer license with limits. The delta quantifies exactly how much the simulator flatters: every simulated gain quoted without it is gross, not net. What transfers is the ranking and the mechanism — which evolver holds which stream, and why — not the absolute percentages, which belong to the simulator's task set and stay there. Re-calibrate on every simulator change and every model swap: a drifted simulator with a stale delta is worse than no simulator, because its numbers still look measured.
 
 The live run also validates the harness, not just the policy: same stream, same protocol, real model in the policy seat. Where the live delta is small, the simulated policy was a faithful stand-in and the sweeps generalize; where it is large, the simulator's competence model diverges from the language model and every band built on it needs re-examination. That is why the validation file records elapsed seconds and the reading alongside the delta — cost, direction and interpretation travel together, or not at all.
+
+```mermaid
+flowchart LR
+  subgraph STREAM["Same stream twice"]
+    direction TB
+    S1["simulated policy run"]
+    S2["live model run on hold-outs"]
+  end
+  subgraph DELTA["Calibration"]
+    direction TB
+    D1["simulated baseline versus live baseline"]
+    D2["the delta in points plus elapsed time"]
+    D3["reading: what transfers and what stays"]
+  end
+  subgraph LICENSE["Transfer license"]
+    direction TB
+    T1["rankings and mechanisms transfer"]
+    T2["absolute magnitudes do not"]
+    T3["re-calibrate on every simulator or model swap"]
+  end
+  STREAM --> DELTA --> LICENSE
+```
 
 **Council deliberation.**
 

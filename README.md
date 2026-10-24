@@ -222,11 +222,11 @@ tools/build_sl_book.py     supplement generator: sibling lab + catalog -> Self-L
 tools/render_pdf.mjs       book typesetter: headless Chrome + vendored Mermaid -> PDF (2-pass Contents)
 tools/book_pdf.py          PDF post-pass (pypdf): reads link destinations, writes sidebar bookmarks
 book/AGENTIC-PATTERNS-AND-GUARDRAILS.md   generated book (114 chapters, 10 parts)
-book/Agentic-Design-Patterns-and-Guardrails.pdf   rendered book (496 pp, 129 diagrams, 132 linked contents entries)
-book/ROGUE-AGENTS.md   generated supplement (7 parts + appendices, 14 diagrams, rogue readings of all 54 scenarios + 7 theme case studies)
-book/Rogue-Agents.pdf      rendered supplement (50 pp, 14 diagrams, 46 linked contents entries)
-book/SELF-LEARNING-AGENTS.md   generated supplement (6 parts + appendices, 12 diagrams, lab inventory + landscape + catalog bridge + the learning loop in detail)
-book/Self-Learning-Agents.pdf   rendered supplement (83 pp, 12 diagrams, 30 linked contents entries)
+book/Agentic-Design-Patterns-and-Guardrails.pdf   rendered book (498 pp, 138 diagrams, 132 linked contents entries)
+book/ROGUE-AGENTS.md   generated supplement (7 parts + appendices, 25 diagrams, rogue readings of all 54 scenarios + 7 illustrated theme case studies)
+book/Rogue-Agents.pdf      rendered supplement (53 pp, 25 diagrams, 46 linked contents entries)
+book/SELF-LEARNING-AGENTS.md   generated supplement (6 parts + appendices, 15 diagrams, lab inventory + landscape + catalog bridge + the learning loop in detail)
+book/Self-Learning-Agents.pdf   rendered supplement (83 pp, 15 diagrams, 30 linked contents entries)
 design/*.md                10 UML/architecture docs (56 Mermaid diagrams total)
 BATTLE-ANALYSIS.md         battle-test bench: analysis, 20-iteration plan, first-campaign findings
 sw.js                      service worker: precaches the whole shell for offline / air-gapped use
@@ -257,7 +257,7 @@ Load order matters and is fixed in `index.html`: `app.js` defines the shell (`sw
 `book/` holds *Agentic Design Patterns & Guardrails — A Hands-On Guide to Designing, Hardening and Operating AI Agents* (Harish Govardhan Damodar), generated from the catalog:
 
 - **`book/AGENTIC-PATTERNS-AND-GUARDRAILS.md`** — 114 chapters across 10 parts: one per catalog pattern across the 9 category parts, in catalog order, then 7 chapters closing on Part X, *The Application* (the seventh, *Testing the Defenses*, is the battle-test bench: the catalog testing itself). The 107 pattern chapters run *Pattern Overview → Practical Applications & Use Cases → How It Works → Components → Control-Flow Diagram → Failure Modes and Risks → Protections → At a Glance → Key Takeaways → References and Related Patterns → Council reading (red team / blue team / operator, argued from the chapter's own records) → Conclusion*; the Part X chapters keep the same order as *Overview → Why It Matters → How It Works → Components → figure → Risks and Limitations → Safeguards → At a Glance → Key Takeaways → References → Council reading → Conclusion*. Full front matter (title page with byline, edition page, preface, acknowledgment, introduction, "What makes an AI system an agent?", contents) and back matter (glossary from `js/help.js`, index of terms, conclusion, colophon).
-- **`book/Agentic-Design-Patterns-and-Guardrails.pdf`** — the rendered book (496 pp, 129 diagrams), typeset by headless Chrome with the vendored Mermaid, so every figure is Mermaid source the app itself renders — same engine, same diagrams (the pattern figures come from the catalog, the Part X figures from `design/*.md`, exactly as the Design tab renders them). Its Contents (132 entries: front matter, all 10 parts, all 114 chapters, back matter) is a live link set with printed page numbers, and the reader's sidebar gets the same 132 entries as bookmarks.
+- **`book/Agentic-Design-Patterns-and-Guardrails.pdf`** — the rendered book (498 pp, 138 diagrams), typeset by headless Chrome with the vendored Mermaid, so every figure is Mermaid source the app itself renders — same engine, same diagrams (the pattern figures come from the catalog, the Part X figures from `design/*.md`, exactly as the Design tab renders them). Its Contents (132 entries: front matter, all 10 parts, all 114 chapters, back matter) is a live link set with printed page numbers, and the reader's sidebar gets the same 132 entries as bookmarks.
 
 Regenerate both with **`npm run book`** (`tools/build_book.py` → Markdown + print HTML, then `tools/render_pdf.mjs` → PDF). The generator is stdlib-only Python and deterministic: pattern chapters are built from `data/*.json` plus the glossary in `js/help.js`, so they cannot drift from the catalog they describe, and the six Part X chapters are built from the repo itself — `README.md`, `design/*.md`, `serve.py`, `sw.js`, `index.html`, `Dockerfile`/compose, with every count they cite recomputed from disk by `book_stats()` at build time (a stale number fails the build instead of shipping). `book/agent-patterns-and-guardrails.html` is an ignored intermediate (the PDF is printed from it).
 
