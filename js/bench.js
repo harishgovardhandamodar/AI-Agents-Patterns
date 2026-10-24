@@ -202,7 +202,13 @@ function btCheckDimSync() {
     dataClasses: (typeof DP_DATACLASS !== "undefined") ? DP_DATACLASS.slice() : null,
     sensitivity: (typeof DP_SENS !== "undefined") ? DP_SENS.map(function (s) { return s[0]; }) : null,
     hosting: (typeof DP_HOSTING !== "undefined") ? DP_HOSTING.map(function (h) { return h[0]; }) : null,
-    rollout: (typeof DP_ROLLOUT !== "undefined") ? DP_ROLLOUT.map(function (r) { return r[0]; }) : null
+    rollout: (typeof DP_ROLLOUT !== "undefined") ? DP_ROLLOUT.map(function (r) { return r[0]; }) : null,
+    /* The planner models the approval gate as a boolean toggle (not a
+       table), so its domain is derived from the default answer's shape.
+       If the planner ever stops asking, this becomes null and the check
+       fails instead of silently keeping a phantom dimension. */
+    approvalGate: (typeof dpDefault === "function" &&
+      Object.prototype.hasOwnProperty.call(dpDefault(), "approvalGate")) ? [true, false] : null
   };
   Object.keys(dims).forEach(function (k) {
     const a = JSON.stringify(dims[k] || []);
@@ -856,7 +862,9 @@ function btRuns() {
   } catch (e) { return []; }
 }
 function btRunsSave(list) {
-  try { localStorage.setItem(BT_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(BT_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("bench", "Battle Bench runs");
 }
 function btConfigs() {
   try {
@@ -865,7 +873,9 @@ function btConfigs() {
   } catch (e) { return []; }
 }
 function btConfigsSave(list) {
-  try { localStorage.setItem(BT_CFG_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(BT_CFG_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("bench", "Battle Bench configs");
 }
 
 /* Run a set of cases through an adapter. `onProgress` is called after
@@ -981,7 +991,6 @@ function btSaveRun(run, results) {
   return run;
 }
 function btLoadRuns() { return btRuns(); }
-function btClearRuns() { btRunsSave([]); }
 
 /* Compare two runs: which cases changed verdict. This is the point of
    storing runs — a model swap or a config change must be diffable. */

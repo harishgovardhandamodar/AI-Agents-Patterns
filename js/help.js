@@ -100,6 +100,20 @@ const HELP = {
     b: `<p><b>The catalog testing itself.</b> Every one of the ${catN("scenarios", 54)} failure scenarios becomes a test case against a <b>configuration</b> — a set of controls an agent would actually deploy. Pick configurations, run the matrix, and the oracle grades whether each scenario's defenses held.</p>
     <ul><li><b>Three adapters</b> answer the same cases: <b>guardrail</b> (deterministic, instant), <b>golden</b> (replays the catalog's ${catN("traces", 55)} execution traces), and <b>live</b> (the local model, backend pinned per run and recorded in every result).</li><li><b>Configs are data</b> — derived from the Deployment Plan's option tables, with a drift check, so the bench can never quietly disagree with the app.</li><li><b>🤖 Adversary</b> attacks the configuration, not the app: ranked <b>exposure</b> (which scenarios a config leaves uncovered), a <b>mutation sweep</b> that erodes a passing baseline one dial at a time to find the load-bearing control, and a <b>red-team</b> loop where the live model writes the attack and the oracle grades it.</li><li><b>Compare models</b> runs the same cases against two models and diffs the verdicts — regressions and improvements listed explicitly.</li><li><b>💾 Save run</b> stores results locally so runs are comparable across time; the report exports as Markdown or JSON.</li></ul>
     <p class="muted small">Honest caveats: errored runs are never counted as passes, and a passing synthetic run proves the <i>controls are wired</i> — not that any agent is safe. The full analysis lives in BATTLE-ANALYSIS.md; the architecture in Design doc 09.</p>`
+  },
+  rogue: {
+    t: "Rogue Agents",
+    b: `<p><b>One compromised agent in the swarm — what stops it, how fast, and what does it cost?</b> Injects rogue agents (goal hijack, exfiltration, capability abuse, collusion, slow drift, sybil spawn) into a deterministic swarm simulation, scores three detectors (behavioural deviation, goal misalignment, collusion), and runs the automated isolation workflow against remediation SLAs.</p>
+    <ul><li><b>Setup</b> picks the swarm, the injection rate, the detectors and the ten enforcement controls — or one of four presets (unmanaged, detect-only, enforce-only, guarded).</li>
+    <li><b>Themes</b> reskin the swarm per domain — fintech, trading, medical advice, research landscape, vulnerability detection, drug discovery — with different roles and tool vocabulary on the same engine, so results stay comparable.</li>
+    <li><b>🔴 Live fire</b> hands the attack to the model backend (fox-services by default): one call per rogue writes its tool-call campaign, the deterministic engine executes it, and anything the model never answers for stays simulated and flagged.</li><li><b>Results</b> reports detection (recall/precision/false positives), containment, blast radius, the harm ledger, and per-rogue rows you can inspect.</li><li><b>📋 Quarantine board</b> is the live ops side: confirmed detections become cases with wall-clock SLA clocks, owners and remediation steps, plus a fleet kill switch.</li><li><b>Guardrails</b> maps each control to its runtime primitive and catalog pattern, with <b>counterfactuals</b> (leave-one-out + solo) showing which controls actually carry the result.</li></ul>
+    <p class="muted small">Honest caveat: a passing synthetic run proves the <i>controls are wired</i> — not that any agent is safe. Enforcement lives outside the model, in readable code.</p>`
+  },
+  selflearn: {
+    t: "Self-Learning",
+    b: `<p><b>The add-on bridge</b> to the Self-Learning Agent Lab (sibling checkout, FastAPI on :8220): continual learning, task-scoped adaptation, and the evaluation discipline that keeps them honest.</p>
+    <ul><li><b>Status dot</b> probes the lab with a no-cors fetch — reachable or not, everything below works either way.</li><li><b>Concept bridge</b> maps each lab mechanism to the catalog patterns and scenarios that already cover it — click through to the record.</li><li>Run the lab with <span class="mono">./run.sh</span> or <span class="mono">docker compose up --build -d</span>, then open its dashboard from the tab.</li></ul>
+    <p class="muted small">The bridge is a map, not a measurement: run the lab's 50-iteration gate for proof. The companion book is built by <span class="mono">npm run book:self</span>.</p>`
   }
 };
 
@@ -118,6 +132,6 @@ function helpOpen(which) {
       (terms.length ? `<div class="dsec"><h4>Terms used above</h4>` +
         terms.map(g => `<p style="margin:4px 0"><b>${escHtml(g[0])}</b> — ${escHtml(g[1])}</p>`).join("") + `</div>` : "");
   }
-  body += `<div class="dsec"><p class="muted small"><a href="#" onclick="helpOpen('glossary');return false;">Full glossary (${GLOSSARY.length} terms)</a> · <a href="#" onclick="closeDetail();skHelpOpen();return false;">Keyboard shortcuts</a> · <a href="#" onclick="closeDetail();onbShow(true);return false;">Replay the welcome tour</a></p></div>`;
+  body += `<div class="dsec"><p class="muted small"><a href="#" data-act="helpOpen" data-args="[&quot;glossary&quot;]">Full glossary (${GLOSSARY.length} terms)</a> · <a href="#" data-act="closeDetailHelp">Keyboard shortcuts</a> · <a href="#" data-act="closeDetailTour">Replay the welcome tour</a></p></div>`;
   openDetail(title, "guide", body);
 }

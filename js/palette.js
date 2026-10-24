@@ -95,12 +95,14 @@ const palMem = { recent: [], used: {} };
   } catch (e) {}
 })();
 function palMemSave() {
+  let ok = false;
   try {
     const used = {};
     Object.keys(palMem.used).slice(-200).forEach(k => { used[k] = Math.min(9, palMem.used[k] || 0); });
     palMem.used = used;
-    localStorage.setItem(PAL_STORE, JSON.stringify(palMem));
-  } catch (e) {}
+    ok = (typeof storeSet === "function") ? storeSet(PAL_STORE, JSON.stringify(palMem)) : false;
+  } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("palette", "Palette history");
 }
 function palUseKey(it) { return it.kind + ":" + it.id; }
 
@@ -109,7 +111,7 @@ const PAL_TABS = [
   ["scenarios", "Failure Scenarios"], ["cascades", "Cascade Explorer"], ["coverage", "Coverage"],
   ["deploy", "Deployment Planner"], ["blueprint", "Blueprints"], ["live", "Live View"],
   ["design", "Design & Architecture"], ["guard", "Guardrail Lab"], ["discovery", "Discovery Lab"],
-  ["bench", "Battle Bench"]
+  ["bench", "Battle Bench"], ["rogue", "Rogue Agents"], ["selflearn", "Self-Learning"]
 ];
 
 let palItems = null;
@@ -236,7 +238,7 @@ function palRender() {
   list.innerHTML = palHits.map((h, i) => {
     const head = (h.grp != null && h.grp !== lastGrp) ? `<div class="pal-grp">${h.grp === 0 ? "Recent" : "Browse"}</div>` : "";
     lastGrp = h.grp == null ? lastGrp : h.grp;
-    return head + `<div class="pal-item ${i === palSel ? "sel" : ""}" data-i="${i}" onmousedown="event.preventDefault()" onclick="palPick(${i})">
+    return head + `<div class="pal-item ${i === palSel ? "sel" : ""}" data-i="${i}" data-noblur data-act="palPick" data-args='[${i}]'>
       <span class="pal-kind k-${h.it.kind}">${escHtml(PAL_KINDS[h.it.kind].label)}</span>
       <span class="pal-title">${palHi(h.it.title, q)}</span>
       <span class="pal-sub">${escHtml(h.it.sub || "")}</span>
@@ -246,6 +248,8 @@ function palRender() {
   if (sel) sel.scrollIntoView({ block: "nearest" });
 }
 
+/* Input shim for delegation (the old inline oninput assigned + rendered). */
+function palInputReset() { palSel = 0; palRender(); }
 function palPick(i) {
   const h = palHits[i != null ? i : palSel];
   if (!h) return;
@@ -260,9 +264,24 @@ function palPick(i) {
   PAL_KINDS[h.it.kind].run(h.it);
 }
 
+/* Focus discipline for the modal: remember who opened it, trap Tab inside
+   while it is open, and hand focus back on close — otherwise keyboard and
+   screen-reader users are dropped at <body> with no way back. */
+let palOpener = null;
+function palTrapTab(e) {
+  const o = el("palOverlay");
+  if (!o || !o.classList.contains("open") || e.key !== "Tab") return;
+  const f = o.querySelectorAll("input, button, [tabindex]");
+  const list = Array.prototype.filter.call(f, n => !n.disabled && n.tabIndex >= 0);
+  if (!list.length) return;
+  const first = list[0], last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
 function palOpen() {
   const o = el("palOverlay");
   if (!o) return;
+  palOpener = document.activeElement;
   o.classList.add("open");
   const inp = el("palInput");
   inp.value = ""; palSel = 0; palRender(); inp.focus();
@@ -270,6 +289,10 @@ function palOpen() {
 function palClose() {
   const o = el("palOverlay");
   if (o) o.classList.remove("open");
+  if (palOpener && document.contains(palOpener)) {
+    try { palOpener.focus(); } catch (e) {}
+  }
+  palOpener = null;
 }
 
 function palKey(e) {
@@ -293,11 +316,12 @@ function initPalette() {
   d.setAttribute("aria-modal", "true");
   d.setAttribute("aria-label", "Command palette");
   d.innerHTML = `<div class="pal-box">
-    <input id="palInput" class="pal-input" aria-label="Search everything" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" oninput="palSel=0;palRender()" autocomplete="off">
+    <input id="palInput" class="pal-input" aria-label="Search everything" placeholder="Search patterns, scenarios, cascades, tabs, templates… (↑↓ to move, Enter to open)" data-input="palInputReset" autocomplete="off">
     <div id="palList" class="pal-list"></div>
     <div class="pal-foot"><span><b>↑↓</b> move · <b>Enter</b> open · <b>&gt;</b> commands · <b>pat: scn: cas:</b> scope · <b>Esc</b> close</span></div>
   </div>`;
   d.addEventListener("mousedown", e => { if (e.target === d) palClose(); });
+  d.addEventListener("keydown", palTrapTab);
   document.body.appendChild(d);
   document.addEventListener("keydown", palKey);
 }

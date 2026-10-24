@@ -190,7 +190,7 @@ function wfRailHtml() {
     st.stages.map((g, i) => {
       const icon = g.state === "done" ? "✓" : g.state === "active" ? "▸" : "○";
       const next = (nx.tab === g.tab && g.cta) ? " wf-next" : "";
-      return '<button class="wf-stage wf-' + g.state + next + '" role="listitem" onclick="wfGo(\'' + g.tab + '\')" ' +
+      return '<button class="wf-stage wf-' + g.state + next + '" role="listitem" data-act="wfGo" data-args="' + dataArgs(g.tab) + '" ' +
         'title="' + escHtml(g.label + " — " + g.detail) + '" aria-label="' + escHtml(g.label + ": " + g.detail) + '">' +
         '<span class="wf-ico" aria-hidden="true">' + icon + "</span>" +
         '<span class="wf-txt"><b>' + escHtml(g.label) + "</b><i>" + escHtml(g.detail) + "</i></span>" +

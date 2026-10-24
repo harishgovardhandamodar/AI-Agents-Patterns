@@ -13,7 +13,10 @@
     "lint": "eslint .",
     "gen": "python3 tools/gen_cascades.py && python3 tools/gen_coverage.py",
     "book": "python3 tools/build_book.py && node tools/render_pdf.mjs",
-    "check": "npm run lint && npm run test"
+    "book:rogue": "python3 tools/build_rogue_book.py",
+    "book:self": "python3 tools/build_sl_book.py",
+    "check": "npm run lint && npm run test",
+    "check:all": "npm run check && npm run test:e2e"
   },
   "devDependencies": {
     "eslint": "^9.14.0",

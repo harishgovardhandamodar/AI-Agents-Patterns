@@ -22,8 +22,9 @@ function cpSave() {
   };
   /* Cap history so one long chat can't fill browser storage (which would
      silently break every other save in the app). Trim oldest first. */
-  if (!trim(40) && !trim(20)) showNotif("Chat history too large to persist — oldest messages were dropped from storage", { kind: "warn" });
-  if (typeof markSaved === "function") markSaved("cp");
+  const ok = trim(40) || trim(20);
+  if (ok) { if (typeof markSaved === "function") markSaved("cp"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("cp", "Copilot chat");
 }
 function cpRestore() {
   try {
@@ -56,7 +57,17 @@ function cpMd(text) {
   s = s.replace(/^#{1,6}\s+(.*)$/gm, "<h4>$1</h4>");
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  /* Links come from model output, so the scheme is whitelisted: only http(s)
+     and same-app fragments become anchors. Anything else (javascript:, data:,
+     file:, bare words the model meant as text) renders as inert text — the
+     label survives, the navigation doesn't. */
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, text, url) {
+    const u = String(url);
+    if (/^(https?:\/\/|#)/i.test(u) && !/[\s<>]/.test(u)) {
+      return '<a href="' + u + '" target="_blank" rel="noopener">' + text + "</a>";
+    }
+    return text + ' <span class="muted small">(' + u + ")</span>";
+  });
   // pipe tables -> .tbl (same styling as the catalog drawers)
   s = s.replace(/^((?:\|[^\n]*\|\s*\n)+)/gm, function (block) {
     const rows = block.trim().split("\n");
@@ -115,9 +126,9 @@ function cpCopyMsg(i) {
   else showNotif("Clipboard unavailable — select the text manually", { kind: "warn" });
 }
 function cpActionsHtml(m, i, isLast) {
-  if (m.role === "user") return `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this question">⧉ copy</button></div>`;
-  let h = `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this answer">⧉ copy</button>`;
-  if (isLast) h += `<button type="button" onclick="cpRegen(${i})" title="Ask the same question again"${cpBusy ? " disabled" : ""}>↻ regenerate</button>`;
+  if (m.role === "user") return `<div class="cp-actions"><button type="button" data-act="cpCopyMsg" data-args='[${i}]' title="Copy this question">⧉ copy</button></div>`;
+  let h = `<div class="cp-actions"><button type="button" data-act="cpCopyMsg" data-args='[${i}]' title="Copy this answer">⧉ copy</button>`;
+  if (isLast) h += `<button type="button" data-act="cpRegen" data-args='[${i}]' title="Ask the same question again"${cpBusy ? " disabled" : ""}>↻ regenerate</button>`;
   return h + "</div>";
 }
 function cpFollowHtml(m) {
@@ -128,7 +139,7 @@ function cpFollowHtml(m) {
        { q: "What should I implement first, and why?", t: "What first?" },
        { q: "How do I test that these controls actually hold?", t: "How to test?" }];
   return `<div class="cp-follow"><span class="muted small">Follow up:</span> ` + qs.map((f, k) =>
-    `<button type="button" onclick="cpFollowAsk(${k})" data-fq="${escHtml(f.q)}">${escHtml(f.t)}</button>`).join("") + `</div>`;
+    `<button type="button" data-act="cpFollowAsk" data-args='[${k}]' data-fq="${escHtml(f.q)}">${escHtml(f.t)}</button>`).join("") + `</div>`;
 }
 function cpFollowAsk(k) {
   const log = el("cpLog");

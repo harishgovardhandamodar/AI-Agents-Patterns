@@ -16,9 +16,12 @@ const btState = {
   adapter: "guardrail",
   context: null,
   severity: "", domain: "",
+  q: "",                 /* results-matrix search text (display-only) */
+  failsOnly: false,      /* results-matrix shows only failing rows */
   results: [],
   run: null,
   running: false,
+  view: "setup",        /* staged sub-view: setup | results | adversary | compare */
   cancel: null,
   selected: null,       /* the case under inspection */
   diffAgainst: null,    /* a stored run id to diff against */
@@ -30,15 +33,29 @@ const btState = {
   compareLimit: 8
 };
 
-/* Build a quoted argument list for an inline handler. JSON.stringify
-   means a value containing a quote can never break out of the attribute. */
+/* Build a quoted argument list for an inline handler. Values are
+   JSON-stringified and then HTML-escaped: a raw `"` would terminate the
+   double-quoted onclick attribute and silently truncate the handler
+   (every argument-bearing button in this tab was dead because of that).
+   The HTML parser decodes &quot; before JS runs, so the handler fires
+   with exactly the strings passed here. */
 function btArgs() {
-  return Array.prototype.slice.call(arguments)
+  return escHtml(Array.prototype.slice.call(arguments)
     .map(function (x) { return JSON.stringify(String(x)); })
-    .join(",");
+    .join(","));
 }
 
 function btInit() {
+  /* Fail loudly if the bench's option tables no longer match the planner's:
+     a silent drift means the bench measures a configuration space the
+     deploy tab cannot actually produce. */
+  const drift = (typeof btCheckDimSync === "function") ? btCheckDimSync() : [];
+  if (drift.length) {
+    console.error("Battle Bench dimensions drifted from the Deployment Planner: " + drift.join("; "));
+    if (typeof showNotif === "function") {
+      showNotif("Battle Bench config drifted from the Deployment Planner — results may be invalid. See console.", { kind: "error" });
+    }
+  }
   btState.context = btContext();
   /* Seed the configuration panel with the default experiment set, and
      adopt the user's saved ones if they have any. */
@@ -63,7 +80,7 @@ function initBench() {
     el("benchMain").innerHTML = '<div class="empty-state"><div class="empty-ico">⚔</div>' +
       '<div class="empty-t">Battle Bench could not start</div>' +
       '<div class="empty-b">Something went wrong while loading (' + escHtml(String(e && e.message || e)).slice(0, 140) + '). The catalog is unaffected.</div>' +
-      '<button class="btn sm primary" onclick="initBench()">Retry</button></div>';
+      '<button class="btn sm primary" data-act="initBench">Retry</button></div>';
   }
 }
 
@@ -75,9 +92,19 @@ tabLoaders.bench = function () { initBench(); };
 function btConfigHtml(c) {
   const controls = btEffectiveControls(c);
   const stack = btConfigStack(c);
-  return '<div class="bt-cfg" data-hash="' + btConfigHash(c) + '">' +
+  const h = btConfigHash(c);
+  /* Last-run footprint so Setup answers "how did this config do?" at a glance. */
+  const recs = btState.results.filter(function (r) { return r.configHash === h; });
+  const last = !recs.length ? '<div class="bt-cfg-last muted small">not in the latest run</div>'
+    : (function () {
+        const p = recs.filter(function (r) { return r.verdict === "pass"; }).length;
+        const f = recs.filter(function (r) { return r.verdict === "fail" || r.verdict === "error"; }).length;
+        return '<div class="bt-cfg-last small">last run: <b class="bt-ok">' + p + " pass</b> · " +
+          '<b class="' + (f ? "bt-bad" : "") + '">' + f + " fail</b></div>";
+      })();
+  return '<div class="bt-cfg" data-hash="' + h + '">' +
     '<div class="bt-cfg-h"><b>' + escHtml(c.name) + "</b>" +
-    '<span class="mono muted small">' + btConfigHash(c) + "</span></div>" +
+    '<span class="mono muted small">' + h + "</span></div>" +
     '<div class="bt-cfg-axes">' +
     '<span class="chip">L' + c.autonomy + "</span>" +
     '<span class="chip ' + (c.approvalGate ? "ok" : "bad") + '">gate ' + (c.approvalGate ? "on" : "OFF") + "</span>" +
@@ -87,9 +114,10 @@ function btConfigHtml(c) {
     "</div>" +
     '<div class="bt-cfg-m muted small">' + stack.length + " implied controls · " +
     controls.length + " effective · " + (c.controls || []).length + " pinned</div>" +
+    last +
     '<div class="bt-cfg-btns">' +
-    '<button class="btn sm" onclick="btEditConfig(' + btArgs(btConfigHash(c)) + ')">Edit</button>' +
-    '<button class="btn sm ghost" onclick="btRemoveConfig(' + btArgs(btConfigHash(c)) + ')">Remove</button>' +
+    '<button class="btn sm" data-act="btEditConfig" data-args=\'' + '[' + btArgs(h) + ']' + '\'' + '>Edit</button>' +
+    '<button class="btn sm ghost" data-act="btRemoveConfig" data-args=\'' + '[' + btArgs(h) + ']' + '\'' + '>Remove</button>' +
     "</div>" +
     "</div>";
 }
@@ -103,17 +131,17 @@ function btEditConfig(hash) {
   const c = btConfigByHash(hash);
   if (!c) return;
   const dims = BT_DIMS;
-  /* Arguments go through JSON.stringify so a quote in a value can never
-     break out of the onclick attribute. */
-  const A = function () { return Array.prototype.slice.call(arguments).map(function (x) { return JSON.stringify(String(x)); }).join(","); };
+  /* Arguments go through btArgs: JSON + HTML-escaped so a quote in a
+     value can never break out of the onclick attribute. */
+  const A = function () { return btArgs.apply(null, arguments); };
   const sel = function (k, v, label) {
     const on = String(c[k]) === String(v);
-    return '<button class="seg-btn' + (on ? " active" : "") + '" onclick="btSetDim(' + A(hash, k, v) + ")'>" + escHtml(label) + "</button>";
+    return '<button class="seg-btn' + (on ? " active" : "") + '" data-act="btSetDim" data-args=\'' + '[' + A(hash, k, v) + ']' + ")'>" + escHtml(label) + "</button>";
   };
   const checks = function (k, v, label) {
     const on = (c[k] || []).indexOf(v) >= 0;
     return '<label class="filter-item"><input type="checkbox" ' + (on ? "checked" : "") +
-      ' onchange="btToggleDim(' + A(hash, k, v) + ",this.checked)\"> " + escHtml(label) + "</label>";
+      ' data-change="btToggleDim" data-last="checked" data-args="' + dataArgs(hash, k, v) + '">' + escHtml(label) + "</label>";
   };
   const html =
     '<div class="dsec"><h4>Autonomy</h4><div class="seg">' +
@@ -136,10 +164,10 @@ function btEditConfig(hash) {
     '<div class="dsec"><h4>Data classes in scope</h4>' +
       dims.dataClasses.map(function (v) { return checks("dataClasses", v, v); }).join("") + "</div>" +
     '<div class="dsec"><h4>Pinned controls (catalog pattern ids)</h4>' +
-      '<input class="search" style="width:100%" placeholder="e.g. approval-gates, policy-engine" value="' + escHtml((c.controls || []).join(", ")) + '" oninput="btSetControls(' + A(hash) + ",this.value)\">" +
+      '<input class="search" style="width:100%" placeholder="e.g. approval-gates, policy-engine" value="' + escHtml((c.controls || []).join(", ")) + '" data-input="btSetControls" data-last="value" data-args="' + dataArgs(hash) + '">' +
       '<p class="muted small">Pinned controls join the ones the configuration implies. Leave empty to test the implied stack alone.</p>' +
     "</div>" +
-    '<div class="dsec d-actions"><button class="btn sm primary" onclick="closeDetail();btSaveConfigEdit()">Apply</button></div>';
+    '<div class="dsec d-actions"><button class="btn sm primary" data-act="closeDetailSaveCfg">Apply</button></div>';
   openDetail("Edit configuration — " + c.name, "bench", html);
 }
 
@@ -168,6 +196,8 @@ function btSetControls(hash, v) {
   c.controls = String(v || "").split(",").map(function (x) { return x.trim(); }).filter(Boolean);
   btPersistConfigs();
 }
+/* Apply shim for delegation (the old inline handler compounded two calls). */
+function closeDetailSaveCfg() { closeDetail(); btSaveConfigEdit(); }
 function btSaveConfigEdit() { btPersistConfigs(); renderBench(); }
 function btPersistConfigs() { btConfigsSave(btState.configs); }
 
@@ -190,117 +220,323 @@ function btAddConfig(over) {
 
 /* ---------------- the matrix ---------------- */
 
+/* ---------------- Results: filter + matrix ---------------- */
+
+/* Distinct corpus domains for the domain filter. */
+function btDomainOptions() {
+  const seen = {};
+  btCorpus().forEach(function (s) { if (s && s.domain) seen[s.domain] = 1; });
+  return Object.keys(seen).sort();
+}
+
+/* One row per scenario. Runs always cover the full corpus; severity, domain
+   and search slice the display only, so one run supports every cut. */
+function btScenRows() {
+  const cases = btCases(btState.configs, { context: btState.context });
+  const seen = {};
+  const q = (btState.q || "").toLowerCase();
+  const out = [];
+  cases.forEach(function (kase) {
+    if (seen[kase.scenarioId]) return;
+    seen[kase.scenarioId] = 1;
+    if (btState.severity && kase.scenario.severity !== btState.severity) return;
+    if (btState.domain && kase.scenario.domain !== btState.domain) return;
+    if (q && (kase.scenario.title + " " + kase.scenarioId).toLowerCase().indexOf(q) < 0) return;
+    out.push(kase);
+  });
+  return out;
+}
+
+function btFilterChips() {
+  const chips = [];
+  if (btState.severity) chips.push({ label: "severity " + btState.severity, fn: "btClearFilter('severity')" });
+  if (btState.domain) chips.push({ label: btState.domain, fn: "btClearFilter('domain')" });
+  if (btState.q) chips.push({ label: "“" + btState.q.slice(0, 24) + "”", fn: "btClearFilter('q')" });
+  if (btState.failsOnly) chips.push({ label: "failures only", fn: "btClearFilter('failsOnly')" });
+  return chips;
+}
+
+function btClearAllFilters() {
+  btState.severity = ""; btState.domain = ""; btState.q = ""; btState.failsOnly = false;
+  renderBench();
+}
+
+/* Repaint table + count + chips in place — search keeps focus. */
+function btPaintMatrix() {
+  const wrap = el("btMatrixWrap");
+  if (wrap) wrap.innerHTML = btMatrixInnerHtml();
+  const n = el("btMatrixCount");
+  if (n) n.textContent = btLastCounts ? ("Showing " + btLastCounts.shown + " of " + btLastCounts.total + " scenarios") : "";
+  const b = el("btFailsBtn");
+  if (b) { b.classList.toggle("primary", !!btState.failsOnly); b.setAttribute("aria-pressed", String(!!btState.failsOnly)); }
+  if (typeof paintActiveChips === "function") paintActiveChips("btActiveChips", btFilterChips());
+}
+
+function btKeyInspect(e, el, sid, hash) {
+  if (e.key === "Enter" || e.key === " ") { e.preventDefault(); btInspect(sid, hash); }
+}
+
+let btLastCounts = null;
+
 /* The matrix: one row per scenario, one column per configuration. */
-function btMatrixHtml() {
-  const cases = btCases(btState.configs, { context: btState.context, severity: btState.severity, domain: btState.domain });
-  if (!cases.length) return '<p class="muted small">No cases match the current filters.</p>';
+function btMatrixInnerHtml() {
   const cfgs = btState.configs;
+  if (!cfgs.length) return '<p class="muted small">No configurations — add one in Setup.</p>';
   const byCell = {};
   btState.results.forEach(function (r) {
     byCell[r.scenarioId + "@" + r.configHash] = r;
   });
-  const head = '<tr><th class="bt-mh">scenario</th>' +
-    cfgs.map(function (c) {
-      return '<th class="bt-mh" title="' + escHtml(c.name) + '">' + escHtml(c.name.split(" · ")[0]) + "</th>";
+  /* btCases yields one case per scenario × config — dedupe to one row per
+     scenario, or every scenario repeats once per configuration. */
+  const all = (function () {
+    const cases = btCases(btState.configs, { context: btState.context });
+    const seen = {};
+    return cases.filter(function (kase) {
+      if (seen[kase.scenarioId]) return false;
+      seen[kase.scenarioId] = 1;
+      return true;
+    });
+  })();
+  let scen = btScenRows();
+  const isBad = function (r) { return r && (r.verdict === "fail" || r.verdict === "error"); };
+  if (btState.failsOnly) {
+    scen = scen.filter(function (kase) {
+      return cfgs.some(function (c) { return isBad(byCell[kase.scenarioId + "@" + btConfigHash(c)]); });
+    });
+  }
+  btLastCounts = { shown: scen.length, total: all.length };
+  if (!scen.length) {
+    return '<div class="empty-state"><div class="empty-ico">∅</div>' +
+      '<div class="empty-t">No scenarios match</div>' +
+      '<div class="empty-b">The filters hide every row. Loosen them to see the matrix.</div>' +
+      '<button class="btn sm primary" data-act="btClearAllFilters">Clear filters</button></div>';
+  }
+  const colBad = cfgs.map(function (c) {
+    const h = btConfigHash(c);
+    let n = 0;
+    scen.forEach(function (kase) { if (isBad(byCell[kase.scenarioId + "@" + h])) n++; });
+    return n;
+  });
+  const head = '<tr><th class="bt-mh" scope="col">scenario</th>' +
+    cfgs.map(function (c, i) {
+      return '<th class="bt-mh bt-mh-c" scope="col" title="' + escHtml(c.name) + '">' + escHtml(c.name) +
+        (colBad[i] ? ' <span class="bt-col-bad">✗' + colBad[i] + "</span>" : "") + "</th>";
     }).join("") + "</tr>";
-  const rows = cases.map(function (kase) {
+  const rows = scen.map(function (kase) {
+    let nBad = 0;
     const cells = cfgs.map(function (c) {
       const r = byCell[kase.scenarioId + "@" + btConfigHash(c)];
       if (!r) return '<td class="bt-cell bt-none">·</td>';
+      if (r.verdict === "fail" || r.verdict === "error") nBad++;
       const cls = r.verdict === "pass" ? "bt-pass" : r.verdict === "fail" ? "bt-fail" :
         r.verdict === "error" ? "bt-err" : r.verdict === "skip" ? "bt-skip" : "bt-none";
       const mark = r.verdict === "pass" ? "✓" : r.verdict === "fail" ? "✗" : r.verdict === "error" ? "!" : "–";
-      return '<td class="bt-cell ' + cls + '" onclick="btInspect(' + btArgs(kase.scenarioId, btConfigHash(c)) + ')" ' +
+      const al = r.scenarioTitle + ", " + c.name + ": " + r.verdict + " (" + r.passed + "/" + r.total + " checks). Activate to inspect.";
+      return '<td class="bt-cell ' + cls + '" tabindex="0" role="gridcell" aria-label="' + escHtml(al) + '" ' +
+        'data-act="btInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(c)) + ']' + '\'' + ' ' +
+        'data-key="btKeyInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(c)) + ']' + '\'' + ' ' +
         'title="' + escHtml(r.scenarioTitle + " — " + r.verdict + " (" + r.passed + "/" + r.total + " checks)") + '">' + mark + "</td>";
     }).join("");
-    return '<tr><th class="bt-mh bt-mh-l" onclick="btInspect(' + btArgs(kase.scenarioId, btConfigHash(cfgs[0])) + ')" >' +
-      '<span class="sev-dot sev-' + kase.scenario.severity + '"></span>' + escHtml(kase.scenario.title.slice(0, 46)) +
+    /* Row label inspects the first failing cell so one click lands on evidence. */
+    let target = cfgs[0];
+    for (let i = 0; i < cfgs.length; i++) {
+      if (isBad(byCell[kase.scenarioId + "@" + btConfigHash(cfgs[i])])) { target = cfgs[i]; break; }
+    }
+    return '<tr><th class="bt-mh bt-mh-l" scope="row" tabindex="0" title="' + escHtml(kase.scenario.id + " — " + kase.scenario.title) + '" ' +
+      'data-act="btInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(target)) + ']' + '\'' + ' ' +
+      'data-key="btKeyInspect" data-args=\'' + '[' + btArgs(kase.scenarioId, btConfigHash(target)) + ']' + '\'' + ' >' +
+      '<span class="sev-dot sev-' + kase.scenario.severity + '"></span>' + escHtml(kase.scenario.title) +
+      (nBad ? ' <span class="bt-col-bad">✗' + nBad + "</span>" : "") +
       "</th>" + cells + "</tr>";
   }).join("");
-  return '<table class="bt-matrix"><thead>' + head + "</thead><tbody>" + rows + "</tbody></table>";
+  return '<table class="bt-matrix" role="grid" aria-label="Results matrix: scenarios by configurations"><thead>' + head + "</thead><tbody>" + rows + "</tbody></table>";
 }
 
 /* ---------------- rendering ---------------- */
 
+/* Staged sub-views: one job per screen instead of six stacked panels. */
+function btSetView(v) {
+  btState.view = v;
+  renderBench();
+}
+
+function btTabsHtml() {
+  const v = btState.view || "setup";
+  const tab = function (id, label, badge) {
+    return '<button class="seg-btn' + (v === id ? " active" : "") + '" data-act="btSetView" data-args=\'' + '[' + btArgs(id) + ']' + '\'' + '>' +
+      escHtml(label) + (badge ? ' <span class="bt-tab-n">' + escHtml(String(badge)) + "</span>" : "") + "</button>";
+  };
+  return '<div class="seg bt-tabs" role="tablist">' +
+    tab("setup", "1 · Setup", btState.configs.length || "") +
+    tab("results", "2 · Results", btState.results.length || "") +
+    tab("adversary", "3 · Adversary", "") +
+    tab("compare", "4 · Compare", "") +
+    "</div>";
+}
+
+/* What each executor actually does — the run control's most-asked question. */
+function btAdapterBlurb() {
+  if (btState.adapter === "live") return "Live model via the same-origin proxy — slow (serialised, one case at a time), needs a backend, can surprise you. Empty completions retry, never pass.";
+  if (btState.adapter === "golden") return "Replays the published traces — deterministic, checks the replay pipeline, not the controls.";
+  return "Simulates the config's controls with the deterministic rule engine — instant, no model needed. Start here.";
+}
+
+/* The run controls live in Setup; filters live in Results (run once, slice many ways). */
+function btRunControlsHtml(adapters) {
+  return '<div class="bt-runbar">' +
+      '<label class="muted small">Executor</label>' +
+      '<select class="search" id="btAdapter" aria-label="Battle adapter" data-change="btSetAdapter" data-first="value">' +
+        adapters.map(function (a) {
+          return '<option value="' + a.id + '"' + (a.id === btState.adapter ? " selected" : "") + ">" +
+            escHtml(a.label) + (a.needsModel ? " · needs a model" : "") + "</option>";
+        }).join("") +
+      "</select>" +
+      '<label class="muted small">Mode</label>' +
+      '<select class="search" id="btMode" aria-label="Run mode" data-change="btSetMode" data-first="value">' +
+        '<option value="advise"' + (btState.context.mode === "advise" ? " selected" : "") + ">advise the team</option>" +
+        '<option value="act"' + (btState.context.mode === "act" ? " selected" : "") + ">act as the agent</option>" +
+      "</select>" +
+      '<label class="muted small">Backend</label>' +
+      '<select class="search" id="btBackend" aria-label="Model backend" data-change="btSetBackend" data-first="value">' +
+        '<option value="axiom"' + (btState.context.backend === "axiom" ? " selected" : "") + ">axiom (mesh)</option>" +
+        '<option value="fox-services"' + (btState.context.backend === "fox-services" ? " selected" : "") + ">fox-services (local)</option>" +
+      "</select>" +
+      '<div style="flex:1"></div>' +
+      (btState.running
+        ? '<button class="btn danger" data-act="btCancel">■ Stop</button>'
+        : '<button class="btn primary" data-act="btStart">▶ Run the bench</button>') +
+    "</div>" +
+    '<p class="muted small" id="btAdapterHelp" style="margin:6px 0 0">' + escHtml(btAdapterBlurb()) + "</p>" +
+    (btState.running
+      ? '<div class="bt-progress"><div class="bt-progress-fill" style="width:' + btProgressPct() + '%"></div></div>' +
+        '<p class="muted small" id="btProgressText">' + escHtml(btProgressText()) + "</p>"
+      : "");
+}
+
+function btSetupHtml(cov, adapters) {
+  return '<div class="panel" style="margin-bottom:12px"><h3>Run <span class="muted small">executor · mode · backend — always the full corpus</span></h3>' +
+      btRunControlsHtml(adapters) +
+      '<p class="muted small" style="margin:8px 0 0">' + escHtml(cov.total) + " scenarios × " + btState.configs.length +
+      " configuration" + (btState.configs.length === 1 ? "" : "s") +
+      " = <b>" + (cov.total * btState.configs.length) + "</b> cases" +
+      (cov.tested < cov.total ? ' · <span style="color:var(--orange)">' + (cov.total - cov.tested) + " scenarios have no published trace</span>" : "") +
+      "</p></div>" +
+    '<div class="panel" style="margin-bottom:12px"><h3>Configurations under test</h3>' +
+      btTwinWarnHtml() +
+      '<div class="bt-cfgs">' + (btState.configs.length
+        ? btState.configs.map(btConfigHtml).join("")
+        : '<p class="muted small">No configurations — add one to run the bench.</p>') + "</div>" +
+    "</div>";
+}
+
+/* Per-severity outcome chips: where the failures concentrate. */
+function btSevPerfHtml(sum) {
+  const order = ["critical", "high", "medium"];
+  const chips = order
+    .filter(function (s) { return sum.bySeverity && sum.bySeverity[s]; })
+    .map(function (s) {
+      const g = sum.bySeverity[s];
+      const bad = (g.fail || 0) + (g.error || 0);
+      const cls = bad ? "bad" : (g.pass ? "ok" : "");
+      return '<span class="chip ' + cls + '" title="' + g.pass + " pass · " + g.fail + " fail · " +
+        g.error + " error · " + g.skip + ' skipped">' + escHtml(s) + ": " + g.pass + "✓" +
+        (bad ? " · " + bad + "✗" : "") + "</span>";
+    }).join("");
+  return chips ? '<div class="bt-sev-row">' + chips + "</div>" : "";
+}
+
+/* Per-configuration outcome table with pass-rate bars. */
+function btConfigPerfHtml(sum) {
+  const names = Object.keys(sum.byConfig || {});
+  if (!names.length) return "";
+  const rows = names.map(function (n) {
+    const g = sum.byConfig[n];
+    const t = (g.pass || 0) + (g.fail || 0) + (g.error || 0) + (g.skip || 0);
+    const pct = t ? Math.round(((g.pass || 0) / t) * 100) : 0;
+    return "<tr><td>" + escHtml(String(n).split(" · ")[0]) + "</td>" +
+      '<td class="mono small"><span class="bt-ok">' + (g.pass || 0) + "</span> / " +
+      '<span class="bt-bad">' + (g.fail || 0) + "</span> / " + (g.error || 0) + " / " + (g.skip || 0) + "</td>" +
+      '<td><div class="bt-bar" title="' + pct + '% pass"><span class="bt-bar-fill" style="width:' + pct + '%"></span></div></td></tr>';
+  }).join("");
+  return '<table class="tbl bt-cfg-tbl"><thead><tr><th>Configuration</th><th>pass / fail / err / skip</th><th>pass rate</th></tr></thead>' +
+    "<tbody>" + rows + "</tbody></table>";
+}
+
+function btToolbarHtml() {
+  const doms = btDomainOptions();
+  return '<div class="sticky-bar bt-toolbar">' +
+    '<input class="search" id="btQ" type="search" placeholder="Filter scenarios…" aria-label="Filter scenarios" ' +
+      'value="' + escHtml(btState.q || "") + '" data-input="btSetQuery" data-first="value">' +
+    '<select class="search" id="btSevF" aria-label="Severity filter" data-change="btSetSeverity" data-first="value">' +
+      [["", "all severities"], ["critical", "critical"], ["high", "high"], ["medium", "medium"]].map(function (o) {
+        return '<option value="' + o[0] + '"' + (btState.severity === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
+      }).join("") +
+    "</select>" +
+    '<select class="search" id="btDomF" aria-label="Domain filter" data-change="btSetDomain" data-first="value">' +
+      '<option value="">all domains</option>' +
+      doms.map(function (d) {
+        return '<option value="' + escHtml(d) + '"' + (btState.domain === d ? " selected" : "") + ">" + escHtml(d) + "</option>";
+      }).join("") +
+    "</select>" +
+    '<button class="btn sm' + (btState.failsOnly ? " primary" : "") + '" id="btFailsBtn" ' +
+      'aria-pressed="' + String(!!btState.failsOnly) + '" data-act="btToggleFails">✗ Failures only</button>' +
+    '<span class="muted small" id="btMatrixCount"></span>' +
+    '<div class="fchip-row" id="btActiveChips"></div>' +
+    "</div>";
+}
+
+function btResultsHtml() {
+  const sum = btState.run ? btState.run.summary : null;
+  if (!btState.results.length) {
+    return '<div class="panel" style="margin-bottom:12px"><h3>Results matrix <span class="muted small">scenarios × configurations</span></h3>' +
+      (typeof emptyState === "function"
+        ? emptyState("▦", "No results yet", "Set up configurations, run the bench, and the pass / fail matrix lands here.", "Go to Setup", "btSetView('setup')")
+        : '<p class="muted small">Run the bench to fill the matrix.</p>') +
+      "</div>";
+  }
+  const bad = sum ? ((sum.fail || 0) + (sum.error || 0)) : 0;
+  return '<div class="panel" style="margin-bottom:12px"><h3>Outcome</h3>' +
+      (sum ? btSummaryHtml(sum) + btSevPerfHtml(sum) + btConfigPerfHtml(sum) : "") +
+      (bad ? '<div class="bt-cta-row"><button class="btn sm primary" data-act="btSetView" data-args=\'' + '[' + btArgs("adversary") + ']' + '\'' + '>' +
+        "Probe these failures in Adversary →</button></div>" : "") +
+      "</div>" +
+    '<div class="panel" style="margin-bottom:12px"><h3>Results matrix <span class="muted small">scenarios × configurations — click or Enter on a cell to inspect</span></h3>' +
+      btToolbarHtml() +
+      '<div class="bt-matrix-wrap" id="btMatrixWrap">' + btMatrixInnerHtml() + "</div></div>";
+}
+
 function renderBench() {
   const root = el("benchMain");
   if (!root) return;
-  const cov = btCoverage(btCases(btState.configs, { context: btState.context, severity: btState.severity, domain: btState.domain }));
-  const sum = btState.run ? btState.run.summary : null;
+  const cov = btCoverage(btCases(btState.configs, { context: btState.context }));
   const adapters = btAdapterList();
+  const view = btState.view || "setup";
+
+  let body = "";
+  if (view === "results") body = btResultsHtml();
+  else if (view === "adversary") body =
+    '<div class="panel" style="margin-bottom:12px"><h3>Adversary <span class="muted small">probe · mutate · attack</span></h3>' +
+      btAdversaryHtml() + "</div>";
+  else if (view === "compare") body =
+    '<div class="panel" style="margin-bottom:12px"><h3>Model comparison <span class="muted small">same cases, two models</span></h3>' +
+      btCompareHtml() + "</div>" +
+    '<div class="panel"><h3>Stored runs</h3>' + btRunsHtml() + "</div>";
+  else body = btSetupHtml(cov, adapters);
 
   root.innerHTML =
     '<div class="bt-head">' +
       "<div><h2>Battle Bench</h2>" +
-      '<p class="muted small">Put a configuration in a scenario and assert on the outcome. ' +
-      escHtml(cov.total) + " scenarios × " + btState.configs.length + " configuration" + (btState.configs.length === 1 ? "" : "s") +
-      " = <b>" + (cov.total * btState.configs.length) + "</b> cases" +
-      (cov.tested < cov.total ? ' · <span style="color:var(--orange)">' + (cov.total - cov.tested) + " scenarios have no published trace</span>" : "") +
-      "</p></div>" +
+      '<p class="muted small">Put a configuration in a scenario and assert on the outcome: ' +
+      "setup → results → adversary → compare.</p></div>" +
       '<div class="bt-head-btns">' +
-        '<button class="btn" onclick="btAddConfig()">＋ Configuration</button>' +
-        '<button class="btn" onclick="btSweepConfigs()">⛓ Sweep configs</button>' +
-        '<button class="btn" onclick="btExport(\'md\')" ' + (btState.run ? "" : "disabled") + ">⬇ Report</button>" +
-        '<button class="btn" onclick="btExport(\'json\')" ' + (btState.run ? "" : "disabled") + ">⬇ JSON</button>" +
+        '<button class="btn" data-act="btAddConfig">＋ Configuration</button>' +
+        '<button class="btn" data-act="btSweepConfigs">⛓ Sweep configs</button>' +
+        '<button class="btn" data-act="btExport" data-args="[&quot;md&quot;]" ' + (btState.run ? "" : "disabled") + ">⬇ Report</button>" +
+        '<button class="btn" data-act="btExport" data-args="[&quot;json&quot;]" ' + (btState.run ? "" : "disabled") + ">⬇ JSON</button>" +
       "</div>" +
     "</div>" +
-
-    '<div class="panel" style="margin-bottom:12px"><h3>Run</h3>' +
-      '<div class="bt-runbar">' +
-        '<label class="muted small">Executor</label>' +
-        '<select class="search" id="btAdapter" aria-label="Battle adapter" onchange="btSetAdapter(this.value)">' +
-          adapters.map(function (a) {
-            return '<option value="' + a.id + '"' + (a.id === btState.adapter ? " selected" : "") + ">" +
-              escHtml(a.label) + (a.needsModel ? " · needs a model" : "") + "</option>";
-          }).join("") +
-        "</select>" +
-        '<label class="muted small">Mode</label>' +
-        '<select class="search" id="btMode" aria-label="Run mode" onchange="btSetMode(this.value)">' +
-          '<option value="advise"' + (btState.context.mode === "advise" ? " selected" : "") + ">advise the team</option>" +
-          '<option value="act"' + (btState.context.mode === "act" ? " selected" : "") + ">act as the agent</option>" +
-        "</select>" +
-        '<label class="muted small">Backend</label>' +
-        '<select class="search" id="btBackend" aria-label="Model backend" onchange="btSetBackend(this.value)">' +
-          '<option value="axiom"' + (btState.context.backend === "axiom" ? " selected" : "") + ">axiom (mesh)</option>" +
-          '<option value="fox-services"' + (btState.context.backend === "fox-services" ? " selected" : "") + ">fox-services (local)</option>" +
-        "</select>" +
-        '<label class="muted small">Severity</label>' +
-        '<select class="search" id="btSev" aria-label="Severity filter" onchange="btSetSeverity(this.value)">' +
-          ["", "critical", "high", "medium"].map(function (s) {
-            return '<option value="' + s + '"' + (btState.severity === s ? " selected" : "") + ">" + (s || "all") + "</option>";
-          }).join("") +
-        "</select>" +
-        '<div style="flex:1"></div>' +
-        (btState.running
-          ? '<button class="btn danger" onclick="btCancel()">■ Stop</button>'
-          : '<button class="btn primary" onclick="btStart()">▶ Run the bench</button>') +
-      "</div>" +
-      (btState.running
-        ? '<div class="bt-progress"><div class="bt-progress-fill" style="width:' + btProgressPct() + '%"></div></div>' +
-          '<p class="muted small" id="btProgressText">' + escHtml(btProgressText()) + "</p>"
-        : "") +
-      (sum ? btSummaryHtml(sum) : "") +
-    "</div>" +
-
-    '<div class="panel" style="margin-bottom:12px"><h3>Configurations under test</h3>' +
-      '<div class="bt-cfgs">' + (btState.configs.length
-        ? btState.configs.map(btConfigHtml).join("")
-        : '<p class="muted small">No configurations — add one to run the bench.</p>') + "</div>" +
-    "</div>" +
-
-    '<div class="panel" style="margin-bottom:12px"><h3>Results matrix <span class="muted small">scenarios × configurations</span></h3>' +
-      (btState.results.length ? btMatrixHtml() : '<p class="muted small">Run the bench to fill the matrix.</p>') +
-    "</div>" +
-
-    '<div class="panel" style="margin-bottom:12px"><h3>Adversary <span class="muted small">probe · mutate · attack</span></h3>' +
-      btAdversaryHtml() +
-    "</div>" +
-
-    '<div class="panel" style="margin-bottom:12px"><h3>Model comparison <span class="muted small">same cases, two models</span></h3>' +
-      btCompareHtml() +
-    "</div>" +
-
-    '<div class="panel"><h3>Stored runs</h3>' + btRunsHtml() + "</div>";
+    btTabsHtml() + body;
+  if (view === "results" && btState.results.length) btPaintMatrix();
 }
 
 /* ---------------- the model comparison panel ---------------- */
@@ -334,9 +570,11 @@ function btCompareHtml() {
     '<input class="search" id="btModelB" style="width:auto" placeholder="e.g. qwen3.8:27b" value="' + escHtml(opts[1] || "") + '">' +
     '<label class="muted small">cases</label>' +
     '<input class="search" id="btCompareN" style="width:70px" type="number" min="1" max="54" value="' + (btState.compareLimit || 8) + '">' +
-    '<button class="btn primary" onclick="btRunCompare()">⇄ Compare</button>' +
-    '<button class="btn ghost" onclick="btListModels()">list models</button>' +
-    "</div>" + body;
+    '<button class="btn primary" data-act="btRunCompare">⇄ Compare</button>' +
+    '<button class="btn ghost" data-act="btListModels">list models</button>' +
+    "</div>" +
+    '<p class="muted small" style="margin:6px 0 0">Compares the <b>first</b> configuration only — put the subject you care about first in Setup.</p>' +
+    body;
 }
 
 /* Ask the backend which models it serves. */
@@ -386,7 +624,7 @@ function btAdversaryHtml() {
       '<td class="mono small">' + Math.round(e.exposure * 100) / 100 + "</td>" +
       '<td class="mono small">' + e.coverage + "%</td>" +
       '<td class="muted small">' + escHtml(e.missing.slice(0, 3).join(", ") || "—") + "</td>" +
-      '<td><button class="btn sm" onclick="btAdversaryAttack(' + btArgs(e.scenarioId) + ')">⚔ attack</button></td></tr>';
+      '<td><button class="btn sm" data-act="btAdversaryAttack" data-args=\'' + '[' + btArgs(e.scenarioId) + ']' + '\'' + '>⚔ attack</button></td></tr>';
   }).join("");
   const sweep = btState.sweep ? btSweepHtml(btState.sweep) : "";
   const attacks = btState.attacks ? btAttackHtml(btState.attacks) : "";
@@ -395,13 +633,13 @@ function btAdversaryHtml() {
     "The mutation sweep changes one setting at a time and re-runs; the attack asks a model to break the subject outright.</p>" +
     '<div class="bt-adv-btns">' +
       '<label class="muted small">Subject</label>' +
-      '<select class="search" id="btAdvCfg" aria-label="Adversary subject" onchange="btSetAdversaryConfig(this.value)">' +
+      '<select class="search" id="btAdvCfg" aria-label="Adversary subject" data-change="btSetAdversaryConfig" data-first="value">' +
         btState.configs.map(function (c) {
           return '<option value="' + btConfigHash(c) + '"' + (btConfigHash(c) === btConfigHash(cfg) ? " selected" : "") + ">" + escHtml(c.name) + "</option>";
         }).join("") +
       "</select>" +
-      '<button class="btn sm" onclick="btRunSweep()">⛓ Mutation sweep</button>' +
-      '<button class="btn sm" onclick="btRunRedTeam()">⚔ Red-team (needs a model)</button>' +
+      '<button class="btn sm" data-act="btRunSweep">⛓ Mutation sweep</button>' +
+      '<button class="btn sm" data-act="btRunRedTeam">⚔ Red-team (needs a model)</button>' +
     "</div>" +
     '<div class="bt-adv-tables">' +
       '<div><h4 style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 5px">Probe — most exposed scenarios</h4>' +
@@ -437,7 +675,7 @@ function btAttackHtml(attacks) {
       escHtml(a.title.slice(0, 40)) + "</td>" +
       '<td class="muted small">' + escHtml(a.finding) + "</td>" +
       '<td class="muted small">' + (a.error ? escHtml(a.error) : (a.ms / 1000).toFixed(1) + "s") + "</td>" +
-      '<td><button class="btn sm" onclick="btShowAttack(' + btArgs(a.scenarioId) + ')">view</button></td></tr>';
+      '<td><button class="btn sm" data-act="btShowAttack" data-args=\'' + '[' + btArgs(a.scenarioId) + ']' + '\'' + '>view</button></td></tr>';
   }).join("");
   return '<div><h4 style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin:12px 0 5px">' +
     "Red-team findings</h4>" +
@@ -515,12 +753,16 @@ function btSummaryHtml(sum) {
     "</div>" +
     (sum.failing.length
       ? '<details open><summary class="bt-fail-sum">' + sum.failing.length + " failing case" + (sum.failing.length === 1 ? "" : "s") + " — the first checks that broke</summary>" +
-        '<div class="bt-fails">' + sum.failing.slice(0, 12).map(function (r) {
+        '<table class="tbl bt-fail-tbl"><thead><tr><th>Scenario</th><th>Config</th><th>What broke</th></tr></thead><tbody>' +
+        sum.failing.slice(0, 12).map(function (r) {
           const broke = r.checks.filter(function (c) { return !c.pass; });
-          return '<div class="bt-fail"><b>' + escHtml(r.scenarioTitle.slice(0, 44)) + "</b> " +
-            '<span class="chip">' + escHtml(r.configName.split(" · ")[0]) + "</span> " +
-            '<span class="muted small">' + escHtml(broke.map(function (c) { return c.label + " (" + c.detail + ")"; }).join("; ")) + "</span></div>";
-        }).join("") + "</div></details>"
+          return '<tr class="bt-fail-row" data-act="btInspect" data-args=\'' + '[' + btArgs(r.scenarioId, r.configHash) + ']' + '\'' + ' title="Inspect this case">' +
+            "<td>" + escHtml(r.scenarioTitle.slice(0, 44)) + "</td>" +
+            '<td><span class="chip">' + escHtml(r.configName.split(" · ")[0]) + "</span></td>" +
+            '<td class="muted small">' + escHtml(broke.map(function (c) { return c.label + " (" + c.detail + ")"; }).join("; ")) + "</td></tr>";
+        }).join("") + "</tbody></table>" +
+        (sum.failing.length > 12 ? '<p class="muted small">Showing 12 of ' + sum.failing.length + " — inspect the matrix for the rest.</p>" : "") +
+        "</details>"
       : "");
 }
 
@@ -530,14 +772,27 @@ let btProgress = { done: 0, total: 0, last: "" };
 function btProgressPct() { return btProgress.total ? Math.round((btProgress.done / btProgress.total) * 100) : 0; }
 function btProgressText() { return btProgress.done + " / " + btProgress.total + " · " + btProgress.last; }
 
-function btSetAdapter(v) { btState.adapter = v; }
+function btSetAdapter(v) { btState.adapter = v; const h = el("btAdapterHelp"); if (h) h.textContent = btAdapterBlurb(); }
 function btSetMode(v) { btState.context.mode = v; }
 function btSetBackend(v) { btState.context.backend = v; }
-function btSetSeverity(v) { btState.severity = v; renderBench(); }
+/* Display filters — repaint the matrix in place so search keeps focus. */
+function btSetSeverity(v) { btState.severity = v; btPaintMatrix(); }
+function btSetDomain(v) { btState.domain = v; btPaintMatrix(); }
+function btSetQuery(v) { btState.q = v; btPaintMatrix(); }
+function btToggleFails() { btState.failsOnly = !btState.failsOnly; btPaintMatrix(); }
+function btClearFilter(k) {
+  if (k === "severity") btState.severity = "";
+  else if (k === "domain") btState.domain = "";
+  else if (k === "q") btState.q = "";
+  else if (k === "failsOnly") btState.failsOnly = false;
+  renderBench();
+}
 
 async function btStart() {
   if (btState.running) return;
-  const cases = btCases(btState.configs, { context: btState.context, severity: btState.severity, domain: btState.domain });
+  /* Runs always cover the full corpus — severity / domain / search slice the
+     display in Results, never the run, so one run supports every cut. */
+  const cases = btCases(btState.configs, { context: btState.context });
   if (!cases.length) { showNotif("No cases to run", { kind: "warn" }); return; }
   const adapter = btAdapter(btState.adapter);
   if (adapter && adapter.needsModel) {
@@ -568,6 +823,7 @@ async function btStart() {
   btState.running = false;
   btState.run = out.run;
   if (out.run) btSaveRun(out.run, out.results);
+  btState.view = "results";
   renderBench();
   const s = out.run && out.run.summary;
   showNotif(s ? ("Bench complete — " + s.pass + " passed, " + s.fail + " failed, " + s.error + " errored") : "Bench finished", {
@@ -627,8 +883,9 @@ function btRunsHtml() {
       '<span class="muted small">' + escHtml(r.run.adapter) + " · " + r.run.run + " cases · " + Math.round(r.run.durationMs / 1000) + "s</span></div>" +
       '<div class="bt-run-sum"><span class="bt-ok">' + s.pass + "</span> / <span class=\"bt-bad\">" + s.fail + "</span> pass / fail</div>" +
       '<div style="flex:1"></div>' +
-      '<button class="btn sm" onclick="btDiffWith(' + btArgs(r.run.id) + ')">⇄ Compare with latest</button>' +
-      '<button class="btn sm ghost" onclick="btLoadRun(' + btArgs(r.run.id) + ')">Load</button>' +
+      '<button class="btn sm" data-act="btDiffWith" data-args=\'' + '[' + btArgs(r.run.id) + ']' + '\'' + '>⇄ Compare with latest</button>' +
+      '<button class="btn sm ghost" data-act="btLoadRun" data-args=\'' + '[' + btArgs(r.run.id) + ']' + '\'' + '>Load</button>' +
+      '<button class="btn sm ghost danger" data-act="btDeleteRun" data-args=\'' + '[' + btArgs(r.run.id) + ']' + '\'' + ' title="Delete this stored run">✕</button>' +
       "</div>";
   }).join("") + "</div>";
 }
@@ -662,8 +919,16 @@ function btLoadRun(runId) {
   if (!r) return;
   btState.results = r.results || [];
   btState.run = r.run;
+  btState.view = "results";
   renderBench();
   showNotif("Loaded run " + runId);
+}
+
+function btDeleteRun(runId) {
+  btRunsSave(btLoadRuns().filter(function (x) { return x.run.id !== runId; }));
+  if (btState.run && btState.run.id === runId) { btState.run = null; btState.results = []; }
+  renderBench();
+  showNotif("Deleted run " + runId);
 }
 
 /* ---------------- the dimension sweep ---------------- */
@@ -677,17 +942,39 @@ function btSweepConfigs() {
   const dims = ["autonomy", "blast", "criticality", "approvalGate", "sensitivity", "hosting", "rollout"];
   const base = btState.configs[0] || btDefaultConfigs()[0];
   const out = [];
+  const seen = {};
   dims.forEach(function (d) {
     (BT_DIMS[d] || []).forEach(function (v) {
-      const o = {};
-      o[d] = v;
-      out.push(btConfig(Object.assign({}, base, o, { name: d + " = " + v })));
+      /* Skip the base's own value and any twin already emitted: identical
+         settings share one hash, so twins render the same results under
+         two different names — fails appearing under the wrong column. */
+      if (String(base[d]) === String(v)) return;
+      const c = btConfig(Object.assign({}, base, (function () { const o = {}; o[d] = v; return o; })(), { name: d + " = " + v }));
+      const h = btConfigHash(c);
+      if (seen[h]) return;
+      seen[h] = 1;
+      out.push(c);
     });
   });
   btState.configs = out;
   btPersistConfigs();
   renderBench();
   showNotif("Swept " + dims.length + " dimensions — " + out.length + " configurations");
+}
+
+/* Twin configurations (same hash, different names) render the same results
+   under each name. Surface them in Setup so a misplaced fail is explainable. */
+function btTwinWarnHtml() {
+  const byHash = {};
+  btState.configs.forEach(function (c) {
+    const h = btConfigHash(c);
+    (byHash[h] = byHash[h] || []).push(c.name);
+  });
+  const twins = Object.keys(byHash).filter(function (h) { return byHash[h].length > 1; });
+  if (!twins.length) return "";
+  return '<p class="muted small" style="color:var(--orange)">⚠ ' +
+    twins.map(function (h) { return escHtml(byHash[h].join("  ≡  ")); }).join(" · ") +
+    " — identical settings under different names; results show under each.</p>";
 }
 
 /* ---------------- export ---------------- */

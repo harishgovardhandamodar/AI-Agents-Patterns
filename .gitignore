@@ -19,6 +19,14 @@ Agentic_Design_Patterns.pdf
 book/agent-patterns-and-guardrails.html
 book/.pass1.pdf
 book/.outline-spec.json
+# supplement book — `npm run book:rogue` regenerates these; same split.
+book/rogue-agents.html
+book/Rogue-Agents.pdf.pass1.pdf
+book/Rogue-Agents.pdf.outline-spec.json
+# self-learning supplement — `npm run book:self` regenerates these; same split.
+book/self-learning-agents.html
+book/Self-Learning-Agents.pdf.pass1.pdf
+book/Self-Learning-Agents.pdf.outline-spec.json
 
 # local social/draft copy — personal, not part of the project.
 LINKEDIN-POST.md

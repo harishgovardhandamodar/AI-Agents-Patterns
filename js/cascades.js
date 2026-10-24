@@ -18,7 +18,6 @@ const BLAST_ORDER = ["single-request", "single-agent", "service", "tenant", "fle
 
 function casAll() { return (DATA.cascades && DATA.cascades.cascades) || []; }
 function casById(id) { return casAll().find(function (c) { return c.id === id; }); }
-function casTaxonomy() { return (DATA.cascades && DATA.cascades.taxonomy) || {}; }
 function casDomain(c) { return c.domain || "general"; }
 function casBlastRank(c) { const i = BLAST_ORDER.indexOf(c.blastRadius); return i < 0 ? 0 : i; }
 function casImpactRank(c) { return ({ critical: 4, high: 3, medium: 2, low: 1 })[c.impact] || 0; }
@@ -88,7 +87,7 @@ function casLinksBlock(list, title) {
   sorted.forEach(function (c) { (byCls[c.cls] = byCls[c.cls] || []).push(c); });
   const groups = Object.keys(order).filter(function (k) { return byCls[k]; }).map(function (k) {
     return '<div style="margin:5px 0"><span class="cls-chip ' + k + '">' + k + "</span> " +
-      byCls[k].map(function (c) { return '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(c.id) + '" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'cascades\',\'' + c.id + '\');return false;">' + escHtml(c.name) + "</a>"; }).join(" ") + "</div>";
+      byCls[k].map(function (c) { return '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(c.id) + '" data-act="goTo" data-args="' + dataArgs("cascades", c.id) + '">' + escHtml(c.name) + "</a>"; }).join(" ") + "</div>";
   }).join("");
   return '<div class="dsec"><h4>' + escHtml(title) + ' <span class="muted small" style="text-transform:none">(' + list.length + ")</span></h4>" +
     '<p class="small muted" style="margin:0 0 4px">How this can propagate — grouped by cascade class. Click to open the full analysis, simulator and mitigation plan.</p>' +
@@ -117,7 +116,12 @@ function setCasView(v) {
   if (v === "mitigation") renderMitigation();
 }
 function mitLoad() { try { return JSON.parse(localStorage.getItem(MIT_STORE) || "{}"); } catch (e) { return {}; } }
-function mitSave(m) { try { localStorage.setItem(MIT_STORE, JSON.stringify(m)); } catch (e) {} if (typeof projTouch === "function") projTouch(); }
+function mitSave(m) {
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(MIT_STORE, JSON.stringify(m)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("mit", "Mitigation backlog");
+  if (typeof projTouch === "function") projTouch();
+}
 function mitKey(t) { return t.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim().slice(0, 90); }
 
 /* Aggregate every cascade's controls into a de-duplicated, scored backlog. */
@@ -187,7 +191,7 @@ function renderMitigation() {
   const prog = mitProgress();
   const fbtn = function (label, key, val, extra) {
     const on = mitFilter[key] === val;
-    return '<button class="seg-btn' + (on ? " active" : "") + '" onclick="setMitFilter(\'' + key + '\',\'' + (val || "") + '\')">' + label + (extra || "") + "</button>";
+    return '<button class="seg-btn' + (on ? " active" : "") + '" data-act="setMitFilter" data-args="' + dataArgs(key, val || "") + '">' + label + (extra || "") + "</button>";
   };
   box.innerHTML =
     '<div class="panel" style="margin-bottom:12px"><h3>Mitigation planner — ' + all.length + " distinct controls from " + casAll().length + " cascades</h3>" +
@@ -200,21 +204,21 @@ function renderMitigation() {
       '<div class="mit-prog-row"><span>In progress</span><b>' + prog.inProgress + "</b></div>" +
     "</div>" +
     '<div class="mit-actions">' +
-      '<button class="btn sm" onclick="mitFocusUnowned()">🎯 Focus un-owned</button>' +
-      '<button class="btn sm" onclick="mitToBlueprint(10)">🧩 Seed blueprint from top 10</button>' +
+      '<button class="btn sm" data-act="mitFocusUnowned">🎯 Focus un-owned</button>' +
+      '<button class="btn sm" data-act="mitToBlueprint" data-args="[10]">🧩 Seed blueprint from top 10</button>' +
     "</div>" +
     '<div class="seg" style="margin:10px 0 8px">' + fbtn("All functions", "func", null) + MIT_FUNCS.map(function (f) { return fbtn(f[1], "func", f[0]); }).join("") + "</div>" +
     '<div class="seg" style="margin:0 0 8px">' + fbtn("All priorities", "pri", null) + fbtn("P1", "pri", "P1", " · " + counts.P1) + fbtn("P2", "pri", "P2", " · " + counts.P2) + fbtn("P3", "pri", "P3", " · " + counts.P3) + "</div>" +
-    '<div style="margin:0 0 8px"><input class="search" id="mitSearch" aria-label="Search mitigation controls" style="width:100%" placeholder="Search controls… (e.g. audit, sandbox, approval)" value="' + escHtml(mitFilter.q || "") + '" oninput="mitSetQ(this.value)"></div>' +
+    '<div style="margin:0 0 8px"><input class="search" id="mitSearch" aria-label="Search mitigation controls" style="width:100%" placeholder="Search controls… (e.g. audit, sandbox, approval)" value="' + escHtml(mitFilter.q || "") + '" data-input="mitSetQ" data-first="value"></div>' +
     '<div style="display:flex;gap:8px;align-items:center;margin-top:8px">' +
     '<span class="muted small">showing ' + shown.length + " of " + filtered.length + "</span>" +
     (filtered.length > shown.length
-      ? '<button class="btn" onclick="mitShowMore()">Show ' + Math.min(MIT_PAGE_STEP, filtered.length - shown.length) + " more</button>" +
-        '<button class="btn ghost" onclick="setMitFilter(\'limit\',' + filtered.length + ')">Show all ' + filtered.length + "</button>"
-      : (mitFilter.limit > MIT_PAGE_STEP ? '<button class="btn ghost" onclick="setMitFilter(\'limit\',' + MIT_PAGE_STEP + ')">Show top ' + MIT_PAGE_STEP + "</button>" : "")) +
+      ? '<button class="btn" data-act="mitShowMore">Show ' + Math.min(MIT_PAGE_STEP, filtered.length - shown.length) + " more</button>" +
+        '<button class="btn ghost" data-act="setMitFilter" data-args="' + dataArgs("limit", filtered.length) + '">Show all ' + filtered.length + "</button>"
+      : (mitFilter.limit > MIT_PAGE_STEP ? '<button class="btn ghost" data-act="setMitFilter" data-args="' + dataArgs("limit", MIT_PAGE_STEP) + '">Show top ' + MIT_PAGE_STEP + "</button>" : "")) +
     '<div style="flex:1"></div>' +
-    '<button class="btn" onclick="exportMitigations(\'md\')">⬇ Export markdown</button>' +
-    '<button class="btn" onclick="exportMitigations(\'csv\')">⬇ Export CSV</button></div></div>' +
+    '<button class="btn" data-act="exportMitigations" data-args="[&quot;md&quot;]">⬇ Export markdown</button>' +
+    '<button class="btn" data-act="exportMitigations" data-args="[&quot;csv&quot;]">⬇ Export CSV</button></div></div>' +
     '<div class="mit-table">' + (shown.length ? shown.map(function (e) { return mitRow(e, saved[e.key] || {}); }).join("")
       : (typeof emptyState === "function"
         ? emptyState("✔", "No controls match these filters", "Every control is filtered out — clear the search or a function/priority filter to see the backlog again.", "Clear mitigation filters", "mitClearFilters()")
@@ -233,11 +237,11 @@ function mitRow(e, st) {
     '<div class="mit-m"><span class="chip" style="font-size:9px">' + fn[1] + "</span>" +
     '<span class="muted small">' + e.freq + " cascade" + (e.freq > 1 ? "s" : "") + " · worst impact " + ({ 4: "critical", 3: "high", 2: "medium", 1: "low" }[e.impact] || "?") + " · blast " + BLAST_ORDER[e.blast] + "</span></div>" +
     '<div class="mit-links">' + e.cascades.slice(0, 6).map(function (id) {
-      const c = casById(id); return c ? '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(id) + '" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'cascades\',\'' + id + '\');return false;">' + escHtml(c.name.slice(0, 34)) + "</a>" : "";
+      const c = casById(id); return c ? '<a class="cp-cite c" href="#cascades/' + encodeURIComponent(id) + '" data-act="goTo" data-args="' + dataArgs("cascades", id) + '">' + escHtml(c.name.slice(0, 34)) + "</a>" : "";
     }).join("") + "</div>" +
     '<div class="mit-verify">verify: ' + escHtml(MIT_VERIFY[e.func]) + "</div></div>" +
-    '<div class="mit-side"><input class="mit-owner" aria-label="Control owner" placeholder="owner" value="' + escHtml(owner) + '" oninput="mitSet(\'' + escHtml(e.key) + '\',\'owner\',this.value)">' +
-    '<select class="mit-status" onchange="mitSet(\'' + escHtml(e.key) + '\',\'status\',this.value)">' + stOpts + "</select></div>" +
+    '<div class="mit-side"><input class="mit-owner" aria-label="Control owner" placeholder="owner" value="' + escHtml(owner) + '" data-input="mitSet" data-last="value" data-args="' + dataArgs(e.key, "owner") + '">' +
+    '<select class="mit-status" data-change="mitSet" data-last="value" data-args="' + dataArgs(e.key, "status") + '">' + stOpts + "</select></div>" +
     "</div>";
 }
 function mitSet(key, field, val) {
@@ -426,11 +430,17 @@ function casSimSection(c) {
     '<div class="cas-sim-ctl">' +
     '<label>seed <input type="number" id="simSeed" value="' + seed + '" style="width:88px"></label>' +
     '<label>trials <select id="simTrials"><option>500</option><option selected>2000</option><option>10000</option></select></label>' +
-    '<label>hardening <input type="range" id="simHard" min="0" max="100" value="40" oninput="document.getElementById(\'simHardV\').textContent=this.value+\'%\'"> <span id="simHardV">40%</span></label>' +
-    '<button class="btn primary" onclick="runCascadeSim(\'' + c.id + '\')">▶ Run simulation</button>' +
+    '<label>hardening <input type="range" id="simHard" min="0" max="100" value="40" data-input="rgHardLabel" data-first="el"> <span id="simHardV">40%</span></label>' +
+    '<button class="btn primary" data-act="runCascadeSim" data-args="' + dataArgs(c.id) + '">▶ Run simulation</button>' +
     "</div>" +
     '<div id="casSimOut" class="cas-sim-out"><span class="muted small">Model the spread of this cascade across its ' +
     (c.path || []).length + " propagation steps. Deterministic Monte-Carlo — no model tokens.</span></div></div>";
+}
+/* Range-label shim for delegation (the old inline oninput assigned
+   the label text directly). */
+function rgHardLabel(el) {
+  const t = document.getElementById("simHardV");
+  if (t) t.textContent = el.value + "%";
 }
 function runCascadeSim(id) {
   const c = casById(id);
@@ -513,7 +523,7 @@ function buildCasFilters() {
       const n = casAll().filter(function (x) { return x.cls === c[0]; }).length;
       const l = document.createElement("label");
       l.className = "filter-item";
-      l.innerHTML = '<input type="checkbox" data-v="' + c[0] + '" onchange="onCasFilter(this,\'cls\')"> ' +
+      l.innerHTML = '<input type="checkbox" data-v="' + c[0] + '" data-change="onCasFilter" data-first="el" data-args="[&quot;cls&quot;]"> ' +
         '<span class="cls-chip ' + c[0] + '">' + c[1] + "</span> <span class='muted small'>" + n + "</span>";
       cls.appendChild(l);
     });
@@ -524,7 +534,7 @@ function buildCasFilters() {
     const counts = {};
     casAll().forEach(function (c) { counts[casDomain(c)] = (counts[casDomain(c)] || 0) + 1; });
     dom.innerHTML = Object.keys(counts).sort().map(function (d) {
-      return '<label class="filter-item"><input type="checkbox" data-v="' + escHtml(d) + '" onchange="onCasFilter(this,\'domain\')"> ' +
+      return '<label class="filter-item"><input type="checkbox" data-v="' + escHtml(d) + '" data-change="onCasFilter" data-first="el" data-args="[&quot;domain&quot;]"> ' +
         escHtml(d) + ' <span class="muted small">' + counts[d] + "</span></label>";
     }).join("");
   }
@@ -534,7 +544,7 @@ function buildCasFilters() {
     const set = {};
     casAll().forEach(function (c) { set[c.blastRadius] = (set[c.blastRadius] || 0) + 1; });
     bl.innerHTML = BLAST_ORDER.filter(function (b) { return set[b]; }).map(function (b) {
-      return '<label class="filter-item"><input type="checkbox" data-v="' + b + '" onchange="onCasFilter(this,\'blast\')"> ' +
+      return '<label class="filter-item"><input type="checkbox" data-v="' + b + '" data-change="onCasFilter" data-first="el" data-args="[&quot;blast&quot;]"> ' +
         b + ' <span class="muted small">' + set[b] + "</span></label>";
     }).join("");
   }
@@ -584,6 +594,18 @@ function casActiveChips() {
   return chips;
 }
 
+/* Delegation shims for the cascades toolbar (the old inline handlers
+   assigned state and re-rendered in one expression). */
+function casSearchInput(el) {
+  casState.q = String(el.value || "").trim().toLowerCase();
+  casState.limit = CAS_LIST_STEP;
+  renderCascadeList();
+}
+function casSortSel(v) {
+  casState.sort = v;
+  casState.limit = CAS_LIST_STEP;
+  renderCascadeList();
+}
 function renderCascadeList() {
   const grid = el("casGrid");
   if (!grid) return;
@@ -594,10 +616,10 @@ function renderCascadeList() {
   if (typeof paintActiveChips === "function") paintActiveChips("casActive", casActiveChips());
   grid.innerHTML = shown.map(casCardHtml).join("") +
     (list.length > shown.length
-      ? '<div class="cas-more"><button class="btn" onclick="casShowMore()">Show ' + Math.min(CAS_LIST_STEP, list.length - shown.length) + ' more (' + (list.length - shown.length) + ' remaining)</button>' +
-        '<button class="btn ghost" onclick="casShowAll()">Show all ' + list.length + "</button></div>"
+      ? '<div class="cas-more"><button class="btn" data-act="casShowMore">Show ' + Math.min(CAS_LIST_STEP, list.length - shown.length) + ' more (' + (list.length - shown.length) + ' remaining)</button>' +
+        '<button class="btn ghost" data-act="casShowAll">Show all ' + list.length + "</button></div>"
       : (casState.limit > CAS_LIST_STEP && list.length > CAS_LIST_STEP
-        ? '<div class="cas-more"><button class="btn ghost" onclick="casShowFewer()">Show fewer</button></div>' : "")) ||
+        ? '<div class="cas-more"><button class="btn ghost" data-act="casShowFewer">Show fewer</button></div>' : "")) ||
     (typeof emptyState === "function"
       ? emptyState("⧉", "No cascades match", catN("cascades", 180) + " cascade records and nothing fits — a filter is probably too narrow. Reset to browse the full taxonomy.", "Reset filters", "resetCasFilters()")
       : `<p class="muted">No cascades match the current filters.</p>`);
@@ -606,7 +628,8 @@ function casCardHtml(c) {
   const hi = casBlastRank(c) >= 4 ? " hi" : "";
   const mit = c.mitigations || {};
   const mc = ["prevent", "detect", "contain", "recover"].reduce(function (n, k) { return n + ((mit[k] || []).length); }, 0);
-  return '<div class="cas-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open cascade: ' + escHtml(c.name) + '" onclick="openCascade(\'' + c.id + '\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();openCascade(\'' + c.id + '\')}">' +
+  return `<div class="cas-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open cascade: ${escHtml(c.name)}" ` +
+    `data-act="openCascade" data-args="[&quot;${c.id}&quot;]" data-keys="Enter, ">`;
     '<div class="t"><span class="cls-chip ' + c.cls + '">' + c.cls + '</span> ' + escHtml(c.name) + "</div>" +
     '<div class="m"><span class="blast-chip' + hi + '">blast: ' + escHtml(c.blastRadius) + "</span>" +
     '<span class="blast-chip">' + escHtml(c.impact) + " impact</span>" +
@@ -625,19 +648,19 @@ function casRefChips(c) {
   (c.patternRefs || []).forEach(function (id) {
     const p = DATA.patterns && DATA.patterns.patterns.find(function (x) { return x.id === id; });
     parts.push('<a class="cp-cite p" href="#patterns/' + encodeURIComponent(id) + '" title="Pattern" ' +
-      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'patterns\',\'' + id + '\');return false;">◆ ' +
+      'data-act="goTo" data-args="' + dataArgs("patterns", id) + '">◆ ' +
       escHtml(p ? p.name : id) + "</a>");
   });
   (c.scenarioRefs || []).forEach(function (id) {
     const s = DATA.scenarios && DATA.scenarios.scenarios.find(function (x) { return x.id === id; });
     parts.push('<a class="cp-cite s" href="#scenarios/' + encodeURIComponent(id) + '" title="Scenario" ' +
-      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'scenarios\',\'' + id + '\');return false;">⚠ ' +
+      'data-act="goTo" data-args="' + dataArgs("scenarios", id) + '">⚠ ' +
       escHtml(s ? s.title : id) + "</a>");
   });
   (c.traceRefs || []).forEach(function (id) {
     const t = DATA.traces && DATA.traces.traces.find(function (x) { return x.id === id; });
     parts.push('<a class="cp-cite t" href="#live/' + encodeURIComponent(id) + '" title="Trace" ' +
-      'onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo(\'live\',\'' + id + '\');return false;">▶ ' +
+      'data-act="goTo" data-args="' + dataArgs("live", id) + '">▶ ' +
       escHtml(t ? String(t.name).split(" — ").slice(1).join(" — ") || t.name : id) + "</a>");
   });
   return parts.length ? '<div class="ref-chips">' + parts.join("") + "</div>" : '<span class="muted small">no direct catalog links</span>';
@@ -682,7 +705,7 @@ function openCascade(id) {
     '<div class="d-actions" style="margin-top:14px">' +
     (typeof bpRefsBtnHtml === "function" && (c.patternRefs || []).length ? bpRefsBtnHtml(c.patternRefs, "from this cascade") : "") +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("cascades", c.id) : "") +
-    '<button class="btn primary" onclick="askAbout(\'cascade\',' + JSON.stringify(c.id) + ')">🤖 Ask Fox - Architect about this</button></div>';
+    '<button class="btn primary" data-act="askAbout" data-args="' + dataArgs("cascade", c.id) + '">🤖 Ask Fox - Architect about this</button></div>';
   openDetail(c.name, c.cls + " cascade", html, { tab: "cascades", id: c.id, title: c.name });
 }
 

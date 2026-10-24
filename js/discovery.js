@@ -39,7 +39,9 @@ function discLoad() {
   } catch (e) {}
 }
 function discSave() {
-  try { localStorage.setItem(DISC_STORE, JSON.stringify({ cfg: discState.cfg, run: discState.run, compare: discState.compare })); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(DISC_STORE, JSON.stringify({ cfg: discState.cfg, run: discState.run, compare: discState.compare })) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("discovery", "Discovery Lab state");
 }
 
 /* deterministic RNG so runs (and the on/off comparison) are reproducible */
@@ -275,7 +277,7 @@ function discCard(c, i) {
   const sevColor = c.severity === "critical" ? "var(--red)" : c.severity === "high" ? "var(--orange)" : "var(--accent)";
   const anchorChips = c.anchors.map(id => {
     const p = (DATA.patterns.patterns || []).find(x => x.id === id);
-    return p ? `<a class="cp-cite p" href="#patterns/${encodeURIComponent(id)}" onclick="if(event.ctrlKey||event.metaKey||event.shiftKey)return true;event.preventDefault();goTo('patterns','${id}');return false;" title="Pattern">◆ ${escHtml(p.name)}</a>` : "";
+    return p ? `<a class="cp-cite p" href="#patterns/${encodeURIComponent(id)}" data-act="goTo" data-args='[&quot;patterns&quot;,"${id}"]' title="Pattern">◆ ${escHtml(p.name)}</a>` : "";
   }).join("");
   return `<div class="panel disc-card"><div class="dash-h" style="font-size:13px">${escHtml(c.title)}</div>` +
     `<div class="disc-meta"><span class="chip">${escHtml(c.domain)}</span>` +
@@ -285,9 +287,9 @@ function discCard(c, i) {
     `<ol class="disc-chain">${c.attackChain.map(s => `<li>${escHtml(s)}</li>`).join("")}</ol>` +
     (anchorChips ? `<div class="ref-chips">${anchorChips}</div>` : "") +
     `<div class="d-actions" style="margin-top:8px">` +
-    `<button class="btn sm primary" onclick="discPromote(${i})" title="Turn this draft into a catalog-shaped scenario you can review and export">⬆ Promote to draft scenario</button>` +
-    `<button class="btn sm" onclick="discAsk(${i})">🤖 Ask Fox - Architect</button>` +
-    `<button class="btn sm ghost" onclick="discExportMd(${i})">⧉ Copy draft</button></div></div>`;
+    `<button class="btn sm primary" data-act="discPromote" data-args='[${i}]' title="Turn this draft into a catalog-shaped scenario you can review and export">⬆ Promote to draft scenario</button>` +
+    `<button class="btn sm" data-act="discAsk" data-args='[${i}]'>🤖 Ask Fox - Architect</button>` +
+    `<button class="btn sm ghost" data-act="discExportMd" data-args='[${i}]'>⧉ Copy draft</button></div></div>`;
 }
 
 /* ---------------- promote a draft to a catalog-shaped scenario (113)
@@ -311,7 +313,9 @@ function discDrafts() {
   } catch (e) { return []; }
 }
 function discDraftSave(list) {
-  try { localStorage.setItem(DISC_DRAFT_STORE, JSON.stringify(list)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(DISC_DRAFT_STORE, JSON.stringify(list)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("discovery", "Discovery drafts");
   if (typeof projTouch === "function") projTouch();
 }
 
@@ -368,13 +372,13 @@ function openDraftScenario(id) {
   if (!d) return;
   const patLinks = (d.patternRefs || []).map(function (pid) {
     const p = (DATA.patterns.patterns || []).find(function (x) { return x.id === pid; });
-    return p ? `<a href="#" onclick="goTo('patterns','${pid}');return false;">${escHtml(p.name)}</a>` : escHtml(pid);
+    return p ? `<a href="#" data-act="goTo" data-args="[&quot;patterns&quot;,&quot;${pid}&quot;]">${escHtml(p.name)}</a>` : escHtml(pid);
   }).join(" · ");
   const html = `
     <div class="dsec d-actions">
       <span class="chip" style="color:var(--orange)">DRAFT — not a catalog entry</span>
-      <button class="btn sm" onclick="askAbout('scenario','${escHtml(d.id)}')">🤖 Ask Fox - Architect</button>
-      <button class="btn sm" onclick="discExportJson()">⬇ Export drafts</button>
+      <button class="btn sm" data-act="askAbout" data-args="[&quot;scenario&quot;,&quot;${escHtml(d.id)}&quot;]">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" data-act="discExportJson">⬇ Export drafts</button>
     </div>
     <div class="dsec">
       <p><span class="sev-dot sev-${escHtml(d.severity)}"></span><b>${escHtml(d.severity.toUpperCase())}</b>
@@ -400,7 +404,7 @@ function renderDraftCollection() {
   const list = discDrafts();
   host.innerHTML = list.length
     ? list.map(function (d) {
-        return '<div class="g-item" role="listitem" onclick="openDraftScenario(\'' + d.id + '\')">' +
+        return '<div class="g-item" role="listitem" data-act="openDraftScenario" data-args="' + dataArgs(d.id) + '">' +
           '<div class="t">' + escHtml(d.title) + "</div>" +
           '<div class="m">' + escHtml(d.domain) + " · " + escHtml(d.severity) + " · draft</div></div>";
       }).join("")
@@ -436,8 +440,8 @@ function discRender() {
   main.innerHTML = discRoundChart(run, discState.compare) +
     `<div class="dash-export"><b>${run.winners.length} drafts kept</b>` +
     `<span class="muted small">${run.forgotten} near-duplicates forgotten across ${run.rounds.length} rounds · deterministic (seed ${run.cfg.seed})</span>` +
-    `<span class="dash-export-btns"><button class="btn sm" onclick="discExportJson()">⬇ Export drafts JSON</button>` +
-    (discState.compare ? "" : `<button class="btn sm ghost" onclick="discRunAll(true)">Run compare (forgetting off)</button>`) +
+    `<span class="dash-export-btns"><button class="btn sm" data-act="discExportJson">⬇ Export drafts JSON</button>` +
+    (discState.compare ? "" : `<button class="btn sm ghost" data-act="discRunAll" data-args="[true]">Run compare (forgetting off)</button>`) +
     `</span></div>` +
     run.winners.map(discCard).join("");
   discNudgePaint();
@@ -465,18 +469,19 @@ function paintDiscControls() {
   const domOpts = ["all"].concat(discDomains()).map(d =>
     `<option value="${escHtml(d)}"${cfg.domains[0] === d ? " selected" : ""}>${d === "all" ? "All domains (gap-ranked)" : escHtml(d)}</option>`).join("");
   box.innerHTML =
-    `<h4>Seed scope</h4><select class="search" id="discDom" aria-label="Seed scope domain" onchange="discSet('domains',[this.value])">${domOpts}</select>` +
-    `<h4>Rounds</h4><select class="search" id="discRounds" aria-label="Forgetting rounds" onchange="discSet('rounds',Number(this.value))">${[2, 3, 4, 6, 8].map(r => `<option value="${r}"${cfg.rounds === r ? " selected" : ""}>${r} rounds</option>`).join("")}</select>` +
-    `<h4>Candidates / round</h4><select class="search" id="discPer" aria-label="Candidates per round" onchange="discSet('perRound',Number(this.value))">${[12, 24, 40].map(r => `<option value="${r}"${cfg.perRound === r ? " selected" : ""}>${r} candidates</option>`).join("")}</select>` +
-    `<h4>Keep per round</h4><select class="search" id="discKeep" aria-label="Keep per round" onchange="discSet('keep',Number(this.value))">${[3, 6, 10].map(r => `<option value="${r}"${cfg.keep === r ? " selected" : ""}>top ${r}</option>`).join("")}</select>` +
-    `<label class="filter-item" style="margin-top:10px"><input type="checkbox" ${cfg.forget ? "checked" : ""} onchange="discSet('forget',this.checked)"> Forgetting on <span class="muted small">discard losers each round</span></label>` +
-    `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" style="flex:1" onclick="discRunAll(false)">▶ Run discovery</button></div>` +
-    `<div style="margin-top:6px"><button class="btn sm ghost" style="width:100%" onclick="discRunAll(true)">Run + compare (forgetting off)</button></div>` +
+    `<h4>Seed scope</h4><select class="search" id="discDom" aria-label="Seed scope domain" data-change="discSetSingle" data-first="value" data-args='["domains"]'>${domOpts}</select>` +
+    `<h4>Rounds</h4><select class="search" id="discRounds" aria-label="Forgetting rounds" data-change="discSet" data-last="value" data-args="[&quot;rounds&quot;]">${[2, 3, 4, 6, 8].map(r => `<option value="${r}"${cfg.rounds === r ? " selected" : ""}>${r} rounds</option>`).join("")}</select>` +
+    `<h4>Candidates / round</h4><select class="search" id="discPer" aria-label="Candidates per round" data-change="discSet" data-last="value" data-args="[&quot;perRound&quot;]">${[12, 24, 40].map(r => `<option value="${r}"${cfg.perRound === r ? " selected" : ""}>${r} candidates</option>`).join("")}</select>` +
+    `<h4>Keep per round</h4><select class="search" id="discKeep" aria-label="Keep per round" data-change="discSet" data-last="value" data-args="[&quot;keep&quot;]">${[3, 6, 10].map(r => `<option value="${r}"${cfg.keep === r ? " selected" : ""}>top ${r}</option>`).join("")}</select>` +
+    `<label class="filter-item" style="margin-top:10px"><input type="checkbox" ${cfg.forget ? "checked" : ""} data-change="discSet" data-last="checked" data-args="[&quot;forget&quot;]"> Forgetting on <span class="muted small">discard losers each round</span></label>` +
+    `<div style="display:flex;gap:6px;margin-top:10px;flex-wrap:wrap"><button class="btn primary" style="flex:1" data-act="discRunAll" data-args="[false]">▶ Run discovery</button></div>` +
+    `<div style="margin-top:6px"><button class="btn sm ghost" style="width:100%" data-act="discRunAll" data-args="[true]">Run + compare (forgetting off)</button></div>` +
     `<p class="muted small" style="margin:10px 0 0">Single-run, deterministic, local. Drafts never enter the catalog on their own — export for curator review.</p>` +
     `<p class="muted small" style="margin:8px 0 0" title="Support fingerprint: proves which app copy this browser runs">` +
     (document.querySelectorAll(".app-tab").length + " tabs · storage " + (typeof storeOk === "function" && storeOk() ? "ok" : "BLOCKED — work will not save")) + `</p>`;
 }
 function discSet(k, v) {
+  if (k === "rounds" || k === "perRound" || k === "keep") v = Number(v);
   if (k === "rounds") v = Math.min(12, Math.max(1, v || 4));
   if (k === "perRound") v = Math.min(60, Math.max(4, v || 24));
   if (k === "keep") v = Math.min(20, Math.max(1, v || 6));
@@ -484,6 +489,9 @@ function discSet(k, v) {
   discSave();
   paintDiscControls();
 }
+/* Single-select shim for delegation (the old inline handler wrapped the
+   value in an array inline). */
+function discSetSingle(k, v) { discSet(k, [v]); }
 
 function initDiscovery() {
   if (!el("discMain")) return;

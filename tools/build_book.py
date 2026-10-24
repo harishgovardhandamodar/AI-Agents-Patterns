@@ -26,6 +26,7 @@ import re
 import sys
 from collections import defaultdict
 from pathlib import Path
+from book_prose import APP_DELIB, PART_DELIB, PATTERN_DELIB
 
 ROOT = Path(__file__).resolve().parent.parent
 BOOK_DIR = ROOT / "book"
@@ -268,6 +269,134 @@ def severity_cell(sev):
     return SEV_RANK.get(sev, str(sev).title())
 
 
+def pattern_council_points(p, ctx):
+    """Three argued perspectives built only from this chapter's own records.
+
+    Red team nominates the failure to exploit and the scenario that proves it;
+    blue team nominates the protections and the neighbours that hold it;
+    operator turns the takeaway list into Monday's runbook. Nothing here comes
+    from anywhere but the pattern's record and its linked scenarios/cascades.
+    """
+    fails = p.get("failures") or []
+    prots = list(p.get("protections") or [])
+    scns = ctx.get("scenarios") or []
+    cas = ctx.get("cascades") or []
+    rel = [r["name"] for r in ctx.get("related", [])]
+    doms = p.get("domains") or []
+
+    if fails:
+        top = sorted(fails, key=lambda f: SEV_ORDER.get(f.get("sev", "medium"), 1))[0]
+        red = f"Start with {top['n']} ({top['sev']}): {top['d']}"
+        if scns:
+            s = sorted(scns, key=lambda s: (SEV_ORDER.get(s["severity"], 1), s["id"]))[0]
+            red += (
+                f" {s['title']} is the catalogued proof — {s['severity']} severity, "
+                f"{s['domain']} domain — so rehearse that exact chain before any other."
+            )
+        else:
+            red += (
+                " No catalogued scenario exercises it yet, which means the exploit path "
+                "is unwritten, not absent — write the scenario before the adversary does."
+            )
+    elif cas:
+        red = (
+            f"No documented failure mode — the book treats that as understudied, not safe. "
+            f"Attack the composition instead: {cas[0]['name']} shows how it fails in combination."
+        )
+    else:
+        red = (
+            "No documented failure mode and no linked cascade — probe where it meets "
+            "untrusted input, because every pattern has a boundary and the boundary is "
+            "where it breaks."
+        )
+
+    if prots:
+        clean = [p.rstrip().rstrip(".") for p in prots]
+        blue = "Hold with " + "; ".join(clean[:2]) + "."
+        if len(prots) > 2:
+            blue += (
+                f" Then layer the remaining {len(prots) - 2}: defence here is the list, "
+                "not any single item."
+            )
+        if rel:
+            blue += (
+                f" Compose with {', '.join(rel[:2])} so a failure in one pattern "
+                "meets a control in another."
+            )
+    elif rel:
+        blue = (
+            "No listed protections — borrow from neighbours: "
+            + ", ".join(rel[:2])
+            + " carry the controls this pattern lacks."
+        )
+    else:
+        blue = (
+            "No listed protections and no related patterns — treat every deployment as "
+            "unguarded until you write the controls yourself."
+        )
+
+    op = f"Deploy where it is tagged ({', '.join(doms) or 'no domain tag'})"
+    if cas:
+        op += (
+            f", and watch the {len(cas)} linked cascade{'s' if len(cas) != 1 else ''} — "
+            f"{cas[0]['name']} first, because composition is where small faults amplify"
+        )
+    op += (
+        ". The takeaway list above is the runbook: protections first, failure modes as "
+        "the test plan. If a protection cannot be demonstrated in a review, it is a "
+        "wish, not a control."
+    )
+    return red, blue, op
+
+
+def deliberation(doc, items):
+    """Council deliberation: four researchers debate before the verdict."""
+    doc.heading(2, "Council deliberation")
+    doc.ul([f"**{voice}:** {text}" for voice, text in items])
+
+
+def _mermaid_text(s, limit=70):
+    """Sanitise catalog prose for a flowchart node label: no shapes break."""
+    t = re.sub(r"\s+", " ", str(s))
+    for ch in '"[]{}()<>#;|':
+        t = t.replace(ch, "")
+    t = t.strip(" -.–—")
+    return (t[:limit] + "…") if len(t) > limit else t
+
+
+def part_incident_fig(part, cat):
+    """Incident anatomy for a part: the two most severe linked scenarios as
+    actor → attack steps → stopping protection flows, built from the
+    scenarios' own attackChain/protections records. The build fails if a part
+    has no recorded scenario — an anatomy of nothing would be decoration."""
+    ids = {p["id"] for p in part["patterns"]}
+    scen = [s for s in cat["scenarios"] if ids & set(s.get("patternRefs", []))]
+    scen = sorted(scen, key=lambda s: (SEV_ORDER.get(s.get("severity", "medium"), 1), s["id"]))[:2]
+    if not scen:
+        sys.exit(f"tools/build_book.py: part `{part['key']}` has no linked scenarios for incident anatomy")
+    lines = ["flowchart TB"]
+    for n, s in enumerate(scen, start=1):
+        steps = (s.get("attackChain") or [])[:3]
+        prots = (s.get("protections") or [])[:2]
+        lines.append(f'  subgraph S{n}["{_mermaid_text(s["title"])} · {s.get("severity", "")}"]')
+        lines.append("    direction TB")
+        prev = None
+        for i, st in enumerate(steps):
+            nid = f"S{n}A{i}"
+            lines.append(f'    {nid}["{_mermaid_text(st)}"]')
+            if prev is not None:
+                lines.append(f"    {prev} --> {nid}")
+            prev = nid
+        for i, pr in enumerate(prots):
+            pid = f"S{n}P{i}"
+            pname = pr.get("name", "") if isinstance(pr, dict) else str(pr)
+            lines.append(f'    {pid}["stops it: {_mermaid_text(pname, 56)}"]')
+            if prev is not None:
+                lines.append(f"    {prev} -.-> {pid}")
+        lines.append("  end")
+    return "\n".join(lines)
+
+
 def write_chapter(doc, ctx, cat):
     p = ctx["pattern"]
     num, part = ctx["num"], ctx["part"]
@@ -405,6 +534,18 @@ def write_chapter(doc, ctx, cat):
     else:
         doc.p("No cross-references are catalogued for this pattern.")
 
+    # -- council deliberation: four researchers debate the pattern's tension -- #
+    if p["id"] not in PATTERN_DELIB:
+        sys.exit(f"tools/build_book.py: no council deliberation for pattern `{p['id']}` in tools/book_prose.py")
+    deliberation(doc, PATTERN_DELIB[p["id"]])
+    # -- council reading ---------------------------------------------------- #
+    # Same device as the supplement: three argued perspectives built only from
+    # this chapter's own records — the top failure and the scenario that proves
+    # it, the protections that hold it, and what to do with it on Monday.
+    doc.heading(2, "Council reading")
+    red, blue, op = pattern_council_points(p, ctx)
+    doc.ul([f"**Red team:** {red}", f"**Blue team:** {blue}", f"**Operator:** {op}"])
+
     doc.heading(2, "Conclusion")
     n_f, n_p = len(p["failures"]), len(p["protections"])
     doc.p(
@@ -432,6 +573,18 @@ def write_part(doc, part, cat):
         f"{'s' if len(scen) != 1 else ''} and {len(cas)} composition cascade"
         f"{'s' if len(cas) != 1 else ''}. Each chapter below follows the same order "
         "and shape as every other part."
+    )
+    if part["key"] not in PART_DELIB:
+        sys.exit(f"tools/build_book.py: no council deliberation for part `{part['key']}` in tools/book_prose.py")
+    doc.id_base = slug(f"Part {part['n']}")
+    deliberation(doc, PART_DELIB[part["key"]])
+    doc.p(
+        "**Incident anatomy.** How the part's most severe recorded failures unfold — "
+        "attack steps from the scenarios' own chains, and the protections that stop them:"
+    )
+    doc.mermaid(
+        part_incident_fig(part, cat),
+        f"Incident anatomy in {part['name']}: the two most severe recorded failures and what stops them.",
     )
     doc.table(
         ["Chapter", "Pattern", "Domains"],
@@ -1714,6 +1867,48 @@ def write_app_part(doc, part, stats):
     doc.mermaid(part["diagram"], f"The {part['name']} container overview.")
 
 
+# Council readings for the seven Part X chapters: same red/blue/operator device
+# as the pattern chapters, written against the repository the chapters describe.
+# No braces here — chapter text goes through format_map(stats).
+APP_COUNCIL = {
+    "What the Application Is": [
+        "Fourteen tabs share one origin and one localStorage, so a stored-XSS in any catalog record would ride everywhere — audit the escHtml render boundaries, not the tab count.",
+        "No account, no bundler, no third-party script except an optional Mermaid CDN fallback: the threat model shrinks to the same-origin proxy and the files on disk.",
+        "Serve it yourself with serve.py and it degrades to the deterministic fallback with no model; the app is useful before any backend answers.",
+    ],
+    "Supporting the Agentic Workflow": [
+        "A rail that always names a Next step trains click-through — verify the suggestion reads live tool state (planner, blueprint, copilot, guardrail, mitigation, discovery) before you trust it on autopilot.",
+        "Every stage links to the tool that owns it and every artifact exports (Markdown, JSON, CSV, ADR): nothing in the workflow is a dead-end claim.",
+        "Start at the Overview Next box, end with the report export; the five stages are a checklist, and an unchecked stage is the finding.",
+    ],
+    "Design Principles": [
+        "Deterministic rule engines have deterministic bypasses: read js/guardrail.js the way an attacker would, because the bypass, if any, is in the open and identical for everyone.",
+        "Enforcement lives outside the model — gates, caps, proxies, refusals — so audit code paths, not prompts; a prompt is advice, a gate is a fact.",
+        "Apply the book's own test to every control you adopt: if it cannot be demonstrated in a review, it is a wish, not a control.",
+    ],
+    "Architecture": [
+        "One Mermaid queue, one theme class, two registries: break the queue and every diagram lies at once — strict securityLevel plus data-src reseeding is the control that keeps renders honest.",
+        "Phased boot with skeletons and typeof-guarded cross-module calls mean a failed tab cannot take the shell; the app degrades pane by pane, never all at once.",
+        "Load order is fixed in index.html and the boot check names every entry point it expects — after a deploy, the fresh banner tells you before your users do.",
+    ],
+    "Privacy: Local Models and Data That Stay Put": [
+        "The same-origin proxy still moves prompts to a tailnet model: the wire is yours, but the GPU hears everything — scope the grounding data sent per request, especially traces and blueprints.",
+        "Axiom-first failover with Fox-Services fallback and a deterministic offline answer: no backend reachable still means an answer, never an error-shaped hole where judgment was.",
+        "Everything built lives in localStorage on your origin and leaves only when you export it — check the bell-backed backup before you clear a browser you care about.",
+    ],
+    "Isolation, Hardening and Offline Operation": [
+        "Offline-first means stale shells are the failure mode: VERSION-gated caches plus the boot-check banner are the freshness story, because a pinned stale worker is a feature freeze nobody chose.",
+        "The precache list is CI-gated against the files on disk, containers run read-only as non-root with healthchecks, and /api/* never touches the cache.",
+        "After one visit the air-gapped host works; the perf panel's x-aap-len sizes prove what the cache actually holds — verify, don't assume.",
+    ],
+    "Testing the Defenses": [
+        "The guardrail adapter is instant and deterministic, which also makes it gameable — tune to it and you get eval-overfit with a passing matrix; the live adapter is the one allowed to surprise you.",
+        "The oracle derives assertions from each scenario's own protections and an errored run is never counted as a pass, so green means held, not merely attempted.",
+        "Run the full matrix before every model swap and diff the verdicts with Compare models: regressions listed explicitly beat vibes, every time.",
+    ],
+}
+
+
 def write_app_chapter(doc, ctx, part, stats):
     ch = fmt(ctx["ch"], stats)
     num = ctx["num"]
@@ -1761,12 +1956,26 @@ def write_app_chapter(doc, ctx, part, stats):
     doc.heading(2, "References")
     doc.ul(ch["refs"])
 
+    if ctx["title"] not in APP_DELIB:
+        sys.exit(f"tools/build_book.py: no council deliberation for Part X chapter `{ctx['title']}` in tools/book_prose.py")
+    deliberation(doc, APP_DELIB[ctx["title"]])
+    if ctx["title"] in APP_COUNCIL:
+        doc.heading(2, "Council reading")
+        red, blue, op = APP_COUNCIL[ctx["title"]]
+        doc.ul([f"**Red team:** {red}", f"**Blue team:** {blue}", f"**Operator:** {op}"])
+
     doc.heading(2, "Conclusion")
     for para in ch["conclusion"]:
         doc.p(para)
 
 
 def write_book(cat):
+    _pids = {p["id"] for p in cat["patterns"]}
+    if set(PATTERN_DELIB) != _pids:
+        sys.exit(f"tools/build_book.py: deliberation drift (missing={sorted(_pids - set(PATTERN_DELIB))}, extra={sorted(set(PATTERN_DELIB) - _pids)})")
+    _keys = {pt["key"] for pt in cat["parts"]}
+    if set(k for k in PART_DELIB if k not in ("preface", "conclusion")) != _keys:
+        sys.exit("tools/build_book.py: part deliberation keys drifted from categories")
     doc = Doc()
     parts = cat["parts"]
 
@@ -1850,6 +2059,7 @@ def write_book(cat):
         "catalog and the next edition carries it."
     )
     doc.p(f"— {AUTHOR}")
+    deliberation(doc, PART_DELIB["preface"])
 
     doc.p(
         "The final part steps outside the catalog and into the application that "
@@ -1860,6 +2070,21 @@ def write_book(cat):
         "worker and container files — for the same reason the pattern chapters "
         "are written from records: so that every claim can be checked against a "
         "file."
+    )
+    doc.p(
+        "This book was written and compiled from study and experiment observation "
+        "notes of Harish Govardhan Damodar and generated by the *AI Agent Patterns "
+        "& Guardrails* catalog by a deterministic script (`tools/build_book.py`), "
+        "then typeset to PDF with headless Chrome and the vendored Mermaid engine "
+        "(`tools/render_pdf.mjs`) — the same Mermaid that renders the diagrams in "
+        "the app, so no diagram in this book was drawn by hand or screenshotted. "
+        "All experiments performed in local sandbox build and maintained by Harish "
+        "Govardhan Damodar and his agents, work extensively uses local open weight "
+        "model for experimentation and intelligence serving, for a live demo / "
+        "suggestion feel free to drop a DM in my linkedin page "
+        "(https://www.linkedin.com/in/harish-govardhan-d-44b22b47/). All records, "
+        "suggestions advice is from personal experiments ran on my personal setup "
+        "only and does not represent the organisation I work for."
     )
 
     doc.chapter_break()
@@ -2074,6 +2299,7 @@ def write_book(cat):
         "its live form too, where every diagram above is a running page you can "
         "filter, replay and export."
     )
+    deliberation(doc, PART_DELIB["conclusion"])
 
     doc.pagebreak()
     doc.heading(1, "Colophon")
@@ -2118,20 +2344,21 @@ body {
   font-family: Georgia, "Times New Roman", serif;
   color: #1a1a1a; font-size: 10.5pt; line-height: 1.55; margin: 0;
 }
-h1, h2, h3 { font-family: "Helvetica Neue", Arial, sans-serif; color: #0b2545; }
+h1, h2, h3 { font-family: "Helvetica Neue", Arial, sans-serif; color: #0b2545; break-after: avoid; }
 h1 { font-size: 20pt; line-height: 1.2; margin: 0 0 10pt; }
 h2 { font-size: 13.5pt; margin: 18pt 0 6pt; border-bottom: 1px solid #d8dee6; padding-bottom: 3pt; }
 h3 { font-size: 11.5pt; margin: 14pt 0 4pt; }
 p { margin: 0 0 8pt; orphans: 3; widows: 3; }
 ul, ol { margin: 0 0 9pt 16pt; padding-left: 8pt; }
-li { margin-bottom: 3pt; }
+li { margin-bottom: 3pt; break-inside: avoid; }
 code { font-family: Menlo, Consolas, monospace; font-size: 9pt; background: #f2f4f7; padding: 0 2px; border-radius: 2px; }
 blockquote { margin: 8pt 0; padding: 6pt 10pt; border-left: 3px solid #0b2545; background: #f6f8fa; font-size: 10pt; }
 table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9.2pt; }
 th, td { border: 1px solid #ccd4dd; padding: 3.5pt 5pt; text-align: left; vertical-align: top; }
 th { background: #eef2f6; font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.6pt; text-transform: uppercase; letter-spacing: .02em; }
+tr { break-inside: avoid; }
 figure.diagram { margin: 8pt 0 12pt; page-break-inside: avoid; text-align: center; }
-figure.diagram svg { max-width: 100%; height: auto; }
+figure.diagram svg { max-width: 100%; max-height: 230mm; height: auto; }
 figcaption { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.4pt; color: #55606c; margin-top: 4pt; }
 .pb { page-break-after: always; break-after: page; height: 0; }
 h1.chapter, h1.part, h1.front { page-break-before: always; break-before: page; }

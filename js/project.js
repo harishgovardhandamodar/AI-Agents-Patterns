@@ -187,7 +187,7 @@ function projChipHtml() {
   const p = projGet();
   if (!p) return "";
   const n = p.guards.length + (p.bp && p.bp.comps && p.bp.comps.length ? 1 : 0) + (p.plan ? 1 : 0);
-  return '<button class="iconbtn proj-chip" id="projChip" onclick="projPanelToggle()" title="Current project — click to switch" aria-label="Current project" aria-haspopup="dialog" aria-expanded="false">' +
+  return '<button class="iconbtn proj-chip" id="projChip" data-act="projPanelToggle" title="Current project — click to switch" aria-label="Current project" aria-haspopup="dialog" aria-expanded="false">' +
     '<span aria-hidden="true">📁</span> <span id="projChipName">' + escHtml(p.name) + "</span>" +
     (n ? ' <span class="badge" id="projChipCount">' + n + "</span>" : "") +
     "</button>";
@@ -247,28 +247,28 @@ function projPaintPanel() {
       (x.pins.patterns.length + x.pins.scenarios.length + x.pins.cascades.length ? 1 : 0);
     const on = x.id === active;
     return '<div class="proj-row' + (on ? " active" : "") + '">' +
-      '<button class="proj-name" onclick="projSwitch(\'' + x.id + '\')" aria-current="' + (on ? "true" : "false") + '">' +
+      '<button class="proj-name" data-act="projSwitch" data-args="' + dataArgs(x.id) + '" aria-current="' + (on ? "true" : "false") + '">' +
       '<b>' + escHtml(x.name) + "</b>" +
       '<i>' + (x.domain ? escHtml(x.domain) + " · " : "") + arts + " artefact" + (arts === 1 ? "" : "s") + "</i></button>" +
-      (list.length > 1 ? '<button class="iconbtn" onclick="projDelete(\'' + x.id + '\')" title="Delete project" aria-label="Delete project ' + escHtml(x.name) + '">🗑</button>' : "") +
+      (list.length > 1 ? '<button class="iconbtn" data-act="projDelete" data-args="' + dataArgs(x.id) + '" title="Delete project" aria-label="Delete project ' + escHtml(x.name) + '">🗑</button>' : "") +
       "</div>";
   }).join("");
 
   p.innerHTML =
     '<div class="ux-head"><b>Projects</b>' +
-    '<button class="iconbtn" type="button" onclick="projPanelToggle(false)" aria-label="Close projects">✕</button></div>' +
+    '<button class="iconbtn" type="button" data-act="projPanelToggle" data-args="[false]" aria-label="Close projects">✕</button></div>' +
     '<div class="ux-sec">Active</div>' +
     '<div class="ux-usage"><div class="ux-usage-row"><span>Name</span><b>' + escHtml((projGet() || {}).name || "") + "</b></div>" +
     '<div class="ux-usage-row"><span>Domain</span><b>' + escHtml((projGet() || {}).domain || "—") + "</b></div></div>" +
-    (typeof dlCopyWorkLink === "function" ? '<div class="ux-btns" style="margin-top:6px"><button class="btn sm" type="button" onclick="dlCopyWorkLink(\'overview\',\'proj:' + (projGet() || {}).id + '\')" title="Copy a link that opens this project">🔗 Copy project link</button></div>' : "") +
+    (typeof dlCopyWorkLink === "function" ? '<div class="ux-btns" style="margin-top:6px"><button class="btn sm" type="button" data-act="dlCopyProject" title="Copy a link that opens this project">🔗 Copy project link</button></div>' : "") +
     '<div style="display:flex;gap:6px;margin:8px 0">' +
     '<input class="search" id="projNameInput" aria-label="Project name" placeholder="Project name…" value="' + escHtml((projGet() || {}).name || "") + '" style="flex:1">' +
-    '<button class="btn sm primary" type="button" onclick="projRenameFromUI()">Rename</button></div>' +
+    '<button class="btn sm primary" type="button" data-act="projRenameFromUI">Rename</button></div>' +
     '<div class="ux-sec">All projects</div>' +
     '<div class="proj-list">' + rows + "</div>" +
-    '<div class="ux-btns"><button class="btn sm" type="button" onclick="projNewFromUI()">＋ New project</button>' +
-    '<button class="btn sm" type="button" onclick="projExport()">⬇ Export</button>' +
-    '<button class="btn sm" type="button" onclick="projImport()">⬒ Import</button></div>' +
+    '<div class="ux-btns"><button class="btn sm" type="button" data-act="projNewFromUI">＋ New project</button>' +
+    '<button class="btn sm" type="button" data-act="projExport">⬇ Export</button>' +
+    '<button class="btn sm" type="button" data-act="projImport">⬒ Import</button></div>' +
     '<div class="muted small" style="margin-top:8px">A project groups the planner, blueprint, guardrail analyses, discovery runs, mitigation backlog and pins for one system. Switching projects keeps every one of them.</div>';
 }
 
@@ -477,11 +477,4 @@ function initProject() {
     if (document.visibilityState === "hidden") projSnapshotTools();
   });
   window.addEventListener("pagehide", function () { projSnapshotTools(); });
-}
-
-/* Repaint everything that shows project-derived state. */
-function projRefreshAll() {
-  projPaintChip();
-  if (typeof dashRender === "function") dashRender();
-  if (typeof window.rpPaintProjectNote === "function") window.rpPaintProjectNote();
 }

@@ -34,15 +34,22 @@ import { fileURLToPath } from "node:url";
 import puppeteer from "puppeteer";
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const HTML = join(ROOT, "book", "agent-patterns-and-guardrails.html");
+// Optional argv so the supplement book reuses the same two-pass typesetter:
+//   node tools/render_pdf.mjs [html] [out] [title]
+// Defaults preserve the main book's exact behavior.
+const HTML = resolve(ROOT, process.argv[2] || join("book", "agent-patterns-and-guardrails.html"));
+const OUT = resolve(ROOT, process.argv[3] || join("book", "Agentic-Design-Patterns-and-Guardrails.pdf"));
+// Scratch files sit next to the output: the historic fixed names for the
+// default book (byte-identical behavior), suffixed names for custom outputs
+// so two renders never share scratch.
+const customOut = process.argv[3] !== undefined;
+const TMP = customOut ? OUT + ".pass1.pdf" : join(ROOT, "book", ".pass1.pdf");
+const SPEC = customOut ? OUT + ".outline-spec.json" : join(ROOT, "book", ".outline-spec.json");
+const TITLE = process.argv[4] || "Agentic Design Patterns & Guardrails";
 const MMD = join(ROOT, "js", "vendor", "mermaid.min.js");
-const OUT = join(ROOT, "book", "Agentic-Design-Patterns-and-Guardrails.pdf");
-const TMP = join(ROOT, "book", ".pass1.pdf"); // first pass, placeholder numbers
-const SPEC = join(ROOT, "book", ".outline-spec.json");
 const PDF_TOOL = join(ROOT, "tools", "book_pdf.py");
 const PYTHON = process.env.PYTHON || "python3";
 
-const TITLE = "Agentic Design Patterns & Guardrails";
 const AUTHOR = "Harish Govardhan Damodar";
 const MAX_PASSES = 4; // 1 placeholder pass + up to 3 settling passes
 

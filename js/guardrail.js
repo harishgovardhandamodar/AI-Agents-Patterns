@@ -22,8 +22,10 @@ function initGuardrail() {
 }
 
 function persistGuard() {
+  let ok = false;
   try {
     localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+    ok = true;
   } catch (e) {
     /* Storage full: drop oldest analyses (keep the 20 newest) and retry once
        instead of failing silently — a collection that can't save looks saved. */
@@ -31,10 +33,12 @@ function persistGuard() {
     renderGuardCollection();
     try {
       localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+      ok = true;
       showNotif("Browser storage was full — trimmed the collection to the 20 newest analyses", { kind: "warn" });
-    } catch (e2) { showNotif("Could not persist collection (storage unavailable)", { kind: "error" }); }
+    } catch (e2) { ok = false; }
   }
-  if (typeof markSaved === "function") markSaved("guard");
+  if (ok) { if (typeof markSaved === "function") markSaved("guard"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("guard", "Guardrail collection");
   if (typeof projTouch === "function") projTouch();
 }
 function seedExample() {
@@ -47,7 +51,7 @@ function seedExample() {
 /* ---------------- collection UI ---------------- */
 function renderGuardCollection() {
   el("guardCollection").innerHTML = guardState.items.map(it => `
-    <div class="g-item ${it.id === guardState.currentId ? "active" : ""}" role="listitem" onclick="openGuardItem('${it.id}')">
+    <div class="g-item ${it.id === guardState.currentId ? "active" : ""}" role="listitem" data-act="openGuardItem" data-args="[&quot;${it.id}&quot;]">
       <div class="t">${escHtml(it.title)}</div>
       <div class="m">${escHtml(it.meta.domain)} · risk ${it.meta.riskScore} · ${escHtml(it.meta.tier)} · ${it.controls.length} controls</div>
     </div>`).join("");
@@ -63,6 +67,13 @@ function openGuardItem(id) {
   renderGuardCollection();
   const it = guardState.items.find(x => x.id === id);
   if (it) renderGuardReport(it);
+}
+/* Delegation passes item ids, not objects — resolve back to the item.
+   Direct callers may still pass the object itself. */
+function guardItem(idOrItem) {
+  return (typeof idOrItem === "string")
+    ? guardState.items.find(x => x.id === idOrItem)
+    : idOrItem;
 }
 function deleteGuardItem(id, ev) {
   if (ev) ev.stopPropagation();
@@ -93,22 +104,22 @@ function showGuardIntro() {
       <h3 style="margin:0 0 8px;font-size:13px">Describe the agent you're building (or the risk you're worried about)</h3>
       <textarea id="guardInput" aria-label="Describe the agent, tools and task to analyze" placeholder="e.g. Think of an AI agent that can spend money using company cards to complete tasks. One prompt injection may trigger a $50,000 purchase of unnecessary services. How do I design financial guardrails for autonomous agents?"></textarea>
       <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-        <button class="btn primary" onclick="submitGuard()">⚡ Analyze & design guardrails</button>
+        <button class="btn primary" data-act="submitGuard">⚡ Analyze & design guardrails</button>
         <span class="muted small">The analyzer detects domain, action classes, risk signals — and produces advice, proposals, architecture, and a mock run.</span>
       </div>
       <div class="g-examples">
-        <span class="g-example" onclick="fillExample(0)">💳 corporate-card spend agent</span>
-        <span class="g-example" onclick="fillExample(1)">💻 coding agent with prod access</span>
-        <span class="g-example" onclick="fillExample(2)">📨 auto-emailing support agent</span>
-        <span class="g-example" onclick="fillExample(3)">🏥 clinical triage agent</span>
-        <span class="g-example" onclick="fillExample(4)">📊 autonomous trading agent</span>
-        <span class="g-example" onclick="fillExample(5)">🌐 finance agent swarm</span>
-        <span class="g-example" onclick="fillExample(6)">🔁 self-tuning spend controls</span>
-        <span class="g-example" onclick="fillExample(7)">🏥 clinical agent swarm</span>
-        <span class="g-example" onclick="fillExample(8)">🧠 self-learning triage agent</span>
-        <span class="g-example" onclick="fillExample(9)">💊 drug-discovery agent</span>
-        <span class="g-example" onclick="fillExample(10)">🔬 novelty-check research</span>
-        <span class="g-example" onclick="fillExample(11)">🗺 risk-landscape monitor</span>
+        <span class="g-example" data-act="fillExample" data-args="[0]">💳 corporate-card spend agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[1]">💻 coding agent with prod access</span>
+        <span class="g-example" data-act="fillExample" data-args="[2]">📨 auto-emailing support agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[3]">🏥 clinical triage agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[4]">📊 autonomous trading agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[5]">🌐 finance agent swarm</span>
+        <span class="g-example" data-act="fillExample" data-args="[6]">🔁 self-tuning spend controls</span>
+        <span class="g-example" data-act="fillExample" data-args="[7]">🏥 clinical agent swarm</span>
+        <span class="g-example" data-act="fillExample" data-args="[8]">🧠 self-learning triage agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[9]">💊 drug-discovery agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[10]">🔬 novelty-check research</span>
+        <span class="g-example" data-act="fillExample" data-args="[11]">🗺 risk-landscape monitor</span>
       </div>
     </div>
     <div class="g-sec">
@@ -366,6 +377,7 @@ function guardAnalysisPatternIds(item) {
 
 /* Add an analysis's controls to the blueprint as real components. */
 function guardAddToBlueprint(item, mode) {
+  item = guardItem(item);
   if (!item) return;
   if (typeof bpAddMany !== "function") { showNotif("Blueprint builder unavailable"); return; }
   const ids = guardAnalysisPatternIds(item);
@@ -408,7 +420,15 @@ function guardAddToBlueprint(item, mode) {
    instead of the Live View. Promoting it puts it in the same player, under
    the same filters, next to the 39 catalog traces, so "show me the run" is
    one click instead of a re-read of the report. */
+/* Copy-JSON shim for delegation (the old inline handler serialized the
+   item inline). */
+function copyAnalysisJSON(id) {
+  const it = guardItem(id);
+  if (!it) return;
+  copyText(JSON.stringify(it, null, 2), "Analysis JSON");
+}
 function guardPromoteToTrace(item) {
+  item = guardItem(item);
   if (!item || !item.mockRun) { showNotif("This analysis has no mock run", { kind: "warn" }); return; }
   const m = item.mockRun;
   const id = "trace-local-" + item.id;
@@ -438,6 +458,7 @@ function guardPromoteToTrace(item) {
 /* Ask Fox - Architect about a guardrail analysis, sending the design
    itself rather than its title (iteration 110). */
 function askAboutGuard(item) {
+  item = guardItem(item);
   if (!item) return;
   const m = item.meta || {};
   const q = "Guardrail design for: " + item.title + " (" + (m.domain || "") + ", risk " +
@@ -706,16 +727,16 @@ function renderGuardReport(it) {
       <span class="g-badge" style="color:${sevColor};border-color:${sevColor}">${m.tier} RISK</span>
       <div style="flex:1"></div>
       <span class="muted small mono">${escHtml(it.meta.domain)} · ${escHtml(it.createdAt.slice(0, 16).replace("T", " "))}</span>
-      <button class="btn" onclick="deleteGuardItem('${it.id}', event)">🗑</button>
+      <button class="btn" data-act="deleteGuardItem" data-args="${dataArgs(it.id)}" data-ev>🗑</button>
     </div>
 
     <div class="g-handoff">
       <b>Take this further</b>
-      <button class="btn sm primary" onclick="guardAddToBlueprint(guardState.items.find(function(x){return x.id==='${it.id}'}), 'add')" ${mapped ? "" : "disabled"}>🧩 Add ${mapped || "no"} pattern${mapped === 1 ? "" : "s"} to blueprint</button>
-      <button class="btn sm" onclick="guardAddToBlueprint(guardState.items.find(function(x){return x.id==='${it.id}'}), 'replace')" ${mapped ? "" : "disabled"}>↺ Replace canvas</button>
-      <button class="btn sm" onclick="askAboutGuard(guardState.items.find(function(x){return x.id==='${it.id}'}))">🤖 Ask Fox - Architect</button>
-      <button class="btn sm" onclick="copyText(JSON.stringify(guardState.items.find(function(x){return x.id==='${it.id}'}), null, 2), 'Analysis JSON')">⧉ Copy JSON</button>
-      <button class="btn sm" onclick="guardPromoteToTrace(guardState.items.find(function(x){return x.id==='${it.id}'}))">▶ Promote mock run to Live View</button>
+      <button class="btn sm primary" data-act="guardAddToBlueprint" data-args="${dataArgs(it.id, "add")}" ${mapped ? "" : "disabled"}>🧩 Add ${mapped || "no"} pattern${mapped === 1 ? "" : "s"} to blueprint</button>
+      <button class="btn sm" data-act="guardAddToBlueprint" data-args="${dataArgs(it.id, "replace")}" ${mapped ? "" : "disabled"}>↺ Replace canvas</button>
+      <button class="btn sm" data-act="askAboutGuard" data-args="${dataArgs(it.id)}">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" data-act="copyAnalysisJSON" data-args="${dataArgs(it.id)}">⧉ Copy JSON</button>
+      <button class="btn sm" data-act="guardPromoteToTrace" data-args="${dataArgs(it.id)}">▶ Promote mock run to Live View</button>
       <span class="muted small">${mapped ? ctrlMapped + " of " + (it.controls || []).length + " controls map to " + mapped + " catalog patterns" : "No control maps to a catalog pattern yet"}</span>
     </div>
 
@@ -769,7 +790,7 @@ function renderGuardReport(it) {
         ${it.cascadeRules.map(r => `
           <div class="cr-rule">
             <div class="cr-head">
-              <a class="cr-name" onclick="openCascade('${escHtml(r.cas)}')">${escHtml(r.name)}</a>
+              <a class="cr-name" data-act="openCascade" data-args="[&quot;${escHtml(r.cas)}&quot;]">${escHtml(r.name)}</a>
               <span class="chip cr-cls cr-cls-${escHtml(r.cls)}">${escHtml(r.cls)}</span>
               <span class="muted small">${escHtml(r.impact)} impact · ${escHtml(r.likelihood)} likely · score ${r.score}</span>
             </div>

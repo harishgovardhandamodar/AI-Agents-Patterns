@@ -34,7 +34,7 @@ function initOverview() {
   const domCounts = {};
   S.scenarios.forEach(s => { domCounts[s.domain] = (domCounts[s.domain] || 0) + 1; });
   el("ovDomains").innerHTML = Object.entries(domCounts).sort((a, b) => b[1] - a[1]).map(([d, n]) =>
-    `<span class="domain-chip" onclick="jumpToScenarioDomain('${escHtml(d)}')">${escHtml(d)} <b>${n}</b></span>`).join("");
+    `<span class="domain-chip" data-act="jumpToScenarioDomain" data-args="[&quot;${escHtml(d)}&quot;]">${escHtml(d)} <b>${n}</b></span>`).join("");
 
   const layerDefs = [
     ["identity", "Least-privilege identity — scoped, short-lived credentials"],
@@ -85,10 +85,10 @@ const patState = { cats: new Set(), domains: new Set() };
 function initPatterns() {
   const P = DATA.patterns;
   el("patCats").innerHTML = P.categories.map(c =>
-    `<label class="filter-item"><input type="checkbox" data-cat="${c.id}" onchange="onPatCat(this)" checked> ${escHtml(c.name)}<span class="cnt">${P.patterns.filter(p => p.cat === c.id).length}</span></label>`).join("");
+    `<label class="filter-item"><input type="checkbox" data-cat="${c.id}" data-change="onPatCat" data-first="el" checked> ${escHtml(c.name)}<span class="cnt">${P.patterns.filter(p => p.cat === c.id).length}</span></label>`).join("");
   const doms = uniq(P.patterns.flatMap(p => p.domains)).sort();
   el("patDomains").innerHTML = doms.map(d =>
-    `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" onchange="onPatDomain(this)"> ${escHtml(d)}<span class="cnt">${P.patterns.filter(p => p.domains.includes(d)).length}</span></label>`).join("");
+    `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" data-change="onPatDomain" data-first="el"> ${escHtml(d)}<span class="cnt">${P.patterns.filter(p => p.domains.includes(d)).length}</span></label>`).join("");
   P.categories.forEach(c => patState.cats.add(c.id));
   patMemRestore();
   renderPatterns();
@@ -171,6 +171,10 @@ function patActiveChips(q, needDia, needFail) {
   return chips;
 }
 
+/* View-switch shims for delegation (the old inline handlers compounded
+   the uxSetView call with a re-render). */
+function patShowCards() { uxSetView("patView", "cards"); renderPatterns(); }
+function patShowList() { uxSetView("patView", "list"); renderPatterns(); }
 function renderPatterns() {
   const P = DATA.patterns;
   const q = el("patSearch").value.trim().toLowerCase();
@@ -198,7 +202,7 @@ function renderPatterns() {
   if ((uxPrefs.patView || "cards") === "list") return renderPatternList(list, P);
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   el("patGrid").innerHTML = list.map(p => `
-    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open pattern: ${escHtml(p.name)}" onclick="openPattern('${p.id}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPattern('${p.id}');}">
+    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open pattern: ${escHtml(p.name)}" data-act="openPattern" data-args="[&quot;${p.id}&quot;]" data-keys="Enter, ">
       <div class="cat">${escHtml(catName(p.cat))}</div>
       <div class="nm">${escHtml(p.name)}</div>
       <div class="sm">${escHtml(p.summary)}</div>
@@ -222,7 +226,7 @@ function renderPatternList(list, P) {
     return;
   }
   el("patGrid").innerHTML = `<div class="mini-list" role="list">` + list.map(p => `
-    <div class="mini-row" role="listitem" tabindex="0" onclick="openPattern('${p.id}')" onkeydown="if(event.key==='Enter')openPattern('${p.id}')">
+    <div class="mini-row" role="listitem" tabindex="0" data-act="openPattern" data-args="[&quot;${p.id}&quot;]" data-keys="Enter">
       <span class="mini-nm">${escHtml(p.name)}</span>
       <span class="mini-meta">${escHtml(catName(p.cat))} · ${(p.failures || []).length} failure${(p.failures || []).length === 1 ? "" : "s"} · ${(p.protections || []).length} protections${p.diagram ? " · ◇ diagram" : ""}</span>
     </div>`).join("") + `</div>`;
@@ -236,11 +240,11 @@ function openPattern(id) {
   const sevCls = { critical: "var(--red)", high: "var(--orange)", medium: "var(--accent)", low: "var(--green)" };
   const rel = (p.related || []).map(rid => {
     const rp = P.patterns.find(x => x.id === rid);
-    return rp ? `<a href="#" onclick="openPattern('${rid}');return false;">${escHtml(rp.name)}</a>` : escHtml(rid);
+    return rp ? `<a href="#" data-act="openPattern" data-args="[&quot;${rid}&quot;]">${escHtml(rp.name)}</a>` : escHtml(rid);
   }).join(" · ");
 
   const html = `
-    <div class="dsec d-actions">${typeof bpDrawerBtnHtml === "function" ? bpDrawerBtnHtml(p.id) : ""}<button class="btn sm" onclick="askAbout('pattern','${escHtml(p.id)}')">🤖 Ask Fox - Architect</button>${typeof pinBtnHtml === "function" ? pinBtnHtml("patterns", p.id) : ""}</div>
+    <div class="dsec d-actions">${typeof bpDrawerBtnHtml === "function" ? bpDrawerBtnHtml(p.id) : ""}<button class="btn sm" data-act="askAbout" data-args="[&quot;pattern&quot;,&quot;${escHtml(p.id)}&quot;]">🤖 Ask Fox - Architect</button>${typeof pinBtnHtml === "function" ? pinBtnHtml("patterns", p.id) : ""}</div>
     <div class="dsec"><p>${typeof jargon === "function" ? jargon(p.summary) : escHtml(p.summary)}</p>
       <p class="small muted">Domains: ${p.domains.map(escHtml).join(", ")} · Pattern ID: <code>${escHtml(p.id)}</code></p></div>
     ${p.diagram ? `<div class="dsec"><h4>Control flow</h4>${diagramHtml(p.diagram, p.name)}</div>` : ""}
@@ -256,3 +260,8 @@ function openPattern(id) {
     <div class="dsec"><h4>Category context</h4>${diagramHtml(P.categoryDiagrams[p.cat] || "", cat.name)}<p class="small muted">${escHtml(cat.desc || "")}</p></div>`;
   openDetail(p.name, cat.name || p.cat, html, { tab: "patterns", id: p.id, title: p.name });
 }
+
+/* Registered so the shell-freshness check and tab shortcuts see this tab as
+   initialised (SK_TABS ↔ DOM ↔ tabLoaders must agree). Re-runs the idempotent
+   filter build + render on every visit, like the other catalog tabs. */
+tabLoaders.patterns = function () { initPatterns(); };

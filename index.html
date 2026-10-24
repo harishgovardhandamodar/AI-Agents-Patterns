@@ -14,7 +14,7 @@
 </head>
 <body>
 
-<a href="#maincontent" class="skip-link" id="skipLink" onclick="skipToContent(event)">Skip to main content</a>
+<a href="#maincontent" class="skip-link" id="skipLink" data-act="skipToContent" data-ev>Skip to main content</a>
 <div id="main">
 <header class="topbar">
   <div class="logo">A</div>
@@ -23,32 +23,34 @@
   <div class="spacer"></div>
   <span class="sub mono" id="dataStatus" title="Catalog size">loading…</span>
   <span id="projChipHost" style="display:inline-flex"></span>
-  <button class="iconbtn" id="undoBtn" onclick="undoOnce()" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
-  <button class="iconbtn" id="redoBtn" onclick="redoOnce()" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
-    <button class="iconbtn" id="uxBtn" onclick="uxPanelToggle()" title="Display: density and text size" aria-label="Display preferences" aria-haspopup="dialog" aria-expanded="false">⛭ display</button>
-  <button class="iconbtn llm-pill" id="llmPill" onclick="LLM.infoToggle()" title="Model backend status" aria-label="Model backend status" aria-haspopup="dialog" aria-expanded="false"><span class="dot wait"></span>checking…</button>
-<button class="iconbtn" id="notifBell" onclick="notifLogToggle()" title="Notification history" aria-label="Notifications" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
-  <button class="iconbtn" onclick="palOpen()" title="Search everything (Ctrl/⌘ K)" aria-label="Search everything">🔍 Search ⌘K</button>
-  <button class="iconbtn" onclick="skHelpOpen()" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">⌨</button>
-  <button class="iconbtn" onclick="helpOpen()" title="Guide for this tab" aria-label="Guide for this tab">ⓘ guide</button>
-  <button class="iconbtn" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle light or dark theme">◐ theme</button>
+  <button class="iconbtn" id="undoBtn" data-act="undoOnce" title="Undo (Ctrl+Z)" aria-label="Undo" disabled>↶</button>
+  <button class="iconbtn" id="redoBtn" data-act="redoOnce" title="Redo (Ctrl+Shift+Z)" aria-label="Redo" disabled>↷</button>
+    <button class="iconbtn" id="uxBtn" data-act="uxPanelToggle" title="Display: density and text size" aria-label="Display preferences" aria-haspopup="dialog" aria-expanded="false">⛭ display</button>
+  <button class="iconbtn llm-pill" id="llmPill" data-act="llmInfoToggle" title="Model backend status" aria-label="Model backend status" aria-haspopup="dialog" aria-expanded="false"><span class="dot wait"></span>checking…</button>
+<button class="iconbtn" id="notifBell" data-act="notifLogToggle" title="Notification history" aria-label="Notifications" aria-haspopup="dialog" aria-expanded="false">🔔 <span class="badge" id="notifCount" hidden>0</span></button>
+  <button class="iconbtn" data-act="palOpen" title="Search everything (Ctrl/⌘ K)" aria-label="Search everything">🔍 Search ⌘K</button>
+  <button class="iconbtn" data-act="skHelpOpen" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">⌨</button>
+  <button class="iconbtn" data-act="helpOpen" title="Guide for this tab" aria-label="Guide for this tab">ⓘ guide</button>
+  <button class="iconbtn" data-act="toggleTheme" title="Toggle theme" aria-label="Toggle light or dark theme">◐ theme</button>
 </header>
 
 <div class="tabs-wrap">
 <div class="app-tabs" id="appTabs" role="tablist" aria-label="Main sections">
-  <div class="app-tab active" role="tab" aria-selected="true" tabindex="0" aria-controls="overviewPane" data-tab="overview" onclick="switchTab('overview')">📊 Overview</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="copilotPane" data-tab="copilot" onclick="switchTab('copilot')">🤖 Fox - Architect</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="patternsPane" data-tab="patterns" onclick="switchTab('patterns')">◆ Patterns <span class="badge" id="patBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="scenariosPane" data-tab="scenarios" onclick="switchTab('scenarios')">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="cascadesPane" data-tab="cascades" onclick="switchTab('cascades')">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="coveragePane" data-tab="coverage" onclick="switchTab('coverage')">📊 Coverage &amp; Gaps</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="deployPane" data-tab="deploy" onclick="switchTab('deploy')">🧭 Deployment Plan</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="blueprintPane" data-tab="blueprint" onclick="switchTab('blueprint')">🧩 Blueprints</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="livePane" data-tab="live" onclick="switchTab('live')">▶ Live View <span class="badge" id="traceBadge">–</span></div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="designPane" data-tab="design" onclick="switchTab('design')">📐 Design &amp; Architecture</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="guardPane" data-tab="guard" onclick="switchTab('guard')">🛡 Guardrail Lab</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="discoveryPane" data-tab="discovery" onclick="switchTab('discovery')">🧪 Discovery Lab</div>
-  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="benchPane" data-tab="bench" onclick="switchTab('bench')">⚔ Battle Bench</div>
+  <div class="app-tab active" role="tab" aria-selected="true" tabindex="0" aria-controls="overviewPane" data-tab="overview" data-act="switchTab" data-args="[&quot;overview&quot;]">📊 Overview</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="copilotPane" data-tab="copilot" data-act="switchTab" data-args="[&quot;copilot&quot;]">🤖 Fox - Architect</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="patternsPane" data-tab="patterns" data-act="switchTab" data-args="[&quot;patterns&quot;]">◆ Patterns <span class="badge" id="patBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="scenariosPane" data-tab="scenarios" data-act="switchTab" data-args="[&quot;scenarios&quot;]">⚠ Scenarios <span class="badge" id="scnBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="cascadesPane" data-tab="cascades" data-act="switchTab" data-args="[&quot;cascades&quot;]">⧉ Cascades <span class="badge" id="casBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="coveragePane" data-tab="coverage" data-act="switchTab" data-args="[&quot;coverage&quot;]">📊 Coverage &amp; Gaps</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="deployPane" data-tab="deploy" data-act="switchTab" data-args="[&quot;deploy&quot;]">🧭 Deployment Plan</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="blueprintPane" data-tab="blueprint" data-act="switchTab" data-args="[&quot;blueprint&quot;]">🧩 Blueprints</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="livePane" data-tab="live" data-act="switchTab" data-args="[&quot;live&quot;]">▶ Live View <span class="badge" id="traceBadge">–</span></div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="designPane" data-tab="design" data-act="switchTab" data-args="[&quot;design&quot;]">📐 Design &amp; Architecture</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="guardPane" data-tab="guard" data-act="switchTab" data-args="[&quot;guard&quot;]">🛡 Guardrail Lab</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="discoveryPane" data-tab="discovery" data-act="switchTab" data-args="[&quot;discovery&quot;]">🧪 Discovery Lab</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="benchPane" data-tab="bench" data-act="switchTab" data-args="[&quot;bench&quot;]">⚔ Battle Bench</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="roguePane" data-tab="rogue" data-act="switchTab" data-args="[&quot;rogue&quot;]">🛑 Rogue Agents</div>
+  <div class="app-tab" role="tab" aria-selected="false" tabindex="-1" aria-controls="selflearnPane" data-tab="selflearn" data-act="switchTab" data-args="[&quot;selflearn&quot;]">🧬 Self-Learning</div>
 </div>
 </div>
 
@@ -77,6 +79,10 @@
         <div id="ovLayers"></div>
       </div>
     </div>
+    <div class="panel" style="margin-top:12px">
+      <h3>Bookshelf <span class="muted small">collect the landscape &amp; rebuild the books</span></h3>
+      <div id="bookshelf"><p class="muted small">Loading bookshelf status…</p></div>
+    </div>
   </div>
 </section>
 
@@ -91,21 +97,21 @@
       </div>
     </div>
     <h4>Model</h4>
-    <select class="search" id="cpModel" style="width:100%" aria-label="Model" onchange="cpSave()"></select>
+    <select class="search" id="cpModel" style="width:100%" aria-label="Model" data-change="cpSave"></select>
     <div class="save-stamp" data-save-stamp="cp" style="margin-top:4px"></div>
     <h4>Persona</h4>
-    <select class="search" id="cpPersona" style="width:100%" aria-label="Answer persona" onchange="cpSetPersona(this.value)" title="Who answers: the voice and expertise behind the reply"></select>
+    <select class="search" id="cpPersona" style="width:100%" aria-label="Answer persona" data-change="cpSetPersona" data-first="value" title="Who answers: the voice and expertise behind the reply"></select>
     <h4>Explain it for</h4>
-    <select class="search" id="cpAudience" style="width:100%" aria-label="Delivery audience" onchange="cpSetAudience(this.value)" title="Delivery mode: who the answer is written for"></select>
+    <select class="search" id="cpAudience" style="width:100%" aria-label="Delivery audience" data-change="cpSetAudience" data-first="value" title="Delivery mode: who the answer is written for"></select>
     <h4>Ground answers in</h4>
     <div class="cp-scope" id="cpScope"></div>
     <h4>Suggested questions</h4>
     <div class="cp-suggest" id="cpSuggest"></div>
     <div style="flex:1"></div>
     <div class="cp-rail-foot">
-      <button class="btn" onclick="copilotNew()">＋ New</button>
-      <button class="btn" onclick="copilotPreview()" title="Inspect the exact catalog context sent to the model">⌕ Grounding</button>
-      <button class="btn" onclick="copilotExport()">⬇</button>
+      <button class="btn" data-act="copilotNew">＋ New</button>
+      <button class="btn" data-act="copilotPreview" title="Inspect the exact catalog context sent to the model">⌕ Grounding</button>
+      <button class="btn" data-act="copilotExport">⬇</button>
     </div>
   </aside>
   <div class="cp-main">
@@ -113,8 +119,8 @@
     <div class="cp-input">
       <textarea id="cpInput" aria-label="Ask Fox - Architect" placeholder="Describe your agent deployment… e.g. &quot;A refunds agent with Stripe tool access, 3 approvals/day, EU customers. What patterns, cascade risks and mitigations should I plan?&quot;"></textarea>
       <div class="cp-input-side">
-        <button class="btn primary" id="cpSend" onclick="cpSend()">Send ▸</button>
-        <button class="btn" id="cpStop" onclick="copilotStop()" style="display:none">■ Stop</button>
+        <button class="btn primary" id="cpSend" data-act="cpSend">Send ▸</button>
+        <button class="btn" id="cpStop" data-act="copilotStop" style="display:none">■ Stop</button>
       </div>
     </div>
   </div>
@@ -124,24 +130,24 @@
 <section class="pane" id="patternsPane" role="tabpanel" aria-label="patterns">
   <div class="split">
     <aside class="side">
-      <input class="search" id="patSearch" placeholder="Search patterns…  (e.g. budget, injection, memory)" aria-label="Search patterns" oninput="renderPatterns()">
+      <input class="search" id="patSearch" placeholder="Search patterns…  (e.g. budget, injection, memory)" aria-label="Search patterns" data-input="renderPatterns">
       <h4>Category</h4>
       <div id="patCats"></div>
       <h4>Domain</h4>
       <div id="patDomains"></div>
       <h4>Quick filters</h4>
-      <label class="filter-item"><input type="checkbox" id="patHasDiagram" onchange="renderPatterns()"> Has diagram</label>
-      <label class="filter-item"><input type="checkbox" id="patHasFailures" onchange="renderPatterns()"> Has failure modes</label>
-      <div style="margin-top:10px"><button class="btn" onclick="resetPatFilters()">Reset filters</button></div>
+      <label class="filter-item"><input type="checkbox" id="patHasDiagram" data-change="renderPatterns"> Has diagram</label>
+      <label class="filter-item"><input type="checkbox" id="patHasFailures" data-change="renderPatterns"> Has failure modes</label>
+      <div style="margin-top:10px"><button class="btn" data-act="resetPatFilters">Reset filters</button></div>
     </aside>
     <div class="main">
       <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="patCount"></span>
         <div style="flex:1"></div>
         <span class="view-seg" role="group" aria-label="Layout">
-          <button type="button" id="patViewCards" onclick="uxSetView('patView','cards');renderPatterns()" title="Card layout">▦</button><button type="button" id="patViewList" onclick="uxSetView('patView','list');renderPatterns()" title="Compact list layout">☰</button>
+          <button type="button" id="patViewCards" data-act="patShowCards" title="Card layout">▦</button><button type="button" id="patViewList" data-act="patShowList" title="Compact list layout">☰</button>
         </span>
-        <select class="search" style="width:auto" id="patSort" aria-label="Sort patterns" onchange="renderPatterns()">
+        <select class="search" style="width:auto" id="patSort" aria-label="Sort patterns" data-change="renderPatterns">
           <option value="cat">sort: category</option>
           <option value="name">sort: name</option>
           <option value="risk">sort: riskiest (by failure count)</option>
@@ -159,23 +165,23 @@
 <section class="pane" id="scenariosPane" role="tabpanel" aria-label="scenarios">
   <div class="split">
     <aside class="side">
-      <input class="search" id="scnSearch" placeholder="Search scenarios…" aria-label="Search scenarios" oninput="renderScenarios()">
+      <input class="search" id="scnSearch" placeholder="Search scenarios…" aria-label="Search scenarios" data-input="renderScenarios">
       <h4>Domain</h4>
       <div id="scnDomains"></div>
       <h4>Severity</h4>
       <div id="scnSev"></div>
       <h4>Vector</h4>
       <div id="scnVectors"></div>
-      <div style="margin-top:10px"><button class="btn" onclick="resetScnFilters()">Reset filters</button></div>
+      <div style="margin-top:10px"><button class="btn" data-act="resetScnFilters">Reset filters</button></div>
     </aside>
     <div class="main">
       <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <div class="muted small" style="margin-bottom:0" id="scnCount"></div>
         <div style="flex:1"></div>
         <span class="view-seg" role="group" aria-label="Layout">
-          <button type="button" id="scnViewCards" onclick="uxSetView('scnView','cards');renderScenarios()" title="Card layout">▦</button><button type="button" id="scnViewList" onclick="uxSetView('scnView','list');renderScenarios()" title="Compact list layout">☰</button>
+          <button type="button" id="scnViewCards" data-act="scnShowCards" title="Card layout">▦</button><button type="button" id="scnViewList" data-act="scnShowList" title="Compact list layout">☰</button>
         </span>
-        <select class="search" style="width:auto" id="scnSort" aria-label="Sort scenarios" onchange="renderScenarios()">
+        <select class="search" style="width:auto" id="scnSort" aria-label="Sort scenarios" data-change="renderScenarios">
           <option value="severity">sort: severity</option>
           <option value="name">sort: title</option>
           <option value="gaps">sort: least protected first</option>
@@ -192,28 +198,28 @@
 <!-- ======================= CASCADES ======================= -->
 <section class="pane" id="cascadesPane" role="tabpanel" aria-label="cascades">
   <aside class="side">
-    <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" aria-label="Search cascades" oninput="casState.q=this.value.trim().toLowerCase();casState.limit=CAS_LIST_STEP;renderCascadeList()">
+    <input class="search" id="casSearch" placeholder="Search cascades…  (e.g. retry, exfil, tenant)" aria-label="Search cascades" data-input="casSearchInput" data-first="el">
     <h4>Cascade class</h4>
     <div id="casClasses" class="cas-legend"></div>
     <h4>Domain</h4>
     <div id="casDomains"></div>
     <h4>Blast radius</h4>
     <div id="casBlast"></div>
-    <div style="margin-top:10px"><button class="btn" onclick="resetCasFilters()">Reset filters</button></div>
+    <div style="margin-top:10px"><button class="btn" data-act="resetCasFilters">Reset filters</button></div>
     <h4>Why four classes?</h4>
-    <p class="muted small" style="padding:0 6px">Inherent failures live in one part; emergent ones only exist when parts interact; derived ones are the necessary consequence chain; cascading ones cross a boundary and amplify. They need different tests and different controls — see <a href="#" onclick="switchTab('design');return false;">Design → Architect Value Map</a>.</p>
+    <p class="muted small" style="padding:0 6px">Inherent failures live in one part; emergent ones only exist when parts interact; derived ones are the necessary consequence chain; cascading ones cross a boundary and amplify. They need different tests and different controls — see <a href="#" data-act="switchTab" data-args="[&quot;design&quot;]">Design → Architect Value Map</a>.</p>
   </aside>
   <div class="main">
     <div class="seg" id="casSeg">
-      <button class="seg-btn active" data-v="explorer" onclick="setCasView('explorer')">⧉ Explorer</button>
-      <button class="seg-btn" data-v="mitigation" onclick="setCasView('mitigation')">✔ Mitigation planner</button>
+      <button class="seg-btn active" data-v="explorer" data-act="setCasView" data-args="[&quot;explorer&quot;]">⧉ Explorer</button>
+      <button class="seg-btn" data-v="mitigation" data-act="setCasView" data-args="[&quot;mitigation&quot;]">✔ Mitigation planner</button>
     </div>
     <div id="casExplorer">
       <div class="panel" id="casOverview" style="margin-bottom:12px"></div>
       <div class="sticky-bar" style="display:flex;align-items:center;margin-bottom:10px;gap:8px">
         <span class="muted small" id="casCount"></span>
         <div style="flex:1"></div>
-        <select class="search" style="width:auto" id="casSort" aria-label="Sort cascades" onchange="casState.sort=this.value;casState.limit=CAS_LIST_STEP;renderCascadeList()">
+        <select class="search" style="width:auto" id="casSort" aria-label="Sort cascades" data-change="casSortSel" data-first="value">
           <option value="impact">sort: impact</option>
           <option value="blast">sort: blast radius</option>
           <option value="class">sort: class</option>
@@ -244,7 +250,7 @@
 <!-- ======================= BLUEPRINT BUILDER ======================= -->
 <section class="pane" id="blueprintPane" role="tabpanel" aria-label="blueprint">
   <aside class="side">
-    <input class="search" id="bpSearch" placeholder="Search patterns…  (e.g. approval, sandbox, judge)" aria-label="Search patterns to add" oninput="bpSetQ(this.value)">
+    <input class="search" id="bpSearch" placeholder="Search patterns…  (e.g. approval, sandbox, judge)" aria-label="Search patterns to add" data-input="bpSetQ" data-first="value">
     <h4>Start from a template</h4>
     <div id="bpTemplates"></div>
     <h4>Category</h4>
@@ -259,7 +265,7 @@
 <!-- ======================= LIVE VIEW ======================= -->
 <section class="pane" id="livePane" role="tabpanel" aria-label="live">
   <aside class="side">
-    <input class="search" id="traceSearch" placeholder="Search traces…  (e.g. injection, spend, prod)" aria-label="Search traces" oninput="onLiveSearch(this.value)">
+    <input class="search" id="traceSearch" placeholder="Search traces…  (e.g. injection, spend, prod)" aria-label="Search traces" data-input="onLiveSearch" data-first="value">
     <h4>Domain</h4>
     <div id="traceDomains"></div>
     <h4>Severity</h4>
@@ -268,7 +274,7 @@
     <div id="traceVerdicts"></div>
     <h4>Mock execution traces <span class="chip" id="traceCount">–</span></h4>
     <div id="traceList" role="list"></div>
-    <div style="margin-top:10px"><button class="btn" onclick="resetLiveFilters()">Reset filters</button></div>
+    <div style="margin-top:10px"><button class="btn" data-act="resetLiveFilters">Reset filters</button></div>
     <h4>About</h4>
     <p class="muted small" style="padding:0 6px">Every scenario in the catalog has a replayable trace: the control-flow diagram highlights the active node while steps, guardrail decisions, budget burn and the event log track in sync. Use ⤢ to enlarge any diagram with zoom. All data is synthetic.</p>
   </aside>
@@ -283,7 +289,7 @@
       <span class="title" id="designTitle">—</span>
       <span class="meta" id="designMeta"></span>
       <div class="spacer"></div>
-      <button class="iconbtn" onclick="toggleDesignSrc()">⟨/⟩ Source</button>
+      <button class="iconbtn" data-act="toggleDesignSrc">⟨/⟩ Source</button>
     </div>
     <div class="design-body">
       <nav class="design-outline" id="designOutline"></nav>
@@ -295,12 +301,12 @@
 <!-- ======================= GUARDRAIL LAB ======================= -->
 <section class="pane" id="guardPane" role="tabpanel" aria-label="guard">
   <aside class="g-collection">
-    <button class="btn primary" style="width:100%;margin-bottom:10px" onclick="newGuardAnalysis()">＋ New analysis</button>
+    <button class="btn primary" style="width:100%;margin-bottom:10px" data-act="newGuardAnalysis">＋ New analysis</button>
     <h4 style="font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--text3);margin:4px 6px 6px">Collection</h4>
     <div class="save-stamp" data-save-stamp="guard" style="margin:0 6px 6px"></div>
     <div id="guardCollection" role="list"></div>
     <div style="flex:1"></div>
-    <button class="btn" style="margin-top:10px" onclick="exportCollection()">⬇ Export JSON</button>
+    <button class="btn" style="margin-top:10px" data-act="exportCollection">⬇ Export JSON</button>
   </aside>
   <div class="g-main" id="guardMain"></div>
 </section>
@@ -327,19 +333,31 @@
     <div id="benchMain"></div>
   </div>
 </section>
+<!-- ======================= ROGUE AGENTS ======================= -->
+<section class="pane" id="roguePane" role="tabpanel" aria-label="rogue">
+  <div class="ov-wrap">
+    <div id="rogueMain"></div>
+  </div>
+</section>
+<!-- ======================= SELF-LEARNING (ADD-ON) ======================= -->
+<section class="pane" id="selflearnPane" role="tabpanel" aria-label="selflearn">
+  <div class="ov-wrap">
+    <div id="slMain"></div>
+  </div>
+</section>
 </main><!-- /#maincontent: every .pane must live inside this grid — outside it the
      pane renders below the 100vh app shell, i.e. off-screen -->
 </div><!-- /#main -->
 
 <!-- ======================= OVERLAYS ======================= -->
-<div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Detail" onclick="if(event.target===this)closeDetail()">
+<div class="overlay" id="detailOverlay" role="dialog" aria-modal="true" aria-label="Detail" data-act="dlgSelfClose" data-ev>
   <div class="drawer">
     <div class="drawer-head">
       <h2 id="detailTitle"></h2>
       <span class="chip" id="detailCat"></span>
       <div class="spacer"></div>
       <div class="d-share" id="detailShare"></div>
-      <button class="btn" onclick="closeDetail()">✕ Close</button>
+      <button class="btn" data-act="closeDetail">✕ Close</button>
     </div>
     <div class="drawer-body" id="detailBody"></div>
   </div>
@@ -350,13 +368,13 @@
     <b id="zoomTitle"></b>
     <span class="muted small" id="zoomHint">wheel: zoom · drag: pan · ←/→: step · Esc: close</span>
     <div class="spacer"></div>
-    <button class="btn" onclick="zoomBy(1.2)">＋</button>
-    <button class="btn" onclick="zoomBy(1/1.2)">－</button>
-    <button class="btn" onclick="zoomFit()">Fit</button>
-    <button class="btn" onclick="zoomNatural()">1:1</button>
-    <button class="btn" onclick="zoomStep(-1)">◀</button>
-    <button class="btn" onclick="zoomStep(1)">▶</button>
-    <button class="btn" onclick="zoomClose()">✕</button>
+    <button class="btn" data-act="zoomIn">＋</button>
+    <button class="btn" data-act="zoomOut">－</button>
+    <button class="btn" data-act="zoomFit">Fit</button>
+    <button class="btn" data-act="zoomNatural">1:1</button>
+    <button class="btn" data-act="zoomStep" data-args="[-1]">◀</button>
+    <button class="btn" data-act="zoomStep" data-args="[1]">▶</button>
+    <button class="btn" data-act="zoomClose">✕</button>
   </div>
   <div class="zoom-stage" id="zoomStage"><div class="zoom-inner" id="zoomInner"></div></div>
 </div>
@@ -388,31 +406,9 @@
 <script src="js/bench.js"></script>
 <script src="js/adversary.js"></script>
 <script src="js/benchui.js"></script>
-<script>
-/* Inline boot check (runs from index.html itself, so it works even when a
-   module file is stale, blocked or 404s): every expected entry point must
-   exist, otherwise offer a cache-busting reload instead of a silent dead tab. */
-window.addEventListener("load", function () {
-  setTimeout(function () {
-    try {
-      var need = [["initDiscovery", "Discovery Lab"], ["initLanding", "Overview landing"], ["initCopilot", "Fox - Architect"], ["renderGuardReport", "Guardrail Lab"]];
-      var missing = need.filter(function (x) { return typeof window[x[0]] !== "function"; });
-      if (!missing.length) return;
-      var b = document.getElementById("freshBanner");
-      if (!b) {
-        b = document.createElement("div");
-        b.id = "freshBanner";
-        document.body.appendChild(b);
-      }
-      b.innerHTML = "<b>App files mismatched.</b><span>These modules did not load: " + missing.map(function (x) { return x[1]; }).join(", ") + ". The tab will look broken. </span>";
-      var btn = document.createElement("button");
-      btn.className = "btn sm primary";
-      btn.textContent = "Reload fresh copy";
-      btn.onclick = function () { location.href = location.pathname + "?v=" + Date.now() + location.hash; };
-      b.appendChild(btn);
-    } catch (e) { /* never break boot for the checker itself */ }
-  }, 2500);
-});
-</script>
+<script src="js/rogue.js"></script>
+<script src="js/selflearn.js"></script>
+<script src="js/books.js"></script>
+<script src="js/bootcheck.js"></script>
 </body>
 </html>

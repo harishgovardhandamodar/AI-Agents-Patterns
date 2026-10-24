@@ -76,12 +76,19 @@ const bpState = { name: "", comps: [], notes: "", q: "", cat: "", lib: [], est: 
 
 /* ---------------- persistence ---------------- */
 function bpSave() {
-  try { localStorage.setItem(BP_STORE, JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes, est: bpState.est })); } catch (e) {}
-  if (typeof markSaved === "function") markSaved("bp");
+  let ok = false;
+  try {
+    const raw = JSON.stringify({ name: bpState.name, comps: bpState.comps, notes: bpState.notes, est: bpState.est });
+    ok = (typeof storeSet === "function") ? storeSet(BP_STORE, raw) : false;
+  } catch (e) { ok = false; }
+  if (ok) { if (typeof markSaved === "function") markSaved("bp"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("bp", "Blueprint");
   if (typeof projTouch === "function") projTouch();
 }
 function bpSaveLib() {
-  try { localStorage.setItem(BP_LIB_STORE, JSON.stringify(bpState.lib)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(BP_LIB_STORE, JSON.stringify(bpState.lib)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("bp", "Blueprint library");
 }
 function bpLoad() {
   try {
@@ -150,13 +157,13 @@ function bpAddMany(ids) {
 /* One button for drawers: state-aware, safe to call before blueprints load. */
 function bpDrawerBtnHtml(id) {
   if (typeof bpHas !== "function" || typeof bpAddMany !== "function" || !bpPat(id)) return "";
-  if (bpHas(id)) return `<button class="btn sm" onclick="closeDetail();switchTab('blueprint')">✓ In blueprint — open</button>`;
-  return `<button class="btn sm primary" onclick='bpAddMany(["${id}"])'>＋ Add to blueprint</button>`;
+  if (bpHas(id)) return `<button class="btn sm" data-act="closeDetailGo" data-args='["blueprint"]'>✓ In blueprint — open</button>`;
+  return `<button class="btn sm primary" data-act="bpAddMany" data-args='[["${id}"]]'>＋ Add to blueprint</button>`;
 }
 function bpRefsBtnHtml(ids, what) {
   const list = (ids || []).filter(id => typeof bpPat === "function" && bpPat(id) && typeof bpHas === "function" && !bpHas(id));
   if (typeof bpAddMany !== "function" || !list.length) return "";
-  return `<button class="btn sm primary" onclick='bpAddMany(${JSON.stringify(list)})'>＋ Add ${list.length} linked pattern${list.length === 1 ? "" : "s"}${what ? " " + escHtml(what) : ""} to blueprint</button>`;
+  return `<button class="btn sm primary" data-act="bpAddMany" data-args='${JSON.stringify(list)}'>＋ Add ${list.length} linked pattern${list.length === 1 ? "" : "s"}${what ? " " + escHtml(what) : ""} to blueprint</button>`;
 }
 function bpRemove(i) {
   const id = bpState.comps[i];
@@ -205,7 +212,6 @@ function bpApplyTemplate(k) {
     () => { bpState.comps = tcomps.slice(); bpSave(); bpRender(); bpRenderPalette(); });
   showNotif("Template applied — " + tname, { actions: [{ label: "Undo", primary: true, fn: undoOnce }] });
 }
-function bpRemoveFamily(k) { /* no-op hook for future; kept for stable API */ }
 
 /* ---------------- guardrail coverage ---------------- */
 function bpCoverage() {
@@ -352,12 +358,12 @@ function bpEstInputs() {
   const e = bpState.est;
   const num = (k, label, step, extra) =>
     `<label class="bp-fld"><span>${label}</span><input type="number" min="0" step="${step}" value="${e[k]}" ` +
-    `oninput="bpSetEst('${k}', this.value)">${extra || ""}</label>`;
+    `data-input="bpSetEst" data-last="value" data-args="[&quot;${k}&quot;]">${extra || ""}</label>`;
   const grp = (title, body) => `<div class="bp-estgrp"><h5>${title}</h5>${body}</div>`;
   return grp("Volume &amp; shape",
       num("req", "Requests / month", "1000") + num("tin", "Input tokens / req", "100") + num("tout", "Output tokens / req", "50")) +
     grp("Model &amp; tools",
-      `<label class="bp-fld"><span>Model</span><select onchange="bpSetEst('model', this.value)">` +
+      `<label class="bp-fld"><span>Model</span><select data-change="bpSetEst" data-last="value" data-args="[&quot;model&quot;]">` +
       BP_MODELS.map(m => `<option value="${m.k}"${e.model === m.k ? " selected" : ""}>${m.name} — ` +
         (m.in === 0 ? "$0 / Mtok" : "$" + m.in + "/" + m.out + " per Mtok") + `</option>`).join("") + `</select></label>` +
       num("toolCalls", "Tool calls / req", "1") + num("toolPrice", "$ / tool call", "0.001")) +
@@ -521,14 +527,14 @@ function bpTmMax() {
   bpTmMaxCache = Math.round(m);
   return bpTmMaxCache;
 }
-function bpTmBtn(id) { return `<button class="btn sm ghost" onclick="bpAdd('${id}')">+ ${id}</button>`; }
+function bpTmBtn(id) { return `<button class="btn sm ghost" data-act="bpAdd" data-args="[&quot;${id}&quot;]">+ ${id}</button>`; }
 
 function bpTmScnRow(x) {
   const s = x.s;
   const cov = x.need ? Math.round(x.present / x.need * 100) : 100;
   return `<div class="bp-tmrow">` +
     `<div class="bp-tmbody">` +
-      `<a class="bp-tmttl" onclick="openScenario('${s.id}')">${escHtml(s.title)}</a>` +
+      `<a class="bp-tmttl" data-act="openScenario" data-args="[&quot;${s.id}&quot;]">${escHtml(s.title)}</a>` +
       `<span class="bp-tmmeta">${bpTmSev(s.severity)} × ${escHtml(s.likelihood)} · ${escHtml(s.vector)} · ` +
         `<b class="${cov === 100 ? "bp-covok" : cov >= 50 ? "bp-covmid" : "bp-covlow"}">${x.present}/${x.need} defenses present</b></span>` +
     `</div>` +
@@ -539,7 +545,7 @@ function bpTmCasRow(x) {
   const c = x.c;
   return `<div class="bp-tmrow">` +
     `<div class="bp-tmbody">` +
-      `<a class="bp-tmttl" onclick="openCascade('${c.id}')">${escHtml(c.name)}</a>` +
+      `<a class="bp-tmttl" data-act="openCascade" data-args="[&quot;${c.id}&quot;]">${escHtml(c.name)}</a>` +
       `<span class="bp-tmmeta"><b class="bp-cls-${escHtml(c.cls)}">${escHtml(c.cls)}</b> · ${bpTmSev(c.impact)} · ` +
         `blast: ${escHtml(c.blastRadius)} · ${escHtml(c.speed)} · ${x.stageHits} stage participant${x.stageHits === 1 ? "" : "s"}</span>` +
     `</div>` +
@@ -562,7 +568,7 @@ function bpTmList(kind, rows, renderRow) {
   const shown = open ? rows : rows.slice(0, BP_TM_CAP);
   return shown.map(renderRow).join("") +
     (rows.length > BP_TM_CAP
-      ? `<button class="bp-tmmore" onclick="bpTmToggle('${kind}')">${open ? "show top " + BP_TM_CAP : "show all " + rows.length}</button>`
+      ? `<button class="bp-tmmore" data-act="bpTmToggle" data-args="[&quot;${kind}&quot;]">${open ? "show top " + BP_TM_CAP : "show all " + rows.length}</button>`
       : "");
 }
 
@@ -824,11 +830,11 @@ function bpCmpHtml() {
       drow("Risk score", bs.risk, cur.risk, null, true) +
       `</table>` +
       `<div class="d-actions" style="margin-top:8px">` +
-      `<button class="btn sm" onclick="bpCmpRestore()">↩ Restore baseline (undoable)</button>` +
-      `<button class="btn sm ghost" onclick="bpCmpCopy()">⧉ Copy comparison</button></div>`;
+      `<button class="btn sm" data-act="bpCmpRestore">↩ Restore baseline (undoable)</button>` +
+      `<button class="btn sm ghost" data-act="bpCmpCopy">⧉ Copy comparison</button></div>`;
   }
   return `<div class="bp-compare"><h4>Compare with baseline</h4>` +
-    `<select class="search" style="max-width:340px" aria-label="Compare blueprint against" onchange="bpSetCmp(this.value)">${opts}</select>${body}</div>`;
+    `<select class="search" style="max-width:340px" aria-label="Compare blueprint against" data-change="bpSetCmp" data-first="value">${opts}</select>${body}</div>`;
 }
 function bpSaveToLib() {
   if (!bpState.comps.length) { showNotif("Add components before saving"); return; }
@@ -870,7 +876,7 @@ function bpRenderSide() {
   if (t) t.innerHTML = BP_TEMPLATES.map(x => {
     const gaps = bpGapLabels(x.comps);
     const tip = x.blurb + (gaps.length ? " — leaves open: " + gaps.join(", ") : " — covers all ten families");
-    return `<button class="bp-tpl" onclick="bpApplyTemplate('${x.k}')" title="${escHtml(tip)}">` +
+    return `<button class="bp-tpl" data-act="bpApplyTemplate" data-args="[&quot;${x.k}&quot;]" title="${escHtml(tip)}">` +
       `<b>${escHtml(x.name)}</b><span>${escHtml(x.blurb)}</span>` +
       `<span class="bp-tplgap">${x.comps.length} comps · ${BP_FAMILIES.length - gaps.length}/${BP_FAMILIES.length} families</span></button>`;
   }).join("");
@@ -881,7 +887,7 @@ function bpRenderCats() {
   const box = el("bpCats");
   if (!box) return;
   const cats = (DATA.patterns.categories || []);
-  box.innerHTML = cats.map(c => `<button class="bp-catchip${bpState.cat === c.id ? " on" : ""}" onclick="bpSetCat('${c.id}')">${escHtml(c.name)}</button>`).join("");
+  box.innerHTML = cats.map(c => `<button class="bp-catchip${bpState.cat === c.id ? " on" : ""}" data-act="bpSetCat" data-args="[&quot;${c.id}&quot;]">${escHtml(c.name)}</button>`).join("");
 }
 /* ---------------- multi-select with a preview (iteration 116) ------------
    "Add 6 linked patterns" and "materialise the stack" both add everything
@@ -937,8 +943,8 @@ function bpRenderSelBar() {
         ? ' <span class="muted small">· closes: ' + escHtml(p.closes.slice(0, 3).join(", ")) + (p.closes.length > 3 ? " +" + (p.closes.length - 3) : "") + "</span>"
         : ' <span class="muted small">· closes no new control family</span>') +
       '<div class="bp-selbar-btns">' +
-        '<button class="btn sm primary" onclick="bpSelAdd()">＋ Add to blueprint</button>' +
-        '<button class="btn sm ghost" onclick="bpSelClear()">Clear</button>' +
+        '<button class="btn sm primary" data-act="bpSelAdd">＋ Add to blueprint</button>' +
+        '<button class="btn sm ghost" data-act="bpSelClear">Clear</button>' +
       "</div>" +
     "</div>";
 }
@@ -973,12 +979,12 @@ function bpRenderPalette() {
     const on = bpHas(p.id);
     const sel = bpSel.ids.has(p.id);
     return `<div class="bp-palrow${sel ? " sel" : ""}">` +
-      `<button class="bp-pal${on ? " on" : ""}${sel ? " selected" : ""}" onclick="bpSelToggle('${p.id}')" ` +
+      `<button class="bp-pal${on ? " on" : ""}${sel ? " selected" : ""}" data-act="bpSelToggle" data-args="[&quot;${p.id}&quot;]" ` +
       `title="${escHtml(p.summary || "")}${on ? " — already on the canvas" : " — click to select"}">` +
       `<span class="bp-palmark">${sel ? "☑" : on ? "✓" : "+"}</span>` +
       `<span class="bp-palname">${escHtml(p.name)}</span>` +
       `<span class="bp-palcat">${p.cat}</span></button>` +
-      `<button class="bp-paltoggle" onclick="bpToggle('${p.id}')" title="${on ? "Remove from the canvas" : "Add to the canvas directly"}" ` +
+      `<button class="bp-paltoggle" data-act="bpToggle" data-args="[&quot;${p.id}&quot;]" title="${on ? "Remove from the canvas" : "Add to the canvas directly"}" ` +
       `aria-label="${on ? "Remove" : "Add"} ${escHtml(p.name)} ${on ? "from" : "to"} the canvas">${on ? "✓" : "+"}</button>` +
       "</div>";
   }).join("");
@@ -1000,18 +1006,18 @@ function bpRender() {
     `<div class="bp-head">` +
       `<div class="bp-titlerow">` +
         `<input class="bp-name" id="bpName" aria-label="Blueprint name" value="${escHtml(bpState.name)}" placeholder="Name this blueprint…" ` +
-          `oninput="bpSetField('name', this.value)" onkeydown="if(event.key==='Enter')this.blur()">` +
+          `data-input="bpSetField" data-last="value" data-args="[&quot;name&quot;]" data-key="blurOnEnter">` +
         `<span class="muted small">drag-free ordering: ${stages.length} stage${stages.length === 1 ? "" : "s"} → ${controls.length} control${controls.length === 1 ? "" : "s"}</span>` +
         `<span class="save-stamp" data-save-stamp="bp"></span>` +
       `</div>` +
       `<div class="bp-actions">` +
-        `<button class="btn sm" onclick="bpSaveToLib()">💾 Save to library</button>` +
-        `<button class="btn sm" onclick="bpCopy('md','Blueprint copied as Markdown')">⧉ Copy Markdown</button>` +
-        `<button class="btn sm" onclick="bpCopy('mermaid','Mermaid source copied')">⧉ Copy diagram</button>` +
-        `<button class="btn sm" onclick="bpDownload()">⬇ Download .md</button>` +
-        (typeof dlCopyWorkLink === "function" ? `<button class="btn sm" onclick="dlCopyWorkLink('blueprint','current')" title="Copy a link that opens this blueprint">🔗 Copy link</button>` : "") +
-        `<button class="btn sm accent" onclick="bpAskCopilot()">🤖 Stress-test with Fox - Architect</button>` +
-        `<button class="btn sm" onclick="bpClear()">Clear</button>` +
+        `<button class="btn sm" data-act="bpSaveToLib">💾 Save to library</button>` +
+        `<button class="btn sm" data-act="bpCopy" data-args="[&quot;md&quot;,&quot;Blueprint copied as Markdown&quot;]">⧉ Copy Markdown</button>` +
+        `<button class="btn sm" data-act="bpCopy" data-args="[&quot;mermaid&quot;,&quot;Mermaid source copied&quot;]">⧉ Copy diagram</button>` +
+        `<button class="btn sm" data-act="bpDownload">⬇ Download .md</button>` +
+        (typeof dlCopyWorkLink === "function" ? `<button class="btn sm" data-act="dlCopyWorkLink" data-args="[&quot;blueprint&quot;,&quot;current&quot;]" title="Copy a link that opens this blueprint">🔗 Copy link</button>` : "") +
+        `<button class="btn sm accent" data-act="bpAskCopilot">🤖 Stress-test with Fox - Architect</button>` +
+        `<button class="btn sm" data-act="bpClear">Clear</button>` +
       `</div>` +
     `</div>` +
 
@@ -1049,26 +1055,26 @@ function bpRender() {
               return `<li class="bp-row${role === "control" ? " ctl" : ""}">` +
                 `<span class="bp-idx">${i + 1}</span>` +
                 `<div class="bp-rowbody">` +
-                  `<a class="bp-link" onclick="openPattern('${p.id}')">${escHtml(p.name)}</a>` +
+                  `<a class="bp-link" data-act="openPattern" data-args="[&quot;${p.id}&quot;]">${escHtml(p.name)}</a>` +
                   `<span class="bp-rowmeta">${escHtml(bpCatLabel(p.cat))} · ${(p.domains || []).slice(0, 3).join(", ")}</span>` +
                 `</div>` +
                 `<span class="bp-role ${role}">${role}</span>` +
                 `<span class="bp-move">` +
-                  `<button title="Move up" onclick="bpMove(${i},-1)" ${i === 0 ? "disabled" : ""}>↑</button>` +
-                  `<button title="Move down" onclick="bpMove(${i},1)" ${i === comps.length - 1 ? "disabled" : ""}>↓</button>` +
-                  `<button title="Remove" class="bp-x" onclick="bpRemove(${i})">×</button>` +
+                  `<button title="Move up" data-act="bpMove" data-args='[${i},-1]' ${i === 0 ? "disabled" : ""}>↑</button>` +
+                  `<button title="Move down" data-act="bpMove" data-args='[${i},1]' ${i === comps.length - 1 ? "disabled" : ""}>↓</button>` +
+                  `<button title="Remove" class="bp-x" data-act="bpRemove" data-args='[${i}]'>×</button>` +
                 `</span></li>`;
             }).join("") + `</ol>`
           : `<div class="empty-state"><div class="empty-ico">🧩</div>` +
             `<div class="empty-t">Empty canvas</div>` +
             `<div class="empty-b">Start from a proven shape, then add or remove components — coverage, cost and exposure update live.</div>` +
             `<div class="d-actions" style="justify-content:center">` +
-            BP_TEMPLATES.slice(0, 3).map(t => `<button class="btn sm" onclick="bpApplyTemplate('${t.k}')">${escHtml(t.name)}</button>`).join("") +
+            BP_TEMPLATES.slice(0, 3).map(t => `<button class="btn sm" data-act="bpApplyTemplate" data-args="[&quot;${t.k}&quot;]">${escHtml(t.name)}</button>`).join("") +
             `</div></div>`) +
         `<div class="bp-notes">` +
           `<h4>Notes</h4>` +
           `<textarea class="bp-noteta" aria-label="Blueprint notes" placeholder="Assumptions, data classes, known constraints…" ` +
-            `oninput="bpSetField('notes', this.value)">${escHtml(bpState.notes)}</textarea>` +
+            `data-input="bpSetField" data-last="value" data-args="[&quot;notes&quot;]">${escHtml(bpState.notes)}</textarea>` +
         `</div>` +
       `</div>` +
       `<div class="bp-col">` +
@@ -1077,13 +1083,13 @@ function bpRender() {
           `<div class="bp-chkrow ${r.ok ? "ok" : "miss"}">` +
             `<span class="bp-chkmark">${r.ok ? "✓" : "!"}</span>` +
             `<span>${escHtml(r.label)}</span>` +
-            (r.ok ? "" : `<button class="btn sm ghost" onclick="bpAdd('${r.sug}')">+ ${r.sug}</button>`) +
+            (r.ok ? "" : `<button class="btn sm ghost" data-act="bpAdd" data-args="[&quot;${r.sug}&quot;]">+ ${r.sug}</button>`) +
           `</div>`).join("") + `</div>` +
         `<h4>Findings</h4>` +
         `<div class="bp-warn">` + w.map(x =>
           `<div class="bp-warnrow ${x.level}">` +
             `<span>${escHtml(x.text)}</span>` +
-            (x.add ? `<button class="btn sm ghost" onclick="bpAdd('${x.add}')">+ add ${x.add}</button>` : "") +
+            (x.add ? `<button class="btn sm ghost" data-act="bpAdd" data-args="[&quot;${x.add}&quot;]">+ add ${x.add}</button>` : "") +
           `</div>`).join("") + `</div>` +
       `</div>` +
     `</div>` +
@@ -1098,8 +1104,8 @@ function bpRender() {
               `<span class="bp-libname">${escHtml(e.name)}</span>` +
               `<span class="muted small">${(e.comps || []).length} comps · ${new Date(e.at || Date.now()).toLocaleDateString()}</span>` +
               `<span class="bp-libbtns">` +
-                `<button class="btn sm" onclick="bpLoadLib(${i})">Load</button>` +
-                `<button class="btn sm ghost" onclick="bpDeleteLib(${i})">Delete</button>` +
+                `<button class="btn sm" data-act="bpLoadLib" data-args='[${i}]'>Load</button>` +
+                `<button class="btn sm ghost" data-act="bpDeleteLib" data-args='[${i}]'>Delete</button>` +
               `</span>` +
             `</div>`).join("") + `</div>`
         : `<div class="muted small">Nothing saved yet. Save a blueprint to compare variants later.</div>`) +

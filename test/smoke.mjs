@@ -2,8 +2,9 @@
 // every tab, asserting no page/console errors and that each pane renders.
 //
 // Requires an installed Chrome/Chromium. If puppeteer (or a browser) is not
-// available this exits 0 with a SKIP line, so it never blocks a dev without
-// the browser toolchain — `npm test` (the data suite) stays dependency-free.
+// available this exits 0 with a SKIP line locally, so it never blocks a dev
+// without the browser toolchain — but under CI=1 a missing browser FAILS the
+// run, so the e2e job cannot go green while skipping its whole purpose.
 //
 //   npm run test:e2e
 //   CHROME_PATH=/usr/bin/google-chrome npm run test:e2e
@@ -14,7 +15,13 @@ import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
-const TAB_IDS = ["overview", "copilot", "patterns", "scenarios", "cascades", "coverage", "deploy", "blueprint", "live", "design", "guard", "discovery", "bench"];
+// The tab list is not duplicated here: index.html owns it (the .app-tab
+// buttons), so a new tab is walked automatically and a removed one cannot
+// linger as a stale expectation. roles are still asserted below.
+async function tabIds(base) {
+  const html = await (await fetch(base)).text();
+  return [...html.matchAll(/data-tab="([a-z0-9]+)"/g)].map((m) => m[1]);
+}
 
 function freePort() {
   return new Promise((resolve, reject) => {
@@ -39,28 +46,37 @@ async function waitForServer(url, timeoutMs = 15000) {
   return false;
 }
 
+function skip(msg) {
+  if (process.env.CI) {
+    console.error(`FAIL: ${msg} (CI must run the real browser suite — install puppeteer with its Chrome download)`);
+    process.exitCode = 1;
+  } else {
+    console.log(`SKIP: ${msg}`);
+  }
+}
+
 async function main() {
   let puppeteer;
   try {
     ({ default: puppeteer } = await import("puppeteer"));
   } catch {
-    console.log("SKIP: puppeteer is not installed (npm i -D puppeteer), or run the data suite via `npm test`.");
+    skip("puppeteer is not installed (npm i -D puppeteer), or run the data suite via `npm test`.");
     return;
   }
 
   const port = await freePort();
   const server = spawn("python3", ["serve.py", String(port)], { cwd: ROOT, stdio: "ignore" });
   const base = `http://127.0.0.1:${port}/`;
+  let browser = null;
   try {
     if (!(await waitForServer(base))) throw new Error(`server on ${base} did not come up`);
 
     const launch = { headless: "new", args: ["--no-sandbox"] };
     if (process.env.CHROME_PATH) launch.executablePath = process.env.CHROME_PATH;
-    let browser;
     try {
       browser = await puppeteer.launch(launch);
     } catch (e) {
-      console.log(`SKIP: no browser available (${e.message.split("\n")[0]}). Set CHROME_PATH to a Chrome binary.`);
+      skip(`no browser available (${e.message.split("\n")[0]}). Set CHROME_PATH to a Chrome binary.`);
       return;
     }
 
@@ -74,9 +90,13 @@ async function main() {
     await page.goto(base, { waitUntil: "load" });
     await sleep(2500);
 
+    const TAB_IDS = await tabIds(base);
+    if (!TAB_IDS.length) throw new Error("no data-tab buttons found in index.html");
     const results = [];
     for (const id of TAB_IDS) {
-      await page.evaluate((t) => switchTab(t), id);
+      // Real clicks, not direct switchTab() calls: this exercises the
+      // delegated data-act path end to end for every tab button.
+      await page.click(`.app-tab[data-tab="${id}"]`);
       await sleep(500);
       const n = await page.evaluate((t) => {
         const pane = document.getElementById(t + "Pane");
@@ -84,6 +104,34 @@ async function main() {
       }, id);
       results.push([id, n]);
     }
+
+    // Every rendered data-* action must resolve: the name is a function and
+    // data-args parses as JSON (placeholders resolved at render time). A
+    // typo or a malformed payload would otherwise die silently on click.
+    const actCheck = await page.evaluate(() => {
+      const bad = [];
+      document.querySelectorAll("[data-act],[data-change],[data-input],[data-key]").forEach((el) => {
+        ["data-act", "data-change", "data-input", "data-key"].forEach((a) => {
+          const name = el.getAttribute(a);
+          if (name && typeof window[name] !== "function") {
+            bad.push(`${a}="${name}" is not a function ` +
+              `(in #${(el.closest(".pane") || {}).id || "?"})`);
+          }
+        });
+        const raw = el.getAttribute("data-args");
+        if (raw != null) {
+          try {
+            const v = JSON.parse(raw);
+            if (!Array.isArray(v)) bad.push(`data-args not an array: ${raw.slice(0, 80)}`);
+          } catch {
+            bad.push(`data-args not JSON: ${raw.slice(0, 120)}`);
+          }
+        }
+      });
+      return bad;
+    });
+    for (const b of actCheck.slice(0, 12)) errors.push("dead action: " + b);
+    if (actCheck.length > 12) errors.push(`... and ${actCheck.length - 12} more dead actions`);
 
     // Core a11y invariants from iterations 84-86.
     const a11y = await page.evaluate(() => ({
@@ -94,6 +142,21 @@ async function main() {
     if (a11y.main !== 1) errors.push("expected exactly one <main id=maincontent>");
     if (a11y.nestedMain !== 0) errors.push("no <main> may be nested inside <main>");
     if (a11y.tabs !== TAB_IDS.length) errors.push(`expected ${TAB_IDS.length} role=tab, got ${a11y.tabs}`);
+
+    // The Self-Learning status probe must reach the lab through this app's
+    // same-origin proxy (a direct localhost fetch is blocked by connect-src).
+    const sl = await page.evaluate(async () => {
+      try {
+        const r = await fetch("/api/selflearn/health?port=8220");
+        const j = await r.json();
+        return { status: r.status, ok: typeof j.ok === "boolean" };
+      } catch (e) {
+        return { status: 0, ok: false, error: e.message };
+      }
+    });
+    if (sl.status !== 200 || !sl.ok) {
+      errors.push(`self-learning health proxy broken (status=${sl.status}, ok=${sl.ok}${sl.error ? ", " + sl.error : ""})`);
+    }
 
     // ---- the workflow (iterations 101-120) --------------------------
     // A single journey that crosses the authoring tools: the planner's
@@ -162,8 +225,6 @@ async function main() {
     const empty = results.filter(([, n]) => n <= 0).map(([id]) => id);
     if (empty.length) errors.push(`panes rendered empty: ${empty.join(", ")}`);
 
-    await browser.close();
-
     if (errors.length) {
       console.error(`FAIL: ${errors.length} problem(s)`);
       for (const e of errors) console.error("  " + e);
@@ -173,6 +234,11 @@ async function main() {
         `${wf.steps.length} workflow steps, 0 errors.`);
     }
   } finally {
+    // Close the browser even when an assertion throws midway — a leaked
+    // Chrome keeps the event loop alive and CI hangs until the timeout.
+    if (browser) {
+      try { await browser.close(); } catch { /* already gone */ }
+    }
     server.kill("SIGTERM");
   }
 }
