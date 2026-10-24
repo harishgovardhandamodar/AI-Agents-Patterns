@@ -98,7 +98,9 @@ button { font: inherit; color: inherit; }
 /* second row: the active section's tabs — smaller and quieter than sections */
 .app-tabs.subtabs { padding-top: 0; background: var(--bg); border-bottom: 1px solid var(--border); }
 .app-tab.grp { font-weight: 600; }
-.app-tab.sub { font-size: 11px; padding: 4px 10px; }
+/* subtabs match the section-button height exactly (same font, padding and
+   border metrics as .app-tab); only the strip behind them differs. */
+.app-tab.sub { font-size: 12px; padding: 6px 12px; }
 .tabnav {
   position: absolute; top: 0; bottom: 0; width: 34px; z-index: 2;
   display: none; align-items: center; justify-content: center;
