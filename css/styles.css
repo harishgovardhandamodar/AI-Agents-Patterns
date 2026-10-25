@@ -1934,7 +1934,12 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
 
 /* ---------------- mobile ---------------- */
 @media (max-width: 760px) {
-  .topbar { flex-wrap: wrap; padding: 6px 10px; row-gap: 4px; }
+  /* single scrollable row: wrapping spills past the 44px shell row and
+     paints underneath the tab strips, leaving buttons untappable */
+  .topbar { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding: 6px 10px; }
+  .topbar::-webkit-scrollbar { display: none; }
+  .topbar .iconbtn, .topbar .logo, .topbar #projChipHost { flex: none; }
+  .topbar h1 { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   /* touch comfort: roomier filter rows, chips and replay controls */
   .filter-item { min-height: 36px; padding: 6px 8px; }
   .domain-chip, .g-example { padding: 7px 12px; }
