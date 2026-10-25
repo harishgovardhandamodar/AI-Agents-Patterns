@@ -50,7 +50,7 @@ body {
 #main { display: grid; grid-template-rows: 44px 40px 1fr; grid-template-columns: minmax(0, 1fr); height: 100vh; }
 /* the single <main> landmark wraps only the panes, and must stretch to fill
    the 1fr row so each pane keeps its full-height scroll container */
-#main > main { min-height: 0; display: grid; }
+#main > main { min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .skip-link {
   position: fixed; top: -48px; left: 12px; z-index: 500;
   background: var(--accent); color: #fff; font-size: 13px; font-weight: 600;
@@ -143,7 +143,7 @@ button { font: inherit; color: inherit; }
 
 /* ============ OVERVIEW ============ */
 #overviewPane.visible { grid-template-columns: 1fr; overflow: auto; }
-.ov-wrap { padding: 16px; max-width: 1280px; margin: 0 auto; }
+.ov-wrap { padding: 16px; width: 100%; max-width: 1280px; margin: 0 auto; min-width: 0; }
 .ov-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 16px; }
 .stat-card {
   background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px;
@@ -256,6 +256,7 @@ button { font: inherit; color: inherit; }
 .dsec li b, .dsec p b { color: var(--text); }
 .dsec p { margin: 0 0 8px; color: var(--text2); }
 table.tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl-wrap { overflow-x: auto; max-width: 100%; }
 table.tbl th {
   text-align: left; color: var(--text3); font-weight: 600; font-size: 10px;
   text-transform: uppercase; letter-spacing: .05em; padding: 5px 8px;
@@ -416,7 +417,9 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 .design-top {
   display: flex; align-items: center; gap: 10px; padding: 9px 14px;
   border-bottom: 1px solid var(--border); background: var(--bg2);
+  flex-wrap: wrap;
 }
+.design-top > * { min-width: 0; }
 .design-top .title { font-weight: 600; font-size: 13px; }
 .design-top .meta { color: var(--text3); font-size: 11px; font-family: var(--mono); }
 .design-top .spacer { flex: 1; }
@@ -721,7 +724,7 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 @media (max-width: 900px) { .cas-sim-verdict { grid-template-columns: 1fr 1fr; } .cas-sim-cols { grid-template-columns: 1fr; } }
 
 /* segmented control */
-.seg { display: inline-flex; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; margin-bottom: 12px; }
+.seg { display: inline-flex; gap: 2px; background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 2px; margin-bottom: 12px; flex-wrap: wrap; max-width: 100%; }
 .seg-btn { background: transparent; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; color: var(--text2); cursor: pointer; }
 .seg-btn.active { background: var(--bg3); color: var(--text); }
 .seg-btn:hover { color: var(--text); }
@@ -1961,6 +1964,10 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
   /* every rail+main pane stacks on phones */
   #livePane.visible, #designPane.visible, #guardPane.visible,
   #cascadesPane.visible, #blueprintPane.visible, #copilotPane.visible { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
+  .design-body { grid-template-columns: 1fr; }
+  .design-outline { border-right: none; border-bottom: 1px solid var(--border); max-height: 150px; }
+  .design-doc { padding: 16px 14px 40px; min-width: 0; }
+  .design-doc table, .design-doc pre { display: block; overflow-x: auto; max-width: 100%; }
   .split { grid-template-columns: 1fr; grid-template-rows: auto 1fr; }
   .split .side { max-height: 170px; }
   #designPane .side, #cascadesPane .side, #livePane .side { max-height: 170px; }
@@ -2007,11 +2014,12 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
 #benchPane .ov-wrap { overflow: auto; max-width: 1500px; }
 #roguePane .ov-wrap { overflow: auto; max-width: 1500px; }
 .bt-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+.bt-head > * { min-width: 0; }
 .bt-head h2 { margin: 0 0 3px; font-size: 17px; }
 .bt-head-btns { margin-left: auto; display: flex; gap: 6px; }
 
 .bt-runbar { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
-.bt-runbar select { width: auto; }
+.bt-runbar select { width: auto; max-width: 100%; }
 .bt-runbar label { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; }
 
 .bt-progress {
