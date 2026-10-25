@@ -174,10 +174,26 @@ document.addEventListener("click", function (e) {
     if (ok && el.tagName === "A" && !mod) ev.preventDefault();
   });
 });
-["change", "input"].forEach(function (type) {
+["change"].forEach(function (type) {
   document.addEventListener(type, function (e) {
     actBubble(e, "data-" + type, function (el, fn, ev) { actFire(el, fn, ev); });
   });
+});
+/* `input` fires per keystroke (and per slider tick): trailing debounce so a
+   fast burst re-renders once. `change` above stays immediate for commits and
+   toggles. Dropping intermediate events is safe — every handler re-reads
+   full state, so the final fire sees all keystrokes. */
+let inputTimer = 0, lastInputEvent = null;
+document.addEventListener("input", function (e) {
+  if (!e.target || !e.target.closest || !e.target.closest("[data-input]")) return;
+  lastInputEvent = e;
+  if (inputTimer) clearTimeout(inputTimer);
+  inputTimer = setTimeout(function () {
+    inputTimer = 0;
+    const ev = lastInputEvent; lastInputEvent = null;
+    if (!ev || !ev.target || !ev.target.isConnected) return;
+    actBubble(ev, "data-input", function (el, fn, e2) { actFire(el, fn, e2); });
+  }, 120);
 });
 document.addEventListener("keydown", function (e) {
   const t = (e.target && e.target.closest) ? e.target : null;
@@ -2157,6 +2173,9 @@ async function loadAll() {
     const rest = PANES.filter(p => first.indexOf(p) < 0);
 
     PANES.forEach(p => paneSkeletonOn(p[0]));
+    /* panes are programmatic focus targets (skip link, deep links, AT
+       navigation) without entering the Tab order */
+    document.querySelectorAll(".pane").forEach(p => { if (p.tabIndex < 0) p.tabIndex = -1; });
     for (const p of first) await paneRun(p);
 
     /* First panes are on screen; the catalog-wide pieces below (palette index,
