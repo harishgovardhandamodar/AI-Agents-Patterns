@@ -18,9 +18,8 @@ function groupHtml(docs) {
   const groups = uniq(docs.map(d => d.group));
   return groups.map(g => {
     const items = docs.filter(d => d.group === g);
-    const totalDiag = items.reduce((n, d) => n + (d.id === "01-system-context" ? 3 : d.id === "02-uml" ? 4 : d.id === "03-control-flow" ? 4 : d.id === "04-guardrails" ? 4 : d.id === "05-data-model" ? 1 : 3), 0);
     return `<div class="rail-group">${escHtml(g)}</div>` + items.map(d => `
-      <div class="design-doc-item" id="dd-${d.id}" onclick="designShow('${d.id}')">
+      <div class="design-doc-item" id="dd-${d.id}" data-act="designShow" data-args="[&quot;${d.id}&quot;]">
         <div class="t">${escHtml(d.title)}</div>
         <div class="a">${escHtml(d.answers)}</div>
       </div>`).join("");
@@ -104,12 +103,19 @@ function mdRender(md) {
 }
 function slug(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""); }
 
+/* Smooth-scroll shim for delegation (the old inline handler reached
+   straight into the DOM). */
+function scrollHelpTo(id) {
+  const el = document.getElementById(id);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
 function designRenderOutline() {
   const box = el("designDoc");
   const hs = [...box.querySelectorAll("h1, h2, h3")];
   el("designOutline").innerHTML = hs.map((h, i) => {
     if (!h.id) h.id = "h-ol-" + i;
-    return `<div class="ol-item ${h.tagName === "H3" ? "h3" : ""}" data-t="${h.id}" onclick="document.getElementById('${h.id}').scrollIntoView({behavior:'smooth',block:'start'})">${escHtml(h.textContent)}</div>`;
+    return `<div class="ol-item ${h.tagName === "H3" ? "h3" : ""}" data-t="${h.id}" data-act="scrollHelpTo" data-args="${dataArgs(h.id)}">${escHtml(h.textContent)}</div>`;
   }).join("");
   // scroll spy
   box.onscroll = debounce(() => {

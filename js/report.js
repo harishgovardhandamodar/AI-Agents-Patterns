@@ -1,23 +1,82 @@
 /* js/report.js — full architect report export (Markdown / JSON / print)
-   One document that stitches together everything the planner produced:
+   One document that stitches together every work product the app produces:
    intake answers, readiness scorecard, recommended stack, rollout, risk
    register, ADR, blueprint (pipeline, coverage, cost/risk estimate,
-   threat model) and the copilot transcript. Each section degrades to a
-   "not yet filled in" line when its tool hasn't been used, so the report
-   is always printable. */
+   threat model), guardrail analyses, the cascade mitigation backlog, the
+   pinned working set, discovery drafts, the copilot transcript, and the
+   saved battle-bench runs.
+
+   Every section degrades to a "not yet filled in" line when its tool hasn't
+   been used, so the report is always printable. The report is also stamped
+   with the current **project**, so the document says which system it
+   describes (iteration 106). */
 "use strict";
 
 function rpWhen() { return new Date().toISOString().slice(0, 10); }
 
+/* The project the report describes (iteration 106). Falls back to the
+   blueprint/deploy name so an un-projected app still names its subject. */
+function rpProjectName() {
+  try {
+    if (typeof projGet === "function") {
+      const p = projGet();
+      if (p && p.name) return p.name;
+    }
+  } catch (e) { /* project module unavailable */ }
+  if (typeof bpState !== "undefined" && bpState.name) return bpState.name;
+  if (typeof dpState !== "undefined" && dpState.a && dpState.a.system) return dpState.a.system;
+  return "AI agent system";
+}
+
+/* The mitigation backlog as data (iteration 112): the same rows the
+   Mitigation planner shows, flattened for the report. Each row carries the
+   team's own owner/status from the aap.mitigations store. */
+function rpMitigationRows() {
+  if (typeof buildMitigationBacklog !== "function") return [];
+  try {
+    const list = buildMitigationBacklog();
+    if (!Array.isArray(list)) return [];
+    const saved = (typeof mitLoad === "function") ? mitLoad() : {};
+    return list.map(e => {
+      const s = saved[e.key] || saved[e.text] || {};
+      return {
+        control: e.text,
+        function: e.func,
+        priority: e.priority,
+        score: e.score,
+        freq: e.freq,
+        cascades: e.cascades.length,
+        owner: (s && (s.owner || s.who)) || "",
+        status: (s && s.status) || ""
+      };
+    });
+  } catch (e) { /* mitigation planner not loaded */ }
+  return [];
+}
+
 function rpMarkdown() {
   const F = "```";
   const out = [];
-  out.push("# Architect report — " + (dpState.a.system || (bpState.name || "AI agent system")));
+  const proj = rpProjectName();
+  out.push("# Architect report — " + proj);
   out.push("");
   out.push("_Generated " + rpWhen() + " from AI Agent Patterns & Guardrails — " +
     ((DATA.patterns.patterns || []).length) + " patterns · " +
     ((DATA.scenarios.scenarios || []).length) + " scenarios · " +
     ((DATA.cascades.cascades || []).length) + " cascades in the grounding catalog._");
+  out.push("");
+
+  /* 0 — what this document covers (iteration 106) */
+  const covers = [];
+  if (typeof dpState !== "undefined" && dpState.done) covers.push("deployment plan");
+  if (typeof bpState !== "undefined" && bpState.comps.length) covers.push("reference architecture");
+  if (typeof guardState !== "undefined" && guardState.items.length) covers.push("guardrail analyses");
+  if (rpMitigationRows().length) covers.push("mitigation backlog");
+  if (typeof pinState !== "undefined" && (pinState.patterns.length + pinState.scenarios.length + pinState.cascades.length)) covers.push("working set");
+  if (typeof cpMessages !== "undefined" && cpMessages.length) covers.push("Fox - Architect consult");
+  if (typeof discState !== "undefined" && discState.run) covers.push("discovery drafts");
+  if (typeof btLoadRuns === "function") { try { if (btLoadRuns().length) covers.push("battle-bench runs"); } catch (e) {} }
+  out.push("**Covers:** " + (covers.length ? covers.join(" · ") : "nothing yet — use the tools above to build the design") + ".");
   out.push("");
 
   /* 1 — deployment plan */
@@ -63,8 +122,127 @@ function rpMarkdown() {
   }
   out.push("");
 
-  /* 3 — copilot transcript */
-  out.push("## 3. Fox - Architect consult");
+  /* 3 — guardrail analyses (iteration 106) */
+  out.push("## 3. Guardrail analyses");
+  out.push("");
+  const guards = (typeof guardState !== "undefined" && guardState.items) ? guardState.items : [];
+  if (guards.length) {
+    guards.forEach(g => {
+      out.push(`### ${escMd(g.title)}`);
+      out.push("");
+      out.push(`_${escMd(g.meta.domain)} · risk ${g.meta.riskScore}/100 (${escMd(g.meta.tier)}) · ${g.controls.length} controls · ${(g.cascadeRules || []).length} cascade rules_`);
+      out.push("");
+      out.push("| Control | Layer | Mode | Why |");
+      out.push("| --- | --- | --- | --- |");
+      (g.controls || []).forEach(c => out.push(`| ${escMd(c.name)} | ${escMd(c.layer)} | ${escMd(c.mode)} | ${escMd(c.why)} |`));
+      out.push("");
+      if ((g.cascadeRules || []).length) {
+        out.push("**Cascade-aware rules** — each cites the catalog cascade it breaks:");
+        out.push("");
+        (g.cascadeRules || []).forEach(r => {
+          out.push(`- **${escMd(r.name)}** (\`${escMd(r.cas)}\`, ${escMd(r.cls)}) — ${escMd(r.impact)} impact, ${escMd(r.likelihood)} likely`);
+        });
+        out.push("");
+      }
+      if (g.mockRun && g.mockRun.data) {
+        out.push("**Mock run** — " + escMd(g.mockRun.data.attackOutcome) + "; " +
+          escMd(g.mockRun.data.legitimateOutcome) + "; contained in " + escMd(g.mockRun.data.timeToContain) +
+          "; " + g.mockRun.data.approvals + " human approval(s).");
+        out.push("");
+      }
+    });
+  } else {
+    out.push("_No guardrail analyses yet — run the Guardrail Lab to turn an agent idea into a control design._");
+  }
+  out.push("");
+
+  /* 4 — cascade mitigation backlog (iteration 106) */
+  out.push("## 4. Cascade mitigation backlog");
+  out.push("");
+  const mit = rpMitigationRows();
+  if (mit.length) {
+    out.push("De-duplicated controls across every catalogued cascade, ranked by leverage. Owners and status are the team's own tracking.");
+    out.push("");
+    out.push("| Control | Function | Priority | Cascades | Owner | Status |");
+    out.push("| --- | --- | --- | --- | --- | --- |");
+    mit.slice(0, 40).forEach(r => {
+      out.push(`| ${escMd(String(r.control || "—"))} | ${escMd(String(r.function || "—"))} | ${escMd(String(r.priority || "—"))} | ${r.cascades} | ${escMd(String(r.owner || "—"))} | ${escMd(String(r.status || "—"))} |`);
+    });
+    if (mit.length > 40) { out.push(""); out.push("_" + (mit.length - 40) + " further controls omitted — export the full backlog as CSV from the Cascades tab._"); }
+    out.push("");
+  } else {
+    out.push("_No mitigation backlog yet — open Cascades → Mitigation planner to build one._");
+  }
+  out.push("");
+
+  /* 5 — working set (iteration 106) */
+  out.push("## 5. Working set");
+  out.push("");
+  const pins = (typeof pinState !== "undefined") ? pinState : { patterns: [], scenarios: [], cascades: [] };
+  const pinCount = pins.patterns.length + pins.scenarios.length + pins.cascades.length;
+  if (pinCount) {
+    const group = (ids, kind, label) => {
+      if (!ids.length) return;
+      out.push("**" + label + "**");
+      out.push("");
+      ids.forEach(id => {
+        let name = id;
+        try {
+          if (kind === "patterns") {
+            const p = (DATA.patterns.patterns || []).find(x => x.id === id);
+            if (p) name = p.name;
+          } else if (kind === "scenarios") {
+            const s = (DATA.scenarios.scenarios || []).find(x => x.id === id);
+            if (s) name = s.title;
+          } else {
+            const c = (DATA.cascades.cascades || []).find(x => x.id === id);
+            if (c) name = c.name;
+          }
+        } catch (e) { /* catalog not loaded — keep the id */ }
+        out.push(`- ${escMd(name)} \`${escMd(id)}\``);
+      });
+      out.push("");
+    };
+    group(pins.patterns, "patterns", "Patterns");
+    group(pins.scenarios, "scenarios", "Scenarios");
+    group(pins.cascades, "cascades", "Cascades");
+  } else {
+    out.push("_Nothing pinned yet — pin patterns, scenarios and cascades from any drawer to collect a working set._");
+  }
+  out.push("");
+
+  /* 6 — discovery drafts (iteration 106) */
+  out.push("## 6. Discovery drafts");
+  out.push("");
+  const run = (typeof discState !== "undefined" && discState.run) ? discState.run : null;
+  const promoted = (typeof discDrafts === "function") ? discDrafts() : [];
+  if (promoted.length) {
+    out.push("_Drafts you promoted into catalog-shaped scenarios — review before they enter the catalog._");
+    out.push("");
+    out.push("| Draft | Domain | Severity | Vector | Description |");
+    out.push("| --- | --- | --- | --- | --- |");
+    promoted.forEach(d => {
+      out.push(`| ${escMd(d.title)} | ${escMd(d.domain)} | ${escMd(d.severity)} | ${escMd(d.vector)} | ${escMd(String(d.description || "").slice(0, 180))} |`);
+    });
+    out.push("");
+  }
+  if (run && run.winners && run.winners.length) {
+    out.push("_Drafts from the current Discovery Lab run — hypotheses for review, not catalog entries._");
+    out.push("");
+    out.push("| Draft | Domain | Class | Vector | Severity |");
+    out.push("| --- | --- | --- | --- | --- |");
+    run.winners.forEach(c => {
+      out.push(`| ${escMd(c.title)} | ${escMd(c.domain)} | ${escMd(c.cls)} | ${escMd(c.vector)} | ${escMd(c.severity)} |`);
+    });
+    out.push("");
+  }
+  if (!promoted.length && !(run && run.winners && run.winners.length)) {
+    out.push("_No discovery drafts yet — the Discovery Lab generates novel scenario candidates from the catalog's gaps._");
+  }
+  out.push("");
+
+  /* 7 — copilot transcript */
+  out.push("## 7. Fox - Architect consult");
   out.push("");
   const us = cpMessages.filter(m => m.role === "user");
   if (us.length) {
@@ -75,6 +253,29 @@ function rpMarkdown() {
   } else {
     out.push("_No Fox - Architect conversation yet — ask Fox - Architect to stress-test the architecture._");
   }
+  out.push("");
+
+  /* 8 — battle-bench runs */
+  out.push("## 8. Battle-bench runs");
+  out.push("");
+  const savedRuns = (typeof btLoadRuns === "function") ? btLoadRuns() : [];
+  if (savedRuns.length) {
+    out.push("_Saved Battle Bench runs — same cases, comparable across time. A passing synthetic run proves the controls are wired, not that any agent is safe._");
+    out.push("");
+    savedRuns.slice(0, 5).forEach(sr => {
+      const r = sr.run || {}, sum = r.summary || {};
+      out.push(`**${escMd(r.id || "run")}** — ${escMd(String(r.at || "").slice(0, 10))} · adapter \`${escMd(r.adapter || "?")}\` · ` +
+        `${sum.pass || 0} pass / ${sum.fail || 0} fail / ${sum.error || 0} error / ${sum.skip || 0} skip over ${sum.total || 0} cases` +
+        (r.coverage ? ` · corpus coverage ${r.coverage.pct || 0}%` : "") + ".");
+      (sum.failing || []).slice(0, 8).forEach(f => {
+        out.push(`- ❌ ${escMd(f.scenarioTitle || f.scenarioId)} (${escMd(f.severity || "?")}, ${escMd(f.configName || "?")})`);
+      });
+      out.push("");
+    });
+  } else {
+    out.push("_No saved battle-bench runs yet — run the Battle Bench matrix and save the run to make it comparable across time._");
+    out.push("");
+  }
   return out.join("\n");
 }
 
@@ -84,6 +285,7 @@ function rpJson() {
   const j = {
     generated: new Date().toISOString(),
     app: "AI Agent Patterns & Guardrails",
+    project: rpProjectName(),
     catalog: {
       patterns: (DATA.patterns.patterns || []).length,
       scenarios: (DATA.scenarios.scenarios || []).length,
@@ -114,12 +316,54 @@ function rpJson() {
       markdown: bpMarkdown()
     };
   } else j.blueprint = null;
+  /* guardrail analyses (iteration 106) */
+  const gs = (typeof guardState !== "undefined" && guardState.items) ? guardState.items : [];
+  j.guardrails = gs.length ? gs.map(g => ({
+    id: g.id, title: g.title, request: g.request, meta: g.meta,
+    controls: g.controls, cascadeRules: (g.cascadeRules || []).map(r => ({ cas: r.cas, name: r.name, cls: r.cls, impact: r.impact, likelihood: r.likelihood })),
+    mockRun: g.mockRun ? { verdict: g.mockRun.verdict, data: g.mockRun.data, metrics: g.mockRun.metrics } : null
+  })) : null;
+  /* mitigation backlog (iteration 106) */
+  const mit = rpMitigationRows();
+  j.mitigationBacklog = mit.length ? mit.map(r => ({
+    control: r.control, function: r.function, priority: r.priority,
+    score: r.score, cascades: r.cascades, owner: r.owner || null, status: r.status || null
+  })) : null;
+  /* working set (iteration 106) */
+  const pins = (typeof pinState !== "undefined") ? pinState : { patterns: [], scenarios: [], cascades: [] };
+  j.workingSet = (pins.patterns.length + pins.scenarios.length + pins.cascades.length)
+    ? { patterns: pins.patterns.slice(), scenarios: pins.scenarios.slice(), cascades: pins.cascades.slice() } : null;
+  /* discovery drafts (iteration 106) */
+  const run = (typeof discState !== "undefined" && discState.run) ? discState.run : null;
+  j.discovery = run && run.winners ? { winners: run.winners.map(c => ({ title: c.title, domain: c.domain, cls: c.cls, vector: c.vector, severity: c.severity })) } : null;
   j.copilot = cpMessages.length ? cpMessages.map(m => ({ role: m.role, content: m.content })) : null;
+  /* battle-bench runs — saved runs are comparable across time, so keep the
+     summaries and the verdict rows, not the full outputs. */
+  let saved = [];
+  try { saved = (typeof btLoadRuns === "function") ? btLoadRuns() : []; } catch (e) { saved = []; }
+  j.battleBench = saved.length ? saved.slice(0, 5).map(sr => ({
+    id: (sr.run || {}).id || null, at: (sr.run || {}).at || null,
+    adapter: (sr.run || {}).adapter || null, cases: (sr.run || {}).cases || 0,
+    summary: (sr.run || {}).summary || null, coverage: (sr.run || {}).coverage || null,
+    results: (sr.results || []).map(r => ({ scenarioId: r.scenarioId, configName: r.configName,
+      verdict: r.verdict, passed: r.passed, total: r.total, error: r.error || null }))
+  })) : null;
   return JSON.stringify(j, null, 2);
 }
 
+function rpHasAny() {
+  if (bpState.comps.length || dpState.done || cpMessages.length) return true;
+  if (typeof guardState !== "undefined" && guardState.items.length) return true;
+  if (rpMitigationRows().length) return true;
+  try { if (typeof btLoadRuns === "function" && btLoadRuns().length) return true; } catch (e) {}
+  return false;
+}
+
 function rpDownload(kind) {
-  if (!bpState.comps.length && !dpState.done && !cpMessages.length) { showNotif("Nothing to report yet — run the planner, blueprint or copilot first"); return; }
+  if (!rpHasAny()) {
+    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or copilot first");
+    return;
+  }
   const isMd = kind === "md";
   const txt = isMd ? rpMarkdown() : rpJson();
   const blob = new Blob([txt], { type: isMd ? "text/markdown" : "application/json" });
@@ -128,16 +372,26 @@ function rpDownload(kind) {
   a.download = "architect-report-" + rpWhen() + (isMd ? ".md" : ".json");
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  /* remember that the report went out, so the Deliver stage can show it */
+  try {
+    const n = parseInt(localStorage.getItem("aap.reported.v1") || "0", 10) || 0;
+    localStorage.setItem("aap.reported.v1", String(n + 1));
+  } catch (e) { /* storage unavailable — the stage just stays "active" */ }
+  if (typeof wfPaintRail === "function") wfPaintRail();
+  if (typeof dashRender === "function") dashRender();
   showNotif(isMd ? "Report downloaded (Markdown)" : "Report downloaded (JSON)");
 }
 
 /* print: a dedicated, self-contained page — no app chrome, no JS needed */
 function rpPrint() {
-  if (!bpState.comps.length && !dpState.done && !cpMessages.length) { showNotif("Nothing to report yet — run the planner, blueprint or copilot first"); return; }
+  if (!rpHasAny()) {
+    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or copilot first");
+    return;
+  }
   const w = window.open("", "_blank");
   if (!w) { showNotif("Popup blocked — allow popups to print the report"); return; }
   const md = rpMarkdown();
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Architect report — ${rpWhen()}</title><style>
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Architect report — ${escHtml(rpProjectName())} — ${rpWhen()}</title><style>
     body{font:13.5px/1.65 -apple-system,Segoe UI,Roboto,sans-serif;color:#1f2328;max-width:860px;margin:36px auto;padding:0 24px}
     h1{font-size:22px;border-bottom:2px solid #d0d7de;padding-bottom:8px}
     h2{font-size:17px;margin-top:26px;border-bottom:1px solid #d0d7de;padding-bottom:4px}
@@ -191,7 +445,7 @@ function rpHtml(md) {
       return;
     }
     flushTable();
-    if (/^#{1,3} /.test(l)) { closeList(); const m = l.match(/^(#{1,3}) (.*)$/); html.push("<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"); }
+    if (/^#{1,3} /.test(l)) { closeList(); const m = l.match(/^(#{1,3}) (.+)$/); html.push("<h" + m[1].length + ">" + inline(m[2]) + "</h" + m[1].length + ">"); }
     else if (/^[-*] /.test(l)) { if (!listOpen) { html.push("<ul>"); listOpen = true; } html.push("<li>" + inline(l.slice(2)) + "</li>"); }
     else if (l.startsWith("_") && l.endsWith("_") && l.length > 2) { closeList(); html.push("<blockquote>" + inline(l.slice(1, -1)) + "</blockquote>"); }
     else if (l.trim() === "") { closeList(); }

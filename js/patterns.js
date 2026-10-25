@@ -34,7 +34,7 @@ function initOverview() {
   const domCounts = {};
   S.scenarios.forEach(s => { domCounts[s.domain] = (domCounts[s.domain] || 0) + 1; });
   el("ovDomains").innerHTML = Object.entries(domCounts).sort((a, b) => b[1] - a[1]).map(([d, n]) =>
-    `<span class="domain-chip" onclick="jumpToScenarioDomain('${escHtml(d)}')">${escHtml(d)} <b>${n}</b></span>`).join("");
+    `<span class="domain-chip" data-act="jumpToScenarioDomain" data-args="[&quot;${escHtml(d)}&quot;]">${escHtml(d)} <b>${n}</b></span>`).join("");
 
   const layerDefs = [
     ["identity", "Least-privilege identity — scoped, short-lived credentials"],
@@ -56,24 +56,27 @@ function initOverview() {
 }
 
 function jumpToScenarioDomain(dom) {
+  /* The target pane may not be built yet — wait for it rather than
+     guessing a delay (iteration 108). */
   switchTab("scenarios");
-  setTimeout(() => {
+  dlWhenReady("scenarios", () => {
     const box = el("scnDomains");
+    if (!box) return;
     const input = box.querySelector(`input[data-dom="${CSS.escape(dom)}"]`);
     if (input) { box.querySelectorAll("input").forEach(i => i.checked = false); input.checked = true; renderScenarios(); }
-  }, 30);
+  });
 }
 
 /* Jump to Patterns tab filtered to a single domain (used by Coverage view). */
 function goPatternDomain(dom) {
   switchTab("patterns");
-  setTimeout(() => {
+  dlWhenReady("patterns", () => {
     const box = el("patDomains");
     if (!box) return;
     box.querySelectorAll("input").forEach(i => i.checked = false);
     const input = box.querySelector(`input[data-dom="${CSS.escape(dom)}"]`);
     if (input) { patState.domains.clear(); input.checked = true; onPatDomain(input); }
-  }, 40);
+  });
 }
 
 /* =============== PATTERNS =============== */
@@ -82,12 +85,52 @@ const patState = { cats: new Set(), domains: new Set() };
 function initPatterns() {
   const P = DATA.patterns;
   el("patCats").innerHTML = P.categories.map(c =>
-    `<label class="filter-item"><input type="checkbox" data-cat="${c.id}" onchange="onPatCat(this)" checked> ${escHtml(c.name)}<span class="cnt">${P.patterns.filter(p => p.cat === c.id).length}</span></label>`).join("");
+    `<label class="filter-item"><input type="checkbox" data-cat="${c.id}" data-change="onPatCat" data-first="el" checked> ${escHtml(c.name)}<span class="cnt">${P.patterns.filter(p => p.cat === c.id).length}</span></label>`).join("");
   const doms = uniq(P.patterns.flatMap(p => p.domains)).sort();
   el("patDomains").innerHTML = doms.map(d =>
-    `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" onchange="onPatDomain(this)"> ${escHtml(d)}<span class="cnt">${P.patterns.filter(p => p.domains.includes(d)).length}</span></label>`).join("");
+    `<label class="filter-item"><input type="checkbox" data-dom="${escHtml(d)}" data-change="onPatDomain" data-first="el"> ${escHtml(d)}<span class="cnt">${P.patterns.filter(p => p.domains.includes(d)).length}</span></label>`).join("");
   P.categories.forEach(c => patState.cats.add(c.id));
+  patMemRestore();
   renderPatterns();
+  if (typeof resPaint === "function") resPaint();
+}
+/* Restore / persist the filter state this pane was left in (iteration 76). */
+function patMemRestore() {
+  const m = typeof uiMemGet === "function" ? uiMemGet("pat", null) : null;
+  if (!m || typeof m !== "object") return;
+  if (m.q && el("patSearch")) el("patSearch").value = m.q;
+  if (Array.isArray(m.cats) && el("patCats").children.length) {
+    patState.cats.clear();
+    document.querySelectorAll("#patCats input").forEach(i => {
+      const on = m.cats.indexOf(i.dataset.cat) >= 0;
+      i.checked = on;
+      if (on) patState.cats.add(i.dataset.cat);
+    });
+    if (!patState.cats.size) patCatsAll();
+  }
+  if (Array.isArray(m.domains)) {
+    patState.domains.clear();
+    document.querySelectorAll("#patDomains input").forEach(i => {
+      const on = m.domains.indexOf(i.dataset.dom) >= 0;
+      i.checked = on;
+      if (on) patState.domains.add(i.dataset.dom);
+    });
+  }
+  if (el("patHasDiagram")) el("patHasDiagram").checked = !!m.dia;
+  if (el("patHasFailures")) el("patHasFailures").checked = !!m.fail;
+  if (m.sort && el("patSort")) el("patSort").value = m.sort;
+}
+function patCatsAll() { DATA.patterns.categories.forEach(c => patState.cats.add(c.id)); }
+function patMemSave() {
+  if (typeof uiMemSet !== "function" || !el("patSearch")) return;
+  uiMemSet("pat", {
+    q: el("patSearch").value,
+    cats: [...patState.cats],
+    domains: [...patState.domains],
+    dia: !!(el("patHasDiagram") && el("patHasDiagram").checked),
+    fail: !!(el("patHasFailures") && el("patHasFailures").checked),
+    sort: el("patSort") ? el("patSort").value : ""
+  });
 }
 function onPatCat(inp) { inp.checked ? patState.cats.add(inp.dataset.cat) : patState.cats.delete(inp.dataset.cat); renderPatterns(); }
 function onPatDomain(inp) { inp.checked ? patState.domains.add(inp.dataset.dom) : patState.domains.delete(inp.dataset.dom); renderPatterns(); }
@@ -128,6 +171,10 @@ function patActiveChips(q, needDia, needFail) {
   return chips;
 }
 
+/* View-switch shims for delegation (the old inline handlers compounded
+   the uxSetView call with a re-render). */
+function patShowCards() { uxSetView("patView", "cards"); renderPatterns(); }
+function patShowList() { uxSetView("patView", "list"); renderPatterns(); }
 function renderPatterns() {
   const P = DATA.patterns;
   const q = el("patSearch").value.trim().toLowerCase();
@@ -151,10 +198,11 @@ function renderPatterns() {
 
   el("patCount").textContent = `${list.length} of ${P.patterns.length} patterns`;
   if (typeof paintActiveChips === "function") paintActiveChips("patActive", patActiveChips(q, needDia, needFail));
+  patMemSave();
   if ((uxPrefs.patView || "cards") === "list") return renderPatternList(list, P);
   const catName = id => (P.categories.find(c => c.id === id) || {}).name || id;
   el("patGrid").innerHTML = list.map(p => `
-    <div class="pat-card" role="listitem" onclick="openPattern('${p.id}')">
+    <div class="pat-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open pattern: ${escHtml(p.name)}" data-act="openPattern" data-args="[&quot;${p.id}&quot;]" data-keys="Enter, ">
       <div class="cat">${escHtml(catName(p.cat))}</div>
       <div class="nm">${escHtml(p.name)}</div>
       <div class="sm">${escHtml(p.summary)}</div>
@@ -178,7 +226,7 @@ function renderPatternList(list, P) {
     return;
   }
   el("patGrid").innerHTML = `<div class="mini-list" role="list">` + list.map(p => `
-    <div class="mini-row" role="listitem" tabindex="0" onclick="openPattern('${p.id}')" onkeydown="if(event.key==='Enter')openPattern('${p.id}')">
+    <div class="mini-row" role="listitem" tabindex="0" data-act="openPattern" data-args="[&quot;${p.id}&quot;]" data-keys="Enter">
       <span class="mini-nm">${escHtml(p.name)}</span>
       <span class="mini-meta">${escHtml(catName(p.cat))} · ${(p.failures || []).length} failure${(p.failures || []).length === 1 ? "" : "s"} · ${(p.protections || []).length} protections${p.diagram ? " · ◇ diagram" : ""}</span>
     </div>`).join("") + `</div>`;
@@ -192,12 +240,12 @@ function openPattern(id) {
   const sevCls = { critical: "var(--red)", high: "var(--orange)", medium: "var(--accent)", low: "var(--green)" };
   const rel = (p.related || []).map(rid => {
     const rp = P.patterns.find(x => x.id === rid);
-    return rp ? `<a href="#" onclick="openPattern('${rid}');return false;">${escHtml(rp.name)}</a>` : escHtml(rid);
+    return rp ? `<a href="#" data-act="openPattern" data-args="[&quot;${rid}&quot;]">${escHtml(rp.name)}</a>` : escHtml(rid);
   }).join(" · ");
 
   const html = `
-    <div class="dsec d-actions">${typeof bpDrawerBtnHtml === "function" ? bpDrawerBtnHtml(p.id) : ""}<button class="btn sm" onclick="askCopilotAbout('pattern: ${escHtml(p.name)}')">🤖 Ask Fox - Architect</button>${typeof pinBtnHtml === "function" ? pinBtnHtml("patterns", p.id) : ""}</div>
-    <div class="dsec"><p>${escHtml(p.summary)}</p>
+    <div class="dsec d-actions">${typeof bpDrawerBtnHtml === "function" ? bpDrawerBtnHtml(p.id) : ""}<button class="btn sm" data-act="askAbout" data-args="[&quot;pattern&quot;,&quot;${escHtml(p.id)}&quot;]">🤖 Ask Fox - Architect</button>${typeof pinBtnHtml === "function" ? pinBtnHtml("patterns", p.id) : ""}</div>
+    <div class="dsec"><p>${typeof jargon === "function" ? jargon(p.summary) : escHtml(p.summary)}</p>
       <p class="small muted">Domains: ${p.domains.map(escHtml).join(", ")} · Pattern ID: <code>${escHtml(p.id)}</code></p></div>
     ${p.diagram ? `<div class="dsec"><h4>Control flow</h4>${diagramHtml(p.diagram, p.name)}</div>` : ""}
     <div class="dsec"><h4>How it works</h4><ul>${p.how.map(h => `<li>${escHtml(h)}</li>`).join("")}</ul></div>
@@ -210,5 +258,10 @@ function openPattern(id) {
     ${rel ? `<div class="dsec"><h4>Related patterns</h4><p>${rel}</p></div>` : ""}
     ${typeof casLinksForPattern === "function" ? casLinksForPattern(p.id) : ""}
     <div class="dsec"><h4>Category context</h4>${diagramHtml(P.categoryDiagrams[p.cat] || "", cat.name)}<p class="small muted">${escHtml(cat.desc || "")}</p></div>`;
-  openDetail(p.name, cat.name || p.cat, html);
+  openDetail(p.name, cat.name || p.cat, html, { tab: "patterns", id: p.id, title: p.name });
 }
+
+/* Registered so the shell-freshness check and tab shortcuts see this tab as
+   initialised (SK_TABS ↔ DOM ↔ tabLoaders must agree). Re-runs the idempotent
+   filter build + render on every visit, like the other catalog tabs. */
+tabLoaders.patterns = function () { initPatterns(); };

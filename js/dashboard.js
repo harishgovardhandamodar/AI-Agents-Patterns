@@ -6,6 +6,11 @@
 "use strict";
 
 function dashNext() {
+  /* The workflow engine owns the "what next?" question (iteration 107) —
+     it reads every tool, not just the three this function used to know
+     about. Kept as a thin wrapper so the dashboard and the command
+     palette share one answer. */
+  if (typeof wfNext === "function") return wfNext();
   /* Deterministic suggestion: the first unfinished step wins. */
   if (!dpState.done) return { t: "Complete the deployment intake — the planner scores readiness and picks a recommended stack from your answers.", tab: "deploy", cta: "Open Deployment Planner" };
   if (!bpState.comps.length) {
@@ -33,14 +38,14 @@ function dashRender() {
       <div class="dash-h">📋 Deployment Planner</div>
       <div class="dash-v">${sc.overall}<i>/100</i> <span class="chip ${sc.band[1]}">${escHtml(sc.band[0])}</span></div>
       <div class="dash-m">${sc.dims.length} dimensions scored · target autonomy ${dpState.target == null ? "unset" : "tier " + (dpState.target + 1)}</div>
-      <button class="btn sm ghost" onclick="switchTab('deploy')">Review plan</button>
+      <button class="btn sm ghost" data-act="switchTab" data-args="[&quot;deploy&quot;]">Review plan</button>
     </div>`;
   } else {
     dpCard = `<div class="dash-card dim">
       <div class="dash-h">📋 Deployment Planner</div>
       <div class="dash-v muted">intake incomplete</div>
       <div class="dash-m">Step ${dpState.step + 1} of 4 — readiness scorecard, stack and rollout plan come from the intake.</div>
-      <button class="btn sm" onclick="switchTab('deploy')">Continue intake</button>
+      <button class="btn sm" data-act="switchTab" data-args="[&quot;deploy&quot;]">Continue intake</button>
     </div>`;
   }
 
@@ -54,14 +59,14 @@ function dashRender() {
       <div class="dash-h">🧩 Blueprint <span class="muted small">${escHtml(bpState.name || "Untitled")}</span></div>
       <div class="dash-v">${bpState.comps.length}<i> components</i></div>
       <div class="dash-m">Coverage <b>${c.ok}/${c.total}</b> families · risk <b>${est.risk.score}</b>/100 (${escHtml(est.risk.band[0])}) · exposure <b>${tm.idx}</b>/100 <span class="chip ${tm.band[1]}">${escHtml(tm.band[0])}</span></div>
-      <button class="btn sm ghost" onclick="switchTab('blueprint')">Open builder</button>
+      <button class="btn sm ghost" data-act="switchTab" data-args="[&quot;blueprint&quot;]">Open builder</button>
     </div>`;
   } else {
     bpCard = `<div class="dash-card dim">
       <div class="dash-h">🧩 Blueprint</div>
       <div class="dash-v muted">no architecture yet</div>
       <div class="dash-m">Start from a template (research, worker, pipeline, support, batch) or drag patterns onto the canvas.</div>
-      <button class="btn sm" onclick="switchTab('blueprint')">Start a blueprint</button>
+      <button class="btn sm" data-act="switchTab" data-args="[&quot;blueprint&quot;]">Start a blueprint</button>
     </div>`;
   }
 
@@ -70,7 +75,7 @@ function dashRender() {
     <div class="dash-h">🤖 Fox - Architect</div>
     <div class="dash-v">${cpMessages.length}<i> messages</i></div>
     <div class="dash-m">${cpMessages.length ? "Last question answered " + escHtml(cpMessages.filter(m => m.role === "user").slice(-1).map(m => (m.content || "").slice(0, 60) + "…")[0] || "") : "Grounded in the catalog via the local Qwen model, with deterministic fallback."}</div>
-    <button class="btn sm ghost" onclick="switchTab('copilot')">Open Fox - Architect</button>
+    <button class="btn sm ghost" data-act="switchTab" data-args="[&quot;copilot&quot;]">Open Fox - Architect</button>
   </div>`;
 
   /* — guardrail lab — */
@@ -78,22 +83,46 @@ function dashRender() {
     <div class="dash-h">🛡 Guardrail Lab</div>
     <div class="dash-v">${guardState.items.length}<i> rules</i></div>
     <div class="dash-m">${guardState.items.length ? "Saved guardrail rules in your collection." : "Write, test and replay guardrail rules against sample agent output."}</div>
-    <button class="btn sm ghost" onclick="switchTab('guard')">Open lab</button>
+    <button class="btn sm ghost" data-act="switchTab" data-args="[&quot;guard&quot;]">Open lab</button>
+  </div>`;
+
+  /* — mitigation backlog (iteration 107) — */
+  let mitCount = 0, mitOwned = 0;
+  try {
+    if (typeof buildMitigationBacklog === "function") mitCount = buildMitigationBacklog().length;
+    if (typeof mitLoad === "function") mitOwned = Object.keys(mitLoad()).length;
+  } catch (e) { /* cascades not ready */ }
+  const mitCard = `<div class="dash-card ${mitOwned ? "" : "dim"}">
+    <div class="dash-h">⛨ Mitigation backlog</div>
+    <div class="dash-v">${mitOwned}<i> owned</i></div>
+    <div class="dash-m">${mitCount ? mitCount + " de-duplicated controls across every cascade — " + (mitOwned ? mitOwned + " have an owner" : "none have an owner yet") : "Open the Mitigation planner to aggregate the controls behind every cascade."}</div>
+    <button class="btn sm ghost" data-act="wfGoMitigation">Open planner</button>  </div>`;
+
+  /* — discovery (iteration 107) — */
+  const run = (typeof discState !== "undefined" && discState.run) ? discState.run : null;
+  const winN = run && run.winners ? run.winners.length : 0;
+  const discCard = `<div class="dash-card ${winN ? "" : "dim"}">
+    <div class="dash-h">🧪 Discovery Lab</div>
+    <div class="dash-v">${winN}<i> drafts</i></div>
+    <div class="dash-m">${winN ? winN + " novel scenario drafts kept from the last run — review, then export for curation." : "Gap-seeded ideation: find scenarios the catalog does not have yet."}</div>
+    <button class="btn sm ghost" data-act="switchTab" data-args="[&quot;discovery&quot;]">Open Discovery Lab</button>
   </div>`;
 
   const nx = dashNext();
-  const anyWork = dpState.done || bpState.comps.length || cpMessages.length;
+  const anyWork = dpState.done || bpState.comps.length || cpMessages.length ||
+    (typeof guardState !== "undefined" && guardState.items.length) || mitOwned || winN;
   root.innerHTML =
-    `<div class="dash-next"><span class="dash-next-ico">➡</span><div><b>Next:</b> ${escHtml(nx.t)} <button class="btn sm accent" onclick="switchTab('${nx.tab}')">${escHtml(nx.cta)}</button></div></div>` +
-    `<div class="dash-grid">${dpCard}${bpCard}${cpCard}${glCard}</div>` +
+    (typeof wfRailHtml === "function" ? `<div class="dash-rail">${wfRailHtml()}</div>` : "") +
+    `<div class="dash-next"><span class="dash-next-ico">➡</span><div><b>Next:</b> ${escHtml(nx.t)} <button class="btn sm accent" data-act="switchTab" data-args="[&quot;${nx.tab}&quot;]">${escHtml(nx.cta)}</button></div></div>` +
+    `<div class="dash-grid">${dpCard}${bpCard}${cpCard}${glCard}${mitCard}${discCard}</div>` +
     (typeof pinPanelHtml === "function" ? pinPanelHtml() : "") +
-    `<div class="dash-export${anyWork ? "" : " dim"}">
+    `<div class="dash-export${anyWork ? "" : " dim"}" id="dashExportBtns">
       <b>Export architect report</b>
-      <span class="muted small">Deployment plan + blueprint + threat model + Fox - Architect consult in one document</span>
+      <span class="muted small">Deployment plan + blueprint + threat model + guardrail analyses + mitigation backlog + working set + Fox - Architect consult in one document</span>
       <span class="dash-export-btns">
-        <button class="btn sm" onclick="rpDownload('md')" ${anyWork ? "" : "disabled"}>⬇ Markdown</button>
-        <button class="btn sm" onclick="rpDownload('json')" ${anyWork ? "" : "disabled"}>⬇ JSON</button>
-        <button class="btn sm" onclick="rpPrint()" ${anyWork ? "" : "disabled"}>🖨 Print</button>
+        <button class="btn sm" data-act="rpDownload" data-args="[&quot;md&quot;]" ${anyWork ? "" : "disabled"}>⬇ Markdown</button>
+        <button class="btn sm" data-act="rpDownload" data-args="[&quot;json&quot;]" ${anyWork ? "" : "disabled"}>⬇ JSON</button>
+        <button class="btn sm" data-act="rpPrint" ${anyWork ? "" : "disabled"}>🖨 Print</button>
       </span>
     </div>`;
 }
@@ -115,7 +144,10 @@ function pinLoad() {
   } catch (e) {}
 }
 function pinSave() {
-  try { localStorage.setItem(PIN_STORE, JSON.stringify(pinState)); } catch (e) {}
+  let ok = false;
+  try { ok = (typeof storeSet === "function") ? storeSet(PIN_STORE, JSON.stringify(pinState)) : false; } catch (e) { ok = false; }
+  if (!ok && typeof markSaveFailed === "function") markSaveFailed("pins", "Pinned items");
+  if (typeof projTouch === "function") projTouch();
 }
 function pinHas(kind, id) { return (pinState[kind] || []).indexOf(id) >= 0; }
 
@@ -157,7 +189,7 @@ function pinBtnHtml(kind, id) {
   if (!pinState[kind]) return "";
   const pinned = pinHas(kind, id);
   return `<button class="btn sm pin-btn${pinned ? " on" : ""}" data-pin="${kind}:${id}" aria-pressed="${pinned ? "true" : "false"}" ` +
-    `onclick="pinToggle('${kind}','${escJs(id)}',this)" title="Keep this in your Overview working set">${pinned ? "★ Pinned" : "☆ Pin to working set"}</button>`;
+    `data-act="pinToggle" data-args='["${kind}","${escAttr(id)}"]' title="Keep this in your Overview working set">${pinned ? "★ Pinned" : "☆ Pin to working set"}</button>`;
 }
 
 function pinCount() { return pinState.patterns.length + pinState.scenarios.length + pinState.cascades.length; }
@@ -169,13 +201,13 @@ function pinPanelHtml() {
     const it = pinItem(kind, id);
     if (!it) return "";
     return `<div class="pin-row"><span class="chip ${chipCls}">${label}</span>` +
-      `<a href="#" onclick="${it.open}('${escJs(id)}');return false;">${escHtml(it.name)}</a>` +
-      `<button class="btn sm ghost pin-x" onclick="pinToggle('${kind}','${escJs(id)}')" aria-label="Unpin ${escHtml(it.name)}">×</button></div>`;
+      `<a href="#" data-act="${it.open}" data-args='["${escAttr(id)}"]'>${escHtml(it.name)}</a>` +
+      `<button class="btn sm ghost pin-x" data-act="pinToggle" data-args='["${kind}","${escAttr(id)}"]' aria-label="Unpin ${escHtml(it.name)}">×</button></div>`;
   }).join("");
   return `<div class="dash-pin"><div class="dash-pin-head"><b>📌 Working set</b> <span class="muted small">${n} pinned</span>
     <span style="flex:1"></span>
-    <button class="btn sm ghost" onclick="pinExport()">⬇ Export</button>
-    <button class="btn sm ghost" onclick="pinClear()">Clear</button></div>` +
+    <button class="btn sm ghost" data-act="pinExport">⬇ Export</button>
+    <button class="btn sm ghost" data-act="pinClear">Clear</button></div>` +
     group("patterns", "pattern", "") + group("scenarios", "scenario", "risk") + group("cascades", "cascade", "ok") + `</div>`;
 }
 

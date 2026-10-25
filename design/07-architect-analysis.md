@@ -3,7 +3,7 @@
 This document is the design rationale for the architect-facing upgrade: what the
 dashboard knew, what an architect needs, and the four-class cascade model that
 connects them. It is the reference behind the **Fox - Architect**, **Cascades**,
-**Coverage**, and **Planner** tabs.
+**Coverage**, **Planner** and **Discovery Lab** tabs.
 
 ## 1. From catalog to advisory system
 
@@ -11,9 +11,10 @@ connects them. It is the reference behind the **Fox - Architect**, **Cascades**,
 flowchart LR
   subgraph TODAY["Today — reference"]
     P["107 patterns"]
-    S["43 scenarios"]
-    T["39 traces"]
-    D["6 design docs"]
+    S["54 scenarios"]
+    T["55 traces"]
+    C["191 cascades"]
+    D["9 design docs"]
   end
   subgraph ASK["Architect's four questions"]
     Q1["What do I need to build?"]
@@ -32,9 +33,11 @@ flowchart LR
   P --> CP
   S --> CP
   T --> CP
+  C --> CP
   D --> CP
   P --> CV
   S --> CV
+  C --> CV
   CP --> Q1
   CP --> Q4
   CV --> Q2

@@ -134,3 +134,26 @@ flowchart LR
 | Third-party model/provider incident | Model pinned + eval-gated upgrades; no sensitive data in context | Behavioral drift alerts; shadow-parity checks |
 
 Each row names an owner, a bound, and a monitor — the minimum bar for accepting residual risk rather than ignoring it.
+
+## The app's own threat model (short)
+
+The same discipline applies to this dashboard, which is now a static shell plus one small server, an offline cache, and an optional same-origin model proxy.
+
+```mermaid
+flowchart LR
+  ATK["Web threat<br/>XSS · clickjacking · MIME sniff ·<br/>exfil · stale cache · proxy abuse"] --> APP["App shell + serve.py"]
+  APP --> M1["CSP: default-src 'self'<br/>no third-party script<br/>connect-src 'self'"]
+  APP --> M2["escHtml on all user text —<br/>Mermaid runs securityLevel strict"]
+  APP --> M3["XFO DENY · nosniff · no-referrer<br/>Server version suppressed"]
+  APP --> M4["Service worker caches the shell only —<br/>never /api/*"]
+  APP --> M5["Same-origin LLM proxy;<br/>no third-party egress"]
+```
+
+| STRIDE class | In the app | Control |
+|---|---|---|
+| Spoofing | Fake "trusted" content in an LLM answer | Answers are untrusted data: rendered as escaped text/markdown, never executed |
+| Tampering | A shell file swapped in transit | Same-origin fetch, `nosniff`, `frame-ancestors 'none'`; the SBOM-free vendored Mermaid is pinned |
+| Repudiation | "I never saw that trace back" | Data is versioned in git; exports are explicit and stamped |
+| Information disclosure | Secrets/selections leaking out | `connect-src 'self'` and `Referrer-Policy: no-referrer`; localStorage is browser-local, nothing auto-sent |
+| Denial of service | Runaway model call, stale cache | Watchdog timeouts on the proxy; `VERSION` bump invalidates the cache; per-pane boot isolation |
+| Elevation of privilege | Injection steering the reader's browser | No in-app shell; CSP blocks inline third-party script; strict Mermaid rendering |
