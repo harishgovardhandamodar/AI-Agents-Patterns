@@ -212,7 +212,7 @@ SL_DIR = os.environ.get("SL_DIR", "/home/fox/WorkBook/self-learning-agents")
 
 
 # ------------------------------------------------------- bookshelf (books)
-# The five books are generated artifacts: tools/build_*.py read the catalog
+# The six books are generated artifacts: tools/build_*.py read the catalog
 # (main, rogue) plus the sibling lab checkout (self) and emit Markdown +
 # print HTML; tools/render_pdf.mjs typesets the PDFs. The Bookshelf panel on
 # the Overview tab drives this pipeline: collect the landscape inventory,
@@ -290,6 +290,22 @@ BOOK_TARGETS = {
                     "tools/build_rogue_book.py",
                     "tools/build_workflows_book.py", "tools/workflows_book_prose.py",
                     "tools/workflows_book_data.py", "tools/openshell_book_data.py"],
+    },
+    "field": {
+        "label": "Field Playbooks",
+        "build": ["python3", "tools/build_field_book.py"],
+        "pdf": ["node", "tools/render_pdf.mjs", "book/field-playbooks.html",
+                "book/Field-Playbooks.pdf", "Field Playbooks"],
+        "md": "book/FIELD-PLAYBOOKS.md",
+        "html": "book/field-playbooks.html",
+        "pdf_out": "book/Field-Playbooks.pdf",
+        "sources": ["data/patterns.json", "data/scenarios.json",
+                    "data/cascades.json", "data/traces.json",
+                    "data/coverage.json", "js/shortcuts.js", "index.html",
+                    "tools/build_rogue_book.py", "tools/build_workflows_book.py",
+                    "tools/build_field_book.py", "tools/field_book_prose.py",
+                    "tools/field_book_data.py", "tools/openshell_book_data.py",
+                    "tools/workflows_book_data.py"],
     },
 }
 

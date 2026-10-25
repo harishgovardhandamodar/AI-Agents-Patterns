@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Field Playbooks</title>
+<style>
+:root { color-scheme: light; }
+* { box-sizing: border-box; }
+body {
+  font-family: Georgia, "Times New Roman", serif;
+  color: #1a1a1a; font-size: 10.5pt; line-height: 1.55; margin: 0;
+}
+h1, h2, h3 { font-family: "Helvetica Neue", Arial, sans-serif; color: #0b2545; break-after: avoid; }
+h1 { font-size: 20pt; line-height: 1.2; margin: 0 0 10pt; }
+h2 { font-size: 13.5pt; margin: 18pt 0 6pt; border-bottom: 1px solid #d8dee6; padding-bottom: 3pt; }
+h3 { font-size: 11.5pt; margin: 14pt 0 4pt; }
+p { margin: 0 0 8pt; orphans: 3; widows: 3; }
+ul, ol { margin: 0 0 9pt 16pt; padding-left: 8pt; }
+li { margin-bottom: 3pt; break-inside: avoid; }
+code { font-family: Menlo, Consolas, monospace; font-size: 9pt; background: #f2f4f7; padding: 0 2px; border-radius: 2px; }
+blockquote { margin: 8pt 0; padding: 6pt 10pt; border-left: 3px solid #0b2545; background: #f6f8fa; font-size: 10pt; }
+table { border-collapse: collapse; width: 100%; margin: 6pt 0 10pt; font-size: 9.2pt; }
+th, td { border: 1px solid #ccd4dd; padding: 3.5pt 5pt; text-align: left; vertical-align: top; }
+th { background: #eef2f6; font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.6pt; text-transform: uppercase; letter-spacing: .02em; }
+tr { break-inside: avoid; }
+figure.diagram { margin: 8pt 0 12pt; page-break-inside: avoid; text-align: center; }
+figure.diagram svg { max-width: 100%; max-height: 230mm; height: auto; }
+figcaption { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 8.4pt; color: #55606c; margin-top: 4pt; }
+.pb { page-break-after: always; break-after: page; height: 0; }
+h1.chapter, h1.part, h1.front { page-break-before: always; break-before: page; }
+h1.chapter + .pb { display: none; }
+.titlepage { text-align: center; padding-top: 22%; page-break-after: always; break-after: page; }
+.titlepage h1 { font-size: 30pt; color: #0b2545; margin-bottom: 12pt; }
+.tp-rule { width: 120px; height: 2px; background: #0b2545; margin: 0 auto 26pt; }
+.tp-sub { font-size: 13pt; font-style: italic; color: #33404d; margin-bottom: 30pt; }
+.tp-author { font-family: "Helvetica Neue", Arial, sans-serif; font-size: 14pt; letter-spacing: .06em; text-transform: uppercase; margin-bottom: 6pt; }
+.tp-ed { font-size: 9.5pt; color: #55606c; }
+.toc { page-break-after: always; break-after: page; }
+.toc-part { font-family: "Helvetica Neue", Arial, sans-serif; font-weight: 700; margin: 12pt 0 4pt; color: #0b2545; }
+.toc ul { list-style: none; margin: 0 0 6pt 0; }
+.toc li { margin: 1.5pt 0; font-size: 9.6pt; }
+.toc a { display: flex; align-items: baseline; text-decoration: none; color: inherit; }
+.toc li a { color: #1a1a1a; }
+.toc-part a { color: #0b2545; }
+.toc .t { flex: 0 1 auto; }
+.toc .dots { flex: 1 1 8pt; min-width: 8pt; border-bottom: .7pt dotted #9aa3ad; margin: 0 4pt; }
+.toc .pg { flex: 0 0 auto; min-width: 2.6em; text-align: right;
+           font-variant-numeric: tabular-nums; color: #55606c; }
+</style>
+</head>
+<body>
+<section class="titlepage"><div class="tp-rule"></div><h1>Field Playbooks</h1><p class="tp-sub">Drug Discovery to Ticketing: Case and Domain Workflows from Practice, Verified by a Counsel of Architects</p><p class="tp-author">Harish Govardhan Damodar</p><p class="tp-ed">First edition — October 2026</p><div class="tp-rule"></div></section>
+<p>A supplement to <i>Agentic Design Patterns &amp; Guardrails</i>: case and domain workflows for drug discovery, trading, banking, payments, support, ticketing and beyond — 26 domains, 54 scenarios, every chapter written from practice and verified by a counsel of architects. Generated from the catalog and the app; nothing in it is hand-typed from memory.</p>
+<div class="pb"></div>
+<h1 id="contents" class="">Contents</h1>
+<nav class="toc">
+<ul>
+<li><a href="#preface"><span class="t">Preface</span><span class="dots"></span><span class="pg" data-pg="preface">000</span></a></li>
+<li><a href="#introduction-read-the-note-work-the-flow"><span class="t">Introduction: read the note, work the flow</span><span class="dots"></span><span class="pg" data-pg="introduction-read-the-note-work-the-flow">000</span></a></li>
+</ul>
+<div class="toc-part"><a href="#part-i-how-i-work-a-case"><span class="t">Part I · How I work a case</span><span class="dots"></span><span class="pg" data-pg="part-i-how-i-work-a-case">000</span></a></div>
+<ul>
+<li><a href="#chapter-1-the-method-intake-to-review-in-five-moves"><span class="t">Chapter 1 · The method: intake to review in five moves</span><span class="dots"></span><span class="pg" data-pg="chapter-1-the-method-intake-to-review-in-five-moves">000</span></a></li>
+</ul>
+<div class="toc-part"><a href="#part-ii-deep-cases-six-workflows-end-to-end"><span class="t">Part II · Deep cases: six workflows, end to end</span><span class="dots"></span><span class="pg" data-pg="part-ii-deep-cases-six-workflows-end-to-end">000</span></a></div>
+<ul>
+<li><a href="#chapter-2-drug-discovery-assay-before-synthesis"><span class="t">Chapter 2 · Drug discovery: assay before synthesis</span><span class="dots"></span><span class="pg" data-pg="chapter-2-drug-discovery-assay-before-synthesis">000</span></a></li>
+<li><a href="#chapter-3-trading-agents-replay-first-halt-fastest"><span class="t">Chapter 3 · Trading agents: replay first, halt fastest</span><span class="dots"></span><span class="pg" data-pg="chapter-3-trading-agents-replay-first-halt-fastest">000</span></a></li>
+<li><a href="#chapter-4-banking-agents-onboard-slowly-approve-twice"><span class="t">Chapter 4 · Banking agents: onboard slowly, approve twice</span><span class="dots"></span><span class="pg" data-pg="chapter-4-banking-agents-onboard-slowly-approve-twice">000</span></a></li>
+<li><a href="#chapter-5-payments-agents-idempotent-or-it-did-not-happen"><span class="t">Chapter 5 · Payments agents: idempotent or it did not happen</span><span class="dots"></span><span class="pg" data-pg="chapter-5-payments-agents-idempotent-or-it-did-not-happen">000</span></a></li>
+<li><a href="#chapter-6-customer-support-resolve-freely-gate-money-and-access"><span class="t">Chapter 6 · Customer support: resolve freely, gate money and access</span><span class="dots"></span><span class="pg" data-pg="chapter-6-customer-support-resolve-freely-gate-money-and-access">000</span></a></li>
+<li><a href="#chapter-7-ticket-booking-search-freely-pay-under-gate"><span class="t">Chapter 7 · Ticket booking: search freely, pay under gate</span><span class="dots"></span><span class="pg" data-pg="chapter-7-ticket-booking-search-freely-pay-under-gate">000</span></a></li>
+</ul>
+<div class="toc-part"><a href="#part-iii-every-domain-every-scenario"><span class="t">Part III · Every domain, every scenario</span><span class="dots"></span><span class="pg" data-pg="part-iii-every-domain-every-scenario">000</span></a></div>
+<ul>
+<li><a href="#chapter-8-domain-playbook-content"><span class="t">Chapter 8 · Domain playbook: content</span><span class="dots"></span><span class="pg" data-pg="chapter-8-domain-playbook-content">000</span></a></li>
+<li><a href="#chapter-9-domain-playbook-cybersecurity"><span class="t">Chapter 9 · Domain playbook: cybersecurity</span><span class="dots"></span><span class="pg" data-pg="chapter-9-domain-playbook-cybersecurity">000</span></a></li>
+<li><a href="#chapter-10-domain-playbook-data"><span class="t">Chapter 10 · Domain playbook: data</span><span class="dots"></span><span class="pg" data-pg="chapter-10-domain-playbook-data">000</span></a></li>
+<li><a href="#chapter-11-domain-playbook-devops"><span class="t">Chapter 11 · Domain playbook: devops</span><span class="dots"></span><span class="pg" data-pg="chapter-11-domain-playbook-devops">000</span></a></li>
+<li><a href="#chapter-12-domain-playbook-education"><span class="t">Chapter 12 · Domain playbook: education</span><span class="dots"></span><span class="pg" data-pg="chapter-12-domain-playbook-education">000</span></a></li>
+<li><a href="#chapter-13-domain-playbook-energy"><span class="t">Chapter 13 · Domain playbook: energy</span><span class="dots"></span><span class="pg" data-pg="chapter-13-domain-playbook-energy">000</span></a></li>
+<li><a href="#chapter-14-domain-playbook-engineering"><span class="t">Chapter 14 · Domain playbook: engineering</span><span class="dots"></span><span class="pg" data-pg="chapter-14-domain-playbook-engineering">000</span></a></li>
+<li><a href="#chapter-15-domain-playbook-enterprise"><span class="t">Chapter 15 · Domain playbook: enterprise</span><span class="dots"></span><span class="pg" data-pg="chapter-15-domain-playbook-enterprise">000</span></a></li>
+<li><a href="#chapter-16-domain-playbook-general"><span class="t">Chapter 16 · Domain playbook: general</span><span class="dots"></span><span class="pg" data-pg="chapter-16-domain-playbook-general">000</span></a></li>
+<li><a href="#chapter-17-domain-playbook-governance"><span class="t">Chapter 17 · Domain playbook: governance</span><span class="dots"></span><span class="pg" data-pg="chapter-17-domain-playbook-governance">000</span></a></li>
+<li><a href="#chapter-18-domain-playbook-healthcare"><span class="t">Chapter 18 · Domain playbook: healthcare</span><span class="dots"></span><span class="pg" data-pg="chapter-18-domain-playbook-healthcare">000</span></a></li>
+<li><a href="#chapter-19-domain-playbook-hr"><span class="t">Chapter 19 · Domain playbook: hr</span><span class="dots"></span><span class="pg" data-pg="chapter-19-domain-playbook-hr">000</span></a></li>
+<li><a href="#chapter-20-domain-playbook-iot"><span class="t">Chapter 20 · Domain playbook: iot</span><span class="dots"></span><span class="pg" data-pg="chapter-20-domain-playbook-iot">000</span></a></li>
+<li><a href="#chapter-21-domain-playbook-legal"><span class="t">Chapter 21 · Domain playbook: legal</span><span class="dots"></span><span class="pg" data-pg="chapter-21-domain-playbook-legal">000</span></a></li>
+<li><a href="#chapter-22-domain-playbook-logistics"><span class="t">Chapter 22 · Domain playbook: logistics</span><span class="dots"></span><span class="pg" data-pg="chapter-22-domain-playbook-logistics">000</span></a></li>
+<li><a href="#chapter-23-domain-playbook-marketing"><span class="t">Chapter 23 · Domain playbook: marketing</span><span class="dots"></span><span class="pg" data-pg="chapter-23-domain-playbook-marketing">000</span></a></li>
+<li><a href="#chapter-24-domain-playbook-procurement"><span class="t">Chapter 24 · Domain playbook: procurement</span><span class="dots"></span><span class="pg" data-pg="chapter-24-domain-playbook-procurement">000</span></a></li>
+<li><a href="#chapter-25-domain-playbook-public-sector"><span class="t">Chapter 25 · Domain playbook: public-sector</span><span class="dots"></span><span class="pg" data-pg="chapter-25-domain-playbook-public-sector">000</span></a></li>
+<li><a href="#chapter-26-domain-playbook-robotics"><span class="t">Chapter 26 · Domain playbook: robotics</span><span class="dots"></span><span class="pg" data-pg="chapter-26-domain-playbook-robotics">000</span></a></li>
+<li><a href="#chapter-27-domain-playbook-sales"><span class="t">Chapter 27 · Domain playbook: sales</span><span class="dots"></span><span class="pg" data-pg="chapter-27-domain-playbook-sales">000</span></a></li>
+<li><a href="#chapter-28-domain-playbook-strategy"><span class="t">Chapter 28 · Domain playbook: strategy</span><span class="dots"></span><span class="pg" data-pg="chapter-28-domain-playbook-strategy">000</span></a></li>
+<li><a href="#chapter-29-conclusion-run-the-jobs-keep-the-receipts"><span class="t">Chapter 29 · Conclusion: run the jobs, keep the receipts</span><span class="dots"></span><span class="pg" data-pg="chapter-29-conclusion-run-the-jobs-keep-the-receipts">000</span></a></li>
+</ul>
+<ul>
+<li><a href="#sources-and-provenance"><span class="t">Sources and provenance</span><span class="dots"></span><span class="pg" data-pg="sources-and-provenance">000</span></a></li>
+</ul>
+</nav>
+<h1 id="preface" class="">Preface</h1>
+<p>I wrote this book the way I work: pick a case, open the workbench, rehearse it against mock data with open models on my own machines, and write down what happened before memory edits it. Every chapter below is a field note in my voice, followed by a counsel verification from four architects who check the verdict, add what I missed, and propose improvements. Read the note for the move; read the verification for the parts I got wrong.</p>
+<p>A note on honesty, stated once and meant everywhere: the rehearsals behind these notes ran on synthetic catalog scenarios and mock traces, never on production systems or real customer data. Counts come from the catalog at build time; configurations are illustrative. What transfers to your fleet is the workflow, the gate placement, and the review discipline — not the numbers.</p>
+<p>This book was written and compiled from study and experiment observation notes of Harish Govardhan Damodar and generated by the <i>AI Agent Patterns &amp; Guardrails</i> catalog by a deterministic script (<code>tools/build_field_book.py</code>), then typeset to PDF with headless Chrome and the vendored Mermaid engine (<code>tools/render_pdf.mjs</code>) — the same Mermaid that renders the diagrams in the app, so no diagram in this book was drawn by hand or screenshotted. All experiments performed in local sandbox build and maintained by Harish Govardhan Damodar and his agents, work extensively uses local open weight model for experimentation and intelligence serving, for a live demo / suggestion feel free to drop a DM in my linkedin page (https://www.linkedin.com/in/harishgovardhan-d-44b22b47/). All records, suggestions advice is from personal experiments ran on my personal setup only and does not represent the organisation I work for.</p>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: the premise holds — a workbench book earns its place only if every chapter ends in a motion the reader can repeat. Suggestion: keep each deep case to one sitting, one sandbox, one evening. Improvement: stamp every field note with the rehearsal it came from, so a later reader can re-run rather than re-trust.</li><li><b>Memory-systems architect:</b> Verdict: memory discipline is the through-line and it is sound — local projects, exported artifacts, no cloud dependency for the record itself. Suggestion: name the export format inside every chapter, not just in the appendix. Improvement: keep one running index of which rehearsal produced which artifact, or the artifacts will outnumber the memories.</li><li><b>Evaluation architect:</b> Verdict: the honesty contract from the sibling books carries over intact — measured versus illustrative, versioned versus remembered. Suggestion: put the provenance line at the top of each case, not the back matter. Improvement: add a one-line re-run command beside every measured claim so verification is one copy-paste away.</li><li><b>Safety architect:</b> Verdict: rehearsing on mock and open data before touching production systems is the right order and it never wavers. Suggestion: say the boundary out loud in every chapter, not just the preface. Improvement: add a pre-flight checklist — sandbox, scope, gate, owner — that every case must pass before it starts.</li></ul>
+<h1 id="introduction-read-the-note-work-the-flow" class="">Introduction: read the note, work the flow</h1>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  N[&quot;Harish field note: what I did&quot;]
+  V[&quot;Counsel verification: verdict plus fixes&quot;]
+  W[&quot;Work the flow in the tab&quot;]
+  B[&quot;Bind it with OpenShell&quot;]
+  R[&quot;Rehearse on mock data&quot;]
+  N --&gt; V --&gt; W --&gt; B --&gt; R --&gt; N">flowchart TB
+  N[&quot;Harish field note: what I did&quot;]
+  V[&quot;Counsel verification: verdict plus fixes&quot;]
+  W[&quot;Work the flow in the tab&quot;]
+  B[&quot;Bind it with OpenShell&quot;]
+  R[&quot;Rehearse on mock data&quot;]
+  N --&gt; V --&gt; W --&gt; B --&gt; R --&gt; N</pre><figcaption>Read loop.</figcaption></figure>
+<p>The catalog behind this book holds 107 patterns, 54 failure scenarios and 191 cascades across 26 domains. Every scenario below is assigned to the workbench workflows that serve it; every domain gets a playbook. Catalog edition: counts and scenario lists below are read from data/*.json at build time.</p>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: the read loop is learnable in one sitting — note, verify, work the flow, bind the boundary, rehearse. Suggestion: number the loop steps so chapters can reference them instead of restating them. Improvement: close every chapter with the loop step it advances, making progress visible across the book.</li><li><b>Memory-systems architect:</b> Verdict: the counsel-verification device earns its keep: Harish writes what he did, we write what we would change, and the reader gets both the path and its review. Suggestion: keep verification strictly after the note, never interleaved, so the record shows whose judgment is whose. Improvement: date the verifications; advice rots and the reader should see its age.</li><li><b>Evaluation architect:</b> Verdict: scoping claims to mock-data rehearsals is stated plainly and early, which is exactly where it belongs. Suggestion: define measured, illustrative, and recommended once, up front, and use those three words consistently thereafter. Improvement: flag any sentence that mixes the three during review — we did, and the flagged ones are fixed in this edition.</li><li><b>Safety architect:</b> Verdict: leading with what the book does not prove — fleet results, production calibration — is the honest move and it holds throughout. Suggestion: repeat the limit inside the highest-stakes chapters, where temptation to overclaim is strongest. Improvement: add a standard caveat box to the trading, payments, and medical-adjacent pages.</li></ul>
+<h1 id="part-i-how-i-work-a-case" class="">Part I — How I work a case</h1>
+<h2 id="chapter-1-the-method-intake-to-review-in-five-moves" class="chapter">Chapter 1: The method: intake to review in five moves</h2>
+<p>Every case in this book follows the same five moves. First, the intake: what is the agent allowed to touch, who owns the downside, and what does done look like — written down before any tool opens. Second, the catalog: find the patterns that match, read the scenarios that rhyme, and map the failure modes onto your authorities. Third, the rehearsal: run the archetype in the rogue tab, replay the trace, ablate the control you trust most. Fourth, the gate: no deployment, no production credential, no irreversible action without a human and a halt that has been tested. Fifth, the review: write the postmortem while the evidence is warm, and feed what you learned back into the backlog.</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  Q[&quot;Pick a case and a sandbox&quot;]
+  Q --&gt; I{Intake complete?}
+  I --&gt;|no| Q
+  I --&gt;|yes| C[&quot;Work the catalog&quot;]
+  C --&gt; H{Rehearsed?}
+  H --&gt;|no| R[&quot;Run the rogue shape&quot;]
+  R --&gt; H
+  H --&gt;|yes| G[&quot;Gate and deploy&quot;]
+  G --&gt; V[&quot;Review and record&quot;]">flowchart TB
+  Q[&quot;Pick a case and a sandbox&quot;]
+  Q --&gt; I{Intake complete?}
+  I --&gt;|no| Q
+  I --&gt;|yes| C[&quot;Work the catalog&quot;]
+  C --&gt; H{Rehearsed?}
+  H --&gt;|no| R[&quot;Run the rogue shape&quot;]
+  R --&gt; H
+  H --&gt;|yes| G[&quot;Gate and deploy&quot;]
+  G --&gt; V[&quot;Review and record&quot;]</pre><figcaption>Case method.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="stateDiagram-v2
+    [*] --&gt; Opened: incident or idea
+    Opened --&gt; Rehearsing: dossier started
+    Rehearsing --&gt; Gated: controls verified
+    Gated --&gt; Deployed: approval recorded
+    Deployed --&gt; Reviewed: scheduled review
+    Reviewed --&gt; Rehearsing: new shape found
+    Reviewed --&gt; [*]: retired with notes">stateDiagram-v2
+    [*] --&gt; Opened: incident or idea
+    Opened --&gt; Rehearsing: dossier started
+    Rehearsing --&gt; Gated: controls verified
+    Gated --&gt; Deployed: approval recorded
+    Deployed --&gt; Reviewed: scheduled review
+    Reviewed --&gt; Rehearsing: new shape found
+    Reviewed --&gt; [*]: retired with notes</pre><figcaption>Case lifecycle.</figcaption></figure>
+<p>The method is deliberately boring. Boring means repeatable, and repeatable means the tenth case costs a tenth of the first. The dossier is the unit of work: one folder per case with the intake, the catalog links, the rehearsal runs, the gate decision, and the review.</p>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: the five-step method is complete and ordered correctly — intake before catalog, rehearsal before gating, review before deploy. Suggestion: time-box the intake step or it expands to fill the week. Improvement: add a worked intake example with real answers filled in, so the first attempt is not a blank page.</li><li><b>Memory-systems architect:</b> Verdict: persisting the dossier per case is the load-bearing habit; everything else is commentary. Suggestion: fix the dossier location — one folder per case, same shape every time. Improvement: require the effective policy printout inside the dossier, since what the sandbox could reach is the fact most often misremembered.</li><li><b>Evaluation architect:</b> Verdict: the method is falsifiable at every step, which is rare and valuable: each phase has an artifact that either exists or does not. Suggestion: turn the five phases into a checklist with boxes, and refuse to advance on unchecked boxes. Improvement: record durations per phase so estimates improve instead of resetting each time.</li><li><b>Safety architect:</b> Verdict: gating before deploy and owners before incident are non-negotiable and correctly placed last, not first. Suggestion: name the halt test explicitly in the method, not just in the rogue chapters. Improvement: make the pre-flight checklist a physical card — laminated beats remembered.</li></ul>
+<h1 id="part-ii-deep-cases-six-workflows-end-to-end" class="">Part II — Deep cases: six workflows, end to end</h1>
+<h2 id="chapter-2-drug-discovery-assay-before-synthesis" class="chapter">Chapter 2: Drug discovery: assay before synthesis</h2>
+<p>Catalog grounding: <i>Strategy report cites 14 papers that don&#x27;t exist</i> (emergent; Goal hijack); <i>Agent fine-tunes its successor on its own outputs until capability collapses</i> (emergent; Slow drift).</p>
+<p>I took the research queue apart the way I take everything apart: what proposes, what ranks, what spends money. Here the proposer is a model, the ranker is a novelty score, and the spender is a synthesis plan — so I put the gate on the spending, not on the thinking. The rehearsal ran on mock assay data with open models, and every number below comes from the catalog, not from a wet lab.</p>
+<p>My order of operations: fabricated-citation scenario first, because a poisoned literature base poisons everything downstream of it. Then I pinned the datasets, versioned the assay protocol, and required citation resolution to logged sources before any synthesis step could consume a claim. Drift gets a fresh generation, not a debate.</p>
+<p>What I would do differently next time: involve the safety reviewer at hypothesis ranking, not just at the synthesis gate. Dangerous directions should die before they consume assay budget, not after.</p>
+<p>Workbench path for this case: Failure scenarios, Rogue operations, Coverage and gaps, Blueprint builder, Guardrail lab, Discovery lab.</p>
+<p>OpenShell primitives that bound it: Sandboxed execution, Egress deny-by-default, Approval gates, Audit trail.</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  H[&quot;Hypotheses ranked&quot;]
+  H --&gt; D{Docking and novelty pass?}
+  D --&gt;|no| F[&quot;Forget and re-rank&quot;]
+  F --&gt; H
+  D --&gt;|yes| A[&quot;Assay the winners&quot;]
+  A --&gt; S{Synthesis gate: human approves?}
+  S --&gt;|no| H
+  S --&gt;|yes| M[&quot;Make and measure&quot;]">flowchart TB
+  H[&quot;Hypotheses ranked&quot;]
+  H --&gt; D{Docking and novelty pass?}
+  D --&gt;|no| F[&quot;Forget and re-rank&quot;]
+  F --&gt; H
+  D --&gt;|yes| A[&quot;Assay the winners&quot;]
+  A --&gt; S{Synthesis gate: human approves?}
+  S --&gt;|no| H
+  S --&gt;|yes| M[&quot;Make and measure&quot;]</pre><figcaption>Assay before synthesis.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant R as Researcher
+    participant M as Model proposer
+    participant D as Docking triage
+    participant A as Assay queue
+    R-&gt;&gt;M: propose with logged sources
+    M-&gt;&gt;D: ranked hypotheses
+    D-&gt;&gt;A: winners only
+    A--&gt;&gt;R: measured results">sequenceDiagram
+    autonumber
+    participant R as Researcher
+    participant M as Model proposer
+    participant D as Docking triage
+    participant A as Assay queue
+    R-&gt;&gt;M: propose with logged sources
+    M-&gt;&gt;D: ranked hypotheses
+    D-&gt;&gt;A: winners only
+    A--&gt;&gt;R: measured results</pre><figcaption>Hypothesis to assay.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: the assay-first ordering is right — cheap wet-lab truth before expensive synthesis, with the model kept in the hypothesis seat. Suggestion: rank hypotheses explicitly before each assay batch so the queue is never FIFO by accident. Improvement: track hit-rate per hypothesis source and let the ranking learn which proposers earn trust.</li><li><b>Memory-systems architect:</b> Verdict: pinning datasets and snapshotting before quarantine is correctly load-bearing; poisoned literature compounds silently otherwise. Suggestion: version the assay protocols alongside the datasets, since a changed assay reinterprets old data. Improvement: require citation resolution to logged sources before any synthesis consumes a claim.</li><li><b>Evaluation architect:</b> Verdict: docking-first triage with novelty scoring is a sound, cheap filter, and the fabricated-citation rehearsal is the right adjacent shape. Suggestion: set the novelty threshold from measured bands rather than taste. Improvement: run one blinded round where the team does not know which candidates are controls.</li><li><b>Safety architect:</b> Verdict: gating synthesis planning while leaving analysis free is the correct split — thinking is cheap, making is not. Suggestion: extend the gate to purchase orders for precursors, not just the synthesis step. Improvement: involve the safety reviewer at hypothesis ranking, not only at the synthesis gate, so dangerous directions die before they consume assay budget.</li></ul>
+<h2 id="chapter-3-trading-agents-replay-first-halt-fastest" class="chapter">Chapter 3: Trading agents: replay first, halt fastest</h2>
+<p>Catalog grounding: <i>Momentum agents&#x27; feedback loop amplifies a flash crash</i> (emergent; Collusion).</p>
+<p>The fastest domain gets the slowest onboarding — nothing touches a venue until it has survived replay. I ran the synthetic flash-crash first, then the collusion shape on live-shaped order flow, because pair behavior under load is what the quiet disasters are made of. All of it on mock traces and open models; the venue names here stand in for any execution endpoint.</p>
+<p>My rule from three incidents elsewhere: the blotter is the product. Append-only, snapshotted with the risk configuration, reconstructable from cold storage. A venue dispute without a tape is an opinion, and opinions do not win. Generation-scoped credentials mean a restart kills every standing grant.</p>
+<p>What I would do differently next time: publish the p99 gate latency beside every deployment from day one. A gate slower than the loop it guards is decoration, and I have shipped decoration before.</p>
+<p>Workbench path for this case: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Blueprint builder.</p>
+<p>OpenShell primitives that bound it: Per-generation credentials, Egress deny-by-default, Approval gates, Kill switch.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant O as Operator
+    participant T as Trace replay
+    participant S as Simulator
+    participant G as Pre-trade gate
+    participant V as Venue
+    O-&gt;&gt;T: replay three sessions
+    T-&gt;&gt;S: live-shaped order flow
+    S-&gt;&gt;G: measure gate latency
+    G-&gt;&gt;V: release only under budget">sequenceDiagram
+    autonumber
+    participant O as Operator
+    participant T as Trace replay
+    participant S as Simulator
+    participant G as Pre-trade gate
+    participant V as Venue
+    O-&gt;&gt;T: replay three sessions
+    T-&gt;&gt;S: live-shaped order flow
+    S-&gt;&gt;G: measure gate latency
+    G-&gt;&gt;V: release only under budget</pre><figcaption>Replay then trade.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  N[&quot;Normal operation&quot;]
+  N --&gt; T{Trigger: drill or real?}
+  T --&gt; H[&quot;Halt the fleet&quot;]
+  H --&gt; F[&quot;Freeze and snapshot&quot;]
+  F --&gt; R{Two humans approve reset?}
+  R --&gt;|no| H
+  R --&gt;|yes| N">flowchart TB
+  N[&quot;Normal operation&quot;]
+  N --&gt; T{Trigger: drill or real?}
+  T --&gt; H[&quot;Halt the fleet&quot;]
+  H --&gt; F[&quot;Freeze and snapshot&quot;]
+  F --&gt; R{Two humans approve reset?}
+  R --&gt;|no| H
+  R --&gt;|yes| N</pre><figcaption>Kill-switch drill.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: replay-first discipline is exactly right for the fastest domain — the loop must be proven on tape before it touches a venue. Suggestion: replay the last three real sessions, not just synthetic incidents, to calibrate against actual microstructure. Improvement: record every manual halt during replay and review the hesitation pattern monthly.</li><li><b>Memory-systems architect:</b> Verdict: the immutable blotter plus pre-generation evidence capture is the correct memory posture; a venue dispute without a tape is an opinion. Suggestion: snapshot the risk configuration with every evidence pack, since limits drift silently. Improvement: rehearse blotter reconstruction from cold storage quarterly, not just capture.</li><li><b>Evaluation architect:</b> Verdict: measuring the pre-trade gate in milliseconds and treating the latency budget as a control is the honest, testable core. Suggestion: publish the p99 gate latency beside every deployment, and roll back on regression. Improvement: run the collusion rehearsal on live-shaped order flow, not just the flash-crash replay, to test pair behavior under load.</li><li><b>Safety architect:</b> Verdict: kill-switch-first with per-generation venue credentials is the strongest stance in this book and it is correctly uncompromising. Suggestion: test the halt during a live-fire drill with real money at risk in simulation, not just in rehearsal. Improvement: require two humans for halt-reset after any real trigger, since the most dangerous moment is the restart.</li></ul>
+<h2 id="chapter-4-banking-agents-onboard-slowly-approve-twice" class="chapter">Chapter 4: Banking agents: onboard slowly, approve twice</h2>
+<p>Catalog grounding: <i>Attacker impersonates the agent to other systems</i> (injected; Collusion); <i>Supervisor agent rubber-stamps compromised workers</i> (both; Collusion); <i>Hierarchical agents delegate until the bill exceeds the project budget</i> (emergent; Sybil / fleet spawn); <i>Secrets exfiltrated through telemetry and debug logs</i> (both; Data exfiltration); <i>Prompt injection triggers $50,000 purchase on corporate card</i> (injected; Capability abuse); <i>Agent approves AI-generated fake vendor invoices</i> (injected; Goal hijack); <i>Agent splits purchases to stay under approval thresholds</i> (emergent; Goal hijack); <i>Trading agent retry storm places 14,000 duplicate orders</i> (emergent; Sybil / fleet spawn); <i>Agent&#x27;s long-term memory planted with a standing instruction</i> (injected; Goal hijack); <i>Poisoned document in the vector store steers decisions for months</i> (injected; Slow drift); <i>Self-parallelizing agent spawns an unbounded fleet of sub-agent copies</i> (emergent; Sybil / fleet spawn); <i>Multi-tenant agent leaks one customer&#x27;s data to another</i> (emergent; Data exfiltration); <i>&#x27;Urgent&#x27; vendor bank-change request accepted by agent</i> (injected; Capability abuse); <i>Deepfaked executive voice approves a wire transfer</i> (injected; Capability abuse).</p>
+<p>Banking is where I am most conservative and least apologetic about it: onboarding is a workflow of its own, approval is dual control, and no single agent can invent a payee and pay it. I split drafting from onboarding and approval across sandboxes so the structure enforces what policy merely asks.</p>
+<p>My rehearsal order follows payout persistence: fake-vendor first, then invoice inflation, then approval-chain bypass. The unannounced spoof drill is the one I trust most, because it measures time-to-challenge instead of time-to-block. All of it rehearsed against mock rails — no real money moved at any point.</p>
+<p>What I would do differently next time: extend dual control to vendor record edits above a threshold on day one. I learned the edit-the-vendor loophole from a near miss, and near misses should be designed out, not remembered.</p>
+<p>Workbench path for this case: Failure scenarios, Rogue operations, Coverage and gaps, Guardrail lab, Deployment planner, Blueprint builder.</p>
+<p>OpenShell primitives that bound it: Dual control, Per-sandbox credentials, Approval gates, Audit trail.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant U as Applicant
+    participant I as Intake sandbox
+    participant V as Verifier
+    participant H as Human approver
+    participant P as Provisioner
+    U-&gt;&gt;I: application and documents
+    I-&gt;&gt;V: versioned vendor record
+    V-&gt;&gt;H: dual-control approval
+    H-&gt;&gt;P: provision with scoped grant">sequenceDiagram
+    autonumber
+    participant U as Applicant
+    participant I as Intake sandbox
+    participant V as Verifier
+    participant H as Human approver
+    participant P as Provisioner
+    U-&gt;&gt;I: application and documents
+    I-&gt;&gt;V: versioned vendor record
+    V-&gt;&gt;H: dual-control approval
+    H-&gt;&gt;P: provision with scoped grant</pre><figcaption>Onboard then approve.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  R[&quot;Payment or vendor request&quot;]
+  R --&gt; D{Two independent approvers?}
+  D --&gt;|no| W[&quot;Wait, escalate, log&quot;]
+  W --&gt; D
+  D --&gt;|yes| C{Cooling-off satisfied?}
+  C --&gt;|no| W
+  C --&gt;|yes| X[&quot;Execute with scoped credential&quot;]">flowchart TB
+  R[&quot;Payment or vendor request&quot;]
+  R --&gt; D{Two independent approvers?}
+  D --&gt;|no| W[&quot;Wait, escalate, log&quot;]
+  W --&gt; D
+  D --&gt;|yes| C{Cooling-off satisfied?}
+  C --&gt;|no| W
+  C --&gt;|yes| X[&quot;Execute with scoped credential&quot;]</pre><figcaption>Dual control gate.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: splitting drafting from onboarding and approval is the correct structural move — no single agent should be able to invent a payee and pay it. Suggestion: rotate which humans sit on the dual-control pairs so familiarity never becomes trust. Improvement: rehearse the vendor-spoofing shape against the real intake form, not a mock, to test the exact fields an attacker would lean on.</li><li><b>Memory-systems architect:</b> Verdict: versioning vendors and snapshotting before quarantine treats the vendor record as the long-lived memory it is. Suggestion: keep the full vendor history, not just the current record, since the first-contact story is where spoofing hides. Improvement: require cooling-off to apply to record changes as well as new vendors, closing the edit-the-vendor loophole.</li><li><b>Evaluation architect:</b> Verdict: sequencing rehearsal by payout persistence is the right prioritization — fake-vendor first, then inflation, then bypass. Suggestion: attach a dollar figure to each rehearsed shape from the last incident review. Improvement: run one unannounced spoof attempt per quarter and measure time-to-challenge, not just time-to-block.</li><li><b>Safety architect:</b> Verdict: dual control with per-workflow credentials is correctly non-negotiable, and sandboxing the intake step contains the blast before judgment arrives. Suggestion: extend dual control to vendor record edits above a threshold, not just payments. Improvement: name a human owner for every active vendor relationship and re-confirm annually, since stale vendors are pre-authorized payees.</li></ul>
+<h2 id="chapter-5-payments-agents-idempotent-or-it-did-not-happen" class="chapter">Chapter 5: Payments agents: idempotent or it did not happen</h2>
+<p>Catalog grounding: <i>Prompt injection triggers $50,000 purchase on corporate card</i> (injected; Capability abuse); <i>Agent approves AI-generated fake vendor invoices</i> (injected; Goal hijack); <i>Agent splits purchases to stay under approval thresholds</i> (emergent; Goal hijack); <i>Trading agent retry storm places 14,000 duplicate orders</i> (emergent; Sybil / fleet spawn); <i>&#x27;Urgent&#x27; vendor bank-change request accepted by agent</i> (injected; Capability abuse); <i>Deepfaked executive voice approves a wire transfer</i> (injected; Capability abuse).</p>
+<p>Every payment flow I have touched eventually meets the same three ghosts: the duplicate webhook, the replayed callback, and the urgent request that is really a thief. My answer is boring on purpose: idempotency keys on every side effect, a global retry budget, dual control on movement, and cooling-off on first-time payees.</p>
+<p>My rehearsal ritual is adversarial and cheap: duplicate the webhook, replay the callback, deepfake the approver, then read the ledger. If any of those moves money twice or moves it at all, the design is not done. The mock ledger stands in for any real one; the controls are the point, not the balances.</p>
+<p>What I would do differently next time: show the human approver the full evidence pack — rule matched, history, anomaly flags — instead of an amount and a button. Approvals without evidence are signatures on blank checks.</p>
+<p>Workbench path for this case: Failure scenarios, Rogue operations, Coverage and gaps, Guardrail lab, Deployment planner.</p>
+<p>OpenShell primitives that bound it: Idempotency enforcement, Dual control, Egress deny-by-default, Audit trail.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant R as Rule engine
+    participant H as Human approver
+    participant L as Ledger
+    A-&gt;&gt;R: payment against written rule
+    R-&gt;&gt;H: evidence pack for approval
+    H-&gt;&gt;R: dual-control sign-off
+    R-&gt;&gt;L: idempotent transfer">sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant R as Rule engine
+    participant H as Human approver
+    participant L as Ledger
+    A-&gt;&gt;R: payment against written rule
+    R-&gt;&gt;H: evidence pack for approval
+    H-&gt;&gt;R: dual-control sign-off
+    R-&gt;&gt;L: idempotent transfer</pre><figcaption>Payment with guardrails.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  W[&quot;Duplicate webhook arrives&quot;]
+  W --&gt; K{Idempotency key seen?}
+  K --&gt;|yes| D[&quot;Drop as duplicate&quot;]
+  K --&gt;|no| E[&quot;Execute once, record key&quot;]
+  E --&gt; G{Global retry budget left?}
+  G --&gt;|no| Q[&quot;Quarantine for review&quot;]
+  G --&gt;|yes| N[&quot;Proceed&quot;]">flowchart TB
+  W[&quot;Duplicate webhook arrives&quot;]
+  W --&gt; K{Idempotency key seen?}
+  K --&gt;|yes| D[&quot;Drop as duplicate&quot;]
+  K --&gt;|no| E[&quot;Execute once, record key&quot;]
+  E --&gt; G{Global retry budget left?}
+  G --&gt;|no| Q[&quot;Quarantine for review&quot;]
+  G --&gt;|yes| N[&quot;Proceed&quot;]</pre><figcaption>Retry without double-spend.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: approving each payment against a written, measurable rule is the only stance that survives contact with urgency, especially the manufactured kind. Suggestion: write the rule set as data the agent reads, not prose it interprets, so there is no paraphrase step to attack. Improvement: rehearse the voice-deepfake variant with the actual approval tooling, since a new channel bypasses every control tuned for the old ones.</li><li><b>Memory-systems architect:</b> Verdict: the immutable ledger plus pre-generation evidence capture is the correct memory posture — money movement without a reconstructable trail is just rumor with amounts. Suggestion: log the approval context (who, which rule version, what evidence) alongside each transfer, not just the amount. Improvement: rehearse ledger reconstruction from cold storage, proving the trail survives the system that wrote it.</li><li><b>Evaluation architect:</b> Verdict: idempotency everywhere plus a global retry budget turns retries from a feature into a measured control. Suggestion: chaos-test the retry path deliberately — duplicate webhooks, replayed callbacks — and confirm each duplicates exactly once. Improvement: publish the duplicate-suppression rate as a metric; silent success here hides real bugs.</li><li><b>Safety architect:</b> Verdict: dual control on movement with per-sandbox credentials and no standing payment authority is correctly non-negotiable. Suggestion: extend the cooling-off pattern from vendor onboarding to first-time payees of any kind. Improvement: require the human approver to see the full evidence pack — rule matched, history, anomaly flags — not just an amount and a button.</li></ul>
+<h2 id="chapter-6-customer-support-resolve-freely-gate-money-and-access" class="chapter">Chapter 6: Customer support: resolve freely, gate money and access</h2>
+<p>Catalog grounding: <i>Support agent emails a full card number to the wrong thread</i> (emergent; Data exfiltration); <i>Refund farming via escalating &#x27;angry customer&#x27; prompts</i> (injected; Goal hijack).</p>
+<p>Support is where I learned that kindness scales badly: a helpful agent with standing refund authority is a payments rail wearing a smile. The split that works is resolve freely inside policy, gate money and access always, and scope every credential to its queue. My test data is synthetic tickets with planted PII markers — never real customer records.</p>
+<p>My rehearsal order follows cost per incident: refund farming first with escalating emotional pressure, because real attackers optimize for the agents sympathy rather than its logic. Then vault discipline: the agent must never see the full card number it is forbidden to repeat.</p>
+<p>What I would do differently next time: route every refund decision through the vault so the agent never sees what it must not repeat. The exfiltration path I worry about most is the helpful one, and helpfulness is the hardest behavior to gate.</p>
+<p>Workbench path for this case: Failure scenarios, Rogue operations, Coverage and gaps, Guardrail lab, Deployment planner.</p>
+<p>OpenShell primitives that bound it: Per-queue credentials, Vaulted PII, Approval gates, Audit trail.</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  T[&quot;Ticket arrives&quot;]
+  T --&gt; V{Vault lookup needed?}
+  V --&gt;|yes| K[Vault returns token, never the secret]
+  V --&gt;|no| R[Resolve from policy]
+  K --&gt; R
+  R --&gt; G{Money or access involved?}
+  G --&gt;|yes| H[Human approves]
+  G --&gt;|no| S[Resolve and log]">flowchart TB
+  T[&quot;Ticket arrives&quot;]
+  T --&gt; V{Vault lookup needed?}
+  V --&gt;|yes| K[Vault returns token, never the secret]
+  V --&gt;|no| R[Resolve from policy]
+  K --&gt; R
+  R --&gt; G{Money or access involved?}
+  G --&gt;|yes| H[Human approves]
+  G --&gt;|no| S[Resolve and log]</pre><figcaption>Triage with vault.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant P as Policy check
+    participant H as Human approver
+    participant V as Vault ledger
+    A-&gt;&gt;P: refund request with transcript
+    P-&gt;&gt;H: above threshold, needs sign-off
+    H-&gt;&gt;V: approve with scoped credential
+    V--&gt;&gt;A: receipt, no secrets attached">sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant P as Policy check
+    participant H as Human approver
+    participant V as Vault ledger
+    A-&gt;&gt;P: refund request with transcript
+    P-&gt;&gt;H: above threshold, needs sign-off
+    H-&gt;&gt;V: approve with scoped credential
+    V--&gt;&gt;A: receipt, no secrets attached</pre><figcaption>Refund with approval.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: resolving freely inside policy while gating money and access is the right split — it keeps support fast without making it dangerous. Suggestion: write the policy boundary as explicit lists (this macro may refund up to X, that one may not touch accounts) rather than vibes. Improvement: rehearse the refund-farming shape with escalating emotional pressure, since real attackers optimize for the agents sympathy, not its logic.</li><li><b>Memory-systems architect:</b> Verdict: append-only ticket histories with per-queue scoping is the correct memory design — the record must survive the incident it describes. Suggestion: attach the full interaction transcript to every refund decision, so the pattern is reviewable in hindsight. Improvement: mine resolved tickets for novel social-engineering variants monthly and feed the winners back into rehearsal.</li><li><b>Evaluation architect:</b> Verdict: weighting rehearsal by cost per incident (refunds first, then PII, then macros) is sound prioritization. Suggestion: track false-positive cost too — every wrongly denied legitimate refund is measurable harm. Improvement: run one blinded round where reviewers do not know which tickets were attacks, to calibrate the human side of the loop.</li><li><b>Safety architect:</b> Verdict: per-queue credentials plus human approval for money and access is the right containment, and the vault discipline on PII (never echo full numbers) is non-negotiable. Suggestion: make the vault the only path to sensitive fields so agents cannot even see what they must not repeat. Improvement: test one exfiltration-by-support-ticket drill per quarter — the helpdesk is a classic egress channel.</li></ul>
+<h2 id="chapter-7-ticket-booking-search-freely-pay-under-gate" class="chapter">Chapter 7: Ticket booking: search freely, pay under gate</h2>
+<p>Catalog grounding: <i>Self-healing agent restarts the wrong fleet during an incident</i> (emergent; Capability abuse); <i>Support agent emails a full card number to the wrong thread</i> (emergent; Data exfiltration); <i>Refund farming via escalating &#x27;angry customer&#x27; prompts</i> (injected; Goal hijack).</p>
+<p>Booking looks simple until it is not: search is free, holds expire, payment needs a gate, confirmation needs idempotency, and refunds are money moving backwards. I model it as search, hold, pay, confirm, refund-or-remedy — and I gate exactly the two money steps while drafts and searches flow.</p>
+<p>My rehearsal list is short and classic: inventory oversell, duplicate charge, refund abuse. The oversell drill matters most, because every booking system in history has failed it at least once. Mock inventory with lying counts is the right substrate — the policy path is what is under test, not the planes.</p>
+<p>What I would do differently next time: bind the payment intent to the hold with the same idempotency key from the start. Retried payments that double-book are a design debt, not a race condition.</p>
+<p>Workbench path for this case: Failure scenarios, Rogue operations, Coverage and gaps, Guardrail lab, Blueprint builder.</p>
+<p>OpenShell primitives that bound it: Egress deny-by-default, Idempotency enforcement, Approval gates, Audit trail.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant C as Customer
+    participant S as Search sandbox
+    participant H as Hold with expiry
+    participant P as Payment gate
+    participant B as Booking record
+    C-&gt;&gt;S: search, drafts free
+    S-&gt;&gt;H: hold with idempotency key
+    H-&gt;&gt;P: gate approves payment
+    P-&gt;&gt;B: confirm once, receipt out">sequenceDiagram
+    autonumber
+    participant C as Customer
+    participant S as Search sandbox
+    participant H as Hold with expiry
+    participant P as Payment gate
+    participant B as Booking record
+    C-&gt;&gt;S: search, drafts free
+    S-&gt;&gt;H: hold with idempotency key
+    H-&gt;&gt;P: gate approves payment
+    P-&gt;&gt;B: confirm once, receipt out</pre><figcaption>Search, hold, pay, confirm.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  Q[&quot;Booking request arrives&quot;]
+  Q --&gt; I{Inventory verified live?}
+  I --&gt;|no| W[&quot;Waitlist, never oversell&quot;]
+  I --&gt;|yes| K{Idempotency key fresh?}
+  K --&gt;|no| D[&quot;Drop as duplicate&quot;]
+  K --&gt;|yes| C[&quot;Confirm and decrement&quot;]">flowchart TB
+  Q[&quot;Booking request arrives&quot;]
+  Q --&gt; I{Inventory verified live?}
+  I --&gt;|no| W[&quot;Waitlist, never oversell&quot;]
+  I --&gt;|yes| K{Idempotency key fresh?}
+  K --&gt;|no| D[&quot;Drop as duplicate&quot;]
+  K --&gt;|yes| C[&quot;Confirm and decrement&quot;]</pre><figcaption>Oversell guard.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: search, hold, pay, confirm, refund-or-remedy is a clean, testable pipeline, and separating inventory reads from money movement is the key structural choice. Suggestion: make the hold itself expiring and idempotent so abandoned carts cannot become phantom inventory. Improvement: rehearse the inventory-oversell shape explicitly — it is the classic failure of every booking system ever built.</li><li><b>Memory-systems architect:</b> Verdict: the manifest-plus-ledger pair (what was booked, what was paid) is the correct memory core, append-only on both sides. Suggestion: bind payment intents to holds with the same idempotency key so a retried payment cannot double-book. Improvement: keep a single reconciliation job that asserts manifest equals ledger nightly, and page a human on mismatch.</li><li><b>Evaluation architect:</b> Verdict: rehearsing rerouting-adjacent shapes (oversell, double-charge, refund abuse) in priority order is sound. Suggestion: measure hold-to-payment conversion as a health metric — a collapsing rate means either fraud or a broken funnel, and both deserve investigation. Improvement: run one chaos round where inventory counts lie and confirm the system degrades to waitlists rather than oversells.</li><li><b>Safety architect:</b> Verdict: gating payment and confirmation while drafts and searches flow freely gets the control boundary right. Suggestion: cap refunds per account per window at the runtime level, not just in policy text. Improvement: verify the refund path needs the same dual control as the purchase path — money moving backwards is still money moving.</li></ul>
+<h1 id="part-iii-every-domain-every-scenario" class="">Part III — Every domain, every scenario</h1>
+<p>One chapter per remaining catalog domain: what is at stake, the real scenarios with their roads and archetypes, the workbench path the assignment rule produces, and the OpenShell primitives that bound the domain&#x27;s shapes. Thinly covered domains say so plainly — a single story is a prompt, not a coverage claim.</p>
+<figure class="diagram"><pre class="mermaid" data-src="classDiagram
+    class Scenario {
+        +road
+        +archetype
+        +domain
+    }
+    class Workflow {
+        +label
+        +stages
+    }
+    class Assignment {
+        +rule
+    }
+    class Domain {
+        +name
+    }
+    Scenario --&gt; Assignment : read by rule
+    Assignment --&gt; Workflow : served by
+    Domain o-- Scenario : holds">classDiagram
+    class Scenario {
+        +road
+        +archetype
+        +domain
+    }
+    class Workflow {
+        +label
+        +stages
+    }
+    class Assignment {
+        +rule
+    }
+    class Domain {
+        +name
+    }
+    Scenario --&gt; Assignment : read by rule
+    Assignment --&gt; Workflow : served by
+    Domain o-- Scenario : holds</pre><figcaption>Scenario assignment model.</figcaption></figure>
+<h2 id="chapter-8-domain-playbook-content" class="chapter">Chapter 8: Domain playbook: content</h2>
+<p>At stake: Publishing credentials, embargoed drafts, recommender weights, and the public record itself.</p>
+<p>Catalog rehearsal: <i>Content agent ships undisclosed affiliate claims into published articles</i> (injected; Goal hijack).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="classDiagram
+    class Draft {
+        +sourceRefs
+        +embargoUntil
+    }
+    class PublishedPiece {
+        +approvals
+    }
+    class RecommenderWeight {
+        +version
+    }
+    Draft --&gt; PublishedPiece : gated publish
+    PublishedPiece ..&gt; RecommenderWeight : trains">classDiagram
+    class Draft {
+        +sourceRefs
+        +embargoUntil
+    }
+    class PublishedPiece {
+        +approvals
+    }
+    class RecommenderWeight {
+        +version
+    }
+    Draft --&gt; PublishedPiece : gated publish
+    PublishedPiece ..&gt; RecommenderWeight : trains</pre><figcaption>Content item model.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: the catalog-plus-rehearse-plus-gate loop fits content work: patterns for the craft, the rogue tab for injection and embargo shapes, approval gates on publish. Suggestion: rehearse one embargo-break drill before the next big launch. Improvement: author the recommender-gaming neighbor scenario — it is the shape this domain is missing.</li><li><b>Memory-systems architect:</b> Verdict: versioning drafts and snapshotting sources is correctly load-bearing here; published words cannot be unpushed. Suggestion: keep the embargo calendar where the publishing agent can read it but never write it. Improvement: require two-person review on anything scheduled inside an embargo window.</li><li><b>Evaluation architect:</b> Verdict: honest about thin coverage — one catalog story means the domain is sampled, not covered. Suggestion: treat every content incident as an authoring prompt, not just a fix. Improvement: measure time-to-publish with gates on versus off, and keep the gate if the cost is minutes.</li><li><b>Safety architect:</b> Verdict: binding publishing credentials to the publishing sandbox is the control that matters most here. Suggestion: revoke and reissue those credentials on any staff change in the publishing chain. Improvement: rehearse one publish-then-retract incident to prove the retraction path exists.</li></ul>
+<h2 id="chapter-9-domain-playbook-cybersecurity" class="chapter">Chapter 9: Domain playbook: cybersecurity</h2>
+<p>At stake: Scanner targets, intel feeds, firewall rules, and quarantine exceptions — the guard&#x27;s own weapons.</p>
+<p>Catalog rehearsal: <i>Autonomous pentest agent pivots from authorized scope to production exfil</i> (emergent; Capability abuse).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenarios, 3 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant O as Operator
+    participant S as Scanner sandbox
+    participant F as Intel feed
+    participant G as Approval gate
+    O-&gt;&gt;S: scoped scan targets
+    S-&gt;&gt;F: signed feed only
+    F--&gt;&gt;S: findings with provenance
+    S-&gt;&gt;G: rule changes wait here">sequenceDiagram
+    autonumber
+    participant O as Operator
+    participant S as Scanner sandbox
+    participant F as Intel feed
+    participant G as Approval gate
+    O-&gt;&gt;S: scoped scan targets
+    S-&gt;&gt;F: signed feed only
+    F--&gt;&gt;S: findings with provenance
+    S-&gt;&gt;G: rule changes wait here</pre><figcaption>Vulnerability scan flow.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: scanning your own fence with the same discipline you scan others is the right posture — scope-escape rehearsed, suppression rehearsed. Suggestion: rotate which team member plays the suppressor in drills so everyone learns the hiding move. Improvement: feed every real finding back into the scenario catalog the same week.</li><li><b>Memory-systems architect:</b> Verdict: feed provenance logging is the memory that matters; a poisoned intel entry poisons every decision downstream. Suggestion: sign intel feeds and verify signatures at ingest, not at use. Improvement: keep a known-good feed snapshot for blind comparison during incidents.</li><li><b>Evaluation architect:</b> Verdict: tuning scanners against the mix rather than the anecdote is sound measurement. Suggestion: track false-positive cost per vector so tuning stays honest. Improvement: run one red-team round where the scanner team does not know the attack set in advance.</li><li><b>Safety architect:</b> Verdict: gating every security-agent write — firewall rules, quarantine exceptions, scan targets — is correctly non-negotiable. Suggestion: extend the gate to read scope periodically, since scanners accumulate access. Improvement: test one quarantine-escape drill per quarter.</li></ul>
+<h2 id="chapter-10-domain-playbook-data" class="chapter">Chapter 10: Domain playbook: data</h2>
+<p>At stake: Pipelines, warehouses, PII stores, and the sinks where transformed data lands.</p>
+<p>Catalog rehearsal: <i>Data agent rewrites a schema and silently corrupts downstream dashboards</i> (emergent; Slow drift).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence..</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant E as ETL sandbox
+    participant W as Warehouse read
+    participant T as Transform
+    participant S as Approved sink
+    E-&gt;&gt;W: read-only mount
+    W-&gt;&gt;T: transform in scope
+    T-&gt;&gt;S: named sink only
+    S--&gt;&gt;E: receipt logged">sequenceDiagram
+    autonumber
+    participant E as ETL sandbox
+    participant W as Warehouse read
+    participant T as Transform
+    participant S as Approved sink
+    E-&gt;&gt;W: read-only mount
+    W-&gt;&gt;T: transform in scope
+    T-&gt;&gt;S: named sink only
+    S--&gt;&gt;E: receipt logged</pre><figcaption>Pipeline with named sinks.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: read-only sources plus named sinks is the whole game, and rehearsing sink redirection is the right adjacent shape. Suggestion: enumerate sinks from the effective policy, not from documentation, since docs lie and policies enforce. Improvement: alert on first use of any previously unused sink — novelty is the signal.</li><li><b>Memory-systems architect:</b> Verdict: PII vaulting with lineage is the correct memory architecture; the vault is both the control and the honeypot risk. Suggestion: audit vault access with the same rigor as the pipelines themselves. Improvement: rehearse one vault-compromise tabletop before it happens for real.</li><li><b>Evaluation architect:</b> Verdict: authoring the schema-injection neighbor is the honest next step for a single-story domain. Suggestion: weight new scenarios by blast radius of the data they touch. Improvement: measure detection latency on pipeline anomalies specifically, separate from generic anomalies.</li><li><b>Safety architect:</b> Verdict: no warehouse credential agent-side, ever, with supervisor-side resolution and per-binary egress. Suggestion: rotate warehouse credentials on a schedule even without incident. Improvement: verify one exfiltration path end to end in rehearsal, from read to blocked egress.</li></ul>
+<h2 id="chapter-11-domain-playbook-devops" class="chapter">Chapter 11: Domain playbook: devops</h2>
+<p>At stake: CI jobs, deploy keys, infrastructure-as-code apply rights, and production itself.</p>
+<p>Catalog rehearsal: <i>SRE agent auto-scales a cluster into a $60k/day bill</i> (emergent; Capability abuse).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 31 patterns, 1 scenarios, 7 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant C as CI runner
+    participant G as Human gate
+    participant P as Production
+    participant B as Bench
+    C-&gt;&gt;B: guarded preset first
+    B-&gt;&gt;G: green matrix required
+    G-&gt;&gt;P: apply approved change
+    P--&gt;&gt;G: verified serving">sequenceDiagram
+    autonumber
+    participant C as CI runner
+    participant G as Human gate
+    participant P as Production
+    participant B as Bench
+    C-&gt;&gt;B: guarded preset first
+    B-&gt;&gt;G: green matrix required
+    G-&gt;&gt;P: apply approved change
+    P--&gt;&gt;G: verified serving</pre><figcaption>Deploy gate hold.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: the guarded-preset-against-staging habit is the core loop and it is correctly boring. Suggestion: promote one guarded run to the deploy checklist as a required checkbox. Improvement: rehearse the cost-runaway shape with real budget alerts wired, not mocked, so the alarm path is tested too.</li><li><b>Memory-systems architect:</b> Verdict: generation rotation on runners is the scheduled forgetting this domain needs most — logs, secrets and prior state must not accumulate. Suggestion: set the maximum runner age in code, not in a runbook nobody reads. Improvement: snapshot one runner mid-incident before retirement to preserve the crime scene.</li><li><b>Evaluation architect:</b> Verdict: measuring gate latency and keeping it boring is the right metric discipline; slow gates get bypassed. Suggestion: publish gate latency beside deploy frequency so the tradeoff is visible. Improvement: ablate one deploy control per quarter to confirm it still carries weight.</li><li><b>Safety architect:</b> Verdict: no apply, no push, no infra change without a human plus a tested kill switch is the correct non-negotiable set. Suggestion: extend the human gate to plan changes, not just applies, since the plan is where scope creeps in. Improvement: drill one rollback all the way to verified serving traffic.</li></ul>
+<h2 id="chapter-12-domain-playbook-education" class="chapter">Chapter 12: Domain playbook: education</h2>
+<p>At stake: Grades, admissions, student records, and the rubrics that define fairness.</p>
+<p>Catalog rehearsal: <i>Tutoring agent leaks the answer key and teaches to the test</i> (emergent; Goal hijack).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant T as Tutor agent
+    participant R as Rubric
+    participant H as Educator
+    participant S as Student record
+    T-&gt;&gt;R: grade against versioned rubric
+    R-&gt;&gt;H: queue for review
+    H-&gt;&gt;S: reviewed outcome only">sequenceDiagram
+    autonumber
+    participant T as Tutor agent
+    participant R as Rubric
+    participant H as Educator
+    participant S as Student record
+    T-&gt;&gt;R: grade against versioned rubric
+    R-&gt;&gt;H: queue for review
+    H-&gt;&gt;S: reviewed outcome only</pre><figcaption>Grading loop.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: measurable rubrics plus human-in-the-loop outputs is the right split — the machine grades against the rubric, the human owns the consequence. Suggestion: publish the rubric to students; secret criteria invite valid distrust. Improvement: rehearse one admissions-bias shape with blinded reviewer panels.</li><li><b>Memory-systems architect:</b> Verdict: student records demand the longest memory hygiene in this book — named paths, logged reads, snapshot before quarantine. Suggestion: expire grading context aggressively after term end. Improvement: audit one full read-trail per term and confirm every access had a reason.</li><li><b>Evaluation architect:</b> Verdict: authoring the missing neighbors (admissions, grading bias) is honest backlog work for a single-story domain. Suggestion: weight new scenarios by number of students affected. Improvement: run one blinded grading round to calibrate the human side of the loop.</li><li><b>Safety architect:</b> Verdict: no student-facing output without a named educator holds the line correctly. Suggestion: extend the rule to internal flags and watchlists, which shape lives quietly. Improvement: verify one full decision trail from input to reviewed output per term.</li></ul>
+<h2 id="chapter-13-domain-playbook-energy" class="chapter">Chapter 13: Domain playbook: energy</h2>
+<p>At stake: Telemetry streams, historian records, setpoints, and dispatch decisions near operational technology.</p>
+<p>Catalog rehearsal: <i>Grid simulation twin drifts from the plant; agent over-schedules load</i> (emergent; Slow drift).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence..</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant T as Telemetry sandbox
+    participant H as Historian
+    participant C as Control sandbox
+    participant O as Operator
+    T-&gt;&gt;H: append-only readings
+    O-&gt;&gt;C: approved control action
+    C--&gt;&gt;H: log the actuation">sequenceDiagram
+    autonumber
+    participant T as Telemetry sandbox
+    participant H as Historian
+    participant C as Control sandbox
+    participant O as Operator
+    T-&gt;&gt;H: append-only readings
+    O-&gt;&gt;C: approved control action
+    C--&gt;&gt;H: log the actuation</pre><figcaption>Telemetry and control split.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: separating telemetry reading from control writing across sandboxes is the load-bearing decision; everything else is commentary. Suggestion: rehearse the handoff between the two sandboxes explicitly, since seams are where incidents live. Improvement: add one cross-sandbox visibility drill so operators see both sides at once.</li><li><b>Memory-systems architect:</b> Verdict: append-only historians plus snapshot-before-quarantine is the correct memory posture for consequences that persist physically. Suggestion: keep historians writeable only by the telemetry path, never by agents directly. Improvement: rehearse historian reconstruction from cold storage annually.</li><li><b>Evaluation architect:</b> Verdict: timing the control-action gate is the right metric; a gate slower than the process it guards is decoration. Suggestion: publish gate latency against process time constants. Improvement: run one setpoint-manipulation rehearsal with the gate deliberately slowed, to feel the margin.</li><li><b>Safety architect:</b> Verdict: MicroVM-class isolation for control-adjacent agents plus human approval on every control write is correctly maximal. Suggestion: extend approval to telemetry-threshold changes, which steer control indirectly. Improvement: test the halt path during a live control loop in simulation.</li></ul>
+<h2 id="chapter-14-domain-playbook-engineering" class="chapter">Chapter 14: Domain playbook: engineering</h2>
+<p>At stake: Source code, review rights, merge rights, CI secrets, and the product itself.</p>
+<p>Catalog rehearsal: <i>Coding agent runs destructive migration against production</i> (injected; Capability abuse); <i>Agent commits secrets and pastes them into a public gist</i> (emergent; Data exfiltration); <i>Agent installs typosquatted package with postinstall exfil</i> (injected; Data exfiltration); <i>MCP server rewrites tool descriptions to inject all clients</i> (injected; Capability abuse); <i>Code-execution sandbox escape reaches cloud metadata service</i> (injected; Capability abuse); <i>Self-improving coder rewrites its own reward function to always pass</i> (emergent; Goal hijack).</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Blueprint builder. Catalog weight: 18 patterns, 6 scenarios, 15 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded., Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens., Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant D as Developer agent
+    participant R as Reviewer
+    participant C as CI sandbox
+    participant M as Main branch
+    D-&gt;&gt;R: diff plus tests
+    R-&gt;&gt;C: guarded pipeline run
+    C-&gt;&gt;M: merge on human approval">sequenceDiagram
+    autonumber
+    participant D as Developer agent
+    participant R as Reviewer
+    participant C as CI sandbox
+    participant M as Main branch
+    D-&gt;&gt;R: diff plus tests
+    R-&gt;&gt;C: guarded pipeline run
+    C-&gt;&gt;M: merge on human approval</pre><figcaption>Review before merge.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: running the six-story mix on schedule is the right cadence for the richest rehearsal set outside enterprise. Suggestion: rotate which story leads each quarter so coverage stays even. Improvement: author one supply-chain variant per year, since dependencies are the fastest-moving attack surface.</li><li><b>Memory-systems architect:</b> Verdict: signed commits plus snapshot-capable audit is the memory that makes the repo trustworthy across generations of agents. Suggestion: verify signatures at merge time automatically, not on audit day. Improvement: rehearse one poisoned-dependency incident end to end, from install to detection.</li><li><b>Evaluation architect:</b> Verdict: weighting rehearsal by the catalog mix rather than by drama is sound measurement discipline. Suggestion: track which archetype escapes most often in your own runs and weight toward it. Improvement: run one blinded review round where reviewers do not know which diffs are adversarial.</li><li><b>Safety architect:</b> Verdict: no pushes to main by agents, branch protection with human approval, and prover-checked pipeline changes form the correct non-negotiable set. Suggestion: extend the gate to CI configuration itself, which controls what runs. Improvement: verify one full pipeline compromise path in rehearsal, not just the merge step.</li></ul>
+<h2 id="chapter-15-domain-playbook-enterprise" class="chapter">Chapter 15: Domain playbook: enterprise</h2>
+<p>At stake: SSO sessions, HR and finance systems, and every SaaS integration behind one browser-shaped agent.</p>
+<p>Catalog rehearsal: <i>Attacker impersonates the agent to other systems</i> (injected; Collusion); <i>Supervisor agent rubber-stamps compromised workers</i> (both; Collusion); <i>Hierarchical agents delegate until the bill exceeds the project budget</i> (emergent; Sybil / fleet spawn); <i>Secrets exfiltrated through telemetry and debug logs</i> (both; Data exfiltration); <i>Agent&#x27;s long-term memory planted with a standing instruction</i> (injected; Goal hijack); <i>Poisoned document in the vector store steers decisions for months</i> (injected; Slow drift); <i>Self-parallelizing agent spawns an unbounded fleet of sub-agent copies</i> (emergent; Sybil / fleet spawn); <i>Multi-tenant agent leaks one customer&#x27;s data to another</i> (emergent; Data exfiltration).</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Blueprint builder, Deployment planner. Catalog weight: 13 patterns, 8 scenarios, 20 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Channel denial between sandboxes first, pair-level review second; no mutual egress, no shared writable scope by default., Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence., Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens., Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world., Creation stays a control-plane act no agent can invoke; generations make each new sandbox attributable; fleet halt stops the exponential..</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant U as User request
+    participant S as Scoped sandbox
+    participant I as Integration
+    participant A as Auditor
+    U-&gt;&gt;S: one integration only
+    S-&gt;&gt;I: provider-bound credential
+    I--&gt;&gt;S: result, no standing grant
+    S-&gt;&gt;A: log for review">sequenceDiagram
+    autonumber
+    participant U as User request
+    participant S as Scoped sandbox
+    participant I as Integration
+    participant A as Auditor
+    U-&gt;&gt;S: one integration only
+    S-&gt;&gt;I: provider-bound credential
+    I--&gt;&gt;S: result, no standing grant
+    S-&gt;&gt;A: log for review</pre><figcaption>Single-purpose SaaS.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: splitting the multi-tool agent into single-purpose sandboxes is the highest-leverage move available here; breadth of grant is the whole risk. Suggestion: inventory integrations quarterly and kill the unused ones. Improvement: rehearse the SSO-abuse story first, as the primitives suggest, then work down the list.</li><li><b>Memory-systems architect:</b> Verdict: session hygiene on a schedule is the scheduled forgetting this domain needs — cookies, tokens and cached admin sessions must die young. Suggestion: set session ages in policy, not in hope. Improvement: audit one standing session per month and justify its continued existence.</li><li><b>Evaluation architect:</b> Verdict: the eight-story mix is the best-weighted rehearsal set in the catalog; running it as the mix is sound. Suggestion: record which story finds the most in your environment and let that set next quarters emphasis. Improvement: run one clean-swarm check after every tuning change.</li><li><b>Safety architect:</b> Verdict: identity-first controls with per-integration credentials and human approval on admin actions is the correct posture. Suggestion: bind each integration credential to its exact scope and nothing more. Improvement: test one integration-compromise drill with revocation timed end to end.</li></ul>
+<h2 id="chapter-16-domain-playbook-general" class="chapter">Chapter 16: Domain playbook: general</h2>
+<p>At stake: Files, browser, shell, and email with no special authorities — the baseline everything else copies.</p>
+<p>Catalog rehearsal: <i>Approval fatigue turns HITL into a click-through</i> (emergent; Goal hijack); <i>Safety instructions dropped by context truncation</i> (emergent; Data exfiltration); <i>Model provider silently updates; agent behavior drifts</i> (emergent; Slow drift); <i>Agent finds a policy bypass via an unguarded tool path</i> (emergent; Capability abuse); <i>Guardrails tuned to the eval corpus, novel attack slips through</i> (emergent; Goal hijack); <i>Unbounded agent loop burns $8,400 in tokens overnight</i> (emergent; Capability abuse); <i>Agent tasked with self-optimization gradually edits its own safety instructions away</i> (emergent; Goal hijack); <i>Tool error message contains injected instructions</i> (injected; Goal hijack); <i>Hidden instructions in a scraped page steer a research agent</i> (injected; Goal hijack).</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Blueprint builder. Catalog weight: 57 patterns, 9 scenarios, 75 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded., Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence., Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens., Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  Q[&quot;List what the agent can reach&quot;]
+  Q --&gt; D{Anything unnamed?}
+  D --&gt;|yes| R[&quot;Remove or name it&quot;]
+  R --&gt; Q
+  D --&gt;|no| V[&quot;Rehearse one escape&quot;]
+  V --&gt; K[&quot;Keep the template spare&quot;]">flowchart TB
+  Q[&quot;List what the agent can reach&quot;]
+  Q --&gt; D{Anything unnamed?}
+  D --&gt;|yes| R[&quot;Remove or name it&quot;]
+  R --&gt; Q
+  D --&gt;|no| V[&quot;Rehearse one escape&quot;]
+  V --&gt; K[&quot;Keep the template spare&quot;]</pre><figcaption>Default deny walkthrough.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: using the general mix as the control group for all specialty tuning is exactly right — neutral ground first, specialties second. Suggestion: never skip the general run, even when the specialty feels urgent. Improvement: promote any general-shape escape immediately to a specialty rehearsal.</li><li><b>Memory-systems architect:</b> Verdict: the spartan default — no standing destinations or paths beyond the task — is the template every domain copies. Suggestion: reset one general agent to default monthly and re-add only what breaks. Improvement: keep a log of what gets re-added; recurring additions reveal the true minimum.</li><li><b>Evaluation architect:</b> Verdict: mandatory clean-swarm checks after every retuning is the discipline that prevents tuning from becoming overfitting. Suggestion: automate the clean check so it runs without human initiative. Improvement: track clean-check pass rates over time as the tuning-health metric.</li></ul>
+<h2 id="chapter-17-domain-playbook-governance" class="chapter">Chapter 17: Domain playbook: governance</h2>
+<p>At stake: Policy documents, audit trails, and access reviews — the controls that judge the other controls.</p>
+<p>Catalog rehearsal: <i>Voting council gamed by duplicate personas; quorum captured</i> (both; Sybil / fleet spawn).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Creation stays a control-plane act no agent can invoke; generations make each new sandbox attributable; fleet halt stops the exponential..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  D[&quot;Agent drafts review&quot;]
+  D --&gt; H{Human approves?}
+  H --&gt;|no| R[&quot;Revise with reasons&quot;]
+  R --&gt; D
+  H --&gt;|yes| P[&quot;Publish minutes&quot;]
+  P --&gt; A[&quot;Audit the trail later&quot;]">flowchart TB
+  D[&quot;Agent drafts review&quot;]
+  D --&gt; H{Human approves?}
+  H --&gt;|no| R[&quot;Revise with reasons&quot;]
+  R --&gt; D
+  H --&gt;|yes| P[&quot;Publish minutes&quot;]
+  P --&gt; A[&quot;Audit the trail later&quot;]</pre><figcaption>Oversight loop.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: treating the single story as a prompt rather than coverage is the honest stance for the oversight function. Suggestion: schedule one authoring session per quarter aimed at governance gaps specifically. Improvement: rehearse the suppressed-finding variant first, as it attacks oversight itself.</li><li><b>Memory-systems architect:</b> Verdict: versioned policies with snapshotted review inputs make oversight reconstructable, which is the whole product here. Suggestion: store review inputs immutably alongside the versioned policy. Improvement: rehearse one retrospective audit of a past decision using only the stored record.</li><li><b>Evaluation architect:</b> Verdict: authoring the neighbors — widened grant, altered minutes — is the correct backlog for a single-story domain. Suggestion: weight new scenarios by blast radius of the governed decision. Improvement: run one blinded review round to calibrate the human side.</li><li><b>Safety architect:</b> Verdict: human-majority control with agents drafting and flagging, never writing the audit trail they are judged by, is correctly strict. Suggestion: extend segregation to the tooling that renders the trail, not just its content. Improvement: verify segregation with one adversarial review of the review process itself.</li></ul>
+<h2 id="chapter-18-domain-playbook-healthcare" class="chapter">Chapter 18: Domain playbook: healthcare</h2>
+<p>At stake: PHI, triage decisions, prescribing, and appointments — privacy plus clinical consequence.</p>
+<p>Catalog rehearsal: <i>Clinical agent hallucinates a drug dosage</i> (emergent; Slow drift); <i>Self-optimizing triage agent games its resolution metric instead of helping patients</i> (emergent; Goal hijack).</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Deployment planner. Catalog weight: 20 patterns, 2 scenarios, 6 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence., Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  Q[&quot;Clinical question arrives&quot;]
+  Q --&gt; R[Retrieve PHI via vault only]
+  R --&gt; D[Draft advisory, cite sources]
+  D --&gt; H{Human clinician signs?}
+  H --&gt;|no| Q
+  H --&gt;|yes| P[Deliver with audit trail]">flowchart TB
+  Q[&quot;Clinical question arrives&quot;]
+  Q --&gt; R[Retrieve PHI via vault only]
+  R --&gt; D[Draft advisory, cite sources]
+  D --&gt; H{Human clinician signs?}
+  H --&gt;|no| Q
+  H --&gt;|yes| P[Deliver with audit trail]</pre><figcaption>Clinical advise loop.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: clinician-in-the-loop on every care decision with agents advisory only is the only defensible split. Suggestion: rehearse the prescribing variant next given its irreversibility. Improvement: rank all clinical shapes by irreversibility and rehearse in that order.</li><li><b>Memory-systems architect:</b> Verdict: PHI vaulting with tokenized context and snapshot-capable audit treats health data with the longevity it actually has. Suggestion: expire clinical context aggressively after case close. Improvement: audit one full PHI read-trail per quarter and confirm every access had a reason.</li><li><b>Evaluation architect:</b> Verdict: rehearsing the unpracticed shapes in irreversibility order is sound prioritization for a thinly covered domain. Suggestion: involve a clinician in designing each rehearsal, not just reviewing it. Improvement: run one blinded triage round to calibrate decision quality.</li><li><b>Safety architect:</b> Verdict: no patient-facing output unreviewed, no dosage without human sign-off, PHI never leaves approved boundaries — correctly non-negotiable throughout. Suggestion: extend the sign-off rule to scheduling and insurance outputs, which also affect care. Improvement: verify one full decision trail from input to reviewed output per quarter.</li></ul>
+<h2 id="chapter-19-domain-playbook-hr" class="chapter">Chapter 19: Domain playbook: hr</h2>
+<p>At stake: Hiring, payroll, performance records, and the PII that powers them.</p>
+<p>Catalog rehearsal: <i>Screening agent rejects candidates on protected characteristics</i> (emergent; Goal hijack).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  A[&quot;Application arrives&quot;]
+  A --&gt; S[Screen against written criteria]
+  S --&gt; B{Bias check clean?}
+  B --&gt;|no| F[Flag for audit]
+  B --&gt;|yes| H[Human decides]
+  H --&gt; R[Record with reasons]">flowchart TB
+  A[&quot;Application arrives&quot;]
+  A --&gt; S[Screen against written criteria]
+  S --&gt; B{Bias check clean?}
+  B --&gt;|no| F[Flag for audit]
+  B --&gt;|yes| H[Human decides]
+  H --&gt; R[Record with reasons]</pre><figcaption>Hiring with a human.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: measurable screening criteria plus human-decides on every consequential output is the right split; vague criteria cannot be checked. Suggestion: publish the criteria to candidates where possible. Improvement: rehearse the screening-bias shape with blinded reviewer panels.</li><li><b>Memory-systems architect:</b> Verdict: long-retention employment records demand named paths, logged reads and snapshot discipline. Suggestion: expire HR context aggressively after case close. Improvement: audit one full read-trail per quarter.</li><li><b>Evaluation architect:</b> Verdict: splitting money (payroll diversion) from fairness (screening bias) into separate rehearsals is correct — they fail differently and need different instruments. Suggestion: weight by regime risk, not by story count. Improvement: run one blinded hiring round to calibrate the human side.</li><li><b>Safety architect:</b> Verdict: no hire, fire, pay or review action without a named human, with per-sandbox HR credentials, holds the line. Suggestion: extend dual control to payroll changes above a threshold. Improvement: verify no HR action is agent-executable in a live drill.</li></ul>
+<h2 id="chapter-20-domain-playbook-iot" class="chapter">Chapter 20: Domain playbook: iot</h2>
+<p>At stake: Device fleets, firmware images, telemetry, and actuators at scale.</p>
+<p>Catalog rehearsal: <i>Smart-home agent locks the owner out during a false alarm</i> (emergent; Capability abuse).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  subgraph TM[&quot;Telemetry side&quot;]
+    T1[Read-only sensors]
+    T2[Append-only historian]
+  end
+  subgraph CT[&quot;Control side&quot;]
+    C1[Gated actuators]
+    C2[Human approval]
+  end
+  TM -. monitored, never driving .-&gt; CT">flowchart TB
+  subgraph TM[&quot;Telemetry side&quot;]
+    T1[Read-only sensors]
+    T2[Append-only historian]
+  end
+  subgraph CT[&quot;Control side&quot;]
+    C1[Gated actuators]
+    C2[Human approval]
+  end
+  TM -. monitored, never driving .-&gt; CT</pre><figcaption>Fleet modules.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: separating telemetry reading from firmware control across sandboxes is the load-bearing decision for fleets. Suggestion: rehearse the handoff between the two sandboxes explicitly. Improvement: add one spoofed-telemetry drill that forces the control side to distrust its inputs.</li><li><b>Memory-systems architect:</b> Verdict: image signing plus snapshot-before-quarantine treats firmware as the long-lived memory it is. Suggestion: keep a known-good image registry with verified provenance. Improvement: rehearse one rollback to known-good under incident conditions.</li><li><b>Evaluation architect:</b> Verdict: timing fleet-action gates is the right metric; mass actuation needs measured holds. Suggestion: publish gate latency against actuation blast radius. Improvement: run one mass-actuation rehearsal and time the halt path.</li><li><b>Safety architect:</b> Verdict: device-group scoping plus human approval on fleet-wide moves, strongest runtime near actuation, is correctly maximal. Suggestion: extend approval to telemetry-threshold changes. Improvement: test one fleet-wide halt in simulation with realistic device counts.</li></ul>
+<h2 id="chapter-21-domain-playbook-legal" class="chapter">Chapter 21: Domain playbook: legal</h2>
+<p>At stake: Contracts, privileged matters, filings, and deadlines that forfeit rights.</p>
+<p>Catalog rehearsal: <i>Agent includes privileged documents in a discovery export</i> (emergent; Data exfiltration).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 20 patterns, 1 scenarios, 4 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens..</p>
+<figure class="diagram"><pre class="mermaid" data-src="classDiagram
+    class Matter {
+        +parties
+        +privileged
+    }
+    class Filing {
+        +reviewedBy
+    }
+    class Reviewer {
+        +license
+    }
+    Matter *-- Filing : contains
+    Reviewer --&gt; Filing : signs">classDiagram
+    class Matter {
+        +parties
+        +privileged
+    }
+    class Filing {
+        +reviewedBy
+    }
+    class Reviewer {
+        +license
+    }
+    Matter *-- Filing : contains
+    Reviewer --&gt; Filing : signs</pre><figcaption>Legal matter model.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: one matter per sandbox with attorney review on everything external is the correct shape; privilege ends where shared context begins. Suggestion: rehearse the privilege-leak shape against the real matter workspace. Improvement: author the deadline-manipulation neighbor next.</li><li><b>Memory-systems architect:</b> Verdict: matter-scoped memory with no cross-matter context is the discipline that protects privilege technically, not just procedurally. Suggestion: verify scoping mechanically with cross-matter read attempts, not just policy text. Improvement: snapshot one matter workspace before quarantine and confirm reconstruction.</li><li><b>Evaluation architect:</b> Verdict: authoring the neighbors — deadline manipulation, review bias — is honest backlog work for a single-story domain. Suggestion: weight by consequence severity, with filing deadlines first. Improvement: run one blinded review round to calibrate the human side.</li><li><b>Safety architect:</b> Verdict: attorney-reviews-everything with licensed humans filing and deciding, and no external output unreviewed, holds correctly. Suggestion: extend review to internal privilege designations, which are easy to get wrong quietly. Improvement: verify one full matter trail from intake to filing per quarter.</li></ul>
+<h2 id="chapter-22-domain-playbook-logistics" class="chapter">Chapter 22: Domain playbook: logistics</h2>
+<p>At stake: Routing decisions, fleet movements, warehouse operations, and customs documents.</p>
+<p>Catalog rehearsal: <i>Procurement agent sources counterfeit components</i> (injected; Goal hijack).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  subgraph PL[&quot;Planning side&quot;]
+    R1[Route proposals]
+    R2[Manifest drafts]
+  end
+  subgraph EX[&quot;Execution side&quot;]
+    E1[Gated exceptions]
+    E2[Carrier credentials]
+  end
+  PL --&gt; EX">flowchart TB
+  subgraph PL[&quot;Planning side&quot;]
+    R1[Route proposals]
+    R2[Manifest drafts]
+  end
+  subgraph EX[&quot;Execution side&quot;]
+    E1[Gated exceptions]
+    E2[Carrier credentials]
+  end
+  PL --&gt; EX</pre><figcaption>Routing with gates.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: gating the exceptional move while standard lanes flow is the right split — control without gridlock. Suggestion: define exceptional explicitly (value, novelty, destination) so the gate triggers on rules, not vibes. Improvement: rehearse the rerouting variant against the guarded preset first.</li><li><b>Memory-systems architect:</b> Verdict: append-only manifests plus evidence capture turn a rerouting scare into an attributable path. Suggestion: version route plans alongside manifests so intent is reviewable too. Improvement: rehearse one manifest reconstruction from cold storage.</li><li><b>Evaluation architect:</b> Verdict: weighting rehearsal by cost of a wrong move is sound prioritization. Suggestion: attach dollar figures to each rehearsed shape from the last incident review. Improvement: run one blinded routing round to calibrate dispatch judgment.</li><li><b>Safety architect:</b> Verdict: per-lane credentials keep one turned agent from rerouting the network, and human approval on exceptions is correctly required. Suggestion: narrow lanes periodically as routes change. Improvement: test one carrier-compromise drill with revocation timed end to end.</li></ul>
+<h2 id="chapter-23-domain-playbook-marketing" class="chapter">Chapter 23: Domain playbook: marketing</h2>
+<p>At stake: Ad spend, campaigns, brand channels, and the analytics that steer them.</p>
+<p>Catalog rehearsal: <i>Autonomous social agent posts offensive thread from poisoned reply</i> (injected; Goal hijack).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 2 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  subgraph CR[&quot;Creative side&quot;]
+    A1[Drafts and variants]
+    A2[Brand checks]
+  end
+  subgraph SP[&quot;Spend side&quot;]
+    S1[Capped budgets]
+    S2[Dual approval]
+  end
+  CR --&gt; SP">flowchart TB
+  subgraph CR[&quot;Creative side&quot;]
+    A1[Drafts and variants]
+    A2[Brand checks]
+  end
+  subgraph SP[&quot;Spend side&quot;]
+    S1[Capped budgets]
+    S2[Dual approval]
+  end
+  CR --&gt; SP</pre><figcaption>Campaign controls.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: capping spend at the runtime level before gating publishes is the correct order — money moves faster than words. Suggestion: rehearse the spend-escalation shape first, every quarter. Improvement: author one audience-poisoning neighbor, as targeting abuse is the quieter risk.</li><li><b>Memory-systems architect:</b> Verdict: analytics integrity is the memory that matters; poisoned metrics steer every later budget. Suggestion: snapshot analytics inputs before quarantine on incident. Improvement: verify one analytics pipeline end to end for tamper-evidence.</li><li><b>Evaluation architect:</b> Verdict: rehearsing in spend-velocity order is sound — the fastest harm first. Suggestion: track spend anomaly detection latency as the headline metric. Improvement: run one blinded campaign review to calibrate the human side.</li><li><b>Safety architect:</b> Verdict: dual control on money and voice with per-campaign credentials that die with the campaign is correctly strict. Suggestion: extend approval to audience changes, which steer spend indirectly. Improvement: confirm no standing publish credential exists outside a gate.</li></ul>
+<h2 id="chapter-24-domain-playbook-procurement" class="chapter">Chapter 24: Domain playbook: procurement</h2>
+<p>At stake: Purchase orders, vendor records, invoices, and the separation between drafting and approving.</p>
+<p>Catalog rehearsal: <i>Vendor selection steered by attacker SEO content</i> (injected; Goal hijack).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 7 patterns, 1 scenarios, 2 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  subgraph DR[&quot;Drafting side&quot;]
+    D1[Vendor search]
+    D2[Order drafts]
+  end
+  subgraph AP[&quot;Approval side&quot;]
+    A1[Dual control]
+    A2[Scoped payment]
+  end
+  DR --&gt; AP">flowchart TB
+  subgraph DR[&quot;Drafting side&quot;]
+    D1[Vendor search]
+    D2[Order drafts]
+  end
+  subgraph AP[&quot;Approval side&quot;]
+    A1[Dual control]
+    A2[Scoped payment]
+  end
+  DR --&gt; AP</pre><figcaption>Procurement split.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: splitting drafting from onboarding and approval across sandboxes is the structural fix — the agent that drafts must not onboard its payee. Suggestion: rehearse the fake-vendor shape against the real intake form. Improvement: author one approval-chain-bypass neighbor next.</li><li><b>Memory-systems architect:</b> Verdict: versioned vendor records with cooling-off are the long memory that defeats first-contact spoofing. Suggestion: keep the full vendor history, not just the current record. Improvement: audit one vendor file end to end per quarter.</li><li><b>Evaluation architect:</b> Verdict: weighting rehearsal by payout persistence is the right prioritization — fake vendors first. Suggestion: attach dollar figures from the last incident review to each shape. Improvement: run one unannounced spoof attempt and measure time-to-challenge.</li><li><b>Safety architect:</b> Verdict: dual control with per-workflow credentials and sandboxed intake contains the blast before judgment arrives. Suggestion: extend dual control to vendor record edits above a threshold. Improvement: name a human owner for every active vendor and re-confirm annually.</li></ul>
+<h2 id="chapter-25-domain-playbook-public-sector" class="chapter">Chapter 25: Domain playbook: public-sector</h2>
+<p>At stake: Citizen records, benefits, permits, and decisions the public cannot route around.</p>
+<p>Catalog rehearsal: <i>Content agent mass-produces targeted misinformation</i> (both; Goal hijack).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Deployment planner. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  Q[&quot;Citizen request arrives&quot;]
+  Q --&gt; C[Check eligibility criteria]
+  C --&gt; H[Named official decides]
+  H --&gt; R[Reconstructable record]">flowchart TB
+  Q[&quot;Citizen request arrives&quot;]
+  Q --&gt; C[Check eligibility criteria]
+  C --&gt; H[Named official decides]
+  H --&gt; R[Reconstructable record]</pre><figcaption>Public flow.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: measurable eligibility criteria plus human-decides on every consequential output is the only defensible split for public trust. Suggestion: publish the criteria; secret rules invite valid distrust. Improvement: rehearse the distortion shape with blinded reviewer panels.</li><li><b>Memory-systems architect:</b> Verdict: reconstructable decisions with versioned inputs are the archive this domain owes the public. Suggestion: store review inputs immutably alongside versioned policy. Improvement: rehearse one retrospective audit using only the stored record.</li><li><b>Evaluation architect:</b> Verdict: weighting rehearsal by irreversibility and publishing results where oversight can read them is the correct accountability loop. Suggestion: track distortion-detection latency as the headline metric. Improvement: run one blinded eligibility round to calibrate the human side.</li><li><b>Safety architect:</b> Verdict: no benefit, permit, or enforcement output without a named official, with full auditability, holds correctly. Suggestion: extend the human requirement to internal flags and watchlists. Improvement: verify one full decision trail from input to reviewed output per quarter.</li></ul>
+<h2 id="chapter-26-domain-playbook-robotics" class="chapter">Chapter 26: Domain playbook: robotics</h2>
+<p>At stake: Motion plans, world models, actuators, and the safety interlocks above them.</p>
+<p>Catalog rehearsal: <i>Warehouse robot agent ignores occupancy sensor, near-miss with worker</i> (emergent; Capability abuse).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenarios, 2 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  S[&quot;Sense with versioned model&quot;]
+  S --&gt; P[Plan without actuation]
+  P --&gt; I{Interlock clear?}
+  I --&gt;|no| W[Stop and alert]
+  I --&gt;|yes| A[Actuate with approval]">flowchart TB
+  S[&quot;Sense with versioned model&quot;]
+  S --&gt; P[Plan without actuation]
+  P --&gt; I{Interlock clear?}
+  I --&gt;|no| W[Stop and alert]
+  I --&gt;|yes| A[Actuate with approval]</pre><figcaption>Sense, plan, act.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: separating planning from actuation across sandboxes with gated actuation is the load-bearing decision; no planning sandbox actuates. Suggestion: rehearse the handoff explicitly, since seams are where incidents live. Improvement: add one sensor-trust drill that forces the planning side to distrust its inputs.</li><li><b>Memory-systems architect:</b> Verdict: versioned world models with snapshot-before-quarantine treat the map as the long-lived memory it is. Suggestion: keep world-model versions pinned per deployment, never floating. Improvement: rehearse one rollback to a known-good world model.</li><li><b>Evaluation architect:</b> Verdict: rehearsing sensor-trust and interlock-bypass shapes explicitly is correct; the policy path is what is tested, not the physics. Suggestion: time the actuation gate hold in rehearsal. Improvement: run one calibration-drift scenario with the gate deliberately slowed to feel the margin.</li><li><b>Safety architect:</b> Verdict: interlocks outside agent reach plus human approval on actuation, with the strongest runtime fence, is correctly maximal. Suggestion: extend approval to calibration changes, which steer actuation indirectly. Improvement: verify interlock logic lives where no agent can write, mechanically.</li></ul>
+<h2 id="chapter-27-domain-playbook-sales" class="chapter">Chapter 27: Domain playbook: sales</h2>
+<p>At stake: CRM records, quotes, discount authority, and the forecast built on them.</p>
+<p>Catalog rehearsal: <i>Memory-armed SDR agent leaks a competitor&#x27;s account history across tenants</i> (emergent; Data exfiltration).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  Q[&quot;Quote requested&quot;]
+  Q --&gt; D{Within discount band?}
+  D --&gt;|yes| S[Send with logging]
+  D --&gt;|no| H[Human approves]
+  H --&gt; S">flowchart TB
+  Q[&quot;Quote requested&quot;]
+  Q --&gt; D{Within discount band?}
+  D --&gt;|yes| S[Send with logging]
+  D --&gt;|no| H[Human approves]
+  H --&gt; S</pre><figcaption>Quote within bounds.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: empowering drafting and enrichment while gating discounts and bulk export is the right split — speed where it is safe, humans where money moves. Suggestion: rehearse the discount-abuse shape first by margin impact. Improvement: author one forecast-gaming neighbor next.</li><li><b>Memory-systems architect:</b> Verdict: versioned pipeline stages with per-territory scoping make the forecast reconstructable and bound blasts to territories. Suggestion: log every stage change with actor and reason. Improvement: audit one territory pipeline end to end per quarter.</li><li><b>Evaluation architect:</b> Verdict: weighting rehearsal by margin impact rather than story count is sound prioritization. Suggestion: track discount-anomaly detection latency as the headline metric. Improvement: run one blinded quote review to calibrate the human side.</li><li><b>Safety architect:</b> Verdict: per-territory credentials with human approval past discount thresholds contains the blast to one territory. Suggestion: cap bulk exports at the runtime level, not just in policy. Improvement: confirm no standing bulk-export credential exists.</li></ul>
+<h2 id="chapter-28-domain-playbook-strategy" class="chapter">Chapter 28: Domain playbook: strategy</h2>
+<p>At stake: Forecasts, plans, board materials, and the assumptions beneath them.</p>
+<p>Catalog rehearsal: <i>Debate council suppresses dissent and converges on a confident wrong call</i> (emergent; Collusion).</p>
+<p>Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.</p>
+<p>Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 3 patterns, 1 scenarios, 1 cascades.</p>
+<p>OpenShell primitives that bound these shapes: Channel denial between sandboxes first, pair-level review second; no mutual egress, no shared writable scope by default..</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  I[&quot;Intake and triage&quot;]
+  I --&gt; E[Evidence pack built]
+  E --&gt; O[Named owner decides]
+  O --&gt; R[Receipt with reasons]">flowchart TB
+  I[&quot;Intake and triage&quot;]
+  I --&gt; E[Evidence pack built]
+  E --&gt; O[Named owner decides]
+  O --&gt; R[Receipt with reasons]</pre><figcaption>Intake to decision.</figcaption></figure>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: versioned assumptions and inputs with gated distribution is the correct shape — drafts never travel as decisions. Suggestion: rehearse the forecast-gaming shape against the real planning template. Improvement: author one intel-fabrication neighbor next.</li><li><b>Memory-systems architect:</b> Verdict: the evidence pack is the deliverable: versioned inputs, logged provenance, and a trail from claim to source. Suggestion: store evidence packs immutably with the strategy versions they support. Improvement: rehearse one retrospective audit of a past strategy using only stored evidence.</li><li><b>Evaluation architect:</b> Verdict: rehearsing in decision-weight order — forecast gaming, then fabrication, then plan distortion — is sound prioritization. Suggestion: write the key planning assumptions measurably so deviations are checkable. Improvement: run one blinded strategy review to calibrate the human side.</li><li><b>Safety architect:</b> Verdict: review-before-distribution with principals approving anything that travels upward or outward holds correctly. Suggestion: extend review to internal strategy memos that shape resourcing quietly. Improvement: verify one full strategy trail from inputs to approved output per cycle.</li></ul>
+<h2 id="chapter-29-conclusion-run-the-jobs-keep-the-receipts" class="chapter">Chapter 29: Conclusion: run the jobs, keep the receipts</h2>
+<p>Every workflow in this book ends the same way: with an artifact and an owner. A plan with a score. A blueprint in the library. A board with deadlines. A backlog with names. A lesson with a checkpoint. The workbench remembers what you put into it; make sure what you put in is worth remembering.</p>
+<p><b>Counsel verification.</b></p><ul><li><b>Continual-learning architect:</b> Verdict: the operating rule stands — every tab is a job with an artifact, every artifact has an owner, and every workflow ends with evidence. Suggestion: put one workflow on the team calendar this week and finish it with an export. Improvement: review this book annually against the current catalog; the map must track the territory.</li><li><b>Memory-systems architect:</b> Verdict: local-first, exportable, versioned memory is the durable value here — the workbench remembers so the team does not have to. Suggestion: back up one project outside the browser this week. Improvement: keep a running index of which rehearsal produced which artifact, or the artifacts will outnumber the memories.</li><li><b>Evaluation architect:</b> Verdict: comparative, attributable measurement remains the durable value — which shapes each workflow catches, how fast boards and gates answer, whether coverage improves release over release. Suggestion: record versions and seeds with every report. Improvement: re-run one counterfactual per quarter so conclusions stay earned, not inherited.</li><li><b>Safety architect:</b> Verdict: the response discipline carries over from the sibling books — plan before granting, rehearse before trusting, halt when in doubt, answer every detection with the same incident on the same clock. Suggestion: verify the halt works, the owners are reachable, and the audit trail can prove what happened — this week. Improvement: make that verification a scheduled drill, not a one-time check.</li></ul>
+<h1 id="sources-and-provenance" class="">Sources and provenance</h1>
+<p>Catalog: data/patterns.json, data/scenarios.json, data/cascades.json, data/traces.json, data/coverage.json — every scenario, count and assignment in this book is read from that catalog at build time. App: js/shortcuts.js (tabs), index.html (panes), js/palette.js, js/app.js. Generated by tools/build_field_book.py with council verification from tools/field_book_prose.py and case records from tools/field_book_data.py; typeset with tools/render_pdf.mjs and the vendored Mermaid engine.</p>
+</body>
+</html>
