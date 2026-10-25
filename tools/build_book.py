@@ -696,7 +696,7 @@ APP_CHAPTERS = [
             "node — sequential, because Mermaid measures labels in shared global "
             "state and concurrent renders would race each other — with a CDN "
             "copy used only if the vendored file is missing.",
-            "Opening Fox - Architect posts to `/api/llm/chat` on the page's own "
+            "Opening Fox-Architect posts to `/api/llm/chat` on the page's own "
             "origin; `serve.py` walks its backend list in failover order and "
             "relays the reply as it arrives. With no backend online it answers "
             "with a payload the interface understands, and the chat falls back "
@@ -710,7 +710,7 @@ APP_CHAPTERS = [
             ["Tab", "What it does"],
             [
                 ["Overview", "Landing page and architect dashboard: catalog totals, spotlights, a deterministic \"Next:\" suggestion, the pinned working set, and the report export row."],
-                ["Fox - Architect", "Grounded chat with a local model through the server-side proxy: streaming, citations, tables and Mermaid in answers, plus a deterministic offline fallback."],
+                ["Fox-Architect", "Grounded chat with a local model through the server-side proxy: streaming, citations, tables and Mermaid in answers, plus a deterministic offline fallback."],
                 ["Patterns", "{patterns} design patterns across {categories} categories, each with failure modes, protections, related patterns and a control-flow diagram; filter by category, domain or diagram."],
                 ["Scenarios", "{scenarios} failure scenarios across {domains} domains — {critical} critical, {high} high, {medium} medium — each opening onto its attack chain, protection table, detection signals and response."],
                 ["Cascades", "{cascades} composition cascades in four classes, with propagation paths, amplifiers, blast radius and mitigation columns, plus a simulator and a ranked mitigation backlog."],
@@ -736,7 +736,7 @@ APP_CHAPTERS = [
             "The blueprint exposure index measures matched threat *surface* "
             "from the catalog, not measured risk — compare like-for-like "
             "designs rather than index numbers against feelings.",
-            "Fox - Architect grounds itself by deterministic retrieval over "
+            "Fox-Architect grounds itself by deterministic retrieval over "
             "the catalog, not by fine-tuning: it names the record it used, and "
             "reading that record is still your job.",
             "Cost, latency and benefit figures in the estimator are stated "
@@ -1310,8 +1310,8 @@ APP_CHAPTERS = [
             "content; the design document you write for them is the map of "
             "where those things move. Publishing that map by using a design tool "
             "would be a leak on day one.",
-            "A local model keeps the questions inside the boundary. Fox - "
-            "Architect is grounded in the catalog and answered by a model on "
+            "A local model keeps the questions inside the boundary. Fox-Architect "
+            "is grounded in the catalog and answered by a model on your own "
             "your own network, so asking how your spend guard should work does "
             "not become somebody else's telemetry.",
             "There is no account, no cloud store and no analytics vendor: "

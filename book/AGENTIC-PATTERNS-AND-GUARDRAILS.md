@@ -13128,7 +13128,7 @@ And it runs where it is needed: after a single visit the service worker holds th
 2. First paint is phased rather than total: patterns, scenarios, traces and coverage are awaited before the count badges appear, while `cascades.json` — the largest dataset — loads in parallel and is awaited only by the panes that actually need it.
 3. A tab builds on first visit behind a skeleton and stays built afterwards. `switchTab` runs a pending pane immediately instead of waiting its turn in the idle queue, so a slow pane is never blank.
 4. Every diagram enters one queue. The vendored Mermaid is loaded once, initialised with `securityLevel: 'strict'`, and run node by node — sequential, because Mermaid measures labels in shared global state and concurrent renders would race each other — with a CDN copy used only if the vendored file is missing.
-5. Opening Fox - Architect posts to `/api/llm/chat` on the page's own origin; `serve.py` walks its backend list in failover order and relays the reply as it arrives. With no backend online it answers with a payload the interface understands, and the chat falls back to a deterministic catalog answer instead of an error.
+5. Opening Fox-Architect posts to `/api/llm/chat` on the page's own origin; `serve.py` walks its backend list in failover order and relays the reply as it arrives. With no backend online it answers with a payload the interface understands, and the chat falls back to a deterministic catalog answer instead of an error.
 6. Everything you build is kept in `localStorage` on this origin, and leaves only when you export it — as JSON, Markdown, CSV or a print page.
 
 ## Components
@@ -13136,7 +13136,7 @@ And it runs where it is needed: after a single visit the service worker holds th
 | Tab | What it does |
 |---|---|
 | Overview | Landing page and architect dashboard: catalog totals, spotlights, a deterministic "Next:" suggestion, the pinned working set, and the report export row. |
-| Fox - Architect | Grounded chat with a local model through the server-side proxy: streaming, citations, tables and Mermaid in answers, plus a deterministic offline fallback. |
+| Fox-Architect | Grounded chat with a local model through the server-side proxy: streaming, citations, tables and Mermaid in answers, plus a deterministic offline fallback. |
 | Patterns | 107 design patterns across 9 categories, each with failure modes, protections, related patterns and a control-flow diagram; filter by category, domain or diagram. |
 | Scenarios | 54 failure scenarios across 26 domains — 18 critical, 27 high, 9 medium — each opening onto its attack chain, protection table, detection signals and response. |
 | Cascades | 191 composition cascades in four classes, with propagation paths, amplifiers, blast radius and mitigation columns, plus a simulator and a ranked mitigation backlog. |
@@ -13195,7 +13195,7 @@ flowchart TB
 
 - The catalog is deliberately unfinished: 54 scenarios across 26 domains, and only 7 of the 26 meet the two-per-domain budget the Coverage tab charts. The gap ships as an exportable backlog rather than being papered over.
 - The blueprint exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like designs rather than index numbers against feelings.
-- Fox - Architect grounds itself by deterministic retrieval over the catalog, not by fine-tuning: it names the record it used, and reading that record is still your job.
+- Fox-Architect grounds itself by deterministic retrieval over the catalog, not by fine-tuning: it names the record it used, and reading that record is still your job.
 - Cost, latency and benefit figures in the estimator are stated assumptions for comparison, not benchmarks on your infrastructure.
 - There is no build step, so nothing stops a mistake before runtime the way a type checker would; the substitute is the gate — lint, data-integrity tests, and a headless smoke test that boots the server and walks all 0 tabs.
 - It designs enforcement, it does not enforce. No part of this application sits between your agent and the world: what it produces is a design, a rule set and an ADR that your own runtime still has to implement.
@@ -13735,7 +13735,7 @@ That matters more in this domain than most. A tool that holds your agent's archi
 
 Agents touch money, personal data, health records and customer content; the design document you write for them is the map of where those things move. Publishing that map by using a design tool would be a leak on day one.
 
-A local model keeps the questions inside the boundary. Fox - Architect is grounded in the catalog and answered by a model on your own network, so asking how your spend guard should work does not become somebody else's telemetry.
+A local model keeps the questions inside the boundary. Fox-Architect is grounded in the catalog and answered by a model on your own your own network, so asking how your spend guard should work does not become somebody else's telemetry.
 
 There is no account, no cloud store and no analytics vendor: there is no server-side copy of your work to breach, because there is no server-side copy.
 
