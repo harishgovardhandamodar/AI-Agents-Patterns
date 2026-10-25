@@ -212,7 +212,7 @@ SL_DIR = os.environ.get("SL_DIR", "/home/fox/WorkBook/self-learning-agents")
 
 
 # ------------------------------------------------------- bookshelf (books)
-# The three books are generated artifacts: tools/build_*.py read the catalog
+# The four books are generated artifacts: tools/build_*.py read the catalog
 # (main, rogue) plus the sibling lab checkout (self) and emit Markdown +
 # print HTML; tools/render_pdf.mjs typesets the PDFs. The Bookshelf panel on
 # the Overview tab drives this pipeline: collect the landscape inventory,
@@ -259,6 +259,21 @@ BOOK_TARGETS = {
                        "design/02-uml.md", "design/03-control-flow.md",
                        "design/04-data-model.md", "design/05-evaluation-suite.md",
                        "design/06-workflows.md", "design/07-landscape.md"],
+    },
+    "openshell": {
+        "label": "OpenShell Reference Architecture",
+        "build": ["python3", "tools/build_openshell_book.py"],
+        "pdf": ["node", "tools/render_pdf.mjs", "book/openshell-reference-architecture.html",
+                "book/OpenShell-Reference-Architecture.pdf", "OpenShell Reference Architecture"],
+        "md": "book/OPENSHELL-REFERENCE-ARCHITECTURE.md",
+        "html": "book/openshell-reference-architecture.html",
+        "pdf_out": "book/OpenShell-Reference-Architecture.pdf",
+        "sources": ["data/patterns.json", "data/scenarios.json",
+                    "data/cascades.json", "data/traces.json",
+                    "data/coverage.json",
+                    "tools/build_rogue_book.py",
+                    "tools/build_openshell_book.py", "tools/openshell_book_prose.py",
+                    "tools/openshell_book_data.py"],
     },
 }
 
