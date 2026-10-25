@@ -224,7 +224,7 @@ The collection is only one of several browser-local keys. All are namespaced `aa
 | `aap.discovery.v1` | Discovery Lab rounds |
 | `aap.mitigations` | cascade mitigation backlog (owner / status) |
 | `aap.pins.v1` | pinned working set (Overview dashboard) |
-| `aap.copilot` | Fox - Architect chat history |
+| `aap.copilot` | Fox-Architect chat history |
 | `aap.uimem.v1` / `aap.ux.v1` | per-pane filter & sort memory / UX prefs |
 | `aap.pal.v1` / `aap.onboard.v1` / `aap.theme` | palette recents, tour seen, theme |
 | `aap.saved.v1` | per-store save-time stamps (the "saved" badges) |

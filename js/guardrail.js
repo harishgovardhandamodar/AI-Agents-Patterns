@@ -455,7 +455,7 @@ function guardPromoteToTrace(item) {
   });
 }
 
-/* Ask Fox - Architect about a guardrail analysis, sending the design
+/* Ask Fox-Architect about a guardrail analysis, sending the design
    itself rather than its title (iteration 110). */
 function askAboutGuard(item) {
   item = guardItem(item);
@@ -734,7 +734,7 @@ function renderGuardReport(it) {
       <b>Take this further</b>
       <button class="btn sm primary" data-act="guardAddToBlueprint" data-args="${dataArgs(it.id, "add")}" ${mapped ? "" : "disabled"}>🧩 Add ${mapped || "no"} pattern${mapped === 1 ? "" : "s"} to blueprint</button>
       <button class="btn sm" data-act="guardAddToBlueprint" data-args="${dataArgs(it.id, "replace")}" ${mapped ? "" : "disabled"}>↺ Replace canvas</button>
-      <button class="btn sm" data-act="askAboutGuard" data-args="${dataArgs(it.id)}">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" data-act="askAboutGuard" data-args="${dataArgs(it.id)}">🤖 Ask Fox-Architect</button>
       <button class="btn sm" data-act="copyAnalysisJSON" data-args="${dataArgs(it.id)}">⧉ Copy JSON</button>
       <button class="btn sm" data-act="guardPromoteToTrace" data-args="${dataArgs(it.id)}">▶ Promote mock run to Live View</button>
       <span class="muted small">${mapped ? ctrlMapped + " of " + (it.controls || []).length + " controls map to " + mapped + " catalog patterns" : "No control maps to a catalog pattern yet"}</span>

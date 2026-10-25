@@ -1,4 +1,4 @@
-# Deep Analysis — From Catalog to Architect's Copilot
+# Deep Analysis — From Catalog to Fox-Architect
 
 > Scope: an architect-facing review of the **AI Agent Patterns & Guardrails**
 > dashboard and a 30-iteration roadmap that turns a static catalog into a
@@ -79,7 +79,7 @@ That four-way framing is what an architect needs, and the app has none of it.
 
 ## 4. Roadmap — 30 iterations
 
-**A. Local-model copilot (it. 2–6)** — proxy, client, grounded retrieval,
+**A. Local-model Fox-Architect (it. 2–6)** — proxy, client, grounded retrieval,
 streaming UI, citations, offline fallback.
 
 **B. Cascade core (it. 7–12)** — taxonomy dataset, explorer, propagation
@@ -102,7 +102,7 @@ every one. **Status: complete** — A–E delivered across 30 commits on
 
 | Block | Iterations | Delivered |
 |---|---|---|
-| A | 2–6 | LLM proxy + watchdog, client, grounded copilot, offline fallback |
+| A | 2–6 | LLM proxy + watchdog, client, grounded Fox-Architect, offline fallback |
 | B | 7–12 | cascade taxonomy (175), explorer, diagrams, simulator, mitigation planner, cross-links |
 | C | 13–20 | coverage index, deploy wizard → scorecard → stack → rollout → risk register → ADR |
 | D | 21–23 | blueprint builder, cost/latency/risk estimator, per-blueprint threat model |
@@ -124,7 +124,7 @@ Validation: headless-browser smoke test after each iteration — 11 tabs render,
 - **Proxy, not direct:** the browser calls `serve.py`'s `/api/llm/*`, which
   forwards server-side. This keeps one origin, works from any LAN/Tailscale
   client, hides backend URLs, and lets us fall back A→B transparently.
-- **Degraded mode is first-class:** every copilot feature has a deterministic
+- **Degraded mode is first-class:** every Fox-Architect feature has a deterministic
   fallback computed locally (retrieval + template synthesis). The model adds
   judgement and prose; it is never required for the app to be useful.
 

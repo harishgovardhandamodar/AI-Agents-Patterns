@@ -700,8 +700,8 @@ function bpDownload() {
   showNotif("Blueprint downloaded");
 }
 function bpAskCopilot() {
-  if (typeof copilotAsk !== "function") { showNotif("Copilot unavailable"); return; }
-  if (!bpState.comps.length) { showNotif("Add components before asking the copilot"); return; }
+  if (typeof copilotAsk !== "function") { showNotif("Fox-Architect unavailable"); return; }
+  if (!bpState.comps.length) { showNotif("Add components before asking Fox-Architect"); return; }
   const c = bpCoverage();
   const r = bpEstimate(), e = bpState.est;
   const tm = bpThreatModel();
@@ -1016,7 +1016,7 @@ function bpRender() {
         `<button class="btn sm" data-act="bpCopy" data-args="[&quot;mermaid&quot;,&quot;Mermaid source copied&quot;]">⧉ Copy diagram</button>` +
         `<button class="btn sm" data-act="bpDownload">⬇ Download .md</button>` +
         (typeof dlCopyWorkLink === "function" ? `<button class="btn sm" data-act="dlCopyWorkLink" data-args="[&quot;blueprint&quot;,&quot;current&quot;]" title="Copy a link that opens this blueprint">🔗 Copy link</button>` : "") +
-        `<button class="btn sm accent" data-act="bpAskCopilot">🤖 Stress-test with Fox - Architect</button>` +
+        `<button class="btn sm accent" data-act="bpAskCopilot">🤖 Stress-test with Fox-Architect</button>` +
         `<button class="btn sm" data-act="bpClear">Clear</button>` +
       `</div>` +
     `</div>` +

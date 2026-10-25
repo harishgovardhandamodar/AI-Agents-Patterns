@@ -35,7 +35,7 @@ MD_OUT = BOOK_DIR / "WORKFLOWS.md"
 HTML_OUT = BOOK_DIR / "workflows.html"
 
 BOOK_TITLE = "Workflows"
-SUBTITLE = "Every Job the Workbench Does, Read by a Council of Researchers"
+SUBTITLE = "Every Job the Workbench Does, Read by a Counsel of Architects"
 AUTHOR = "Harish Govardhan Damodar"
 EDITION = "First edition — October 2026"
 
@@ -43,16 +43,16 @@ SEED_NOTE = "Catalog edition: counts below are read from data/*.json at build ti
 
 
 def deliberate(body, key):
-    """Council deliberation: researchers debate before the operator acts."""
+    """Counsel of architects: architects debate before the operator acts."""
     items = WORKFLOWS_DELIB.get(key)
     if not items:
         sys.exit(f"tools/build_workflows_book.py: no council deliberation for `{key}` in tools/workflows_book_prose.py")
-    body.m("**Council deliberation.**")
+    body.m("**Counsel of architects.**")
     body.m()
     for voice, text in items:
         body.m(f"- **{voice}:** {text}")
     body.m()
-    body.h("<p><b>Council deliberation.</b></p><ul>" + "".join(
+    body.h("<p><b>Counsel of architects.</b></p><ul>" + "".join(
         f"<li><b>{esc(voice)}:</b> {inline_html(text)}</li>" for voice, text in items) + "</ul>")
 
 
@@ -115,7 +115,7 @@ def scen_workflows(s):
     rehearsed in Rogue ops against its archetype, and is read against its
     domain gap in Coverage. Traces add Live; boundary shapes add the
     Guardrail lab; authority shapes add Blueprints; high-stakes domains add
-    the Deployment planner. Copilot and design docs serve every scenario and
+    the Deployment planner. Fox-Architect and design docs serve every scenario and
     are covered in their own chapters rather than per-row."""
     arch = SCEN_ROAD[s["id"]][1]
     wfs = ["scenarios", "rogue", "coverage"]
@@ -218,7 +218,7 @@ def main():
         "Three questions organize it around the three jobs on the Overview tab: plan a "
         "deployment safely, architect the system, and study how agents fail. The catalog "
         "workflows feed the planning workflows, the labs rehearse what the catalog "
-        "teaches, and the copilot, design docs and bookshelf hold the whole program "
+        "teaches, and Fox-Architect, design docs and bookshelf hold the whole program "
         "together."
     )
     body.p(
@@ -256,7 +256,7 @@ def main():
         "its domain gap in Coverage. Scenarios with mock runs add Live traces; boundary "
         "shapes (hijack, exfiltration) add the Guardrail lab; authority shapes (abuse, "
         "collusion, spawning) add Blueprints; high-stakes domains add the Deployment "
-        "planner. The copilot and design docs serve every scenario and get their own "
+        "planner. Fox-Architect and design docs serve every scenario and get their own "
         "chapters instead of per-row mentions."
     )
     deliberate(body, "introduction")
@@ -267,7 +267,7 @@ def main():
     CH("The three jobs")
     body.p(
         "Ship an agent safely, architect the system, study how agents fail. Each job lines "
-        "up a different slice of the catalog, the planner and the copilot behind it, so the "
+        "up a different slice of the catalog, the planner and Fox-Architect behind it, so the "
         "first click already has a purpose — and each job ends with an artifact, not a browse "
         "history: a readiness score with a rollout plan and an ADR, stages with controls and "
         "estimates in the library, or rehearsed shapes with measured bands."
@@ -309,7 +309,7 @@ def main():
     body.p(
         "Search by name, failure, or domain; filter by category; open the drawer for the "
         "full record — control flow, failures, protections, links — then hand it off: "
-        "add it to a blueprint or ask the copilot about it. The handoff is the workflow; "
+        "add it to a blueprint or ask Fox-Architect about it. The handoff is the workflow; "
         "a pattern that never leaves the drawer never ships."
     )
     os_fig(body, "Catalog loop")
@@ -408,7 +408,7 @@ def main():
     CH("Blueprint builder: compose, estimate, stress-test")
     body.p(
         "Start from a template or an empty canvas: compose stages, attach controls per stage, "
-        "watch cost, coverage and exposure estimate live, stress-test with the copilot, "
+        "watch cost, coverage and exposure estimate live, stress-test with Fox-Architect, "
         "then save to the library or export. A blueprint is a system you can price and "
         "attack on paper before building it."
     )
@@ -489,9 +489,9 @@ def main():
     )
     os_fig(body, "Ask loop")
     body.p(
-        "Use the copilot to go safer, not just faster: stress-test the blueprint, red-team "
+        "Use Fox-Architect to go safer, not just faster: stress-test the blueprint, red-team "
         "the deployment plan, second-guess the guardrail set — before granting anything. "
-        "An adversary will ask these questions; better the copilot first."
+        "An adversary will ask these questions; better Fox-Architect first."
     )
     os_fig(body, "Ask with provenance")
     deliberate(body, "know-copilot")

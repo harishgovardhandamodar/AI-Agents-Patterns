@@ -1033,7 +1033,7 @@ APP_CHAPTERS = [
             "inline note instead of throwing.",
             "**Degrade, don't fail.** Phased boot, skeletons for panes that "
             "are still building, a pane that can jump the idle queue, a "
-            "deterministic copilot fallback, and a worker that serves from "
+            "deterministic Fox-Architect fallback, and a worker that serves from "
             "cache when the network is gone.",
             "**Make the wins visible, not claims.** The Display panel prints a "
             "live budget from the sizes the worker recorded: first load about "
@@ -1175,7 +1175,7 @@ APP_CHAPTERS = [
             "every module plugs into.",
             "**Feature modules.** {scripts} plain scripts: one per pane — "
             "overview, catalog, scenarios, cascades, coverage, deployment "
-            "planner, blueprints, copilot, live view, design, guardrail lab, "
+            "planner, blueprints, Fox-Architect, live view, design, guardrail lab, "
             "discovery and battle bench — plus the shared playback widget, LLM client, grounding "
             "context, report, dashboard, help, command palette and shortcuts.",
             "**Data.** Five JSON datasets. Phase one (patterns, scenarios, "
@@ -1198,7 +1198,7 @@ APP_CHAPTERS = [
             [
                 ["Delivery", "`serve.py`", "Static host: gzip, ETag and Last-Modified revalidation, immutable vendor cache, security headers, CSP."],
                 ["Shell", "`index.html` · `js/app.js`", "Tab switcher, theme, data load, Mermaid queue, zoom viewer, `tabLoaders` and `PANE_INIT` registries."],
-                ["Feature modules", "`js/*.js` — {scripts} files", "One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, copilot, live view, design, guardrail lab, discovery, battle bench — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts."],
+                ["Feature modules", "`js/*.js` — {scripts} files", "One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, Fox-Architect, live view, design, guardrail lab, discovery, battle bench — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts."],
                 ["Data", "`data/*.json` — 5 datasets", "Patterns, scenarios, cascades, traces and coverage; plain, versioned, diffable."],
                 ["Documents", "`design/*.md` — {design_docs} docs", "Architecture documents fetched at view time and rendered with live Mermaid."],
                 ["Offline", "`sw.js`", "{precache} precache entries; network-first with cache fallback; `/api/*` exempt."],
@@ -1877,7 +1877,7 @@ APP_COUNCIL = {
         "Serve it yourself with serve.py and it degrades to the deterministic fallback with no model; the app is useful before any backend answers.",
     ],
     "Supporting the Agentic Workflow": [
-        "A rail that always names a Next step trains click-through — verify the suggestion reads live tool state (planner, blueprint, copilot, guardrail, mitigation, discovery) before you trust it on autopilot.",
+        "A rail that always names a Next step trains click-through — verify the suggestion reads live tool state (planner, blueprint, Fox-Architect, guardrail, mitigation, discovery) before you trust it on autopilot.",
         "Every stage links to the tool that owns it and every artifact exports (Markdown, JSON, CSV, ADR): nothing in the workflow is a dead-end claim.",
         "Start at the Overview Next box, end with the report export; the five stages are a checklist, and an unchecked stage is the finding.",
     ],

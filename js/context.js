@@ -1,4 +1,4 @@
-/* context.js — grounded retrieval for the Architect Copilot.
+/* context.js — grounded retrieval for Fox-Architect.
    Builds a compact, authoritative context block from the catalog for a query,
    so the local model answers from real catalog items (and can cite them).
 

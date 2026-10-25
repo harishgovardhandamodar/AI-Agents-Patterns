@@ -45,7 +45,7 @@ run anything against it.
 | Coverage index | 26 domains | the **coverage matrix** |
 | Guardrail engine | `js/guardrail.js` — deterministic rule engine | a **deterministic executor** |
 | Planner | `js/deploy.js` — 5 autonomy × 7 actions × 7 blast radii × … | the **configuration space** |
-| Copilot | `js/llm.js` + `js/copilot.js` — streaming chat, 4 personas × 4 audiences | a **live executor** |
+| Fox-Architect | `js/llm.js` + `js/copilot.js` — streaming chat, 4 personas × 4 audiences | a **live executor** |
 
 Two of these are already executors: the Guardrail Lab's rule engine is a
 deterministic simulator, and `LLM.chat` can drive a live model.
@@ -178,7 +178,7 @@ the app has 90% of the raw material for it already.
 
 ### B7 — The catalog has no adversarial dimension (Medium-High)
 
-**Evidence.** Scenarios describe *attacks*; the copilot's
+**Evidence.** Scenarios describe *attacks*; Fox-Architect's
 `security-architect` persona reasons adversarially; but there is no
 adversary that *generates* a new attack against a given configuration.
 

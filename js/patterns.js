@@ -244,7 +244,7 @@ function openPattern(id) {
   }).join(" · ");
 
   const html = `
-    <div class="dsec d-actions">${typeof bpDrawerBtnHtml === "function" ? bpDrawerBtnHtml(p.id) : ""}<button class="btn sm" data-act="askAbout" data-args="[&quot;pattern&quot;,&quot;${escHtml(p.id)}&quot;]">🤖 Ask Fox - Architect</button>${typeof pinBtnHtml === "function" ? pinBtnHtml("patterns", p.id) : ""}</div>
+    <div class="dsec d-actions">${typeof bpDrawerBtnHtml === "function" ? bpDrawerBtnHtml(p.id) : ""}<button class="btn sm" data-act="askAbout" data-args="[&quot;pattern&quot;,&quot;${escHtml(p.id)}&quot;]">🤖 Ask Fox-Architect</button>${typeof pinBtnHtml === "function" ? pinBtnHtml("patterns", p.id) : ""}</div>
     <div class="dsec"><p>${typeof jargon === "function" ? jargon(p.summary) : escHtml(p.summary)}</p>
       <p class="small muted">Domains: ${p.domains.map(escHtml).join(", ")} · Pattern ID: <code>${escHtml(p.id)}</code></p></div>
     ${p.diagram ? `<div class="dsec"><h4>Control flow</h4>${diagramHtml(p.diagram, p.name)}</div>` : ""}

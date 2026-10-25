@@ -730,11 +730,11 @@ function openCascade(id) {
     '<div class="d-actions" style="margin-top:14px">' +
     (typeof bpRefsBtnHtml === "function" && (c.patternRefs || []).length ? bpRefsBtnHtml(c.patternRefs, "from this cascade") : "") +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("cascades", c.id) : "") +
-    '<button class="btn primary" data-act="askAbout" data-args="' + dataArgs("cascade", c.id) + '">🤖 Ask Fox - Architect about this</button></div>';
+    '<button class="btn primary" data-act="askAbout" data-args="' + dataArgs("cascade", c.id) + '">🤖 Ask Fox-Architect about this</button></div>';
   openDetail(c.name, c.cls + " cascade", html, { tab: "cascades", id: c.id, title: c.name });
 }
 
-/* Feed a cascade (or any item) into the copilot and switch to it. */
+/* Feed a cascade (or any item) into Fox-Architect and switch to it. */
 function askCopilotAbout(text) {
   closeDetail();
   if (typeof copilotAsk === "function") { copilotAsk(text); return; }
@@ -746,13 +746,13 @@ function askCopilotAbout(text) {
 }
 
 /* ---------------- ask about the *artifact*, not its title (iteration 110)
-   "Ask Fox - Architect" in a drawer used to send the item's name — so the
-   copilot had to re-derive what the user was looking at from a title, and
+   "Ask Fox-Architect" in a drawer used to send the item's name — so the
+   Fox-Architect had to re-derive what the user was looking at from a title, and
    a title like "escalation-bypass" or "ReAct (Reason + Act)" is a poor
    retrieval key.
 
    askAbout(kind, id) sends the item's own record: its summary, failure
-   modes, protections, attack chain, propagation path. The copilot's
+   modes, protections, attack chain, propagation path. Fox-Architect's
    deterministic retrieval then matches on the substance, and the answer
    cites the real catalog ids. */
 function askAbout(kind, id) {

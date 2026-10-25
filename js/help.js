@@ -28,7 +28,7 @@ const GLOSSARY = [
 const HELP = {
   overview: {
     t: "Overview",
-    b: `<p>This tab answers <b>“where do I stand?”</b> — the workflow rail shows the five stages of the job (discover → research → design → harden → deliver) and where each one stands, and the <b>Next</b> box names the single most useful thing to do. It reads every tool: the planner, the blueprint, the copilot, the guardrail lab, the mitigation backlog and the discovery run.</p>
+    b: `<p>This tab answers <b>“where do I stand?”</b> — the workflow rail shows the five stages of the job (discover → research → design → harden → deliver) and where each one stands, and the <b>Next</b> box names the single most useful thing to do. It reads every tool: the planner, the blueprint, Fox-Architect, the guardrail lab, the mitigation backlog and the discovery run.</p>
     <ul><li>The landing strip on top collects what's new (spotlight scenarios), what the field just found (field notes with paper links), an incident-anatomy diagram and the cascade-class chart — everything below it is the standing catalog summary.</li>
     <li><b>📁 Projects</b> in the top bar group everything you produce for one system — the plan, the blueprint, the guardrail analyses, the mitigation backlog and the pins. Switching projects keeps every one of them.</li>
     <li><b>Pins you make</b> in any catalog drawer collect in the Working set below for review and export.</li>
@@ -36,9 +36,9 @@ const HELP = {
     <p class="muted small">Tip: Alt+1…− jumps between tabs; ? shows every shortcut.</p>`
   },
   copilot: {
-    t: "Fox - Architect",
+    t: "Fox-Architect",
     b: `<p>Ask in plain language. Answers are <b>grounded in this catalog</b> — every claim cites the pattern, scenario or cascade it came from, via the local model with a deterministic fallback when no backend answers.</p>
-    <ul><li>Scope answers with the <b>Ground answers in</b> checkboxes.</li><li>Pick a <b>persona</b> (AI Agent Architect, Security Architect, PhD Researcher, Council of Researchers) and an <b>audience</b> — the live model reshapes its voice and depth; the offline fallback always uses the default catalog voice.</li><li><b>Grounding</b> shows the exact context sent to the model — audit what it was allowed to know.</li><li>The top-bar pill shows which backend answered: Fox-Services, axiom, or the local fallback.</li><li><b>Ask Fox - Architect</b> buttons inside catalog drawers send the <i>artefact</i> — the pattern's failure modes, the scenario's attack chain, the cascade's propagation path — so the answer is grounded in the substance, not the title.</li><li>Citations are real links: focusable, copyable, and openable in a new tab.</li></ul>`
+    <ul><li>Scope answers with the <b>Ground answers in</b> checkboxes.</li><li>Pick a <b>persona</b> (AI Agent Architect, Security Architect, PhD Researcher, Counsel of Architects) and an <b>audience</b> — the live model reshapes its voice and depth; the offline fallback always uses the default catalog voice.</li><li><b>Grounding</b> shows the exact context sent to the model — audit what it was allowed to know.</li><li>The top-bar pill shows which backend answered: Fox-Services, axiom, or the local fallback.</li><li><b>Ask Fox-Architect</b> buttons inside catalog drawers send the <i>artefact</i> — the pattern's failure modes, the scenario's attack chain, the cascade's propagation path — so the answer is grounded in the substance, not the title.</li><li>Citations are real links: focusable, copyable, and openable in a new tab.</li></ul>`
   },
   patterns: {
     t: "Patterns",
@@ -61,7 +61,7 @@ const HELP = {
   coverage: {
     t: "Coverage & Gaps",
     b: `<p>Which <b>domains</b> have patterns, scenarios and cascades behind them — and where the catalog itself is thin. Gap cards tell you exactly what to author next.</p>
-    <ul><li>Click a domain to jump into the catalog pre-filtered to it.</li><li>“Ask the copilot” drafts a gap-closing plan for that domain.</li></ul>`
+    <ul><li>Click a domain to jump into the catalog pre-filtered to it.</li><li>“Ask Fox-Architect” drafts a gap-closing plan for that domain.</li></ul>`
   },
   deploy: {
     t: "Deployment Planner",
@@ -72,7 +72,7 @@ const HELP = {
   blueprint: {
     t: "Blueprints",
     b: `<p>Compose your <b>reference architecture</b> from stages and controls. Coverage, cost, latency, risk and the threat-model <b>exposure index</b> recompute live.</p>
-    <ul><li>Templates are starting points, not answers — the warnings row tells you what's structurally wrong.</li><li><b>Compare</b> pits your canvas against any template or saved blueprint before you restore it.</li><li>The palette <b>multi-selects</b>: tick patterns and the preview tells you how many will be added, how many are already there, and which control families the addition closes.</li><li>Ctrl+Z undoes removes, clears, template swaps, library deletes — and now mitigation edits, risk acknowledgements and copilot regeneration.</li></ul>`
+    <ul><li>Templates are starting points, not answers — the warnings row tells you what's structurally wrong.</li><li><b>Compare</b> pits your canvas against any template or saved blueprint before you restore it.</li><li>The palette <b>multi-selects</b>: tick patterns and the preview tells you how many will be added, how many are already there, and which control families the addition closes.</li><li>Ctrl+Z undoes removes, clears, template swaps, library deletes — and now mitigation edits, risk acknowledgements and Fox-Architect regeneration.</li></ul>`
   },
   live: {
     t: "Live View",
@@ -93,7 +93,7 @@ const HELP = {
   discovery: {
     t: "Discovery Lab",
     b: `<p><b>Auto-discovery of novel scenarios</b>: gap-seeded candidates scored for novelty, iterated in forgetting rounds after arXiv:2610.20563 — winners are reseeded, near-duplicates are discarded each round.</p>
-    <ul><li>Run with forgetting off (compare mode) to watch novelty plateau on accumulated history.</li><li><b>⬆ Promote to draft scenario</b> turns a winner into a catalog-shaped scenario — the same fields the shipped scenarios carry — kept in your draft collection and exportable for curation. The shipped catalog is never modified.</li><li>Winners are review drafts, never catalog entries: ask Fox - Architect about one, copy it, or export JSON.</li></ul>`
+    <ul><li>Run with forgetting off (compare mode) to watch novelty plateau on accumulated history.</li><li><b>⬆ Promote to draft scenario</b> turns a winner into a catalog-shaped scenario — the same fields the shipped scenarios carry — kept in your draft collection and exportable for curation. The shipped catalog is never modified.</li><li>Winners are review drafts, never catalog entries: ask Fox-Architect about one, copy it, or export JSON.</li></ul>`
   },
   bench: {
     t: "Battle Bench",

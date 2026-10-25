@@ -37,14 +37,14 @@ measure against).
 ### F5 — Cross-tool workflow requires copy-paste (Medium-High)
 Scenario protections, cascade mitigations and pattern drawers *describe* the
 controls a blueprint needs but offer no one-click "add to blueprint" or "ask
-the copilot about this". The user context-switches and retypes ids.
+Fox-Architect about this". The user context-switches and retypes ids.
 
 ### F6 — No onboarding path; first-run is a wall of stats (Medium)
 A first-time architect sees counters and 11 tabs. The dashboard's "Next:"
 helps, but there is no stated path for the three real jobs (plan a
 deployment / design an architecture / research failure modes).
 
-### F7 — Copilot messages have no affordances (Medium)
+### F7 — Fox-Architect messages have no affordances (Medium)
 No copy, no regenerate, no suggested follow-ups, streaming is not announced
 (`aria-live`), and there's no visible backend status — the user can't tell
 Fox-Services from axiom from the deterministic fallback without reading meta.
@@ -55,7 +55,7 @@ load-bearing terms with no inline glossary. The Design docs explain them, but
 a user mid-task shouldn't have to leave the pane.
 
 ### F9 — Empty states are mostly absent (Medium)
-Only Patterns, Blueprint and Copilot have designed empty states (3 of 11
+Only Patterns, Blueprint and Fox-Architect have designed empty states (3 of 11
 panes). Searching Scenarios/Cascades/Coverage to zero leaves an unexplained
 blank grid.
 
@@ -77,13 +77,13 @@ pane (keyboard users re-tab from the top bar each time).
 | 37 | Patterns/Scenarios list density + sort controls | F3 |
 | 38 | Sticky filter bars with live counts on catalog panes | F9 |
 | 39 | "Add to blueprint" from every drawer and gap row | F5 |
-| 40 | "Ask copilot" deep-links auto-send from every drawer + coverage | F5, F7 |
+| 40 | "Ask Fox-Architect" deep-links auto-send from every drawer + coverage | F5, F7 |
 | 41 | Pinned working set (patterns/scenarios/cascades) + Overview panel + export | F5 |
 | 42 | Blueprint compare (current vs template/library: diff + delta) | F5 |
 | 43 | First-run onboarding with three guided paths | F6 |
 | 44 | Per-pane help + inline glossary tooltips | F8 |
 | 45 | Designed empty states across all 11 panes | F9 |
-| 46 | Copilot message actions, follow-up suggestions, announced streaming | F7 |
+| 46 | Fox-Architect message actions, follow-up suggestions, announced streaming | F7 |
 | 47 | Skip link, focus trap, focus-after-jump, list semantics, full form labels | F10, F2 |
 | 48 | 24px+ touch targets on all panes at 390px | F4 |
 | 49 | Palette v2: commands, recents, usage learning, match highlights | F5, F9 |
@@ -158,19 +158,19 @@ signage. `--text2` (5.62:1) and `--accent` (6.85:1) pass.
 
 ### G4 — No persistent live region; navigation is silent to screen readers (Medium-High)
 `[aria-live]` regions present at load: **0**. Toasts create an announced
-`role=log` on first use, and copilot streams into its own — but *tab changes,
+`role=log` on first use, and Fox-Architect streams into its own — but *tab changes,
 filter result counts and pane loads are never announced*. A screen-reader user
 gets no confirmation that anything happened.
 
 ### G5 — Diagrams depend on a public CDN in a "nothing leaves your network" app (Medium-High)
 `index.html:9` loads Mermaid from `cdn.jsdelivr.net`. The README promises a
 LAN/Tailscale/air-gapped deployment, but with the CDN blocked the design docs,
-copilot diagrams and zoom viewer lose every diagram. This is the only
+Fox-Architect diagrams and zoom viewer lose every diagram. This is the only
 third-party runtime dependency in the product.
 
 ### G6 — User state has no backup or restore (High)
 Blueprints, the pattern library, guardrail analyses, the deployment plan, the
-copilot chat, pins and preferences live only in `localStorage`. Each tool can
+Fox-Architect chat, pins and preferences live only in `localStorage`. Each tool can
 export its own JSON, but there is **no single "back up everything / restore
 everything"**, and no visible storage-health signal. A cleared profile or a
 quota trim silently destroys work.
@@ -187,7 +187,7 @@ coverage 744) are built for tabs the user may never open, and there is no
 skeleton when they first appear.
 
 ### G9 — Long operations have no global affordance (Low-Medium)
-Discovery runs/compare, copilot streaming and the model probe all take time;
+Discovery runs/compare, Fox-Architect streaming and the model probe all take time;
 the only signal is local to the pane (or a disabled button). Nothing in the
 shell says "working…".
 
@@ -213,7 +213,7 @@ inline definition outside the Design docs.
 | 71 | Copy link / copy id / copy summary in the detail drawer | G7 |
 | 72 | Lazy pane init on first visit | G8 |
 | 73 | Skeleton placeholders while a pane first loads | G8 |
-| 74 | Global busy pill for long operations (discovery, copilot, probe) | G9 |
+| 74 | Global busy pill for long operations (discovery, Fox-Architect, probe) | G9 |
 | 75 | Toast dedupe with ×N counter; Esc dismisses the newest | G10 |
 | 76 | Per-pane filter/query/sort memory across reloads | G8 |
 | 77 | Inline glossary tooltips for load-bearing jargon | G10 |
@@ -243,7 +243,7 @@ zero page errors — before commit.
 | 71 | Share row | Drawer head gets Copy link / Copy id / Copy as Markdown, with a textarea fallback for non-secure (http LAN) origins |
 | 72 | Deferred boot | Shell + overview + catalog panes paint first; the other panes build one per idle slice, a tab visit runs its pane immediately |
 | 73 | Skeletons | Shimmer placeholders on panes whose body is JS-built and not yet rendered |
-| 74 | Busy chip | Top-bar spinner chip for copilot answers in flight and model-backend probes |
+| 74 | Busy chip | Top-bar spinner chip for Fox-Architect answers in flight and model-backend probes |
 | 75 | Toast hygiene | Identical toasts collapse to a single "×N" toast; Esc dismisses the newest; timers pause on hover/focus |
 | 76 | Filter memory | Patterns/scenarios remember search, filters and sort across reloads (`aap.uimem.v1`) |
 | 77 | Inline glossary | Known terms are `abbr`-wrapped with their definition on hover inside drawers |

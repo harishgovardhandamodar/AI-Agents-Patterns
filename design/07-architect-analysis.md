@@ -2,7 +2,7 @@
 
 This document is the design rationale for the architect-facing upgrade: what the
 dashboard knew, what an architect needs, and the four-class cascade model that
-connects them. It is the reference behind the **Fox - Architect**, **Cascades**,
+connects them. It is the reference behind the **Fox-Architect**, **Cascades**,
 **Coverage**, **Planner** and **Discovery Lab** tabs.
 
 ## 1. From catalog to advisory system
@@ -23,7 +23,7 @@ flowchart LR
     Q4["What do I do, in what order?"]
   end
   subgraph NEW["New — advisory"]
-    CP["Fox - Architect<br/>(grounded, local model)"]
+    CP["Fox-Architect<br/>(grounded, local model)"]
     CV["Coverage &amp; gap analysis"]
     CA["Cascade explorer + simulator"]
     PL["Planner: readiness, stack,<br/>rollout, risk register"]
@@ -122,7 +122,7 @@ flowchart LR
 
 ```mermaid
 sequenceDiagram
-  participant UI as Fox - Architect UI
+  participant UI as Fox-Architect UI
   participant PX as serve.py /api/llm
   participant AX as axiom :8210 (primary)
   participant FS as Fox-Services :8210

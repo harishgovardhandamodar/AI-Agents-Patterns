@@ -1,7 +1,7 @@
 # Workflow Analysis — AI Agent Patterns & Guardrails (iterations 101–120)
 
 > A **fourth, independent lens** on the app. `ANALYSIS.md` covered the
-> **product** (catalog → architect's copilot). `UX-ANALYSIS.md` covered
+> **product** (catalog → Fox-Architect). `UX-ANALYSIS.md` covered
 > **UX** (iterations 31–80). `DEEP-ANALYSIS.md` covered **engineering,
 > performance and content coverage** (iterations 81–100).
 > This document covers what none of them did: **the work itself** — the
@@ -50,7 +50,7 @@ demonstrates it; the Overview assembles and exports it.
 | Patterns | 107 | patterns (same pane) |
 | Scenarios | 54 | scenarios (same pane) |
 | Cascades | 61 | cascades, design |
-| Coverage | 76 | **copilot only** (76× `covAsk`) |
+| Coverage | 76 | **Fox-Architect only** (76× `covAsk`) |
 | Deployment | **0** | — |
 | Blueprints | 18 | blueprint (same pane) |
 | Live View | 39 | live (same pane) |
@@ -131,7 +131,7 @@ the workflow graph.
 
 **Evidence.** `discExportJson()` emits `{version: "draft-1", drafts: [...]}`;
 `discExportMd()` emits a Markdown draft. The only two exits are
-`discAsk(i)` (→ copilot) and the two exports. A **curator** — the person the
+`discAsk(i)` (→ Fox-Architect) and the two exports. A **curator** — the person the
 app says these drafts are "for curator review" — has no path to turn a draft
 into a catalog scenario, and the app has no `data/` write path at all
 (`data/*.json` is static, served read-only).
@@ -143,7 +143,7 @@ into a catalog scenario, and the app has no `data/` write path at all
 ```
 ## 1. Deployment plan
 ## 2. Reference architecture
-## 3. Fox - Architect consult
+## 3. Fox-Architect consult
 ```
 
 Measured against the live app:
@@ -152,7 +152,7 @@ Measured against the live app:
 |---|---|
 | Deployment plan (score, stack, risks, ADR) | ✅ |
 | Blueprint (pipeline, coverage, estimate, threat model) | ✅ |
-| Copilot transcript | ✅ |
+| Fox-Architect transcript | ✅ |
 | **Guardrail Lab analyses** | ❌ |
 | **Cascade mitigation backlog** (owners, status, CSV) | ❌ |
 | **Pinned working set** | ❌ |
@@ -187,7 +187,7 @@ profile.
 2. bpState.comps.length? → Blueprints
 3. blueprint gaps?        → Close the gaps
 4. exposure high?         → Open threat model
-5. cpMessages.length?     → Ask the copilot
+5. cpMessages.length?     → Ask Fox-Architect
 6. else                   → export the report
 ```
 
@@ -220,10 +220,10 @@ Worse: `switchTab()` rewrites the hash to the bare tab
 the tab, not the item. Only `dlOpen()` (used by the deep-link router) keeps
 `#tab/item` intact.
 
-### W9 — "Ask Fox - Architect" sends a title, not the artifact (Medium)
+### W9 — "Ask Fox-Architect" sends a title, not the artifact (Medium)
 
 **Evidence.** `askCopilotAbout('pattern: ' + p.name)`,
-`askCopilotAbout('scenario: ' + s.title)`. The copilot's own
+`askCopilotAbout('scenario: ' + s.title)`. Fox-Architect's own
 `AIContext.build()` does a *deterministic retrieval* from the catalog keyed
 on the query text — so asking about `"scenario: fin-card-injection"` retrieves
 by that string. But the *provenance* (the pattern's own catalogue record, the
@@ -259,7 +259,7 @@ forgets the rest.
 Not covered: `mitSet()` — the mitigation backlog's owner/status edits
 (`js/cascades.js:227`) mutate a 5-field nested object per row with **no
 undo and no confirmation**. The planner's risk **acknowledgements**
-(`dpAckRisk`, `dpAckAll`) likewise. And `cpRegen(i)` replaces a copilot
+(`dpAckRisk`, `dpAckAll`) likewise. And `cpRegen(i)` replaces a Fox-Architect
 answer in place with no undo.
 
 ### W12 — Deep links cover 5 kinds; the work products are not addressable (Medium)
@@ -271,7 +271,7 @@ entry**, a **deployment plan**, a **guardrail analysis** (it is, but only via
 
 So the *deliverable* cannot be linked, bookmarked or shared. The catalog can.
 
-### W13 — The copilot's citations are the app's best cross-nav, and they are text-only (Medium)
+### W13 — Fox-Architect's citations are the app's best cross-nav, and they are text-only (Medium)
 
 **Evidence.** `cpOpenCite(c)` handles `pattern` / `scenario` / `trace`.
 `landLink()` in `js/landing.js` builds `.cp-cite` chips for pattern/scenario/
@@ -284,7 +284,7 @@ app.
 ### W14 — No "state of this system" view exists (Medium)
 
 **Evidence.** The Overview dashboard shows four cards: Deployment Planner,
-Blueprint, Fox - Architect, Guardrail Lab. It does **not** show the
+Blueprint, Fox-Architect, Guardrail Lab. It does **not** show the
 mitigation backlog, the discovery run, or the pins (pins are shown, but in a
 separate `pinPanelHtml()` block below the cards). There is no single place
 that answers *"what is the state of the system I am designing?"* — which is
@@ -323,7 +323,7 @@ Ordered by (impact ÷ effort). Each is a real, testable increment.
 |---|---|---|
 | 108 | `goTo()` — one navigation primitive replacing 10 hand-rolled timeouts; keeps `#tab/item` | W8 |
 | 109 | Deep links for every work product (blueprint, plan, analysis, run, project) | W12 |
-| 110 | "Ask Fox - Architect" sends the artifact, not the title | W9 |
+| 110 | "Ask Fox-Architect" sends the artifact, not the title | W9 |
 | 111 | Citations become real, focusable, copyable links | W13 |
 
 **The depth (fixes W4, W6, W10, W11, W15)**
@@ -333,7 +333,7 @@ Ordered by (impact ÷ effort). Each is a real, testable increment.
 | 112 | Mitigation backlog → real work product: project-scoped, in the report, in the dashboard | W6 |
 | 113 | Discovery → "promote to draft scenario" with a catalog-shaped editor | W4 |
 | 114 | Saved research sets: a named, shareable filter set per catalog pane | W10 |
-| 115 | Undo for mitigation edits, risk acknowledgements and copilot regeneration | W11 |
+| 115 | Undo for mitigation edits, risk acknowledgements and Fox-Architect regeneration | W11 |
 | 116 | Multi-select in the palette/palette panel with a preview of what will be added | W15 |
 
 **The finish (fixes the rest)**
@@ -382,7 +382,7 @@ running app. Evidence is measured, not estimated.
 |---|---|---|
 | 108 | `goTo(tab, id)` — one navigation primitive replacing 13 hand-rolled `setTimeout` races; keeps the `#tab/item` deep link and the Back button working | `087adf8` |
 | 109 | Deep links for the work products: `#blueprint/current`, `#deploy/plan`, `#discovery/run`, `#blueprint/lib:N`, `#overview/proj:<id>`, plus Copy-link buttons | `0ffcfa5` |
-| 110 | "Ask Fox - Architect" sends the **artefact** (the pattern's failure modes, the scenario's attack chain, the cascade's propagation path, the guardrail design's controls) — not the title | `0ffcfa5` |
+| 110 | "Ask Fox-Architect" sends the **artefact** (the pattern's failure modes, the scenario's attack chain, the cascade's propagation path, the guardrail design's controls) — not the title | `0ffcfa5` |
 | 111 | Citations become real `<a href="#tab/id">` links — focusable, keyboard-reachable, copyable, openable in a new tab. 15 links, 0 spans | `0ffcfa5`, `5ab60e1` |
 
 ### The depth
@@ -392,7 +392,7 @@ running app. Evidence is measured, not estimated.
 | 112 | Mitigation backlog → a real work product: progress panel, "focus un-owned", "seed blueprint from the top 10", in the report and on the dashboard | `b69f7f7` |
 | 113 | Discovery → "promote to draft scenario": a catalog-shaped scenario (the shipped fields) kept in a draft collection, reviewable in the shared drawer, exportable. `data/*.json` stays read-only | `b69f7f7` |
 | 114 | Saved **research sets**: named, shareable filter states for the Patterns and Scenarios panes. A set stores the filter *state*, never the results, so it never goes stale | `723d344` |
-| 115 | Undo extended to the authoring tools' own decisions: mitigation owner/status, risk acknowledgements, copilot regeneration | `b69f7f7` |
+| 115 | Undo extended to the authoring tools' own decisions: mitigation owner/status, risk acknowledgements, Fox-Architect regeneration | `b69f7f7` |
 | 116 | Multi-select in the blueprint palette with a live preview: how many will be added, how many are already there, and which control families the addition closes | `723d344` |
 
 ### The finish

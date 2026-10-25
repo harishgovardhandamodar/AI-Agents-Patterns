@@ -202,7 +202,7 @@ async function main() {
       const md = typeof rpMarkdown === "function" ? rpMarkdown() : "";
       const want = ["## 1. Deployment plan", "## 2. Reference architecture", "## 3. Guardrail analyses",
         "## 4. Cascade mitigation backlog", "## 5. Working set", "## 6. Discovery drafts",
-        "## 7. Fox - Architect consult"];
+        "## 7. Fox-Architect consult"];
       const missing = want.filter((w) => md.indexOf(w) < 0);
       step("report sections", missing.length === 0, missing.length ? "missing " + missing.join(",") : "all 7");
 

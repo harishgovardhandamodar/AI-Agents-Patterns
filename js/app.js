@@ -577,7 +577,7 @@ const TAB_GROUPS = [
 ];
 const SUBTAB_LABELS = {
   overview: "📊 Overview",
-  copilot: "🤖 Fox - Architect",
+  copilot: "🤖 Fox-Architect",
   patterns: '◆ Patterns <span class="badge" id="patBadge">–</span>',
   scenarios: '⚠ Scenarios <span class="badge" id="scnBadge">–</span>',
   cascades: '⧉ Cascades <span class="badge" id="casBadge">–</span>',
@@ -823,7 +823,7 @@ function announce(msg) {
 }
 
 /* ---------------- global busy indicator ----------------
-   Long, non-blocking work (a copilot answer in flight, a model-backend probe)
+   Long, non-blocking work (a Fox-Architect answer in flight, a model-backend probe)
    reports here so the shell always says "working…" even when the busy thing
    lives in a different pane than the one on screen. Ref-counted by label. */
 const busySet = new Set();
@@ -1298,7 +1298,7 @@ function paintSaveStamps() {
 }
 
 /* ---------------- storage: quota-aware persistence --------------------
-   Browser storage (localStorage, ~5MB) can fill up — long copilot chats and
+   Browser storage (localStorage, ~5MB) can fill up — long Fox-Architect chats and
    big guardrail collections are the usual culprits. When a write fails with
    quota errors the old code failed SILENTLY (flags never stuck, so the
    welcome tour reappeared on every reload). These helpers make failure loud
@@ -1325,8 +1325,8 @@ function storeOk() {
 
 /* ---------------- backup / restore & storage health --------------------
    Everything the user creates lives in localStorage under aap.*: blueprints,
-   the saved library, guardrail analyses, the deployment plan, the copilot
-   chat, mitigations, discovery runs, pins, filters and display prefs. This
+   the saved library, guardrail analyses, the deployment plan, the Fox-Architect chat,
+   mitigations, discovery runs, pins, filters and display prefs. This
    block gives one place to see how much is stored, download it all as a
    single JSON file, and load it back (replacing matching keys, then reload). */
 const BACKUP_PREFIX = "aap.";
@@ -1528,7 +1528,7 @@ function onbShow(force) {
       `<button class="onb-x" data-act="onbGo" data-args="[null]" aria-label="Close welcome tour">✕</button>` +
       `<div class="onb-kicker">AI AGENT PATTERNS &amp; GUARDRAILS</div>` +
       `<h2 class="onb-title">What are you designing today?</h2>` +
-      `<p class="onb-sub">This is an advisory workbench, not a dashboard. Pick the job — the app lines up the catalog, the planner and the copilot behind it.</p>` +
+      `<p class="onb-sub">This is an advisory workbench, not a dashboard. Pick the job — the app lines up the catalog, the planner and Fox-Architect behind it.</p>` +
       `<div class="onb-cards">` +
       `<div class="onb-card"><div class="onb-ico">🧭</div><b>Ship an agent safely</b>` +
       `<span>Answer 4 intake questions → readiness score, recommended stack, rollout plan, risks and ADR.</span>` +
@@ -1540,7 +1540,7 @@ function onbShow(force) {
       `<span>${catN("patterns", 107)} patterns, ${catN("scenarios", 43)} scenarios, ${catN("cascades", 180)} cascades — how small faults cross boundaries and amplify.</span>` +
       `<button class="btn primary" data-act="onbGo" data-args="[&quot;cascades&quot;]">Explore the cascade catalog</button></div>` +
       `</div>` +
-      `<div class="onb-foot"><button class="btn sm ghost" data-act="onbGo" data-args="[&quot;copilot&quot;]">Just ask Fox - Architect instead →</button>` +
+      `<div class="onb-foot"><button class="btn sm ghost" data-act="onbGo" data-args="[&quot;copilot&quot;]">Just ask Fox-Architect instead →</button>` +
       `<span style="flex:1"></span>` +
       `<button class="btn sm" data-act="onbGo" data-args="[null]">Skip — I'll explore</button></div>` +
       `</div>`;
@@ -2143,7 +2143,7 @@ async function loadAll() {
       has("initLive") && ["live", "Live View", () => initLive()],
       has("initDesign") && ["design", "Design docs", () => initDesign()],
       has("initGuardrail") && ["guard", "Guardrail Lab", () => initGuardrail()],
-      has("initCopilot") && ["copilot", "Fox - Architect", () => initCopilot()],
+      has("initCopilot") && ["copilot", "Fox-Architect", () => initCopilot()],
       has("initCascades") && ["cascades", "Cascades", () => initCascades()],
       has("initCoverage") && ["coverage", "Coverage", () => initCoverage()],
       has("initDeploy") && ["deploy", "Deployment Plan", () => initDeploy()],

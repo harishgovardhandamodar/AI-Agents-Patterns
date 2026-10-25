@@ -1,7 +1,7 @@
 # Deep Analysis — Engineering, Performance & Content-Coverage Audit
 
 > A third, independent lens on the app. `ANALYSIS.md` covered the **product**
-> (catalog → architect's copilot). `UX-ANALYSIS.md` covered **UX** (iterations
+> (catalog → Fox-Architect). `UX-ANALYSIS.md` covered **UX** (iterations
 > 31–80). This audit covers what neither did: **delivery cost, keyboard/ARIA
 > conformance, content coverage math, data integrity, and engineering process**.
 > Every finding below is measured, not estimated — headless Chrome at
@@ -55,7 +55,7 @@
 5. **Failover LLM proxy** with generous timeouts and a deterministic local
    fallback — the model is never a hard dependency.
 6. **Rich export surface** already exists: report Markdown/JSON/print,
-   blueprint `.md`, cascade mitigations `.md`/`.csv`, copilot threads `.md`.
+   blueprint `.md`, cascade mitigations `.md`/`.csv`, Fox-Architect threads `.md`.
 
 ---
 

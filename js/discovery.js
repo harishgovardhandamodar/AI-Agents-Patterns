@@ -5,7 +5,7 @@
    rest, reseeding the next round from the winners alone. A compare mode runs
    the same budget with forgetting off to show the plateau on our own catalog.
    Nothing is added to the catalog automatically — winners are drafts the
-   architect reviews, asks Fox - Architect about, or exports as JSON. */
+   architect reviews, asks Fox-Architect about, or exports as JSON. */
 
 "use strict";
 
@@ -240,7 +240,7 @@ function discRunAll(compare, quiet) {
 }
 function discAsk(i) {
   const c = discState.run && discState.run.winners[i];
-  if (!c || typeof copilotAsk !== "function") { showNotif("Fox - Architect unavailable"); return; }
+  if (!c || typeof copilotAsk !== "function") { showNotif("Fox-Architect unavailable"); return; }
   copilotAsk("Draft scenario for review: \"" + c.title + "\" (" + c.domain + ", " + c.cls + ", vector: " + c.vector + "). " + c.description +
     " Attack sketch: " + c.attackChain.join(" → ") +
     " Is this genuinely novel vs the catalog, how would you red-team it, and which existing patterns would blunt it?");
@@ -288,7 +288,7 @@ function discCard(c, i) {
     (anchorChips ? `<div class="ref-chips">${anchorChips}</div>` : "") +
     `<div class="d-actions" style="margin-top:8px">` +
     `<button class="btn sm primary" data-act="discPromote" data-args='[${i}]' title="Turn this draft into a catalog-shaped scenario you can review and export">⬆ Promote to draft scenario</button>` +
-    `<button class="btn sm" data-act="discAsk" data-args='[${i}]'>🤖 Ask Fox - Architect</button>` +
+    `<button class="btn sm" data-act="discAsk" data-args='[${i}]'>🤖 Ask Fox-Architect</button>` +
     `<button class="btn sm ghost" data-act="discExportMd" data-args='[${i}]'>⧉ Copy draft</button></div></div>`;
 }
 
@@ -377,7 +377,7 @@ function openDraftScenario(id) {
   const html = `
     <div class="dsec d-actions">
       <span class="chip" style="color:var(--orange)">DRAFT — not a catalog entry</span>
-      <button class="btn sm" data-act="askAbout" data-args="[&quot;scenario&quot;,&quot;${escHtml(d.id)}&quot;]">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" data-act="askAbout" data-args="[&quot;scenario&quot;,&quot;${escHtml(d.id)}&quot;]">🤖 Ask Fox-Architect</button>
       <button class="btn sm" data-act="discExportJson">⬇ Export drafts</button>
     </div>
     <div class="dsec">

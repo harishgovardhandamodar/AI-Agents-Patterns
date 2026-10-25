@@ -13058,7 +13058,7 @@ In the catalog this chapter was generated from, **Procurement / Purchasing Agent
 
 The dashboard that publishes the catalog — what it is, how it carries a design workflow, how it is designed and built, how it tests the defenses it recommends, and how it keeps your data and your model on hardware you control.
 
-This book has been read through an application for its whole life, and so has every diagram in it. *AI Agent Patterns & Guardrails* is a 15-tab single-page dashboard of plain HTML, CSS and JavaScript, served by one small Python program, rendered by a vendored Mermaid engine, and reachable over a LAN, a tailnet or no network at all. This part opens that machine up.
+This book has been read through an application for its whole life, and so has every diagram in it. *AI Agent Patterns & Guardrails* is a 0-tab single-page dashboard of plain HTML, CSS and JavaScript, served by one small Python program, rendered by a vendored Mermaid engine, and reachable over a LAN, a tailnet or no network at all. This part opens that machine up.
 
 It closes the book deliberately. The pattern chapters argue that safety comes from deterministic enforcement outside the model; the application is where that argument is applied to the tool itself — a rule engine instead of a model for the analysis, a gate instead of a build step, a cache instead of a CDN dependency, and a same-origin proxy instead of a third-party API. The seven chapters below follow the same shape as every chapter above them, and every claim in them points at a file in the repository the catalog ships in.
 
@@ -13075,13 +13075,13 @@ It closes the book deliberately. The pattern chapters argue that safety comes fr
 ```mermaid
 flowchart LR
   subgraph BROWSER["Browser (single page, 15 tabs)"]
-    TABS["Tab strip<br/>Overview · Fox - Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab · Battle Bench<br/>Rogue Agents · Self-Learning"]
+    TABS["Tab strip<br/>Overview · Fox-Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab · Battle Bench<br/>Rogue Agents · Self-Learning"]
     ENG1["Pattern catalog engine"]
     ENG2["Scenario catalog engine"]
     ENG3["Trace playback engine"]
     ENG4["Markdown+Mermaid renderer"]
     ENG5["Guardrail rule engine"]
-    ENG6["Planner · blueprint · copilot tooling"]
+    ENG6["Planner · blueprint · Fox-Architect tooling"]
     ENG7["Cascade · coverage · discovery engines"]
     ENG8["Battle-bench engine<br/>(cases · adapters · oracle · adversary)"]
     STORE["localStorage<br/>(plans, blueprints, collection, prefs)"]
@@ -13106,9 +13106,9 @@ flowchart LR
 
 ## Overview
 
-This book's catalog does not arrive as a folder of JSON files. It arrives as *AI Agent Patterns & Guardrails* — a 15-tab single-page dashboard of plain HTML, CSS and JavaScript, rendered at view time by a vendored Mermaid engine, with no build step, no bundler, no framework and no account anywhere in the stack.
+This book's catalog does not arrive as a folder of JSON files. It arrives as *AI Agent Patterns & Guardrails* — a 0-tab single-page dashboard of plain HTML, CSS and JavaScript, rendered at view time by a vendored Mermaid engine, with no build step, no bundler, no framework and no account anywhere in the stack.
 
-The lifecycle it covers is the one this book describes from its first chapter: design patterns, then what can go wrong, then how to protect against it, then a live replay of the control flow, then the architecture, and finally a lab that turns your own agent idea into a guardrail design with a mock run. The whole thing is served by `serve.py`, 836 lines of standard-library Python that also doubles as a same-origin relay to an optional model running on your own network.
+The lifecycle it covers is the one this book describes from its first chapter: design patterns, then what can go wrong, then how to protect against it, then a live replay of the control flow, then the architecture, and finally a lab that turns your own agent idea into a guardrail design with a mock run. The whole thing is served by `serve.py`, 867 lines of standard-library Python that also doubles as a same-origin relay to an optional model running on your own network.
 
 It is a reference you can interrogate rather than a shelf you can only read: filter, sort, replay, compose, compare, and take the result out as Markdown, JSON, CSV or a print-friendly page.
 
@@ -13197,7 +13197,7 @@ flowchart TB
 - The blueprint exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like designs rather than index numbers against feelings.
 - Fox - Architect grounds itself by deterministic retrieval over the catalog, not by fine-tuning: it names the record it used, and reading that record is still your job.
 - Cost, latency and benefit figures in the estimator are stated assumptions for comparison, not benchmarks on your infrastructure.
-- There is no build step, so nothing stops a mistake before runtime the way a type checker would; the substitute is the gate — lint, data-integrity tests, and a headless smoke test that boots the server and walks all 15 tabs.
+- There is no build step, so nothing stops a mistake before runtime the way a type checker would; the substitute is the gate — lint, data-integrity tests, and a headless smoke test that boots the server and walks all 0 tabs.
 - It designs enforcement, it does not enforce. No part of this application sits between your agent and the world: what it produces is a design, a rule set and an ADR that your own runtime still has to implement.
 
 ## Safeguards
@@ -13213,7 +13213,7 @@ flowchart TB
 | Field | Value |
 |---|---|
 | Form | Static single-page app; no build step, no account |
-| Tabs | 15 tabs over one shell and 31 modules |
+| Tabs | 0 tabs over one shell and 31 modules |
 | Catalog | 107 patterns · 9 categories · 207 failure modes · 289 protections |
 | Evidence | 54 scenarios · 191 cascades · 55 traces · 26 domains |
 | Diagrams | Vendored Mermaid in one queue; CDN only as a fallback |
@@ -13325,7 +13325,7 @@ flowchart LR
     Q4["What do I do, in what order?"]
   end
   subgraph NEW["New — advisory"]
-    CP["Fox - Architect<br/>(grounded, local model)"]
+    CP["Fox-Architect<br/>(grounded, local model)"]
     CV["Coverage &amp; gap analysis"]
     CA["Cascade explorer + simulator"]
     PL["Planner: readiness, stack,<br/>rollout, risk register"]
@@ -13405,7 +13405,7 @@ flowchart LR
 
 ## Council reading
 
-- **Red team:** A rail that always names a Next step trains click-through — verify the suggestion reads live tool state (planner, blueprint, copilot, guardrail, mitigation, discovery) before you trust it on autopilot.
+- **Red team:** A rail that always names a Next step trains click-through — verify the suggestion reads live tool state (planner, blueprint, Fox-Architect, guardrail, mitigation, discovery) before you trust it on autopilot.
 - **Blue team:** Every stage links to the tool that owns it and every artifact exports (Markdown, JSON, CSV, ADR): nothing in the workflow is a dead-end claim.
 - **Operator:** Start at the Overview Next box, end with the report export; the five stages are a checklist, and an unchecked stage is the finding.
 
@@ -13436,11 +13436,11 @@ And claims about speed and offline behaviour are worthless unless they are measu
 ## How It Works
 
 1. **Deterministic outside the model.** The Guardrail Lab's analysis is a rule engine running in the browser: signals times weights, mapped to a tier, matched to proposals. The chat is optional, and when it is unavailable the analysis does not change.
-2. **No build step, but there is a gate.** Plain files that any editor can change, wrapped in `npm run lint` (ESLint `no-undef` over the shared globals), `npm test` (ids, schema, references, coverage freshness, precache sync) and a headless smoke test that boots the server and walks all 15 tabs.
+2. **No build step, but there is a gate.** Plain files that any editor can change, wrapped in `npm run lint` (ESLint `no-undef` over the shared globals), `npm test` (ids, schema, references, coverage freshness, precache sync) and a headless smoke test that boots the server and walks all 0 tabs.
 3. **Plain, versioned JSON with no hidden defaults.** The datasets are diffable and exportable, and a missing field renders as absent rather than as a silently-chosen value.
 4. **One global namespace with guarded edges.** `index.html` loads classic scripts — no modules, no bundler. Cross-module calls are checked with `typeof … === 'function'`, so any single module can fail to define itself without blanking the application.
 5. **One queue for every diagram.** Mermaid measures text in shared global state, so renders are serialised behind one promise chain: vendored engine first, CDN only as a fallback, initialise once in strict mode, run node by node, heal if fonts raced, and write an inline note instead of throwing.
-6. **Degrade, don't fail.** Phased boot, skeletons for panes that are still building, a pane that can jump the idle queue, a deterministic copilot fallback, and a worker that serves from cache when the network is gone.
+6. **Degrade, don't fail.** Phased boot, skeletons for panes that are still building, a pane that can jump the idle queue, a deterministic Fox-Architect fallback, and a worker that serves from cache when the network is gone.
 7. **Make the wins visible, not claims.** The Display panel prints a live budget from the sizes the worker recorded: first load about 1.37 MB compressed against 4.9 MB raw, and a repeat visit about 0.02 MB.
 
 ## Components
@@ -13565,7 +13565,7 @@ It also explains the deployment story. The image copies exactly what the server 
 
 1. **Delivery.** `serve.py` serves the files with gzip, conditional revalidation for a cheap 304, immutable caching for the vendored engine, and the same header block on every single response.
 2. **Shell.** `index.html` and `js/app.js` own the tab switcher, theme, data load, Mermaid queue, zoom viewer and the registries every module plugs into.
-3. **Feature modules.** 31 plain scripts: one per pane — overview, catalog, scenarios, cascades, coverage, deployment planner, blueprints, copilot, live view, design, guardrail lab, discovery and battle bench — plus the shared playback widget, LLM client, grounding context, report, dashboard, help, command palette and shortcuts.
+3. **Feature modules.** 31 plain scripts: one per pane — overview, catalog, scenarios, cascades, coverage, deployment planner, blueprints, Fox-Architect, live view, design, guardrail lab, discovery and battle bench — plus the shared playback widget, LLM client, grounding context, report, dashboard, help, command palette and shortcuts.
 4. **Data.** Five JSON datasets. Phase one (patterns, scenarios, traces, coverage) is awaited for first paint; `cascades.json` streams in beside it and is awaited only by the panes that read it.
 5. **Documents.** `design/*.md` — 11 of them — are fetched live and rendered, which is the one reason a server is needed at all beyond hosting the optional model proxy.
 6. **Offline.** `sw.js` precaches 50 entries, answers same-origin GETs network-first with a cache fallback, and never touches `/api/*`.
@@ -13577,7 +13577,7 @@ It also explains the deployment story. The image copies exactly what the server 
 |---|---|---|
 | Delivery | `serve.py` | Static host: gzip, ETag and Last-Modified revalidation, immutable vendor cache, security headers, CSP. |
 | Shell | `index.html` · `js/app.js` | Tab switcher, theme, data load, Mermaid queue, zoom viewer, `tabLoaders` and `PANE_INIT` registries. |
-| Feature modules | `js/*.js` — 31 files | One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, copilot, live view, design, guardrail lab, discovery, battle bench — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts. |
+| Feature modules | `js/*.js` — 31 files | One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, Fox-Architect, live view, design, guardrail lab, discovery, battle bench — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts. |
 | Data | `data/*.json` — 5 datasets | Patterns, scenarios, cascades, traces and coverage; plain, versioned, diffable. |
 | Documents | `design/*.md` — 11 docs | Architecture documents fetched at view time and rendered with live Mermaid. |
 | Offline | `sw.js` | 50 precache entries; network-first with cache fallback; `/api/*` exempt. |
@@ -13598,7 +13598,7 @@ flowchart TB
     COVV["CoveragePane<br/>heatmap + backlog"]
     DEPV["DeployPane<br/>planner + ADR"]
     BPV["BlueprintPane<br/>compose + threat model"]
-    CPV["CopilotPane<br/>Fox - Architect chat"]
+    CPV["CopilotPane<br/>Fox-Architect chat"]
     DSCV["DiscoveryPane<br/>forget-and-reseed ideation"]
     DRW["DetailDrawer<br/>(pattern/scenario)"]
     ZOOM["ZoomViewer<br/>clone-SVG pan/zoom"]
@@ -13614,7 +13614,7 @@ flowchart TB
     CASENG["CascadeEngine<br/>classify · simulate"]
     COVENG["CoverageEngine<br/>domain gaps · backlog"]
     DISCENG["DiscoveryEngine<br/>seed → candidates → keep"]
-    COPV["Copilot<br/>grounded chat + citations"]
+    COPV["Fox-Architect<br/>grounded chat + citations"]
   end
 
   subgraph DATA2["Data layer"]
@@ -13763,7 +13763,7 @@ There is no account, no cloud store and no analytics vendor: there is no server-
 
 ```mermaid
 sequenceDiagram
-  participant UI as Fox - Architect UI
+  participant UI as Fox-Architect UI
   participant PX as serve.py /api/llm
   participant AX as axiom :8210 (primary)
   participant FS as Fox-Services :8210

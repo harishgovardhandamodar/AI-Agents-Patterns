@@ -1,6 +1,6 @@
 /* js/dashboard.js — Architect dashboard (Overview tab)
    Aggregates the three planning tools (Deployment Planner, Blueprint builder,
-   Copilot) plus the Guardrail Lab into one "where am I, what's next" panel.
+   Fox-Architect) plus the Guardrail Lab into one "where am I, what's next" panel.
    Read-only over their state objects: no separate persistence, the dashboard
    is always a projection of the real tools. */
 "use strict";
@@ -22,7 +22,7 @@ function dashNext() {
   if (gaps.length) return { t: "Your blueprint leaves " + gaps.length + " control famil" + (gaps.length === 1 ? "y" : "ies") + " uncovered (" + gaps.slice(0, 3).map(g => g.label).join(", ") + ").", tab: "blueprint", cta: "Close the gaps" };
   const tm = bpThreatModel();
   if (tm.has && (tm.band[0] === "High" || tm.band[0] === "Severe") && tm.scns.length) return { t: "Exposure is " + tm.band[0].toLowerCase() + " — worst matched scenario: " + tm.scns[0].s.title + ".", tab: "blueprint", cta: "Open threat model" };
-  if (!cpMessages.length) return { t: "Everything is covered. Stress-test the architecture with the copilot — it goes out with your blueprint, exposure and cost estimates.", tab: "copilot", cta: "Ask the copilot" };
+  if (!cpMessages.length) return { t: "Everything is covered. Stress-test the architecture with Fox-Architect — it goes out with your blueprint, exposure and cost estimates.", tab: "copilot", cta: "Ask Fox-Architect" };
   return { t: "All planning steps done — export the full report below (Markdown, JSON or print) to share it.", tab: "overview", cta: "Use the export buttons" };
 }
 
@@ -70,12 +70,12 @@ function dashRender() {
     </div>`;
   }
 
-  /* — copilot — */
+  /* — fox-architect — */
   const cpCard = `<div class="dash-card ${cpMessages.length ? "" : "dim"}">
-    <div class="dash-h">🤖 Fox - Architect</div>
+    <div class="dash-h">🤖 Fox-Architect</div>
     <div class="dash-v">${cpMessages.length}<i> messages</i></div>
     <div class="dash-m">${cpMessages.length ? "Last question answered " + escHtml(cpMessages.filter(m => m.role === "user").slice(-1).map(m => (m.content || "").slice(0, 60) + "…")[0] || "") : "Grounded in the catalog via the local Qwen model, with deterministic fallback."}</div>
-    <button class="btn sm ghost" data-act="switchTab" data-args="[&quot;copilot&quot;]">Open Fox - Architect</button>
+    <button class="btn sm ghost" data-act="switchTab" data-args="[&quot;copilot&quot;]">Open Fox-Architect</button>
   </div>`;
 
   /* — guardrail lab — */
@@ -118,7 +118,7 @@ function dashRender() {
     (typeof pinPanelHtml === "function" ? pinPanelHtml() : "") +
     `<div class="dash-export${anyWork ? "" : " dim"}" id="dashExportBtns">
       <b>Export architect report</b>
-      <span class="muted small">Deployment plan + blueprint + threat model + guardrail analyses + mitigation backlog + working set + Fox - Architect consult in one document</span>
+      <span class="muted small">Deployment plan + blueprint + threat model + guardrail analyses + mitigation backlog + working set + Fox-Architect consult in one document</span>
       <span class="dash-export-btns">
         <button class="btn sm" data-act="rpDownload" data-args="[&quot;md&quot;]" ${anyWork ? "" : "disabled"}>⬇ Markdown</button>
         <button class="btn sm" data-act="rpDownload" data-args="[&quot;json&quot;]" ${anyWork ? "" : "disabled"}>⬇ JSON</button>

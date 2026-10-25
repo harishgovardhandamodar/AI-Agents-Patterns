@@ -143,7 +143,7 @@ function openScenario(id) {
   }).join(" · ");
 
   const scnActions = ((typeof bpRefsBtnHtml === "function" && (s.patternRefs || []).length) ? bpRefsBtnHtml(s.patternRefs, "from this scenario") : "") +
-    `<button class="btn sm" data-act="askAbout" data-args="[&quot;scenario&quot;,&quot;${escHtml(s.id)}&quot;]">🤖 Ask Fox - Architect about this scenario</button>` +
+    `<button class="btn sm" data-act="askAbout" data-args="[&quot;scenario&quot;,&quot;${escHtml(s.id)}&quot;]">🤖 Ask Fox-Architect about this scenario</button>` +
     (typeof pinBtnHtml === "function" ? pinBtnHtml("scenarios", s.id) : "");
   const html = `
     <div class="dsec d-actions">${scnActions}</div>

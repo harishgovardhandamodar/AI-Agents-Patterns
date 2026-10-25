@@ -10,7 +10,7 @@ Design & Architecture tab fetches markdown documents from /design/.
 
 Local model
 -----------
-The Architect Copilot talks to a local model through this server, never
+Fox-Architect talks to a local model through this server, never
 directly from the browser.  This keeps a single origin (so the app works from
 any LAN / Tailscale client), hides backend URLs, and lets us fail over between
 backends transparently.

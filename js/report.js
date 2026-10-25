@@ -3,7 +3,7 @@
    intake answers, readiness scorecard, recommended stack, rollout, risk
    register, ADR, blueprint (pipeline, coverage, cost/risk estimate,
    threat model), guardrail analyses, the cascade mitigation backlog, the
-   pinned working set, discovery drafts, the copilot transcript, and the
+   pinned working set, discovery drafts, the Fox-Architect transcript, and the
    saved battle-bench runs.
 
    Every section degrades to a "not yet filled in" line when its tool hasn't
@@ -73,7 +73,7 @@ function rpMarkdown() {
   if (typeof guardState !== "undefined" && guardState.items.length) covers.push("guardrail analyses");
   if (rpMitigationRows().length) covers.push("mitigation backlog");
   if (typeof pinState !== "undefined" && (pinState.patterns.length + pinState.scenarios.length + pinState.cascades.length)) covers.push("working set");
-  if (typeof cpMessages !== "undefined" && cpMessages.length) covers.push("Fox - Architect consult");
+  if (typeof cpMessages !== "undefined" && cpMessages.length) covers.push("Fox-Architect consult");
   if (typeof discState !== "undefined" && discState.run) covers.push("discovery drafts");
   if (typeof btLoadRuns === "function") { try { if (btLoadRuns().length) covers.push("battle-bench runs"); } catch (e) {} }
   out.push("**Covers:** " + (covers.length ? covers.join(" · ") : "nothing yet — use the tools above to build the design") + ".");
@@ -241,8 +241,8 @@ function rpMarkdown() {
   }
   out.push("");
 
-  /* 7 — copilot transcript */
-  out.push("## 7. Fox - Architect consult");
+  /* 7 — Fox-Architect transcript */
+  out.push("## 7. Fox-Architect consult");
   out.push("");
   const us = cpMessages.filter(m => m.role === "user");
   if (us.length) {
@@ -251,7 +251,7 @@ function rpMarkdown() {
       else if (m.role === "assistant") { out.push("**A —** " + escMd((m.content || "").slice(0, 900))); out.push(""); }
     });
   } else {
-    out.push("_No Fox - Architect conversation yet — ask Fox - Architect to stress-test the architecture._");
+    out.push("_No Fox-Architect conversation yet — ask Fox-Architect to stress-test the architecture._");
   }
   out.push("");
 
@@ -361,7 +361,7 @@ function rpHasAny() {
 
 function rpDownload(kind) {
   if (!rpHasAny()) {
-    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or copilot first");
+    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or Fox-Architect first");
     return;
   }
   const isMd = kind === "md";
@@ -385,7 +385,7 @@ function rpDownload(kind) {
 /* print: a dedicated, self-contained page — no app chrome, no JS needed */
 function rpPrint() {
   if (!rpHasAny()) {
-    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or copilot first");
+    showNotif("Nothing to report yet — run the planner, blueprint, guardrail lab, battle bench or Fox-Architect first");
     return;
   }
   const w = window.open("", "_blank");

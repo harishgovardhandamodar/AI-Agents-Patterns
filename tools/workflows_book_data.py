@@ -17,7 +17,7 @@ WORKFLOWS = {
         "label": "Overview and the three jobs",
         "tab": "overview",
         "entry": "Open the app: pick the job card that matches — deploy, architect, or study failure.",
-        "stages": ["Pick one of the three job cards", "Follow it into catalog, planner or copilot",
+        "stages": ["Pick one of the three job cards", "Follow it into catalog, planner or Fox-Architect",
                    "Finish with an artifact: plan, blueprint, or rehearsal record"],
     },
     "patterns": {
@@ -25,7 +25,7 @@ WORKFLOWS = {
         "tab": "patterns",
         "entry": "Search by name, failure, or domain; filter by category.",
         "stages": ["Search and filter the 107 patterns", "Open the drawer for diagram, failures, protections",
-                   "Hand off: add to blueprint or ask the copilot", "Convert a failure mode into a bench case"],
+                   "Hand off: add to blueprint or ask Fox-Architect", "Convert a failure mode into a bench case"],
     },
     "scenarios": {
         "label": "Failure scenarios",
@@ -68,7 +68,7 @@ WORKFLOWS = {
         "tab": "blueprint",
         "entry": "Start from a template or an empty canvas.",
         "stages": ["Compose stages and attach controls", "Watch cost, coverage and exposure estimate live",
-                   "Stress-test with the copilot", "Save to the library or export"],
+                   "Stress-test with Fox-Architect", "Save to the library or export"],
     },
     "guard": {
         "label": "Guardrail lab",
@@ -134,7 +134,7 @@ WF_FIGS = {
   J1["Ship an agent safely"]
   J2["Architect the system"]
   J3["Study how agents fail"]
-  J1 --> P1["catalog plus planner plus copilot"]
+  J1 --> P1["catalog plus planner plus Fox-Architect"]
   J2 --> P1
   J3 --> P1""",
     "Shell, palette, tabs, memory": """flowchart TB
@@ -147,7 +147,7 @@ WF_FIGS = {
   S["Search and filter"]
   S --> R["Read the drawer record"]
   R --> H1["Hand off to blueprint"]
-  R --> H2["Ask the copilot"]
+  R --> H2["Ask Fox-Architect"]
   H1 --> B["Convert a failure into a bench case"]
   H2 --> B""",
     "Scenario anatomy": """flowchart TB
@@ -182,7 +182,7 @@ WF_FIGS = {
   T["Template or empty canvas"]
   T --> C["Stages plus controls"]
   C --> E["Live cost and exposure estimate"]
-  E --> S["Stress-test with the copilot"]
+  E --> S["Stress-test with Fox-Architect"]
   S --> L["Save to the library"]""",
     "Guardrail analysis lifecycle": """flowchart TB
   D["Describe the agent in plain language"]
@@ -338,7 +338,7 @@ WF_FIGS = {
     "Ask with provenance": """sequenceDiagram
     autonumber
     participant U as Operator
-    participant C as Copilot
+    participant C as Fox-Architect
     participant K as Catalog
     participant M as Model backend
     U->>C: ask about record or run

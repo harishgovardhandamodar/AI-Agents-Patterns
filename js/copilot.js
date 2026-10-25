@@ -1,4 +1,4 @@
-/* copilot.js — Architect Copilot tab.
+/* copilot.js — Fox-Architect tab.
    A grounded chat over the catalog, answered by the local model (Qwen 3.8-27B
    via Fox-Services) through the /api/llm proxy, with a deterministic local
    fallback when no model is reachable. Retrieval lives in js/context.js
@@ -24,7 +24,7 @@ function cpSave() {
      silently break every other save in the app). Trim oldest first. */
   const ok = trim(40) || trim(20);
   if (ok) { if (typeof markSaved === "function") markSaved("cp"); }
-  else if (typeof markSaveFailed === "function") markSaveFailed("cp", "Copilot chat");
+  else if (typeof markSaveFailed === "function") markSaveFailed("cp", "Fox-Architect chat");
 }
 function cpRestore() {
   try {
@@ -159,7 +159,7 @@ function cpMsgEl(m, stream, i, isLast) {
     wrap.insertAdjacentHTML("beforeend", cpActionsHtml(m, i, isLast));
     return wrap;
   }
-  wrap.innerHTML = '<div class="who">◆ Fox - Architect' +
+  wrap.innerHTML = '<div class="who">◆ Fox-Architect' +
     (m.meta ? ' <span class="chip" style="font-size:9px">' + escHtml(m.meta) + "</span>" : "") +
     (m.persona ? ' <span class="chip" style="font-size:9px" title="Answer voice and delivery audience">' +
       escHtml((CP_PERSONAS.find(p => p.id === m.persona) || {}).label || m.persona) + " → " +
@@ -225,7 +225,7 @@ function cpRenderLog() {
   if (!log) return;
   log.innerHTML = "";
   if (!cpMessages.length) {
-    log.innerHTML = '<div class="cp-empty"><h3>Fox - Architect</h3>' +
+    log.innerHTML = '<div class="cp-empty"><h3>Fox-Architect</h3>' +
       "<p>Ask about your agent deployment in plain words. Answers are grounded in the pattern catalog, threat scenarios, cascade model and traces.</p>" +
       "<p class=\"small\">Model: local Qwen 3.8-27B via Fox-Services (axiom fallback). Press <span class=\"cp-kbd\">Enter</span> to send, <span class=\"cp-kbd\">Shift</span>+<span class=\"cp-kbd\">Enter</span> for a new line.</p></div>";
     return;
@@ -347,9 +347,9 @@ const CP_PERSONAS = [
   { id: "phd-researcher", label: "Experienced Researcher (PhD)",
     blurb: "rigorous, mechanism-first",
     sys: "You answer as an experienced researcher with a PhD in AI systems. Lead with mechanisms, not slogans: define terms, separate what is measured from what is assumed, cite the catalog items that ground each claim, and close with open questions and what evidence would change your mind." },
-  { id: "council", label: "Council of Researchers",
+  { id: "council", label: "Counsel of Architects",
     blurb: "several viewpoints + dissent",
-    sys: "You answer as a council of three researchers with different priors (a builder, a skeptic, an empiricist). Give each a short named viewpoint on the question, let them disagree explicitly (mark dissent!), then synthesize a joint recommendation and list what the council still disagrees on. Keep each voice to a few sentences." }
+    sys: "You answer as a counsel of three architects with different priors (a builder, a skeptic, an empiricist). Give each a short named viewpoint on the question, let them disagree explicitly (mark dissent!), then synthesize a joint recommendation and list what the council still disagrees on. Keep each voice to a few sentences." }
 ];
 const CP_AUDIENCES = [
   { id: "peer", label: "Architect (peer)",
@@ -427,7 +427,7 @@ function cpRenderSuggestions() {
 /* ---------------- send / stream ---------------- */
 function cpBuildMessages(query) {
   const msgs = [];
-  let system = "You are Fox - Architect for an enterprise AI-agent design catalog. " +
+  let system = "You are Fox-Architect for an enterprise AI-agent design catalog. " +
     cpPersonaDef().sys + " " + cpAudienceDef().sys + " " +
     "Answer as a pragmatic, senior enterprise architect. Be concrete and structured: use short headings and bullet lists, name specific patterns and scenarios from the catalog, and always cover risk and mitigation. " +
     "Prefer the four cascade classes (inherent, emergent, derived, cascading) when analysing failure propagation. " +
@@ -573,8 +573,8 @@ function cpSetBusyUI(busy) {
   if (send) send.disabled = busy;
   if (stop) stop.style.display = busy ? "" : "none";
   /* mirror into the shell so an answer in flight is visible from any tab */
-  if (busy) { if (typeof setBusy === "function") setBusy("Fox - Architect is answering…"); }
-  else if (typeof clearBusy === "function") clearBusy("Fox - Architect is answering…");
+  if (busy) { if (typeof setBusy === "function") setBusy("Fox-Architect is answering…"); }
+  else if (typeof clearBusy === "function") clearBusy("Fox-Architect is answering…");
 }
 function copilotStop() { if (cpAbort) cpAbort.abort(); }
 
@@ -604,7 +604,7 @@ function copilotPreview() {
 }
 function copilotExport() {
   const md = cpMessages.map(function (m) {
-    return (m.role === "user" ? "## You\n\n" : "## Fox - Architect" + (m.meta ? " _(" + m.meta + ")_" : "") + "\n\n") + m.content;
+    return (m.role === "user" ? "## You\n\n" : "## Fox-Architect" + (m.meta ? " _(" + m.meta + ")_" : "") + "\n\n") + m.content;
   }).join("\n\n---\n\n");
   cpDownload("fox-architect-chat.md", md);
 }
@@ -649,7 +649,7 @@ function initCopilot() {
   cpLoadModels().then(cpSetStatus);
 }
 /* Deep-link entry used by other views (Coverage, Cascades, Deployment…):
-   switch to the Copilot tab, seed the input and send the question. */
+   switch to the Fox-Architect tab, seed the input and send the question. */
 function copilotAsk(q) {
   if (!q) return;
   switchTab("copilot");

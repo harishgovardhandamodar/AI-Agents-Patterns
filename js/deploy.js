@@ -1306,7 +1306,7 @@ function dpSectionAdr() {
       <div class="dp-actions-row" style="margin-top:0">
         <button class="iconbtn" data-act="dpCopyAdr">Copy Markdown</button>
         <button class="iconbtn" data-act="dpDownloadAdr">Download .md</button>
-        <button class="iconbtn" data-act="dpAdrToCopilot">Refine with Fox - Architect</button>
+        <button class="iconbtn" data-act="dpAdrToCopilot">Refine with Fox-Architect</button>
       </div>
     </div>
     <div class="dp-adr">${typeof cpMd === "function" ? cpMd(md) : "<pre>" + escHtml(md) + "</pre>"}</div>
@@ -1328,13 +1328,13 @@ function dpDownloadAdr() {
   setTimeout(() => URL.revokeObjectURL(url), 1500);
 }
 function dpAdrToCopilot() {
-  /* Keep the message bounded — the copilot re-grounds on its own catalog
+  /* Keep the message bounded — Fox-Architect re-grounds on its own catalog
      context, so a truncated ADR plus that context beats a context-stuffing
      paste that pushes the prompt past what the local model can hold. */
   let md = dpAdrMarkdown();
   if (md.length > 7000) md = md.slice(0, 7000) + "\n\n_(truncated — full record is available via Copy Markdown)_";
   const q = "Review this architecture decision record and challenge it. Focus on the weakest assumption and on what would have to be true for Option B to become the right call. Keep it short.\n\n" + md;
-  if (typeof copilotAsk === "function") copilotAsk(q); else showNotif("Copilot unavailable");
+  if (typeof copilotAsk === "function") copilotAsk(q); else showNotif("Fox-Architect unavailable");
 }
 
 DP_SECTIONS.push({ id: "adr", title: "Architecture Decision Record", render: dpSectionAdr });

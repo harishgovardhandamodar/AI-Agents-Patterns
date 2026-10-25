@@ -105,7 +105,7 @@ function landDiagram() {
     "  C -->|no gate| D[Tool fires<br/>charge / email / deploy]\n" +
     "  C -->|spend guard<br/>allowlist<br/>dual control| E[Blocked + logged]\n" +
     "  D --> F[Cascade<br/>retry storm / split / exfil]\n" +
-    "  E --> G[Copilot consult<br/>+ Guardrail Lab rule]\n" +
+    "  E --> G[Fox-Architect consult<br/>+ Guardrail Lab rule]\n" +
     "  style C fill:#e8c35a,color:#1f2328,stroke:#9a6700\n" +
     "  style E fill:#8fd6a4,color:#0d2818,stroke:#1a7f37\n" +
     "  style F fill:#f2a3a3,color:#2d0d0d,stroke:#cf222e";

@@ -170,11 +170,11 @@ function wfNext() {
   }
   /* 3 — deliver: a design exists but was never stress-tested */
   if (!s.copilot) {
-    return { t: "The design is " + (s.covOk || 0) + "/" + (s.covTotal || 0) + " covered — stress-test it with Fox - Architect, which goes out with your blueprint, exposure and cost estimates.", tab: "copilot", cta: "Ask the copilot" };
+    return { t: "The design is " + (s.covOk || 0) + "/" + (s.covTotal || 0) + " covered — stress-test it with Fox-Architect, which goes out with your blueprint, exposure and cost estimates.", tab: "copilot", cta: "Ask Fox-Architect" };
   }
   /* 3 — deliver: a discovery run produced drafts nobody reviewed */
   if (s.runs && !s.guards) {
-    return { t: "Your discovery run kept " + s.runs + " novel draft" + (s.runs === 1 ? "" : "s") + " — review them, or ask Fox - Architect whether they are genuinely new.", tab: "discovery", cta: "Review the drafts" };
+    return { t: "Your discovery run kept " + s.runs + " novel draft" + (s.runs === 1 ? "" : "s") + " — review them, or ask Fox-Architect whether they are genuinely new.", tab: "discovery", cta: "Review the drafts" };
   }
   /* everything is done — hand it over */
   return { t: "All planning steps done — export the full report below (Markdown, JSON or print) to share it.", tab: "overview", cta: "Use the export buttons" };

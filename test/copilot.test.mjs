@@ -1,4 +1,4 @@
-// Copilot markdown-lite link safety: cpMd() renders model output as HTML,
+// Fox-Architect markdown-lite link safety: cpMd() renders model output as HTML,
 // so a model-emitted [label](javascript:…) must never become a live anchor.
 import test from "node:test";
 import assert from "node:assert/strict";

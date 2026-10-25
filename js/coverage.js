@@ -140,7 +140,7 @@ function renderCoverage() {
       <ul class="cov-gaplist">${items}</ul>
       <div class="cov-actions">
         <button class="iconbtn" data-act="covOpenDomain" data-args="[&quot;${escAttr(r.d)}&quot;]">Inspect</button>
-        <button class="iconbtn" data-act="covAsk" data-args="[&quot;${escAttr(r.d)}&quot;]">Ask Fox - Architect</button>
+        <button class="iconbtn" data-act="covAsk" data-args="[&quot;${escAttr(r.d)}&quot;]">Ask Fox-Architect</button>
       </div>
     </div>`;
   }).join("") || '<div class="panel"><div class="muted small">No gaps flagged — every domain meets its heuristic targets.</div></div>';
@@ -180,7 +180,7 @@ function covBand(r) {
 
 function covSetSort(k) { covSort = k; renderCoverage(); }
 
-/* --- domain navigation / copilot deep-link --------------------------- */
+/* --- domain navigation / Fox-Architect deep-link --------------------------- */
 function covOpenDomain(d) {
   const ids = [];
   ["patterns", "scenarios", "cascades"].forEach(k => (covView.by_domain[d] && covView.by_domain[d][k] || []).forEach(x => ids.push({ k, x })));
@@ -197,12 +197,12 @@ function covAsk(d) {
   const bd = covView.by_domain[d] || {};
   const q = `How should I close the coverage gaps in the "${d}" domain? We currently have ${(bd.patterns || []).length} patterns, ${(bd.scenarios || []).length} scenarios and ${(bd.cascades_all || []).length} cascades (derived: ${(bd.cascades_derived || []).length}, cascading: ${(bd.cascades_cascading || []).length}).`;
   if (typeof copilotAsk === "function") { switchTab("copilot"); copilotAsk(q); }
-  else showNotif("Fox - Architect unavailable");
+  else showNotif("Fox-Architect unavailable");
 }
 
-/* Small helper: link a domain name to a copilot-ready prompt */
+/* Small helper: link a domain name to a Fox-Architect-ready prompt */
 function navDomain(d) {
-  return `<a href="#" data-act="covAsk" data-args="[&quot;${escAttr(d)}&quot;]" title="Ask Fox - Architect about this domain">${escHtml(d)}</a>`;
+  return `<a href="#" data-act="covAsk" data-args="[&quot;${escAttr(d)}&quot;]" title="Ask Fox-Architect about this domain">${escHtml(d)}</a>`;
 }
 
 function escAttr(s) { return String(s == null ? "" : s).replace(/['"\\]/g, ""); }

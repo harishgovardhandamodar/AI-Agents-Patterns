@@ -1,6 +1,6 @@
 # System Context
 
-**What this system is:** a no-build dashboard for studying AI-agent design patterns, their failure modes, and the guardrail architectures that contain them — plus the tooling to act on them (deployment planner, reference-architecture builder, guardrail lab, battle-test bench, rogue-agent simulator, self-learning add-on bridge). It is deliberately modeled on the *Agentic Knowledge Mapper* classic GUI: a single-page vanilla-JS app with a 15-tab strip, CSS-variable theming, and a Design & Architecture tab that renders markdown+Mermaid documents live. Mermaid is vendored under `js/vendor/` (the CDN is only a fallback), an offline service worker precaches the whole shell, and an optional same-origin LLM proxy (`serve.py /api/llm/*`) grounds Fox - Architect answers and the bench's live adapter in a tailnet model; without it the app degrades to a deterministic catalog fallback.
+**What this system is:** a no-build dashboard for studying AI-agent design patterns, their failure modes, and the guardrail architectures that contain them — plus the tooling to act on them (deployment planner, reference-architecture builder, guardrail lab, battle-test bench, rogue-agent simulator, self-learning add-on bridge). It is deliberately modeled on the *Agentic Knowledge Mapper* classic GUI: a single-page vanilla-JS app with a 15-tab strip, CSS-variable theming, and a Design & Architecture tab that renders markdown+Mermaid documents live. Mermaid is vendored under `js/vendor/` (the CDN is only a fallback), an offline service worker precaches the whole shell, and an optional same-origin LLM proxy (`serve.py /api/llm/*`) grounds Fox-Architect answers and the bench's live adapter in a tailnet model; without it the app degrades to a deterministic catalog fallback.
 
 ## Purpose & principles
 
@@ -55,13 +55,13 @@ flowchart TB
 ```mermaid
 flowchart LR
   subgraph BROWSER["Browser (single page, 15 tabs)"]
-    TABS["Tab strip<br/>Overview · Fox - Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab · Battle Bench<br/>Rogue Agents · Self-Learning"]
+    TABS["Tab strip<br/>Overview · Fox-Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab · Battle Bench<br/>Rogue Agents · Self-Learning"]
     ENG1["Pattern catalog engine"]
     ENG2["Scenario catalog engine"]
     ENG3["Trace playback engine"]
     ENG4["Markdown+Mermaid renderer"]
     ENG5["Guardrail rule engine"]
-    ENG6["Planner · blueprint · copilot tooling"]
+    ENG6["Planner · blueprint · Fox-Architect tooling"]
     ENG7["Cascade · coverage · discovery engines"]
     ENG8["Battle-bench engine<br/>(cases · adapters · oracle · adversary)"]
     STORE["localStorage<br/>(plans, blueprints, collection, prefs)"]
@@ -78,7 +78,7 @@ flowchart LR
   ENG8 -->|live adapter| PROXY
 ```
 
-There is **no server-side agent**. The Guardrail Lab's "agent" is a deterministic rule engine (`js/guardrail.js`) that classifies the request, scores risk, selects controls, and synthesizes a mock run — chosen so the demo is auditable and reproducible: an un-auditable analyzer would undercut the very thesis the tool teaches. The model calls in the system are Fox - Architect chats and the Battle Bench's live/red-team adapters — all streaming through the same-origin proxy with a deterministic fallback when no backend answers. Every model-backed result records which backend served it, and an errored or empty completion is never counted as a pass (see *Battle Bench*).
+There is **no server-side agent**. The Guardrail Lab's "agent" is a deterministic rule engine (`js/guardrail.js`) that classifies the request, scores risk, selects controls, and synthesizes a mock run — chosen so the demo is auditable and reproducible: an un-auditable analyzer would undercut the very thesis the tool teaches. The model calls in the system are Fox-Architect chats and the Battle Bench's live/red-team adapters — all streaming through the same-origin proxy with a deterministic fallback when no backend answers. Every model-backed result records which backend served it, and an errored or empty completion is never counted as a pass (see *Battle Bench*).
 
 ## Trust boundaries
 

@@ -8,7 +8,7 @@
 window.addEventListener("load", function () {
   setTimeout(function () {
     try {
-      var need = [["initDiscovery", "Discovery Lab"], ["initLanding", "Overview landing"], ["initCopilot", "Fox - Architect"], ["renderGuardReport", "Guardrail Lab"], ["initRogue", "Rogue Agents"], ["initSelflearn", "Self-Learning"], ["initBooks", "Bookshelf"]];
+      var need = [["initDiscovery", "Discovery Lab"], ["initLanding", "Overview landing"], ["initCopilot", "Fox-Architect"], ["renderGuardReport", "Guardrail Lab"], ["initRogue", "Rogue Agents"], ["initSelflearn", "Self-Learning"], ["initBooks", "Bookshelf"]];
       var missing = need.filter(function (x) { return typeof window[x[0]] !== "function"; });
       if (!missing.length) return;
       var b = document.getElementById("freshBanner");

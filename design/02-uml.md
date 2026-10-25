@@ -17,7 +17,7 @@ flowchart TB
     COVV["CoveragePane<br/>heatmap + backlog"]
     DEPV["DeployPane<br/>planner + ADR"]
     BPV["BlueprintPane<br/>compose + threat model"]
-    CPV["CopilotPane<br/>Fox - Architect chat"]
+    CPV["CopilotPane<br/>Fox-Architect chat"]
     DSCV["DiscoveryPane<br/>forget-and-reseed ideation"]
     DRW["DetailDrawer<br/>(pattern/scenario)"]
     ZOOM["ZoomViewer<br/>clone-SVG pan/zoom"]
@@ -33,7 +33,7 @@ flowchart TB
     CASENG["CascadeEngine<br/>classify · simulate"]
     COVENG["CoverageEngine<br/>domain gaps · backlog"]
     DISCENG["DiscoveryEngine<br/>seed → candidates → keep"]
-    COPV["Copilot<br/>grounded chat + citations"]
+    COPV["Fox-Architect<br/>grounded chat + citations"]
   end
 
   subgraph DATA2["Data layer"]

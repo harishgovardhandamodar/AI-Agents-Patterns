@@ -23,7 +23,7 @@ const PAL_COMMANDS = [
   { id: "cmd-display", title: "Display preferences (density, text size)", run: () => uxPanelToggle(true) },
   { id: "cmd-undo",    title: "Undo last change", run: () => undoOnce() },
   { id: "cmd-redo",    title: "Redo", run: () => redoOnce() },
-  { id: "cmd-newchat", title: "New copilot chat", run: () => { switchTab("copilot"); copilotNew(); } },
+  { id: "cmd-newchat", title: "New Fox-Architect chat", run: () => { switchTab("copilot"); copilotNew(); } },
   { id: "cmd-expmd",   title: "Export architect report (Markdown)", run: () => rpDownload("md") },
   { id: "cmd-expjson", title: "Export architect report (JSON)", run: () => rpDownload("json") },
   { id: "cmd-guide",   title: "Open guide for this tab", run: () => helpOpen() },
@@ -107,7 +107,7 @@ function palMemSave() {
 function palUseKey(it) { return it.kind + ":" + it.id; }
 
 const PAL_TABS = [
-  ["overview", "Overview"], ["copilot", "Fox - Architect"], ["patterns", "Patterns"],
+  ["overview", "Overview"], ["copilot", "Fox-Architect"], ["patterns", "Patterns"],
   ["scenarios", "Failure Scenarios"], ["cascades", "Cascade Explorer"], ["coverage", "Coverage"],
   ["deploy", "Deployment Planner"], ["blueprint", "Blueprints"], ["live", "Live View"],
   ["design", "Design & Architecture"], ["guard", "Guardrail Lab"], ["discovery", "Discovery Lab"],

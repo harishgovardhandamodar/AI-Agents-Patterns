@@ -540,7 +540,7 @@ svg .trace-past rect, svg .trace-past polygon, svg .trace-past circle, svg .trac
 ::-webkit-scrollbar-track { background: transparent; }
 
 /* ============================================================
-   ARCHITECT COPILOT
+   FOX-ARCHITECT
    ============================================================ */
 #copilotPane.visible { grid-template-columns: 304px 1fr; }
 .cp-rail {
@@ -1504,7 +1504,7 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
   white-space: pre; margin: 8px 0;
 }
 
-/* copilot message actions + follow-ups */
+/* Fox-Architect message actions + follow-ups */
 .cp-actions { display: flex; gap: 4px; margin-top: 6px; }
 .cp-msg.user .cp-actions { justify-content: flex-end; }
 .cp-actions button {
@@ -1520,7 +1520,7 @@ html.light .bp-cls-emergent { color: #bc4c00; } html.light .bp-cls-cascading { c
 }
 .cp-follow button:hover { color: var(--text); border-color: var(--accent); }
 
-/* drawer action rows (add-to-blueprint / ask-copilot) */
+/* drawer action rows (add-to-blueprint / ask-Fox-Architect) */
 .d-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
 .dsec.d-actions { padding-bottom: 2px; }
 
