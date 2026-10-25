@@ -98,7 +98,7 @@ This book was written and compiled from study and experiment observation notes o
 # Introduction: containment before detection
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph PLANE["Control plane"]
     GW["Gateway: identity, policy delivery, JWT signing, logs"]
   end
@@ -186,6 +186,11 @@ flowchart TB
     S3["DNS resolver"]
     S4["Connection relay"]
   end
+  GW --> SV
+```
+
+```mermaid
+flowchart TB
   subgraph SB["Sandbox modules"]
     B1["Process owner"]
     B2["Seccomp and Landlock hooks"]
@@ -196,9 +201,7 @@ flowchart TB
     D2["Kubernetes"]
     D3["MicroVM"]
   end
-  GW --> SV --> SB
-  DR -. builds and fences .-> SB
-  DR -. places .-> SV
+  SB -. fenced by .-> DR
 ```
 
 **Council deliberation.**
@@ -213,7 +216,7 @@ flowchart TB
 Supervisor and sandbox talk over the OpenShell Sandbox Protocol: one mutually authenticated HTTP/2 connection carrying independent streams for control, DNS and per-connection TCP, each with its own backpressure — so a slow download cannot wedge exec or process control. The driver picks the transport (Unix socket for Docker and Podman, TCP for Kubernetes, vsock for MicroVM) with identical authentication and behavior on all of them.
 
 ```mermaid
-flowchart LR
+flowchart TB
   AG["Agent opens TCP / DNS"] --> SB["Sandbox: identifies program, intercepts"]
   SB --> CH["One mutual-TLS channel, many streams"]
   CH --> SV["Supervisor: policy check, add credentials"]
@@ -238,7 +241,7 @@ sequenceDiagram
     participant SB as Sandbox
     participant SV as Supervisor
     A->>SB: TCP open example.com:443
-    SB->>SV: stream SYN plus program identity
+    SB->>SV: stream SYN, program identity
     SV->>SV: policy lookup per binary
     alt destination allowed
         SV->>SV: attach credentials if bound
@@ -269,18 +272,15 @@ Every runtime follows the same contract but builds the boundary with the tools i
 ```mermaid
 flowchart TB
   subgraph DK["Docker / Podman"]
-    D1["supervisor in its own container"]
-    D2["Unix socket, workload networking off"]
+    D1["own container, Unix socket, net off"]
   end
   subgraph K8["Kubernetes"]
-    K1["supervisor in its own pod"]
-    K2["mTLS service, NetworkPolicy fence"]
+    K1["own pod, mTLS service, NetworkPolicy"]
   end
   subgraph VM["MicroVM"]
-    V1["supervisor as host process"]
-    V2["vsock channel, no guest net device"]
+    V1["host process, vsock, no guest net"]
   end
-  DK & K8 & VM --> CT["same contract: supervisor decides, sandbox relays, fence denies"]
+  DK ~~~ K8 ~~~ VM
 ```
 
 Match the workload to the fence you understand best, and put the highest-authority agents behind the strongest fence. Runtimes can differ in readiness reporting and features; each advertises its capabilities so the gateway — and the operator — knows what a given deployment can do.
@@ -322,12 +322,12 @@ sequenceDiagram
     participant DR as Compute driver
     participant SV as Supervisor
     participant GW as Gateway
-    DR->>SV: bootstrap token in files or ServiceAccount
-    SV->>GW: claim plus bootstrap credential
-    GW->>GW: verify against sandbox record
-    GW-->>SV: gateway JWT plus sandbox JWT
-    SV->>SV: renew both before expiry
-    SV->>GW: delete sandbox ends renewal
+    DR->>SV: bootstrap token
+    SV->>GW: claim plus credential
+    GW->>GW: verify sandbox record
+    GW-->>SV: gateway and sandbox JWTs
+    SV->>SV: renew before expiry
+    SV->>GW: delete ends renewal
 ```
 
 **Council deliberation.**
@@ -350,7 +350,7 @@ A sandbox policy is versioned YAML that denies everything it does not allow. Fil
 | network_middlewares | Extra inspection, transformation, or blocking of allowed traffic. | Sandbox network proxy. | While running. |
 
 ```mermaid
-flowchart LR
+flowchart TB
   subgraph LOCKED["Locked at creation or startup"]
     L1["process: unprivileged user, no caps"]
     L2["filesystem_policy: Landlock paths"]
@@ -377,7 +377,7 @@ Every sandbox runs under a policy even when none is supplied: global policy firs
 Before a policy change is approved, OpenShell formally verifies what the change would newly allow — new credentialed reach, new HTTP methods, access to cloud metadata endpoints — and findings block auto-approval for human review. Policy proposals from agents themselves therefore cannot self-authorize their own widening: the mechanical check holds the line until a human wakes.
 
 ```mermaid
-flowchart LR
+flowchart TB
   PR["Policy pull request"] --> PV["openshell-prover checks the boundary"]
   PV -->|clean| MG["Merge: ship the rule"]
   PV -->|new credentialed reach| HB["Human review required"]
@@ -390,13 +390,13 @@ The prover runs in the gateway and ships as the standalone openshell-prover comm
 ```mermaid
 sequenceDiagram
     autonumber
-    participant AG as Agent advisor
+    participant AG as Advisor
     participant PV as Prover
-    participant HU as Human reviewer
+    participant HU as Reviewer
     participant GW as Gateway
     AG->>PV: proposed network rule
     PV->>PV: check credentialed reach
-    PV->>PV: check methods and metadata endpoints
+    PV->>PV: check methods, metadata
     alt finding flagged
         PV->>HU: block plus finding report
         HU->>GW: approve or reject
@@ -416,15 +416,14 @@ sequenceDiagram
 
 Each archetype below is read the same way: what the shape does, how many of the catalog scenarios wear it and on which roads, and which OpenShell primitive bounds it — plus what that primitive cannot see. Containment first, then the residual, honestly labeled.
 
-```mermaid
-flowchart TB
-  H["hijack: steered intent"] --> G1["approval gates + scoped grants"]
-  E["exfiltration: outward road"] --> G2["deny-by-default + read-only mounts"]
-  A["abuse: excess scope"] --> G3["least privilege + revocation by deletion"]
-  C["collusion: pair channel"] --> G4["channel denial + pair review"]
-  D["drift: decayed goal"] --> G5["goal comparison + generation rotation"]
-  S["spawning: multiplied identity"] --> G6["control-plane creation + fleet halt"]
-```
+| Rogue shape | Containing primitive |
+|---|---|
+| Goal hijack | Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world. |
+| Data exfiltration | Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens. |
+| Capability abuse | Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded. |
+| Collusion | Channel denial between sandboxes first, pair-level review second; no mutual egress, no shared writable scope by default. |
+| Slow drift | Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence. |
+| Sybil / fleet spawn | Creation stays a control-plane act no agent can invoke; generations make each new sandbox attributable; fleet halt stops the exponential. |
 
 ## Chapter 8: Goal hijack: contained, not trusted
 
@@ -442,12 +441,11 @@ sequenceDiagram
     participant A as Turned agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant G as Approval gate
     participant D as Detectors
-    A->>SB: irreversible action attempt
-    SB->>SV: mediated request plus identity
-    SV->>G: hold while detectors score
-    D->>SV: deviation and misalignment scores
+    A->>SB: irreversible attempt
+    SB->>SV: mediated request
+    Note over SV: gate holds while detectors score
+    D->>SV: deviation, misalignment scores
     alt scores convict
         SV->>SB: freeze and open case
     else scores clear
@@ -513,14 +511,13 @@ sequenceDiagram
     participant A as Agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant GW as Gateway
     A->>SB: invoke visible tool
     SB->>SV: grant scope check
     alt tool outside grant
         SV-->>SB: deny and log attempt
     else tool inside grant
         SV->>SV: execute, watch for drift
-        SV->>GW: revoke grant on finding
+        Note over SV: revoke grant on finding
     end
 ```
 
@@ -580,15 +577,14 @@ sequenceDiagram
     participant A as Drifting agent
     participant SV as Supervisor
     participant GC as Goal comparator
-    participant G as Approval gate
     A->>SV: permitted actions, week after week
     SV->>GC: compare mix to written objective
-    GC->>G: slow evidence accumulates
-    G->>G: hold irreversible step
+    GC-->>SV: slow evidence accumulates
+    Note over SV: gate holds the irreversible step
     alt objective confirmed lost
-        G->>SV: retire generation, fresh start
+        SV->>A: retire generation, fresh start
     else objective holds
-        G->>SV: release with new baseline
+        SV->>A: release with new baseline
     end
 ```
 
@@ -680,13 +676,13 @@ sequenceDiagram
     participant A as Agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant P as Bound endpoint
-    A->>SB: request with opaque placeholder
-    SB->>SV: relay plus program identity
-    SV->>SV: policy check and bind endpoint
-    SV->>P: real request plus resolved credential
+    participant P as Endpoint
+    A->>SB: opaque request
+    SB->>SV: relay plus identity
+    SV->>SV: policy check and bind
+    SV->>P: credentialed request
     P-->>SV: response
-    SV-->>SB: relay with no secret attached
+    SV-->>SB: clean relay
     SB-->>A: response bytes
 ```
 
@@ -715,7 +711,7 @@ The halt is the fleet-scale counterpart: pause everything when doubt is fleet-wi
 Isolate is freezing or deleting the sandbox; revoke is token death by deletion; evidence is the supervisor and gateway logs; memory quarantine is generation retirement; handoff is the owned case with deadlines; remediation is a fresh generation from a clean image with policy re-review. Every step of the incident workflow has a runtime home.
 
 ```mermaid
-flowchart LR
+flowchart TB
   Q1["Freeze or delete the sandbox"] --> Q2["Tokens die with the generation"]
   Q2 --> Q3["Capture supervisor and gateway logs"]
   Q3 --> Q4["Retire the generation: memory quarantine"]
@@ -730,16 +726,15 @@ sequenceDiagram
     autonumber
     participant D as Detector
     participant SV as Supervisor
-    participant SB as Sandbox
     participant GW as Gateway
     participant OP as Operator
     D->>SV: score crosses threshold
-    SV->>SB: freeze workload
-    SV->>GW: revoke tokens as generation dies
-    SV->>GW: snapshot logs and context
-    GW->>OP: owned case with deadlines
-    OP->>GW: scrub proof plus approve release
-    GW->>SV: fresh generation from clean image
+    Note over SV: freeze workload
+    SV->>GW: revoke tokens
+    SV->>GW: snapshot evidence
+    GW->>OP: owned case, deadlines
+    OP->>GW: scrub proof, approve release
+    GW->>SV: fresh generation
 ```
 
 **Council deliberation.**
@@ -756,16 +751,16 @@ One chapter per catalog domain, same shape every time: what is at stake, the cat
 ```mermaid
 sequenceDiagram
     autonumber
-    participant A as Domain agent
+    participant A as Agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant P as Bound provider
-    participant D as Named destination
-    A->>SB: read task paths under Landlock
-    SB->>SV: mediated request plus identity
-    SV->>P: credentialed call on approval
+    participant P as Provider
+    participant D as Destination
+    A->>SB: read paths
+    SB->>SV: mediated call
+    SV->>P: bound call
     P-->>SV: result
-    SV->>D: allowed write only
+    SV->>D: allowed write
     Note over SV: every hop logged, scoped, revocable
 ```
 
@@ -1607,7 +1602,7 @@ And the operator gap: revocation, handoff, remediation and release need staffed 
 The reference architecture pairs the sandboxed runtime with inference and compute platforms up through AI-factory scale: the same gateway-supervisor-sandbox contract and policy model, carried by container runtimes up through Kubernetes, with the fence rebuilt per tier from native tools. The contract scales; the tools change.
 
 ```mermaid
-flowchart LR
+flowchart TB
   S1["One sandbox: contract proven"] --> S2["Many sandboxes: destination inventory"]
   S2 --> S3["Fleet: per-sandbox attribution at scale"]
   S3 --> S4["AI factory: same policy model, tiered runtimes"]

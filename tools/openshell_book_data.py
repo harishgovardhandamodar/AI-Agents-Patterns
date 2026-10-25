@@ -30,7 +30,7 @@ ARCHETYPES = [
 ]
 
 OPENSHELL_FIGS = {
-    "Three actors, one rule": """flowchart LR
+    "Three actors, one rule": """flowchart TB
   subgraph PLANE["Control plane"]
     GW["Gateway: identity, policy delivery, JWT signing, logs"]
   end
@@ -42,7 +42,7 @@ OPENSHELL_FIGS = {
     AG["Agent: unprivileged owned child"]
   end
   AG --> SB --> SV --> GW""",
-    "The mediated channel": """flowchart LR
+    "The mediated channel": """flowchart TB
   AG["Agent opens TCP / DNS"] --> SB["Sandbox: identifies program, intercepts"]
   SB --> CH["One mutual-TLS channel, many streams"]
   CH --> SV["Supervisor: policy check, add credentials"]
@@ -63,7 +63,7 @@ OPENSHELL_FIGS = {
   G4["Restart: generation N+1, fresh tokens and certs"]
   G5["Old tokens stop working; deletion cuts everything"]
   G1 --> G2 --> G3 --> G4 --> G5""",
-    "Policy layers and timing": """flowchart LR
+    "Policy layers and timing": """flowchart TB
   subgraph LOCKED["Locked at creation or startup"]
     L1["process: unprivileged user, no caps"]
     L2["filesystem_policy: Landlock paths"]
@@ -74,20 +74,13 @@ OPENSHELL_FIGS = {
     N2["network_middlewares: inspect, transform, block"]
   end
   LOCKED --> LIVE""",
-    "The prover in CI": """flowchart LR
+    "The prover in CI": """flowchart TB
   PR["Policy pull request"] --> PV["openshell-prover checks the boundary"]
   PV -->|clean| MG["Merge: ship the rule"]
   PV -->|new credentialed reach| HB["Human review required"]
   PV -->|metadata or methods| HB
   HB --> MG""",
-    "Six archetypes, six containments": """flowchart TB
-  H["hijack: steered intent"] --> G1["approval gates + scoped grants"]
-  E["exfiltration: outward road"] --> G2["deny-by-default + read-only mounts"]
-  A["abuse: excess scope"] --> G3["least privilege + revocation by deletion"]
-  C["collusion: pair channel"] --> G4["channel denial + pair review"]
-  D["drift: decayed goal"] --> G5["goal comparison + generation rotation"]
-  S["spawning: multiplied identity"] --> G6["control-plane creation + fleet halt"]""",
-    "The quarantine workflow on OpenShell": """flowchart LR
+    "The quarantine workflow on OpenShell": """flowchart TB
   Q1["Freeze or delete the sandbox"] --> Q2["Tokens die with the generation"]
   Q2 --> Q3["Capture supervisor and gateway logs"]
   Q3 --> Q4["Retire the generation: memory quarantine"]
@@ -95,23 +88,20 @@ OPENSHELL_FIGS = {
   Q5 --> Q6["Fresh generation from a clean image"]""",
     "Four runtimes, one contract": """flowchart TB
   subgraph DK["Docker / Podman"]
-    D1["supervisor in its own container"]
-    D2["Unix socket, workload networking off"]
+    D1["own container, Unix socket, net off"]
   end
   subgraph K8["Kubernetes"]
-    K1["supervisor in its own pod"]
-    K2["mTLS service, NetworkPolicy fence"]
+    K1["own pod, mTLS service, NetworkPolicy"]
   end
   subgraph VM["MicroVM"]
-    V1["supervisor as host process"]
-    V2["vsock channel, no guest net device"]
+    V1["host process, vsock, no guest net"]
   end
-  DK & K8 & VM --> CT["same contract: supervisor decides, sandbox relays, fence denies"]""",
-    "From one sandbox to fleets": """flowchart LR
+  DK ~~~ K8 ~~~ VM""",
+    "From one sandbox to fleets": """flowchart TB
   S1["One sandbox: contract proven"] --> S2["Many sandboxes: destination inventory"]
   S2 --> S3["Fleet: per-sandbox attribution at scale"]
   S3 --> S4["AI factory: same policy model, tiered runtimes"]""",
-    "Gateway, supervisor, sandbox: module view": """flowchart TB
+    "Control plane modules": """flowchart TB
   subgraph GW["Gateway modules"]
     G1["Identity and auth"]
     G2["Policy store and delivery"]
@@ -124,6 +114,8 @@ OPENSHELL_FIGS = {
     S3["DNS resolver"]
     S4["Connection relay"]
   end
+  GW --> SV""",
+    "Enforcement modules": """flowchart TB
   subgraph SB["Sandbox modules"]
     B1["Process owner"]
     B2["Seccomp and Landlock hooks"]
@@ -134,16 +126,14 @@ OPENSHELL_FIGS = {
     D2["Kubernetes"]
     D3["MicroVM"]
   end
-  GW --> SV --> SB
-  DR -. builds and fences .-> SB
-  DR -. places .-> SV""",
+  SB -. fenced by .-> DR""",
     "Sandbox protocol session": """sequenceDiagram
     autonumber
     participant A as Agent
     participant SB as Sandbox
     participant SV as Supervisor
     A->>SB: TCP open example.com:443
-    SB->>SV: stream SYN plus program identity
+    SB->>SV: stream SYN, program identity
     SV->>SV: policy lookup per binary
     alt destination allowed
         SV->>SV: attach credentials if bound
@@ -156,21 +146,21 @@ OPENSHELL_FIGS = {
     participant DR as Compute driver
     participant SV as Supervisor
     participant GW as Gateway
-    DR->>SV: bootstrap token in files or ServiceAccount
-    SV->>GW: claim plus bootstrap credential
-    GW->>GW: verify against sandbox record
-    GW-->>SV: gateway JWT plus sandbox JWT
-    SV->>SV: renew both before expiry
-    SV->>GW: delete sandbox ends renewal""",
+    DR->>SV: bootstrap token
+    SV->>GW: claim plus credential
+    GW->>GW: verify sandbox record
+    GW-->>SV: gateway and sandbox JWTs
+    SV->>SV: renew before expiry
+    SV->>GW: delete ends renewal""",
     "Agent-proposed rule under review": """sequenceDiagram
     autonumber
-    participant AG as Agent advisor
+    participant AG as Advisor
     participant PV as Prover
-    participant HU as Human reviewer
+    participant HU as Reviewer
     participant GW as Gateway
     AG->>PV: proposed network rule
     PV->>PV: check credentialed reach
-    PV->>PV: check methods and metadata endpoints
+    PV->>PV: check methods, metadata
     alt finding flagged
         PV->>HU: block plus finding report
         HU->>GW: approve or reject
@@ -182,12 +172,11 @@ OPENSHELL_FIGS = {
     participant A as Turned agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant G as Approval gate
     participant D as Detectors
-    A->>SB: irreversible action attempt
-    SB->>SV: mediated request plus identity
-    SV->>G: hold while detectors score
-    D->>SV: deviation and misalignment scores
+    A->>SB: irreversible attempt
+    SB->>SV: mediated request
+    Note over SV: gate holds while detectors score
+    D->>SV: deviation, misalignment scores
     alt scores convict
         SV->>SB: freeze and open case
     else scores clear
@@ -213,14 +202,13 @@ OPENSHELL_FIGS = {
     participant A as Agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant GW as Gateway
     A->>SB: invoke visible tool
     SB->>SV: grant scope check
     alt tool outside grant
         SV-->>SB: deny and log attempt
     else tool inside grant
         SV->>SV: execute, watch for drift
-        SV->>GW: revoke grant on finding
+        Note over SV: revoke grant on finding
     end""",
     "Collusion without a channel": """sequenceDiagram
     autonumber
@@ -240,15 +228,14 @@ OPENSHELL_FIGS = {
     participant A as Drifting agent
     participant SV as Supervisor
     participant GC as Goal comparator
-    participant G as Approval gate
     A->>SV: permitted actions, week after week
     SV->>GC: compare mix to written objective
-    GC->>G: slow evidence accumulates
-    G->>G: hold irreversible step
+    GC-->>SV: slow evidence accumulates
+    Note over SV: gate holds the irreversible step
     alt objective confirmed lost
-        G->>SV: retire generation, fresh start
+        SV->>A: retire generation, fresh start
     else objective holds
-        G->>SV: release with new baseline
+        SV->>A: release with new baseline
     end""",
     "Spawning denied by construction": """sequenceDiagram
     autonumber
@@ -273,28 +260,27 @@ OPENSHELL_FIGS = {
     participant A as Agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant P as Bound endpoint
-    A->>SB: request with opaque placeholder
-    SB->>SV: relay plus program identity
-    SV->>SV: policy check and bind endpoint
-    SV->>P: real request plus resolved credential
+    participant P as Endpoint
+    A->>SB: opaque request
+    SB->>SV: relay plus identity
+    SV->>SV: policy check and bind
+    SV->>P: credentialed request
     P-->>SV: response
-    SV-->>SB: relay with no secret attached
+    SV-->>SB: clean relay
     SB-->>A: response bytes""",
     "Incident on the clock": """sequenceDiagram
     autonumber
     participant D as Detector
     participant SV as Supervisor
-    participant SB as Sandbox
     participant GW as Gateway
     participant OP as Operator
     D->>SV: score crosses threshold
-    SV->>SB: freeze workload
-    SV->>GW: revoke tokens as generation dies
-    SV->>GW: snapshot logs and context
-    GW->>OP: owned case with deadlines
-    OP->>GW: scrub proof plus approve release
-    GW->>SV: fresh generation from clean image""",
+    Note over SV: freeze workload
+    SV->>GW: revoke tokens
+    SV->>GW: snapshot evidence
+    GW->>OP: owned case, deadlines
+    OP->>GW: scrub proof, approve release
+    GW->>SV: fresh generation""",
     "Policy schema as UML": """classDiagram
     class SandboxPolicy {
         +version
@@ -338,16 +324,16 @@ OPENSHELL_FIGS = {
     Retired --> [*]""",
     "Canonical domain request path": """sequenceDiagram
     autonumber
-    participant A as Domain agent
+    participant A as Agent
     participant SB as Sandbox
     participant SV as Supervisor
-    participant P as Bound provider
-    participant D as Named destination
-    A->>SB: read task paths under Landlock
-    SB->>SV: mediated request plus identity
-    SV->>P: credentialed call on approval
+    participant P as Provider
+    participant D as Destination
+    A->>SB: read paths
+    SB->>SV: mediated call
+    SV->>P: bound call
     P-->>SV: result
-    SV->>D: allowed write only
+    SV->>D: allowed write
     Note over SV: every hop logged, scoped, revocable""",
 }
 

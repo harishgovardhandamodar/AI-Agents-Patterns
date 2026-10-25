@@ -256,7 +256,8 @@ def main():
         "way on every runtime — while each runtime advertises its capabilities so the "
         "gateway knows what each deployment can and cannot do."
     )
-    os_fig(body, "Gateway, supervisor, sandbox: module view")
+    os_fig(body, "Control plane modules")
+    os_fig(body, "Enforcement modules")
     deliberate(body, "arch-actors")
 
     CH("The mediated channel")
@@ -403,7 +404,11 @@ def main():
         "bounds it — plus what that primitive cannot see. Containment first, then the "
         "residual, honestly labeled."
     )
-    os_fig(body, "Six archetypes, six containments")
+    body.table(
+        ["Rogue shape", "Containing primitive"],
+        [[label, prim] for _, label, _, prim in ARCHETYPES],
+        caption="The six archetypes and the primitive that bounds each; every chapter below works one row.",
+    )
 
     # -- Part II chapters ------------------------------------------------ #
     arch_keys = {"hijack": "arch-hijack", "exfil": "arch-exfil",
