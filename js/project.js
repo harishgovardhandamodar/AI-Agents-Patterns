@@ -199,12 +199,16 @@ function projPaintChip() {
   if (!bar) return;
   let chip = document.getElementById("projChip");
   if (!chip) {
-    const host = document.createElement("span");
-    host.id = "projChipHost";
-    host.style.display = "inline-flex";
-    const spacer = bar.querySelector(".spacer");
-    if (spacer) spacer.insertAdjacentElement("afterend", host);
-    else bar.appendChild(host);
+    /* Prefer the static host in index.html; only create one if absent. */
+    let host = document.getElementById("projChipHost");
+    if (!host) {
+      host = document.createElement("span");
+      host.id = "projChipHost";
+      host.style.display = "inline-flex";
+      const spacer = bar.querySelector(".spacer");
+      if (spacer) spacer.insertAdjacentElement("afterend", host);
+      else bar.appendChild(host);
+    }
     host.innerHTML = projChipHtml();
     return;
   }

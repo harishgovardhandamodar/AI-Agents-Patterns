@@ -677,6 +677,12 @@ function tabKeyNav(e) {
   else if (e.key === "ArrowLeft") j = (i - 1 + tabs.length) % tabs.length;
   else if (e.key === "Home") j = 0;
   else if (e.key === "End") j = tabs.length - 1;
+  else if ((e.key === "Enter" || e.key === " ") && i >= 0) {
+    /* .app-tab are divs, so keyboard activation needs an explicit handler. */
+    e.preventDefault();
+    tabs[i].click();
+    return;
+  }
   if (j >= 0) {
     e.preventDefault();
     tabs[j].click();
