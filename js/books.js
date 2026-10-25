@@ -1,5 +1,5 @@
 /* js/books.js — the Bookshelf panel (Overview tab): collect the landscape
- * inventory and rebuild all four books (main, rogue, self-learning, openshell) through
+ * inventory and rebuild all five books (main, rogue, self-learning, openshell, workflows) through
  * the server-side /api/books/* endpoints (serve.py runs the generators, so the
  * browser never shells out). Everything degrades to status text when the
  * server cannot build (e.g. a static host with no Python).
@@ -70,7 +70,7 @@ function renderBookshelf() {
     return;
   }
   const busy = booksState.job && (booksState.job.state === "queued" || booksState.job.state === "running");
-  const order = ["main", "rogue", "self", "openshell"];
+  const order = ["main", "rogue", "self", "openshell", "workflows"];
   const rows = order.filter(function (tid) { return st.books && st.books[tid]; }).map(function (tid) {
     const b = st.books[tid];
     const stale = b.stale
@@ -87,7 +87,7 @@ function renderBookshelf() {
   }).join("");
   root.innerHTML =
     '<div class="bt-head"><div>' +
-    '<p class="muted small" style="margin:0">Collect the landscape inventory (catalog + lab reference data), regenerate Markdown + print HTML, and re-render the PDFs — for all four books.</p></div>' +
+    '<p class="muted small" style="margin:0">Collect the landscape inventory (catalog + lab reference data), regenerate Markdown + print HTML, and re-render the PDFs — for all five books.</p></div>' +
     '<div class="bt-head-btns">' +
     '<button class="btn" data-act="booksRefresh">↻ Status</button>' +
     '<button class="btn primary" data-act="booksBuildAll"' + (busy ? " disabled" : "") + ">⬇ Collect landscape &amp; rebuild all books</button>" +
@@ -150,7 +150,7 @@ function booksLaunch(targets) {
   });
 }
 
-function booksBuildAll() { booksLaunch(["main", "rogue", "self", "openshell"]); }
+function booksBuildAll() { booksLaunch(["main", "rogue", "self", "openshell", "workflows"]); }
 function booksBuildOne(tid) { booksLaunch([tid]); }
 
 function booksRefresh() {
