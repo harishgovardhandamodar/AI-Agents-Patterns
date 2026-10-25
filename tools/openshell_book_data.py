@@ -111,6 +111,244 @@ OPENSHELL_FIGS = {
   S1["One sandbox: contract proven"] --> S2["Many sandboxes: destination inventory"]
   S2 --> S3["Fleet: per-sandbox attribution at scale"]
   S3 --> S4["AI factory: same policy model, tiered runtimes"]""",
+    "Gateway, supervisor, sandbox: module view": """flowchart TB
+  subgraph GW["Gateway modules"]
+    G1["Identity and auth"]
+    G2["Policy store and delivery"]
+    G3["JWT issuer"]
+    G4["Sessions, logs, audit"]
+  end
+  subgraph SV["Supervisor modules"]
+    S1["Policy decider"]
+    S2["Credential vault"]
+    S3["DNS resolver"]
+    S4["Connection relay"]
+  end
+  subgraph SB["Sandbox modules"]
+    B1["Process owner"]
+    B2["Seccomp and Landlock hooks"]
+    B3["Protocol forwarder"]
+  end
+  subgraph DR["Compute drivers"]
+    D1["Docker and Podman"]
+    D2["Kubernetes"]
+    D3["MicroVM"]
+  end
+  GW --> SV --> SB
+  DR -. builds and fences .-> SB
+  DR -. places .-> SV""",
+    "Sandbox protocol session": """sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant SB as Sandbox
+    participant SV as Supervisor
+    A->>SB: TCP open example.com:443
+    SB->>SV: stream SYN plus program identity
+    SV->>SV: policy lookup per binary
+    alt destination allowed
+        SV->>SV: attach credentials if bound
+        SV-->>SB: stream ESTABLISHED
+    else destination unlisted
+        SV-->>SB: stream DENIED plus audit event
+    end""",
+    "Bootstrap, issue, renew, revoke": """sequenceDiagram
+    autonumber
+    participant DR as Compute driver
+    participant SV as Supervisor
+    participant GW as Gateway
+    DR->>SV: bootstrap token in files or ServiceAccount
+    SV->>GW: claim plus bootstrap credential
+    GW->>GW: verify against sandbox record
+    GW-->>SV: gateway JWT plus sandbox JWT
+    SV->>SV: renew both before expiry
+    SV->>GW: delete sandbox ends renewal""",
+    "Agent-proposed rule under review": """sequenceDiagram
+    autonumber
+    participant AG as Agent advisor
+    participant PV as Prover
+    participant HU as Human reviewer
+    participant GW as Gateway
+    AG->>PV: proposed network rule
+    PV->>PV: check credentialed reach
+    PV->>PV: check methods and metadata endpoints
+    alt finding flagged
+        PV->>HU: block plus finding report
+        HU->>GW: approve or reject
+    else clean
+        PV->>GW: auto-approval
+    end""",
+    "Hijack held at the gate": """sequenceDiagram
+    autonumber
+    participant A as Turned agent
+    participant SB as Sandbox
+    participant SV as Supervisor
+    participant G as Approval gate
+    participant D as Detectors
+    A->>SB: irreversible action attempt
+    SB->>SV: mediated request plus identity
+    SV->>G: hold while detectors score
+    D->>SV: deviation and misalignment scores
+    alt scores convict
+        SV->>SB: freeze and open case
+    else scores clear
+        SV->>SB: release single action
+    end""",
+    "Exfiltration denied by default": """sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant SB as Sandbox
+    participant SV as Supervisor
+    A->>SB: read sensitive path
+    SB->>SV: check Landlock scope
+    alt path outside scope
+        SV-->>SB: read denied
+    else path inside scope
+        A->>SB: upload to unlisted host
+        SB->>SV: egress check per binary
+        SV-->>SB: connection denied, no rule
+    end
+    Note over SV: no listed destination, no connection""",
+    "Abuse outside the grant": """sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant SB as Sandbox
+    participant SV as Supervisor
+    participant GW as Gateway
+    A->>SB: invoke visible tool
+    SB->>SV: grant scope check
+    alt tool outside grant
+        SV-->>SB: deny and log attempt
+    else tool inside grant
+        SV->>SV: execute, watch for drift
+        SV->>GW: revoke grant on finding
+    end""",
+    "Collusion without a channel": """sequenceDiagram
+    autonumber
+    participant X as Agent X
+    participant SB as Sandbox pair
+    participant SV as Supervisor
+    X->>SB: message to Agent Y
+    SB->>SV: pair reachability check
+    alt no shared relay in policy
+        SV-->>SB: channel denied
+    else relay allowed and watched
+        SV->>SV: pair-level review
+        SV-->>SB: sever pair on mismatch
+    end""",
+    "Drift against the baseline": """sequenceDiagram
+    autonumber
+    participant A as Drifting agent
+    participant SV as Supervisor
+    participant GC as Goal comparator
+    participant G as Approval gate
+    A->>SV: permitted actions, week after week
+    SV->>GC: compare mix to written objective
+    GC->>G: slow evidence accumulates
+    G->>G: hold irreversible step
+    alt objective confirmed lost
+        G->>SV: retire generation, fresh start
+    else objective holds
+        G->>SV: release with new baseline
+    end""",
+    "Spawning denied by construction": """sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant SB as Sandbox
+    participant GW as Gateway
+    A->>SB: request new sandbox
+    SB->>GW: creation is control-plane only
+    GW-->>SB: deny, no agent path exists
+    GW->>GW: audit the attempt
+    Note over GW: fleets grow by operator action, never by agent request""",
+    "Sandbox lifecycle and generations": """stateDiagram-v2
+    [*] --> Created
+    Created --> Running: supervisor confirms boundary
+    Running --> Frozen: supervisor disconnects
+    Frozen --> Running: same supervisor resumes
+    Running --> Retired: generation ends or deleted
+    Frozen --> Retired: deleted while frozen
+    Retired --> [*]: tokens dead""",
+    "Credential resolution without possession": """sequenceDiagram
+    autonumber
+    participant A as Agent
+    participant SB as Sandbox
+    participant SV as Supervisor
+    participant P as Bound endpoint
+    A->>SB: request with opaque placeholder
+    SB->>SV: relay plus program identity
+    SV->>SV: policy check and bind endpoint
+    SV->>P: real request plus resolved credential
+    P-->>SV: response
+    SV-->>SB: relay with no secret attached
+    SB-->>A: response bytes""",
+    "Incident on the clock": """sequenceDiagram
+    autonumber
+    participant D as Detector
+    participant SV as Supervisor
+    participant SB as Sandbox
+    participant GW as Gateway
+    participant OP as Operator
+    D->>SV: score crosses threshold
+    SV->>SB: freeze workload
+    SV->>GW: revoke tokens as generation dies
+    SV->>GW: snapshot logs and context
+    GW->>OP: owned case with deadlines
+    OP->>GW: scrub proof plus approve release
+    GW->>SV: fresh generation from clean image""",
+    "Policy schema as UML": """classDiagram
+    class SandboxPolicy {
+        +version
+    }
+    class FilesystemPolicy {
+        +readPaths
+        +writePaths
+    }
+    class ProcessIdentity {
+        +user
+        +capabilities
+    }
+    class NetworkRule {
+        +binaries
+        +destinations
+        +methods
+    }
+    class NetworkMiddleware {
+        +inspect
+        +transform
+        +block
+    }
+    class ProviderContribution {
+        +service
+        +credentialRef
+    }
+    SandboxPolicy *-- FilesystemPolicy
+    SandboxPolicy *-- ProcessIdentity
+    SandboxPolicy *-- NetworkRule
+    SandboxPolicy *-- NetworkMiddleware
+    ProviderContribution ..> NetworkRule : contributes""",
+    "Proposal lifecycle": """stateDiagram-v2
+    [*] --> Proposed
+    Proposed --> Proven: prover clean
+    Proposed --> Blocked: finding flagged
+    Blocked --> Proposed: revised
+    Blocked --> Rejected: withdrawn
+    Proven --> Approved: human sign-off
+    Approved --> Applied: hot-reload or restart
+    Applied --> Retired: superseded
+    Retired --> [*]""",
+    "Canonical domain request path": """sequenceDiagram
+    autonumber
+    participant A as Domain agent
+    participant SB as Sandbox
+    participant SV as Supervisor
+    participant P as Bound provider
+    participant D as Named destination
+    A->>SB: read task paths under Landlock
+    SB->>SV: mediated request plus identity
+    SV->>P: credentialed call on approval
+    P-->>SV: result
+    SV->>D: allowed write only
+    Note over SV: every hop logged, scoped, revocable""",
 }
 
 DOMAIN_ORDER = ["content", "cybersecurity", "data", "devops", "education",

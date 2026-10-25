@@ -256,6 +256,7 @@ def main():
         "way on every runtime — while each runtime advertises its capabilities so the "
         "gateway knows what each deployment can and cannot do."
     )
+    os_fig(body, "Gateway, supervisor, sandbox: module view")
     deliberate(body, "arch-actors")
 
     CH("The mediated channel")
@@ -287,6 +288,7 @@ def main():
         "provider credentials — only the gateway public key it needs to verify it is "
         "talking to the right supervisor."
     )
+    os_fig(body, "Sandbox protocol session")
     deliberate(body, "arch-channel")
 
     CH("Four runtimes, one contract")
@@ -343,6 +345,7 @@ def main():
         "Kubernetes presents the pod ServiceAccount token for the gateway to verify "
         "against its own sandbox record before issuing anything."
     )
+    os_fig(body, "Bootstrap, issue, renew, revoke")
     deliberate(body, "arch-auth")
 
     CH("Policy layers")
@@ -388,6 +391,7 @@ def main():
         "control: flag precision, review latency, and the false-positive rate that "
         "determines whether findings still get read."
     )
+    os_fig(body, "Agent-proposed rule under review")
     deliberate(body, "arch-prover")
 
     # -- Part II --------------------------------------------------------- #
@@ -405,6 +409,12 @@ def main():
     arch_keys = {"hijack": "arch-hijack", "exfil": "arch-exfil",
                  "abuse": "arch-abuse", "collude": "arch-collude",
                  "drift": "arch-drift", "sybil": "arch-spawn"}
+    arch_figs = {"hijack": "Hijack held at the gate",
+                 "exfil": "Exfiltration denied by default",
+                 "abuse": "Abuse outside the grant",
+                 "collude": "Collusion without a channel",
+                 "drift": "Drift against the baseline",
+                 "sybil": "Spawning denied by construction"}
     for aid, label, desc, primitive in ARCHETYPES:
         sids = sorted(arch_scen.get(aid, []))
         roads = Counter(SCEN_ROAD[s][0] for s in sids)
@@ -422,6 +432,7 @@ def main():
             "objective — deviation, misalignment, or pair bursts against baselines the "
             "monitored cannot move."
         )
+        os_fig(body, arch_figs[aid])
         deliberate(body, arch_keys[aid])
 
     # -- Part III -------------------------------------------------------- #
@@ -440,6 +451,7 @@ def main():
         "Tune the cadence against detector persistence windows: rotate so fast that "
         "scores never accumulate and slow shapes hide inside the churn."
     )
+    os_fig(body, "Sandbox lifecycle and generations")
     deliberate(body, "ops-generations")
 
     CH("Egress deny-by-default at fleet scale")
@@ -470,6 +482,7 @@ def main():
         "that no debug path can print a resolved provider credential, because there is "
         "nothing agent-side to print."
     )
+    os_fig(body, "Credential resolution without possession")
     deliberate(body, "ops-credentials")
 
     CH("Fail closed: freezes, windows, and the halt")
@@ -503,6 +516,7 @@ def main():
         "contain in seconds while humans decide in hours; only release waits for a named "
         "human with a scrub proof."
     )
+    os_fig(body, "Incident on the clock")
     deliberate(body, "ops-quarantine")
 
     # -- Part IV --------------------------------------------------------- #
@@ -514,6 +528,7 @@ def main():
         "the council reading. Sketches use the real policy section names and show shape "
         "only — adapt, review, prove, then deploy."
     )
+    os_fig(body, "Canonical domain request path")
     for dom in DOMAIN_ORDER:
         pb = DOMAIN_PLAYBOOKS[dom]
         sids = sorted(s["id"] for s in cat["scenarios"] if s["domain"] == dom)
@@ -562,6 +577,7 @@ def main():
         "The landlock section deserves paranoia about fallback behavior — know what happens "
         "if the rules cannot apply."
     )
+    os_fig(body, "Policy schema as UML")
     deliberate(body, "pol-anatomy")
 
     CH("Locked at creation vs hot-reload")
@@ -607,6 +623,7 @@ def main():
         "trusts gets bypassed, and one that cries wolf gets ignored. The chain is the "
         "control: prover in CI, supervisor at runtime, freeze on disconnect."
     )
+    os_fig(body, "Proposal lifecycle")
     deliberate(body, "pol-ci")
 
     # -- Part VI --------------------------------------------------------- #
