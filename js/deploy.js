@@ -110,8 +110,14 @@ function dpLoad() {
   } catch (e) { /* ignore corrupt state */ }
 }
 function dpSave() {
-  try { localStorage.setItem(DP_STORE, JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus })); } catch (e) {}
-  if (typeof markSaved === "function") markSaved("dp");
+  let ok = false;
+  try {
+    const raw = JSON.stringify({ a: dpState.a, step: dpState.step, done: dpState.done, target: dpState.target, ack: dpState.ack, adrStatus: dpState.adrStatus });
+    ok = (typeof storeSet === "function") ? storeSet(DP_STORE, raw) : false;
+  } catch (e) { ok = false; }
+  if (ok) { if (typeof markSaved === "function") markSaved("dp"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("dp", "Deployment plan");
+  if (typeof projTouch === "function") projTouch();
 }
 function dpReset() {
   const snap = { a: JSON.parse(JSON.stringify(dpState.a)), step: dpState.step, done: dpState.done, target: dpState.target, ack: Object.assign({}, dpState.ack), adrStatus: dpState.adrStatus };
@@ -178,22 +184,22 @@ function dpField(f) {
 
   switch (f.type) {
     case "text":
-      return `<div class="dp-field"><label class="dp-label" for="${fid}">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</label><input class="dp-input" id="${fid}" type="text" value="${escHtml(v)}" placeholder="${escHtml(f.placeholder || "")}" oninput="dpSet('${f.k}', this.value, true)">${hint}</div>`;
+      return `<div class="dp-field"><label class="dp-label" for="${fid}">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</label><input class="dp-input" id="${fid}" type="text" value="${escHtml(v)}" placeholder="${escHtml(f.placeholder || "")}" data-input="dpSetSoft" data-first="value" data-args="[&quot;${f.k}&quot;]">${hint}</div>`;
 
     case "select":
-      return `<div class="dp-field"><label class="dp-label" for="${fid}">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</label><select class="dp-input" id="${fid}" onchange="dpSet('${f.k}', this.value)">${
+      return `<div class="dp-field"><label class="dp-label" for="${fid}">${escHtml(f.label)}${f.required ? ' <b class="req">*</b>' : ""}</label><select class="dp-input" id="${fid}" data-change="dpSet" data-last="value" data-args="[&quot;${f.k}&quot;]">${
         dpOpts(f.opts).map(o => `<option value="${escHtml(o[0])}"${o[0] === v ? " selected" : ""}>${escHtml(o[1])}</option>`).join("")
       }</select>${hint}</div>`;
 
     case "cards":
       return `<div class="dp-field">${label}<div class="dp-cards" role="group" aria-labelledby="${fid}-lbl">${
-        f.opts.map(o => `<button class="dp-card${o[0] === v ? " on" : ""}" onclick="dpSet('${f.k}','${escHtml(o[0])}')">
+        f.opts.map(o => `<button class="dp-card${o[0] === v ? " on" : ""}" data-act="dpSet" data-args="[&quot;${f.k}&quot;,&quot;${escHtml(o[0])}&quot;]">
           <b>${escHtml(o[1])}</b>${o[2] ? `<span>${escHtml(o[2])}</span>` : ""}</button>`).join("")
       }</div>${hint}</div>`;
 
     case "autonomy":
       return `<div class="dp-field">${label}<div class="dp-cards dp-auto" role="group" aria-labelledby="${fid}-lbl">${
-        DP_AUTONOMY.map(o => `<button class="dp-card${Number(v) === o.v ? " on" : ""}" onclick="dpSet('autonomy',${o.v})">
+        DP_AUTONOMY.map(o => `<button class="dp-card${Number(v) === o.v ? " on" : ""}" data-act="dpSet" data-args='["autonomy",${o.v}]'>
           <b>${escHtml(o.label)}</b><span>${escHtml(o.desc)}</span></button>`).join("")
       }</div>${hint}</div>`;
 
@@ -212,7 +218,7 @@ function dpField(f) {
 
     case "toggle":
       return `<div class="dp-field dp-toggle-row">${label}
-        <button class="dp-toggle${v ? " on" : ""}" role="switch" aria-checked="${v ? "true" : "false"}" aria-labelledby="${fid}-lbl" onclick="dpSet('${f.k}', ${v ? "false" : "true"})">
+        <button class="dp-toggle${v ? " on" : ""}" role="switch" aria-checked="${v ? "true" : "false"}" aria-labelledby="${fid}-lbl" data-act="dpSet" data-args='["${f.k}",${v ? "false" : "true"}]'>
           <i></i><span>${v ? "Required" : "Not required"}</span>
         </button>${hint}</div>`;
 
@@ -223,11 +229,14 @@ function dpField(f) {
 function dpChipBtn(k, val, text, sel, single) {
   const on = sel.indexOf(val) >= 0;
   const fn = single ? "dpPick" : "dpToggle";
-  return `<button class="dp-chip${on ? " on" : ""}" onclick="${fn}('${k}','${escHtml(val)}')">${escHtml(text)}</button>`;
+  return `<button class="dp-chip${on ? " on" : ""}" data-act="${fn}" data-args='["${k}","${escHtml(val)}"]'>${escHtml(text)}</button>`;
 }
 
 /* ---------------- mutations ---------------- */
 function dpSet(k, v, soft) {
+  /* The delegation layer stringifies every arg (like the old inline call
+     did not, for autonomy) — coerce back so numeric dimensions compare. */
+  if (k === "autonomy") v = Number(v);
   dpState.a[k] = v;
   if (dpState.err) {
     dpState.err = null;
@@ -240,6 +249,9 @@ function dpSet(k, v, soft) {
   if (soft) { dpRefreshRail(); return; }
   dpRender();
 }
+/* Delegation shim for the soft text-input path: the value arrives first
+   (data-first) with the field key static, and soft is always true. */
+function dpSetSoft(v, k) { dpSet(k, v, true); }
 function dpRefreshRail() {
   const rail = document.querySelector("#dpRoot .dp-rail");
   if (rail) rail.innerHTML = dpRailHTML();
@@ -266,6 +278,15 @@ function dpFinish() {
   const errs = DP_STEPS.reduce((acc, _, i) => acc.concat(dpErrors(i)), []);
   if (errs.length) { dpState.err = errs; dpRender(); return; }
   dpState.done = true; dpState.err = null; dpSave(); dpRender();
+  /* The plan names the system — the project should carry that name too, so
+     every other tool's output lands under the same subject. */
+  if (typeof projRename === "function" && dpState.a.system) {
+    const cur = projGet();
+    if (!cur || cur.name !== dpState.a.system) {
+      projRename(dpState.a.system, dpState.a.domain ? dpDomainLabel() : (cur ? cur.domain : ""));
+      if (typeof projPaintChip === "function") projPaintChip();
+    }
+  }
   showNotif("Plan generated — " + (dpState.a.system || "deployment"));
 }
 function dpEditIntake() { dpState.done = false; dpState.step = 0; dpSave(); dpRender(); }
@@ -298,10 +319,10 @@ function dpSectionProfile() {
     </dl>
     <p class="muted small">${escHtml(auto.desc)}</p>
     <div class="dp-actions-row">
-      <button class="btn" onclick="dpEditIntake()">Edit intake</button>
-      <button class="iconbtn" onclick="dpCopyPlan()">Copy Markdown</button>
-      <button class="iconbtn" onclick="dpDownloadPlan()">Download .md</button>
-      <button class="iconbtn" onclick="dpReset()">Reset plan</button>
+      <button class="btn" data-act="dpEditIntake">Edit intake</button>
+      <button class="iconbtn" data-act="dpCopyPlan">Copy Markdown</button>
+      <button class="iconbtn" data-act="dpDownloadPlan">Download .md</button>
+      <button class="iconbtn" data-act="dpReset">Reset plan</button>
     </div>`;
 }
 
@@ -345,7 +366,7 @@ function dpRender() {
 
   const stepper = `<ol class="dp-steps">${DP_STEPS.map((s, i) => {
     const state = i < dpState.step || (dpState.done && i <= dpState.step) ? "done" : i === dpState.step ? "on" : "";
-    return `<li class="dp-step ${state}"><button onclick="dpGo(${i})" ${state === "" ? 'aria-current="false"' : ""}>
+    return `<li class="dp-step ${state}"><button data-act="dpGo" data-args='[${i}]' ${state === "" ? 'aria-current="false"' : ""}>
       <i>${state === "done" ? "✓" : i + 1}</i><span>${escHtml(s.title)}</span></button></li>`;
   }).join("")}</ol>`;
 
@@ -357,7 +378,7 @@ function dpRender() {
           <h2>${escHtml(dpState.a.system || "Deployment plan")}</h2>
           <p class="muted small">${escHtml(dpLabel("criticality", dpState.a.criticality))} · ${escHtml(dpState.a.blast)} blast radius · ${escHtml(dpLabel("autonomy", dpState.a.autonomy))}</p>
         </div>
-        <div class="dp-actions-row"><button class="btn" onclick="dpEditIntake()">↺ Edit intake</button></div>
+        <div class="dp-actions-row"><button class="btn" data-act="dpEditIntake">↺ Edit intake</button></div>
       </div>
       <div class="dp-sections">${DP_SECTIONS.map(s => `
         <section class="panel dp-sec" id="dpsec-${escHtml(s.id)}">
@@ -378,12 +399,12 @@ function dpRender() {
           ${errs.length ? `<div class="dp-err" role="alert">${errs.map(e => "• " + escHtml(e)).join("<br>")}</div>` : ""}
           ${step.fields.map(dpField).join("")}
           <div class="dp-foot">
-            <button class="iconbtn" onclick="dpPrev()" ${dpState.step === 0 ? "disabled" : ""}>← Back</button>
+            <button class="iconbtn" data-act="dpPrev" ${dpState.step === 0 ? "disabled" : ""}>← Back</button>
             <div style="flex:1"></div>
-            <button class="iconbtn" onclick="dpReset()">Reset</button>
+            <button class="iconbtn" data-act="dpReset">Reset</button>
             ${last
-              ? `<button class="btn primary" onclick="dpFinish()">Generate plan →</button>`
-              : `<button class="btn primary" onclick="dpNext()">Continue →</button>`}
+              ? `<button class="btn primary" data-act="dpFinish">Generate plan →</button>`
+              : `<button class="btn primary" data-act="dpNext">Continue →</button>`}
           </div>
         </div>
         <aside class="dp-rail">${dpRailHTML()}</aside>
@@ -395,6 +416,7 @@ function dpRender() {
       <div><h2>Deployment Planner</h2>
       <p class="muted small">Answer four questions about the system. The plan that comes out is grounded in this catalog — patterns, scenarios and cascades cited by name.
       <span class="save-stamp" data-save-stamp="dp"></span></p></div>
+      ${typeof dlCopyWorkLink === "function" ? `<button class="btn sm" data-act="dlCopyWorkLink" data-args="[&quot;deploy&quot;,&quot;plan&quot;]" title="Copy a link that opens this plan">🔗 Copy link</button>` : ""}
     </div>
     ${stepper}
     ${body}`;
@@ -435,8 +457,8 @@ function dpFinding(t, kind, id) { return { t: t, kind: kind, id: dpHas(kind, id)
 function dpOpenCite(kind, id) {
   try {
     if (kind === "pattern" && typeof openPattern === "function") openPattern(id);
-    else if (kind === "scenario") { switchTab("scenarios"); setTimeout(() => openScenario(id), 70); }
-    else if (kind === "cascade") { switchTab("cascades"); setTimeout(() => openCascade(id), 70); }
+    else if (kind === "scenario") { goTo("scenarios", id); }
+    else if (kind === "cascade") { goTo("cascades", id); }
     else showNotif("Reference: " + id);
   } catch (e) { showNotif("Couldn't open " + id); }
 }
@@ -579,13 +601,13 @@ function dpSectionScore() {
         <div class="dp-dimhead"><b>${escHtml(d.title)}</b><span>${d.score} · ${dpGrade(d.score)} <i class="muted">w${d.weight}</i></span></div>
         <div class="dp-bar"><div class="dp-bar-fill ${d.score >= 70 ? "good" : d.score >= 50 ? "mid" : "bad"}" style="width:${d.score}%"></div></div>
         <ul class="dp-find">${d.findings.map(f => `
-          <li>${f.id ? `<button class="dp-cite" onclick="dpOpenCite('${escHtml(f.kind)}','${escHtml(f.id)}')" title="Open in catalog">${escHtml(f.id)}</button> ` : ""}${escHtml(f.t)}</li>`).join("")}
+          <li>${f.id ? `<button class="dp-cite" data-act="dpOpenCite" data-args="[&quot;${escHtml(f.kind)}&quot;,&quot;${escHtml(f.id)}&quot;]" title="Open in catalog">${escHtml(f.id)}</button> ` : ""}${escHtml(f.t)}</li>`).join("")}
         </ul>
       </div>`).join("")}</div>
     ${sc.moves.length ? `
     <div class="dp-moves">
       <h4>Highest-leverage next moves</h4>
-      <ol>${sc.moves.map(m => `<li><b>${escHtml(m.dim.title)}:</b> ${escHtml(m.f.t)}${m.f.id ? ` — <button class="dp-cite" onclick="dpOpenCite('${escHtml(m.f.kind)}','${escHtml(m.f.id)}')">${escHtml(m.f.id)}</button>` : ""}</li>`).join("")}</ol>
+      <ol>${sc.moves.map(m => `<li><b>${escHtml(m.dim.title)}:</b> ${escHtml(m.f.t)}${m.f.id ? ` — <button class="dp-cite" data-act="dpOpenCite" data-args="[&quot;${escHtml(m.f.kind)}&quot;,&quot;${escHtml(m.f.id)}&quot;]">${escHtml(m.f.id)}</button>` : ""}</li>`).join("")}</ol>
     </div>` : ""}`;
 }
 
@@ -657,6 +679,58 @@ function dpStack() {
   return R.filter(x => { if (!x.pat) return true; if (seen[x.pat]) return false; seen[x.pat] = 1; return true; });
 }
 
+/* ---------------- materialise the stack as a blueprint (iteration 103)
+   The planner's recommended stack already names the right catalog patterns
+   (12 of 13 entries carry a valid pattern id). Until now the only way to
+   act on that was to re-pick every one of them by hand in the Blueprints
+   palette. This turns the stack into a blueprint in one step — the
+   promise js/help.js has been making since iteration 44. */
+function dpStackPatternIds() {
+  return dpStack().filter(x => x.pat).map(x => x.pat)
+    .filter(id => typeof DATA !== "undefined" && DATA.patterns &&
+      (DATA.patterns.patterns || []).some(p => p.id === id));
+}
+
+/* Add the stack to the blueprint. `mode` is "add" (merge) or "replace"
+   (start a clean canvas from the stack). Never overwrites without a
+   confirmation the user can undo. */
+function dpMaterialise(mode) {
+  if (typeof bpAddMany !== "function") { showNotif("Blueprint builder unavailable"); return; }
+  const ids = dpStackPatternIds();
+  if (!ids.length) { showNotif("The recommended stack has no catalog patterns yet", { kind: "warn" }); return; }
+  const name = (dpState.a && dpState.a.system) || "";
+  if (mode === "replace" && bpState.comps.length) {
+    const had = bpState.comps.slice();
+    const hadName = bpState.name;
+    bpState.comps = [];
+    bpState.name = name;
+    bpAddMany(ids);
+    undoPush("replace blueprint with the recommended stack",
+      () => { bpState.comps = had; bpState.name = hadName; bpSave(); bpRender(); bpRenderPalette(); },
+      () => { bpState.comps = ids.slice(); bpState.name = name; bpSave(); bpRender(); bpRenderPalette(); });
+    showNotif("Blueprint replaced with the recommended stack — " + ids.length + " patterns", {
+      kind: "ok",
+      actions: [
+        { label: "Undo", primary: true, fn: undoOnce },
+        { label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }
+      ]
+    });
+    switchTab("blueprint");
+    focusPane("blueprint");
+    return;
+  }
+  if (name && !bpState.name) bpState.name = name;
+  const added = bpAddMany(ids);
+  showNotif(added
+    ? "Recommended stack added to the blueprint — " + added + " pattern" + (added === 1 ? "" : "s")
+    : "Every recommended pattern is already on the blueprint", {
+    kind: "ok",
+    actions: [{ label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }]
+  });
+  switchTab("blueprint");
+  focusPane("blueprint");
+}
+
 /* Deterministic guardrail configuration derived from the intake answers. */
 function dpConfig() {
   const a = dpState.a;
@@ -714,7 +788,7 @@ function dpSectionStack() {
       <div class="dp-layerhead">${escHtml(label)}</div>
       <div class="dp-layeritems">${items.map(x => `
         <div class="dp-stackitem">
-          <b>${x.pat ? `<button class="dp-cite" onclick="dpOpenCite('pattern','${escHtml(x.pat)}')">${escHtml(x.pat)}</button> ` : ""}${escHtml(x.name)}</b>
+          <b>${x.pat ? `<button class="dp-cite" data-act="dpOpenCite" data-args="[&quot;pattern&quot;,&quot;${escHtml(x.pat)}&quot;]">${escHtml(x.pat)}</button> ` : ""}${escHtml(x.name)}</b>
           <span>${escHtml(x.why)}</span>
         </div>`).join("")}</div>
     </div>`;
@@ -725,11 +799,16 @@ function dpSectionStack() {
       <p class="muted small">${stack.length} controls selected for this profile, grouped by the layer that enforces them. Citations open the catalog entry.</p>
       ${groups}
     </div>
+    <div class="dp-actions-row" style="margin:10px 0 0">
+      <button class="btn primary" data-act="dpMaterialise" data-args="[&quot;add&quot;]" title="Add every recommended control to your blueprint as a starting canvas">🧩 Materialise as blueprint</button>
+      <button class="btn" data-act="dpMaterialise" data-args="[&quot;replace&quot;]" title="Replace the blueprint canvas with the recommended stack (undoable)">↺ Replace canvas</button>
+      <span class="muted small">${dpStackPatternIds().length} of these are catalog patterns — they land on the canvas, not as text.</span>
+    </div>
     <div class="dp-confighead">
       <h4>Guardrail configuration</h4>
       <div class="dp-actions-row" style="margin-top:0">
-        <button class="iconbtn" onclick="dpCopyConfig()">Copy JSON</button>
-        <button class="iconbtn" onclick="switchTab('guard')">Open Guardrail Lab →</button>
+        <button class="iconbtn" data-act="dpCopyConfig">Copy JSON</button>
+        <button class="iconbtn" data-act="switchTab" data-args="[&quot;guard&quot;]">Open Guardrail Lab →</button>
       </div>
     </div>
     <pre class="dp-code">${escHtml(JSON.stringify(cfg, null, 2))}</pre>
@@ -838,7 +917,7 @@ function dpSectionRollout() {
   const ladder = DP_AUTONOMY.map(o => {
     const state = o.v < cur ? "past" : o.v === cur ? "here" : o.v <= tgt ? "target" : o.v <= ceil ? "open" : "locked";
     const missing = o.v > ceil ? dpBlocked(o.v) : [];
-    return `<button class="dp-rung ${state}" onclick="dpSetTarget(${o.v})"
+    return `<button class="dp-rung ${state}" data-act="dpSetTarget" data-args='[${o.v}]'
         title="${escHtml(o.desc)}" aria-pressed="${o.v === tgt}">
         <i>L${o.v}</i><b>${escHtml(o.label.split(" · ")[1] || o.label)}</b>
         <span>${escHtml(o.desc)}</span>
@@ -859,7 +938,7 @@ function dpSectionRollout() {
     <div class="dp-dial" role="group" aria-label="Autonomy dial">${ladder}</div>
     <div class="dp-rollhead">
       <h4>Rollout path <span class="muted small">${stages.length} stages · ~${totalDays} days</span></h4>
-      <button class="iconbtn" onclick="dpCopyRollout()">Copy plan</button>
+      <button class="iconbtn" data-act="dpCopyRollout">Copy plan</button>
     </div>
     <ol class="dp-stages">${stages.map(s => `
       <li class="dp-stage${/BLOCKED/.test(s.gate) ? " blocked" : ""}">
@@ -964,17 +1043,39 @@ function dpRiskList() {
   return { all: all, shown: dpRiskSrc === "all" ? all : all.filter(r => r.src === dpRiskSrc) };
 }
 function dpSetRiskSrc(v) { dpRiskSrc = v; dpRender(); }
+/* Acknowledging a risk is a decision, so it is undoable (iteration 115). */
 function dpAckRisk(key) {
   if (!dpState.ack) dpState.ack = {};
-  if (dpState.ack[key]) delete dpState.ack[key]; else dpState.ack[key] = 1;
+  const was = !!dpState.ack[key];
+  if (was) delete dpState.ack[key]; else dpState.ack[key] = 1;
   dpSave(); dpRender();
+  const apply = function (on) {
+    if (!dpState.ack) dpState.ack = {};
+    if (on) dpState.ack[key] = 1; else delete dpState.ack[key];
+    dpSave(); dpRender();
+  };
+  if (typeof undoPush === "function") {
+    undoPush((was ? "unacknowledge " : "acknowledge ") + key,
+      function () { apply(was); },
+      function () { apply(!was); });
+  }
 }
 function dpAckAll() {
   const list = dpRiskList().shown;
   if (!dpState.ack) dpState.ack = {};
   const allAcked = list.every(r => dpState.ack[r.key]);
+  const before = Object.assign({}, dpState.ack);
   list.forEach(r => { if (allAcked) delete dpState.ack[r.key]; else dpState.ack[r.key] = 1; });
   dpSave(); dpRender();
+  const apply = function (ack) {
+    dpState.ack = Object.assign({}, ack);
+    dpSave(); dpRender();
+  };
+  if (typeof undoPush === "function") {
+    undoPush((allAcked ? "clear" : "acknowledge") + " " + list.length + " risks",
+      function () { apply(before); },
+      function () { apply(dpState.ack); });
+  }
   showNotif(allAcked ? "Cleared acknowledgements" : "Acknowledged " + list.length + " risks");
 }
 function dpRiskCsv() {
@@ -1009,7 +1110,7 @@ function dpSectionRisks() {
 
   const filters = [["all", "All " + all.length], ["scenario", "Scenarios " + srcCount("scenario")],
     ["cascade", "Cascades " + srcCount("cascade")], ["gap", "Intake gaps " + srcCount("gap")]]
-    .map(([k, label]) => `<button class="dp-chip${dpRiskSrc === k ? " on" : ""}" onclick="dpSetRiskSrc('${k}')">${escHtml(label)}</button>`)
+    .map(([k, label]) => `<button class="dp-chip${dpRiskSrc === k ? " on" : ""}" data-act="dpSetRiskSrc" data-args="[&quot;${k}&quot;]">${escHtml(label)}</button>`)
     .join("");
 
   const rows = shown.map((r, i) => {
@@ -1018,7 +1119,7 @@ function dpSectionRisks() {
       : r.src === "cascade" ? "cascade"
       : (r.kind === "scenario" || r.kind === "cascade") ? r.kind : "pattern";
     const cite = r.ref
-      ? `<button class="dp-cite" onclick="dpOpenCite('${escHtml(citeKind)}','${escHtml(r.ref)}')">${escHtml(r.ref)}</button>`
+      ? `<button class="dp-cite" data-act="dpOpenCite" data-args="[&quot;${escHtml(citeKind)}&quot;,&quot;${escHtml(r.ref)}&quot;]">${escHtml(r.ref)}</button>`
       : "";
     return `<li class="dp-risk${isAck ? " ack" : ""}">
       <div class="dp-riskex ${r.exposure >= 9 ? "hot" : r.exposure >= 6 ? "warm" : ""}"><b>${r.exposure}</b><span>${escHtml(r.sev)} · ${escHtml(r.lik)}</span></div>
@@ -1030,7 +1131,7 @@ function dpSectionRisks() {
         ${r.note ? `<p class="dp-risknote">${escHtml(r.note)}</p>` : ""}
         ${r.detail && r.detail.length ? `<ul class="dp-riskdetail">${r.detail.map(d => `<li>${escHtml(d)}</li>`).join("")}</ul>` : ""}
       </div>
-      <button class="dp-ack${isAck ? " on" : ""}" onclick="dpAckRisk('${escAttr(r.key)}')" aria-pressed="${isAck}" title="Acknowledge this risk">${isAck ? "✓ ack" : "ack"}</button>
+      <button class="dp-ack${isAck ? " on" : ""}" data-act="dpAckRisk" data-args="[&quot;${escAttr(r.key)}&quot;]" aria-pressed="${isAck}" title="Acknowledge this risk">${isAck ? "✓ ack" : "ack"}</button>
     </li>`;
   }).join("");
 
@@ -1046,9 +1147,9 @@ function dpSectionRisks() {
     </div>
     <p class="muted small">Residual exposure <i>after</i> the controls in this plan: real scenarios for this domain, modeled cascades, and the gaps this intake still leaves. Acknowledgements persist in this browser.</p>
     <div class="dp-risktools">
-      <button class="iconbtn" onclick="dpAckAll()">Acknowledge shown</button>
-      <button class="iconbtn" onclick="dpCopyRisks()">Copy CSV</button>
-      <button class="iconbtn" onclick="dpDownloadRisks()">Download .csv</button>
+      <button class="iconbtn" data-act="dpAckAll">Acknowledge shown</button>
+      <button class="iconbtn" data-act="dpCopyRisks">Copy CSV</button>
+      <button class="iconbtn" data-act="dpDownloadRisks">Download .csv</button>
     </div>
     ${rows ? `<ol class="dp-risks">${rows}</ol>` : `<div class="muted small">No risks under this filter.</div>`}`;
 }
@@ -1200,12 +1301,12 @@ function dpSectionAdr() {
     <div class="dp-adrhead">
       <div class="dp-adrstatus">
         <span class="muted small">Status</span>
-        ${DP_ADR_STATUS.map(s => `<button class="dp-chip${dpAdrStatus() === s ? " on" : ""}" onclick="dpSetAdrStatus('${s}')">${s}</button>`).join("")}
+        ${DP_ADR_STATUS.map(s => `<button class="dp-chip${dpAdrStatus() === s ? " on" : ""}" data-act="dpSetAdrStatus" data-args="[&quot;${s}&quot;]">${s}</button>`).join("")}
       </div>
       <div class="dp-actions-row" style="margin-top:0">
-        <button class="iconbtn" onclick="dpCopyAdr()">Copy Markdown</button>
-        <button class="iconbtn" onclick="dpDownloadAdr()">Download .md</button>
-        <button class="iconbtn" onclick="dpAdrToCopilot()">Refine with Fox - Architect</button>
+        <button class="iconbtn" data-act="dpCopyAdr">Copy Markdown</button>
+        <button class="iconbtn" data-act="dpDownloadAdr">Download .md</button>
+        <button class="iconbtn" data-act="dpAdrToCopilot">Refine with Fox - Architect</button>
       </div>
     </div>
     <div class="dp-adr">${typeof cpMd === "function" ? cpMd(md) : "<pre>" + escHtml(md) + "</pre>"}</div>

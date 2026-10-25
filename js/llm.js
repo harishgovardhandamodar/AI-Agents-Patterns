@@ -24,6 +24,7 @@ const LLM = (function () {
     if (state.probing) return state;
     if (state.probed && !force) return state;
     state.probing = true;
+    if (typeof setBusy === "function") setBusy("Checking model backends…");
     try {
       const r = await fetch("api/llm/health", { cache: "no-store" });
       const j = await r.json();
@@ -39,6 +40,7 @@ const LLM = (function () {
     } finally {
       state.probing = false;
       state.probed = true;
+      if (typeof clearBusy === "function") clearBusy("Checking model backends…");
     }
     return state;
   }
@@ -121,9 +123,13 @@ const LLM = (function () {
     let res;
     arm(firstMs);
     try {
+      /* An optional backend pin. A chat wants failover; a *measurement*
+         wants a fixed node, so two runs can be compared. */
+      const hdrs = { "Content-Type": "application/json" };
+      if (opts.backend) hdrs["X-Fox-Backend"] = opts.backend;
       res = await fetch("api/llm/chat", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: hdrs,
         body: JSON.stringify(body),
         signal: ctrl.signal
       });
@@ -291,10 +297,10 @@ const LLM = (function () {
       p.setAttribute("role", "dialog");
       p.setAttribute("aria-label", "Model backend status");
       p.innerHTML = '<div class="llm-pop-head"><b>Model backend</b>' +
-        '<span><button class="iconbtn" type="button" onclick="LLM.probe(true).then(()=>LLM.paintPill())">↻ retry</button>' +
-        '<button class="iconbtn" type="button" onclick="LLM.infoToggle(false)" aria-label="Close backend status">✕</button></span></div>' +
+        '<span><button class="iconbtn" type="button" data-act="llmRetryProbe">↻ retry</button>' +
+        '<button class="iconbtn" type="button" data-act="llmInfoClose" aria-label="Close backend status">✕</button></span></div>' +
         '<div class="llm-pop-body" id="llmPopBody"></div>' +
-        '<div class="llm-pop-foot"><button class="btn" type="button" onclick="LLM.infoToggle(false);switchTab(\'copilot\')">Open Fox - Architect</button></div>';
+        '<div class="llm-pop-foot"><button class="btn" type="button" data-act="llmGoCopilot">Open Fox - Architect</button></div>';
       document.body.appendChild(p);
     }
     p.classList.toggle("open", force == null ? !p.classList.contains("open") : !!force);
@@ -318,6 +324,13 @@ const LLM = (function () {
 
   return { state, probe, models, chat, available, label, paintPill, bootPill, infoToggle: llmPopToggle };
 })();
+
+/* Delegation shims: the llm popover is rendered HTML, so its buttons use
+   data-act instead of inline handlers (LLM.x is not a window global). */
+function llmInfoToggle() { if (typeof LLM !== "undefined") LLM.infoToggle(); }
+function llmInfoClose() { if (typeof LLM !== "undefined") LLM.infoToggle(false); }
+function llmGoCopilot() { if (typeof LLM !== "undefined") LLM.infoToggle(false); switchTab("copilot"); }
+function llmRetryProbe() { if (typeof LLM !== "undefined") LLM.probe(true).then(() => LLM.paintPill()); }
 
 document.addEventListener("mousedown", function (e) {
   const p = document.getElementById("llmPop");

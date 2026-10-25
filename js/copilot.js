@@ -14,8 +14,17 @@ let cpScope = { patterns: true, scenarios: true, cascades: true, traces: true };
 
 /* ---------------- persistence ---------------- */
 function cpSave() {
-  try { localStorage.setItem(CP_STORE, JSON.stringify({ messages: cpMessages, scope: cpScope, model: el("cpModel") && el("cpModel").value, persona: cpPersona, audience: cpAudience })); } catch (e) {}
-  if (typeof markSaved === "function") markSaved("cp");
+  const trim = n => {
+    try {
+      localStorage.setItem(CP_STORE, JSON.stringify({ messages: cpMessages.slice(-n), scope: cpScope, model: el("cpModel") && el("cpModel").value, persona: cpPersona, audience: cpAudience }));
+      return true;
+    } catch (e) { return false; }
+  };
+  /* Cap history so one long chat can't fill browser storage (which would
+     silently break every other save in the app). Trim oldest first. */
+  const ok = trim(40) || trim(20);
+  if (ok) { if (typeof markSaved === "function") markSaved("cp"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("cp", "Copilot chat");
 }
 function cpRestore() {
   try {
@@ -48,7 +57,17 @@ function cpMd(text) {
   s = s.replace(/^#{1,6}\s+(.*)$/gm, "<h4>$1</h4>");
   s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
   s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
-  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  /* Links come from model output, so the scheme is whitelisted: only http(s)
+     and same-app fragments become anchors. Anything else (javascript:, data:,
+     file:, bare words the model meant as text) renders as inert text — the
+     label survives, the navigation doesn't. */
+  s = s.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, function (m, text, url) {
+    const u = String(url);
+    if (/^(https?:\/\/|#)/i.test(u) && !/[\s<>]/.test(u)) {
+      return '<a href="' + u + '" target="_blank" rel="noopener">' + text + "</a>";
+    }
+    return text + ' <span class="muted small">(' + u + ")</span>";
+  });
   // pipe tables -> .tbl (same styling as the catalog drawers)
   s = s.replace(/^((?:\|[^\n]*\|\s*\n)+)/gm, function (block) {
     const rows = block.trim().split("\n");
@@ -107,9 +126,9 @@ function cpCopyMsg(i) {
   else showNotif("Clipboard unavailable — select the text manually", { kind: "warn" });
 }
 function cpActionsHtml(m, i, isLast) {
-  if (m.role === "user") return `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this question">⧉ copy</button></div>`;
-  let h = `<div class="cp-actions"><button type="button" onclick="cpCopyMsg(${i})" title="Copy this answer">⧉ copy</button>`;
-  if (isLast) h += `<button type="button" onclick="cpRegen(${i})" title="Ask the same question again"${cpBusy ? " disabled" : ""}>↻ regenerate</button>`;
+  if (m.role === "user") return `<div class="cp-actions"><button type="button" data-act="cpCopyMsg" data-args='[${i}]' title="Copy this question">⧉ copy</button></div>`;
+  let h = `<div class="cp-actions"><button type="button" data-act="cpCopyMsg" data-args='[${i}]' title="Copy this answer">⧉ copy</button>`;
+  if (isLast) h += `<button type="button" data-act="cpRegen" data-args='[${i}]' title="Ask the same question again"${cpBusy ? " disabled" : ""}>↻ regenerate</button>`;
   return h + "</div>";
 }
 function cpFollowHtml(m) {
@@ -120,7 +139,7 @@ function cpFollowHtml(m) {
        { q: "What should I implement first, and why?", t: "What first?" },
        { q: "How do I test that these controls actually hold?", t: "How to test?" }];
   return `<div class="cp-follow"><span class="muted small">Follow up:</span> ` + qs.map((f, k) =>
-    `<button type="button" onclick="cpFollowAsk(${k})" data-fq="${escHtml(f.q)}">${escHtml(f.t)}</button>`).join("") + `</div>`;
+    `<button type="button" data-act="cpFollowAsk" data-args='[${k}]' data-fq="${escHtml(f.q)}">${escHtml(f.t)}</button>`).join("") + `</div>`;
 }
 function cpFollowAsk(k) {
   const log = el("cpLog");
@@ -156,24 +175,48 @@ function cpMsgEl(m, stream, i, isLast) {
   if (isLast && m.content && !stream) wrap.insertAdjacentHTML("beforeend", cpFollowHtml(m));
   return wrap;
 }
+/* Citations are the user's path from prose back into the catalog. They
+   used to be <span onclick> — not focusable, not keyboard-reachable, not
+   copyable as a URL. Now they are real <a href="#tab/id"> links: the
+   browser can open them in a new tab, they are in the tab order, and the
+   address bar shows the destination (iteration 111). */
 function cpCiteEl(cites) {
   const d = document.createElement("div");
   d.className = "cp-cites";
   cites.forEach(function (c) {
-    const b = document.createElement("span");
-    b.className = "cp-cite " + (c.kind || "").charAt(0);
-    b.textContent = c.label;
-    b.title = "Open in catalog";
-    b.onclick = function () { cpOpenCite(c); };
-    d.appendChild(b);
+    const tab = cpCiteTab(c.kind);
+    const a = document.createElement("a");
+    a.className = "cp-cite " + (c.kind || "").charAt(0);
+    a.textContent = c.label;
+    a.href = tab ? ("#" + tab + "/" + encodeURIComponent(c.id)) : "#";
+    a.title = tab ? ("Open " + (c.kind || "item") + " in the catalog — " + c.id) : "Open in catalog";
+    a.setAttribute("data-cite-kind", c.kind || "");
+    a.addEventListener("click", function (ev) {
+      /* let the browser handle modified clicks (new tab, new window) */
+      if (ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey || ev.button !== 0) return;
+      ev.preventDefault();
+      cpOpenCite(c);
+    });
+    d.appendChild(a);
   });
   d.insertAdjacentHTML("afterbegin", '<span class="muted small" style="align-self:center;margin-right:2px">grounded in:</span>');
   return d;
 }
+
+/* Which tab holds a kind of citation. */
+function cpCiteTab(kind) {
+  if (kind === "pattern") return "patterns";
+  if (kind === "scenario") return "scenarios";
+  if (kind === "cascade") return "cascades";
+  if (kind === "trace") return "live";
+  return null;
+}
 function cpOpenCite(c) {
+  const tab = cpCiteTab(c.kind);
+  if (tab) { goTo(tab, c.id); return; }
   if (c.kind === "pattern" && typeof openPattern === "function") openPattern(c.id);
   else if (c.kind === "scenario" && typeof openScenario === "function") openScenario(c.id);
-  else if (c.kind === "trace" && typeof loadTrace === "function") { switchTab("live"); setTimeout(function () { loadTrace(c.id); }, 90); }
+  else if (c.kind === "trace" && typeof loadTrace === "function") { goTo("live", c.id); }
   else if (c.kind === "cascade" && typeof openCascade === "function") openCascade(c.id);
   else showNotif("Open from the catalog tab");
 }
@@ -419,7 +462,9 @@ function cpAskNew(q) {
   cpRunAssistant(q);
 }
 /* Regenerate: drop the old assistant answer, re-run the same question
-   without duplicating the user turn. */
+   without duplicating the user turn. The old answer is kept so the
+   regeneration can be undone (iteration 115) — a model answer you did
+   not like should not be unrecoverable. */
 function cpRegen(i) {
   if (cpBusy) return;
   const cur = cpMessages[i];
@@ -429,8 +474,22 @@ function cpRegen(i) {
     if (cpMessages[j].role === "user") { q = cpMessages[j].content; break; }
   }
   if (!q) { showNotif("No question found to regenerate"); return; }
+  const old = cpMessages[i];
   cpMessages.splice(i, 1);
-  cpRunAssistant(q);
+  cpRunAssistant(q).then(function () {
+    if (typeof undoPush === "function") {
+      undoPush("regenerate the answer",
+        function () {
+          const at = Math.min(i, cpMessages.length);
+          cpMessages.splice(at, 0, old);
+          cpSave(); cpRenderLog();
+        },
+        function () {
+          const at = cpMessages.findIndex(function (m) { return m.role === "assistant" && m.content !== old.content; });
+          if (at >= 0) { cpMessages.splice(at, 1); cpSave(); cpRenderLog(); }
+        });
+    }
+  });
 }
 async function cpRunAssistant(q) {
   const assistant = { role: "assistant", content: "", cites: [], persona: cpPersona, audience: cpAudience };
@@ -513,6 +572,9 @@ function cpSetBusyUI(busy) {
   const send = el("cpSend"), stop = el("cpStop");
   if (send) send.disabled = busy;
   if (stop) stop.style.display = busy ? "" : "none";
+  /* mirror into the shell so an answer in flight is visible from any tab */
+  if (busy) { if (typeof setBusy === "function") setBusy("Fox - Architect is answering…"); }
+  else if (typeof clearBusy === "function") clearBusy("Fox - Architect is answering…");
 }
 function copilotStop() { if (cpAbort) cpAbort.abort(); }
 

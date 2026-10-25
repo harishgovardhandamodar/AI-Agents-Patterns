@@ -13,20 +13,29 @@ const DESIGN_DOCS = [
   { id: "04-guardrails", file: "design/04-guardrails.md", title: "Financial Guardrail Architecture", group: "Safety", answers: "Spend controls, dual control, prompt-injection defense" },
   { id: "05-data-model", file: "design/05-data-model.md", title: "Data Model", group: "Architecture", answers: "Entities: patterns, scenarios, traces, analyses" },
   { id: "06-threat-model", file: "design/06-threat-model.md", title: "Threat Model & Protections Map", group: "Safety", answers: "STRIDE view, attack trees, defense-in-depth map" },
-  { id: "07-architect-analysis", file: "design/07-architect-analysis.md", title: "Architect Value Map & Cascade Taxonomy", group: "Architecture", answers: "Why the app advises, not just describes — and the four cascade classes" }
+  { id: "07-architect-analysis", file: "design/07-architect-analysis.md", title: "Architect Value Map & Cascade Taxonomy", group: "Architecture", answers: "Why the app advises, not just describes — and the four cascade classes" },
+  { id: "08-runtime-offline", file: "design/08-runtime-offline.md", title: "Runtime, Offline & Delivery", group: "Dynamics", answers: "Phased boot, vendored Mermaid, the offline service worker, caching, headers and CI gates" },
+  { id: "09-battle-bench", file: "design/09-battle-bench.md", title: "Battle Bench — Testing Agents", group: "Safety", answers: "How the catalog tests itself: cases, adapters, the oracle, the adversary" },
+  { id: "10-rogue-agents", file: "design/10-rogue-agents.md", title: "Rogue Agents — Detection & Quarantine", group: "Safety", answers: "Simulated insider threat: six rogue archetypes, three detectors, the quarantine workflow, live fire" },
+  { id: "11-self-learning-addon", file: "design/11-self-learning-addon.md", title: "Self-Learning Add-on — Bridging the Lab", group: "Architecture", answers: "The sibling lab on :8220: status bridge, concept map, and the data flow the supplement book is built from" }
 ];
 
 /* ---------------- theme ---------------- */
 function toggleTheme() {
   const light = document.documentElement.classList.toggle("light");
+  document.documentElement.setAttribute("data-theme", light ? "light" : "dark");
   try { localStorage.setItem("aap.theme", light ? "light" : "dark"); } catch (e) {}
   // re-render every diagram with the new theme palette
   mmRenderAll();
 }
 (function initTheme() {
-  let t = "dark";
-  try { t = localStorage.getItem("aap.theme") || "dark"; } catch (e) {}
+  let t = null;
+  try { t = localStorage.getItem("aap.theme"); } catch (e) {}
+  /* No explicit choice yet -> follow the OS. Once the user clicks ◐ theme the
+     stored value wins, so the preference is never fought over. */
+  if (!t) t = (window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches) ? "light" : "dark";
   if (t === "light") document.documentElement.classList.add("light");
+  document.documentElement.setAttribute("data-theme", t);
 })();
 
 /* ---------------- reading preferences: density + font size ----------------
@@ -39,11 +48,178 @@ const uxPrefs = (function () {
   catch (e) { return Object.assign({}, dflt); }
 })();
 
+/* ---------------- per-pane UI memory ----------------
+   Remembers the filters, search text and sort a user left each catalog pane
+   in, so coming back to a tab (or reloading) does not mean re-applying the
+   same narrowing. Kept separate from uxPrefs: it is working state, not taste. */
+const UIMEM_STORE = "aap.uimem.v1";
+const uiMem = (function () {
+  try { return JSON.parse(localStorage.getItem(UIMEM_STORE) || "{}") || {}; }
+  catch (e) { return {}; }
+})();
+function uiMemGet(key, dflt) { return uiMem[key] === undefined ? dflt : uiMem[key]; }
+function uiMemSet(key, val) {
+  uiMem[key] = val;
+  try { localStorage.setItem(UIMEM_STORE, JSON.stringify(uiMem)); } catch (e) {}
+}
+
 function uxApply() {
   const root = document.documentElement;
   root.dataset.uxdensity = uxPrefs.density === "compact" ? "compact" : "comfortable";
   root.dataset.uxfs = [13, 14, 15, 16].indexOf(Number(uxPrefs.fs)) >= 0 ? String(uxPrefs.fs) : "13";
 }
+
+/* ---------------- delegated actions (no inline on* handlers) ------------
+   Content-Security Policy ships without script-src 'unsafe-inline', so no
+   element may carry an inline onclick/onchange/... attribute. Interactive
+   markup declares intent instead; the three delegated listeners below do
+   the calling:
+     data-act="fn"       click -> fn(...first, ...staticArgs, ...last)
+                         (+ event iff the element carries data-ev)
+     data-args="[&quot;a&quot;,1]"
+                         static args as entity-escaped JSON. Placeholders
+                         like ${id} resolve at render time inside template
+                         literals, exactly like the old inline string did.
+     data-first / data-last = "el|value|checked"
+                         prepend/append the element, its .value or its
+                         .checked (covers foo(this), foo(this.value) and
+                         foo('a',this.value); a dynamic value in the
+                         middle gets a named shim instead)
+     data-change="fn" / data-input="fn"
+                         same arg convention for change/input events
+     data-key="fn"       keydown -> fn(event, el, ...staticArgs)
+     data-keys="Enter, " on a data-act element: those keys re-fire its
+                         click action (cards and rows are divs, so Enter
+                         and Space need this; Space is preventDefaulted
+                         so the page doesn't scroll, as before)
+     data-noblur         mousedown here never takes focus (palette rows
+                         under the search input)
+   Actions resolve through window, so no registry is needed. A link with a
+   plain left click never navigates (the old `return false`); a modified
+   click skips the action and follows the href (the old goTo idiom), so
+   open-in-new-tab keeps working. The event object is passed only when the
+   element opts in with data-ev (an unasked-for extra argument would flip
+   optional trailing flags like dpSet's `soft`). Missing names and malformed
+   args log a console error — the e2e suite fails on those — instead of
+   dying silent. */
+function actArgs(el) {
+  const raw = el.getAttribute("data-args") || "[]";
+  try {
+    const v = JSON.parse(raw);
+    if (Array.isArray(v)) return v;
+  } catch (e) { /* reported below */ }
+  console.error("bad data-args JSON on", el, raw);
+  return null;
+}
+/* Build a data-args payload at render time: JSON-stringify each value and
+   HTML-escape the whole array, so the result is a single-quoted attribute
+   that survives any JS string context and decodes to valid JSON.
+   Usage (single-quoted JS): data-args=' + dataArgs("tab", id) + '
+   Usage (template literal): data-args="${dataArgs("tab", id)}" */
+function dataArgs() {
+  return escHtml("[" + Array.prototype.map.call(arguments, function (x) {
+    return JSON.stringify(String(x));
+  }).join(",") + "]");
+}
+function actPrepend(el) {
+  const w = el.getAttribute("data-first");
+  if (w === "value") return [el.value];
+  if (w === "checked") return [el.checked];
+  if (w === "el") return [el];
+  return [];
+}
+function actAppend(el) {
+  const w = el.getAttribute("data-last");
+  if (w === "value") return [el.value];
+  if (w === "checked") return [el.checked];
+  if (w === "el") return [el];
+  return [];
+}
+function actFire(el, fn, e) {
+  const args = actArgs(el);
+  if (!args) return false;
+  const call = actPrepend(el).concat(args, actAppend(el));
+  if (el.hasAttribute("data-ev")) call.push(e);
+  try {
+    fn.apply(el, call);
+    return true;
+  } catch (err) {
+    console.error("action " + (el.getAttribute("data-act") || el.getAttribute("data-change") ||
+      el.getAttribute("data-input") || "?") + " failed", err);
+    return false;
+  }
+}
+/* Fire every data-* action from the event target up to the document,
+   innermost first — a link inside a card behaves exactly like nested
+   inline handlers did (both fire). stopPropagation() in one action stops
+   the rest, like a real bubble. */
+function actBubble(e, attr, fire) {
+  let node = (e.target && e.target.closest) ? e.target : null;
+  let el = node ? node.closest("[" + attr + "]") : null;
+  while (el) {
+    if (e.cancelBubble) return;
+    const name = el.getAttribute(attr);
+    const fn = (typeof window[name] === "function") ? window[name] : null;
+    if (!fn) { console.error("unknown action: " + name, el); return; }
+    fire(el, fn, e);
+    if (e.cancelBubble) return;
+    el = el.parentElement ? el.parentElement.closest("[" + attr + "]") : null;
+  }
+}
+document.addEventListener("click", function (e) {
+  actBubble(e, "data-act", function (el, fn, ev) {
+    const mod = ev.ctrlKey || ev.metaKey || ev.shiftKey || ev.altKey;
+    if (el.tagName === "A" && mod) return; /* modified: browser follows href */
+    const ok = actFire(el, fn, ev);
+    if (ok && el.tagName === "A" && !mod) ev.preventDefault();
+  });
+});
+["change"].forEach(function (type) {
+  document.addEventListener(type, function (e) {
+    actBubble(e, "data-" + type, function (el, fn, ev) { actFire(el, fn, ev); });
+  });
+});
+/* `input` fires per keystroke (and per slider tick): trailing debounce so a
+   fast burst re-renders once. `change` above stays immediate for commits and
+   toggles. Dropping intermediate events is safe — every handler re-reads
+   full state, so the final fire sees all keystrokes. */
+let inputTimer = 0, lastInputEvent = null;
+document.addEventListener("input", function (e) {
+  if (!e.target || !e.target.closest || !e.target.closest("[data-input]")) return;
+  lastInputEvent = e;
+  if (inputTimer) clearTimeout(inputTimer);
+  inputTimer = setTimeout(function () {
+    inputTimer = 0;
+    const ev = lastInputEvent; lastInputEvent = null;
+    if (!ev || !ev.target || !ev.target.isConnected) return;
+    actBubble(ev, "data-input", function (el, fn, e2) { actFire(el, fn, e2); });
+  }, 120);
+});
+document.addEventListener("keydown", function (e) {
+  const t = (e.target && e.target.closest) ? e.target : null;
+  /* Keyboard-activable cards/rows: the focused element itself carries both
+     attributes (a focused child link keeps its native behaviour). */
+  const card = t ? t.closest("[data-act][data-keys]") : null;
+  if (card && e.target === card &&
+      !/^(BUTTON|A|INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) &&
+      (card.getAttribute("data-keys") || "").split(",").indexOf(e.key) >= 0) {
+    e.preventDefault();
+    const fn = window[card.getAttribute("data-act")];
+    if (typeof fn !== "function") { console.error("unknown action: " + card.getAttribute("data-act"), card); return; }
+    actFire(card, fn, e);
+    return;
+  }
+  actBubble(e, "data-key", function (el, fn, ev) {
+    const args = actArgs(el);
+    if (!args) return;
+    try { fn.apply(el, [ev, el].concat(args)); }
+    catch (err) { console.error("key action " + el.getAttribute("data-key") + " failed", err); }
+  });
+});
+document.addEventListener("mousedown", function (e) {
+  const t = (e.target && e.target.closest) ? e.target : null;
+  if (t && t.closest("[data-noblur]")) e.preventDefault();
+});
 function uxSave() {
   try { localStorage.setItem(UX_STORE, JSON.stringify(uxPrefs)); } catch (e) {}
   uxApply();
@@ -86,16 +262,98 @@ function uxPaintPanel() {
   const p = document.getElementById("uxPanel");
   if (!p || !p.classList.contains("open")) return;
   const dens = ["comfortable", "compact"].map(d =>
-    `<label class="ux-opt"><input type="radio" name="uxdens" value="${d}" ${uxPrefs.density === d ? "checked" : ""} onchange="uxSetDensity(this.value)">` +
+    `<label class="ux-opt"><input type="radio" name="uxdens" value="${d}" ${uxPrefs.density === d ? "checked" : ""} data-change="uxSetDensity" data-first="value">` +
     `<span><b>${d === "comfortable" ? "Comfortable" : "Compact"}</b><i>${d === "comfortable" ? "roomy cards, easier scanning" : "denser lists, more on screen"}</i></span></label>`).join("");
   const fss = [13, 14, 15, 16].map(f =>
-    `<label class="ux-opt"><input type="radio" name="uxfs" value="${f}" ${Number(uxPrefs.fs) === f ? "checked" : ""} onchange="uxSetFs(this.value)">` +
+    `<label class="ux-opt"><input type="radio" name="uxfs" value="${f}" ${Number(uxPrefs.fs) === f ? "checked" : ""} data-change="uxSetFs" data-first="value">` +
     `<span><b style="font-size:${f}px">${f}px</b><i>${f === 13 ? "default" : f < 15 ? "easier reading" : "large text"}</i></span></label>`).join("");
   p.innerHTML = '<div class="ux-head"><b>Display</b>' +
-    '<button class="iconbtn" type="button" onclick="uxPanelToggle(false)" aria-label="Close display preferences">✕</button></div>' +
+    '<button class="iconbtn" type="button" data-act="uxPanelToggle" data-args="[false]" aria-label="Close display preferences">✕</button></div>' +
     '<div class="ux-sec">Density</div>' + dens +
     '<div class="ux-sec">Text size</div>' + fss +
+    uxPerfSection() +
+    uxDataSection() +
     '<div class="muted small" style="margin-top:8px">Saved in this browser; applies to every tab.</div>';
+  perfCacheStats().then((s) => {
+    const row = document.getElementById("uxPerfCache");
+    if (!row) return;
+    row.innerHTML = "<span>Offline cache</span><b>" +
+      (s.files ? s.files + " files · " + fmtBytes(s.bytes) : "not installed") + "</b>";
+  });
+}
+
+/* ---------------- repeat-visit perf budget (iteration 99) ----------------
+   Makes the P1/F1 wins self-documenting: what this session actually pulled
+   over the wire, how much the cache answered, and how much the offline shell
+   holds. Numbers come from the Resource Timing API (transferSize 0 +
+   decodedBodySize > 0 means the browser disk cache or the service worker
+   answered) and the Cache Storage API. */
+function perfBudget() {
+  const out = { requests: 0, fromCache: 0, wireBytes: 0, decodedBytes: 0 };
+  try {
+    for (const r of performance.getEntriesByType("resource")) {
+      const wire = r.transferSize || 0;
+      const dec = r.decodedBodySize || 0;
+      out.requests += 1;
+      out.wireBytes += wire;
+      out.decodedBytes += dec;
+      if (r.deliveryType === "cache" || (wire === 0 && dec > 0)) out.fromCache += 1;
+    }
+  } catch (e) { /* Resource Timing unavailable — leave zeros */ }
+  return out;
+}
+
+async function perfCacheStats() {
+  try {
+    if (!("caches" in window)) return { files: 0, bytes: 0, version: null };
+    const names = await caches.keys();
+    let files = 0, bytes = 0;
+    for (const n of names) {
+      const c = await caches.open(n);
+      for (const req of await c.keys()) {
+        files += 1;
+        const res = await c.match(req);
+        const len = res && Number(res.headers.get("x-aap-len"));
+        if (len) { bytes += len; continue; }
+        if (res) { try { bytes += (await res.clone().blob()).size; } catch (e) {} }
+      }
+    }
+    return { files, bytes, version: names[0] || null };
+  } catch (e) {
+    return { files: 0, bytes: 0, version: null };
+  }
+}
+
+function uxPerfSection() {
+  const b = perfBudget();
+  const savedPct = b.requests ? Math.round((b.fromCache / b.requests) * 100) : 0;
+  return '<div class="ux-sec">Performance</div>' +
+    '<div class="ux-usage">' +
+    '<div class="ux-usage-row"><span>Requests this session</span><b>' + b.requests + '</b></div>' +
+    '<div class="ux-usage-row"><span>Served from cache</span><b>' + b.fromCache + (b.requests ? " (" + savedPct + "%)" : "") + '</b></div>' +
+    '<div class="ux-usage-row"><span>Bytes over the wire</span><b>' + fmtBytes(b.wireBytes) + '</b></div>' +
+    '<div class="ux-usage-row" id="uxPerfCache"><span>Offline cache</span><b>…</b></div>' +
+    '<div class="muted small">Repeat visits revalidate instead of re-downloading; the offline shell keeps the whole app available with no network.</div>' +
+    "</div>";
+}
+
+/* Storage health + whole-app backup/restore, shown in the display panel. */
+function uxDataSection() {
+  const u = stateUsage();
+  const rows = u.rows.slice(0, 4).map(r =>
+    '<div class="ux-usage-row"><span>' + escHtml(r.key.replace("aap.", "").replace(/\.v\d+$/, "")) + '</span><b>' + fmtBytes(r.bytes) + "</b></div>").join("");
+  return '<div class="ux-sec">Data &amp; backup</div>' +
+    '<div class="ux-usage">' +
+    '<div class="ux-usage-head"><span>' + (u.count ? u.count + " item" + (u.count === 1 ? "" : "s") + " stored" : "Nothing stored yet") + '</span><b>' + fmtBytes(u.bytes) + '</b></div>' +
+    rows +
+    '<div class="muted small">Browser storage holds about 5 MB. Back up before clearing site data.</div>' +
+    (storeOk() ? "" : '<div class="ux-warn">Storage is blocked in this browser — work will not persist after reload.</div>') +
+    "</div>" +
+    '<div class="ux-btns">' +
+    '<button class="btn sm" type="button" data-act="backupAll"' + (u.count ? "" : " disabled") + ">⤓ Back up all</button>" +
+    '<button class="btn sm" type="button" data-act="restoreAll">⤒ Restore…</button>' +
+    '<button class="btn sm" type="button" data-act="trimState">Trim history</button>' +
+    "</div>";
 }
 document.addEventListener("mousedown", function (e) {
   const p = document.getElementById("uxPanel");
@@ -110,13 +368,281 @@ document.addEventListener("keydown", function (e) {
   }
 });
 
+/* ---------------- client diagnostics beacon --------------------
+   Reports JS errors + boot markers to the server log (GET /api/diag),
+   same origin only. This is how a blank tab with no visible error gets
+   diagnosed: the browser tells us what it hit. sendBeacon never throws and
+   never blocks rendering; if the endpoint is absent it 404s silently. */
+(function bootDiag() {
+  function send(kind, msg) {
+    try {
+      const u = "api/diag?kind=" + encodeURIComponent(kind) +
+        "&msg=" + encodeURIComponent(String(msg == null ? "" : msg).slice(0, 300)) +
+        "&tab=" + encodeURIComponent(typeof currentTab === "string" ? currentTab : "") +
+        "&ua=" + encodeURIComponent((navigator.userAgent || "").slice(0, 120));
+      if (navigator.sendBeacon) navigator.sendBeacon(u);
+      else { const im = new Image(); im.src = u; }
+    } catch (e) { /* diagnostics must never break the app */ }
+  }
+  window.addEventListener("error", function (e) {
+    send("js", (e.message || "error") + " @ " + String(e.filename || "").split("/").pop() + ":" + (e.lineno || 0));
+  });
+  window.addEventListener("unhandledrejection", function (e) {
+    const r = e && e.reason;
+    send("promise", String((r && r.message) || r || "unknown").slice(0, 200));
+  });
+  window.__diag = send;
+  setTimeout(function () {
+    try {
+      send("boot", "ok tabs=" + document.querySelectorAll(".app-tab").length +
+        " panes=" + document.querySelectorAll(".pane").length +
+        " disc=" + (!!document.getElementById("discMain")));
+    } catch (e) { /* ignore */ }
+    /* If the user landed on discovery, describe what the pane actually holds
+       at this moment — distinguishes "render never ran" from "rendered but
+       invisible". Reports innerHTML length + first 60 chars + visibility. */
+    try {
+      if (typeof currentTab === "string" && currentTab === "discovery") {
+        window.__diagDisc();
+        if (typeof window.__diagDiscWatch === "function") window.__diagDiscWatch(true);
+      }
+    }
+    catch (e) { /* ignore */ }
+  }, 3000);
+  /* Watcher: while the discovery tab is active, report the pane's real state
+     whenever it CHANGES (so a wipe seconds after first paint is caught, not
+     just the initial render), name whatever sits on top of the pane, and
+     self-heal an unexpectedly emptied pane by re-running the loader. */
+  let discHeal = 0;
+  window.__diagDisc = function () {
+    try {
+      const pane = document.getElementById("discoveryPane");
+      const main = document.getElementById("discMain");
+      const rail = document.getElementById("discControls");
+      const r = main ? main.getBoundingClientRect() : null;
+      const cs = main ? getComputedStyle(main) : null;
+      let top = "?";
+      if (r && r.width > 0 && r.height > 0) {
+        const hit = document.elementFromPoint(Math.round(r.left + r.width / 2), Math.round(r.top + Math.min(r.height, 400) / 2));
+        top = hit ? ((hit.id ? "#" + hit.id : hit.tagName.toLowerCase()) + (hit.className ? "." + String(hit.className).split(" ")[0] : "")) : "none";
+      }
+      const html = main ? main.innerHTML.length : -1;
+      const cards = document.querySelectorAll("#discMain .disc-card").length;
+      const railLen = rail ? rail.innerHTML.length : -1;
+      const style = cs ? cs.visibility + "/" + cs.opacity : "?";
+      /* what full-screen overlays are open right now, and which pane is active */
+      const openOv = ["onbOverlay", "zoomOverlay", "detailOverlay", "palOverlay", "notifBox"].filter(function (id) {
+        const e = document.getElementById(id);
+        if (!e) return false;
+        const ocs = getComputedStyle(e);
+        const orr = e.getBoundingClientRect();
+        return ocs.display !== "none" && ocs.visibility !== "hidden" && (+ocs.opacity || 0) > 0.05 && orr.width > 300 && orr.height > 200;
+      }).join(",") || "none";
+      const visPanes = Array.prototype.map.call(document.querySelectorAll(".pane.visible"), function (p) { return p.id.replace(/Pane$/, ""); }).join(",") || "NONE";
+      /* theme + the chart title's actual painted colors — catches the last
+         branch: content present and visible but text colored like the
+         background (invisible to the eye, fine in the DOM). */
+      const h3 = main ? main.querySelector(".panel h3, .dash-h") : null;
+      const h3cs = h3 ? getComputedStyle(h3) : null;
+      const theme = (document.documentElement.className || "dark");
+      const colors = h3cs ? (h3cs.color + " on " + h3cs.backgroundColor) : "n/a";
+      const pr = pane ? pane.getBoundingClientRect() : null;
+      const pos = (pr ? (Math.round(pr.left) + "," + Math.round(pr.top) + " " + Math.round(pr.width) + "x" + Math.round(pr.height)) : "?") +
+        " scrollY=" + Math.round(window.scrollY || window.pageYOffset || 0);
+      const sig = html + "|" + cards + "|" + railLen + "|" + style + "|" + top + "|" + openOv + "|" + visPanes + "|" + theme + "|" + colors + "|" + pos;
+      if (sig !== window.__diagDiscSig) {
+        window.__diagDiscSig = sig;
+        send("discpane",
+          "main=" + (main ? "present" : "MISSING") +
+          " html=" + html +
+          " kids=" + (main ? main.children.length : -1) +
+          " cards=" + cards +
+          " rail=" + railLen +
+          " vis=" + (pane ? (pane.classList.contains("visible") ? "visible" : "HIDDEN") : "noPane") +
+          " visPane=" + visPanes +
+          " style=" + style +
+          " h=" + (r ? Math.round(r.height) : -1) +
+          " top=" + top +
+          " ov=" + openOv +
+          " theme=" + theme +
+          " colors=" + JSON.stringify(colors) +
+          " pos=" + pos +
+          " txt=" + JSON.stringify((main && main.innerText || "").slice(0, 60)) +
+          " loader=" + (typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function" ? "fn" : "??") +
+          " run=" + (typeof discState === "object" && discState ? (discState.run ? "set" : "null") : "??") +
+          " init=" + (typeof initDiscovery === "function" ? "fn" : "??") +
+          " win=" + window.innerWidth + "x" + window.innerHeight);
+      }
+      /* self-heal: tab active but pane empty or still on the static marker */
+      const stuckMarker = !!(main && main.querySelector("[data-discboot]"));
+      if ((stuckMarker || (html >= 0 && html < 40)) && discHeal < 3 &&
+          typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders.discovery === "function") {
+        discHeal++;
+        send("discpane", "HEAL#" + discHeal + " pane was empty (html=" + html + " marker=" + stuckMarker + ") — re-running discovery loader");
+        tabLoaders.discovery();
+      }
+    } catch (e) { /* ignore */ }
+  };
+  let discWatch = null;
+  window.__diagDiscWatch = function (on) {
+    try {
+      if (discWatch) { clearInterval(discWatch); discWatch = null; }
+      if (on) discWatch = setInterval(function () { try { window.__diagDisc(); } catch (e) {} }, 2000);
+    } catch (e) { /* ignore */ }
+  };
+})();
+
 /* ---------------- tabs ---------------- */
 let currentTab = "overview";
 const tabLoaders = {}; // filled by per-tab scripts
 
+/* ---------------- pane boot bookkeeping ----------------
+   loadAll() paints the shell and the two catalog panes first, then builds the
+   remaining panes one per idle slice, so a heavy pane (cascades ~780 nodes,
+   coverage ~740) can never delay first paint. paneEnsure() lets a tab visit
+   jump the queue and run a not-yet-built pane's init immediately, exactly
+   once. */
+const paneInited = Object.create(null);   // tab -> true | "starting"
+const PANE_INIT = Object.create(null);    // tab -> init function
+/* Resolves once the full catalog (incl. the deferred cascades dataset) is in
+   DATA. On-demand pane inits wait on it so a very fast tab click can't render
+   an empty Cascades/Deploy/Blueprint pane before the data lands. */
+let catalogReady = Promise.resolve();
+const PANE_SKEL = [                        /* panes whose body is JS-built */
+  ["coverage", "#covMain"], ["deploy", "#dpRoot"], ["blueprint", "#bpPalette"],
+  ["cascades", "#casGrid"], ["patterns", "#patGrid"], ["scenarios", "#scnGrid"], ["live", "#traceList"]
+];
+function paneSkeletonOn(tab) {
+  const pane = el(tab + "Pane");
+  if (!pane || pane.querySelector(".pane-skel")) return;
+  const target = (PANE_SKEL.find(s => s[0] === tab) || [null, null])[1];
+  const box = target ? pane.querySelector(target) : null;
+  /* only stand in for content that is genuinely not there yet */
+  const host = (box && !box.children.length && !(box.innerText || "").trim()) ? box
+    : ((pane.innerText || "").trim().length ? null : pane);
+  if (!host) return;
+  const s = document.createElement("div");
+  s.className = "pane-skel";
+  s.setAttribute("aria-hidden", "true");
+  s.innerHTML = '<div class="skel-row w70"></div><div class="skel-row w95"></div>' +
+    '<div class="skel-row w55"></div><div class="skel-row w85"></div><div class="skel-row w40"></div>';
+  host.appendChild(s);
+}
+function paneSkeletonOff(tab) {
+  const pane = el(tab + "Pane");
+  if (pane) pane.querySelectorAll(".pane-skel").forEach(s => s.remove());
+}
+function paneRunNow(tab) {
+  if (paneInited[tab] || !PANE_INIT[tab]) return;
+  paneInited[tab] = "starting";
+  catalogReady
+    .then(() => PANE_INIT[tab]())
+    .catch(e => console.warn("pane init failed: " + tab, e))
+    .then(() => { paneInited[tab] = true; paneSkeletonOff(tab); });
+}
+function paneEnsure(tab) {
+  const s = paneInited[tab];
+  /* Kick off a not-yet-built pane's init and leave the skeleton up until it
+     finishes (paneRunNow clears it on completion) — removing it here would
+     flash a blank pane during the load. */
+  if (!s && PANE_INIT[tab]) { paneRunNow(tab); return; }
+  if (s === "starting") return;
+  if (tabLoaders[tab]) tabLoaders[tab]();
+}
+
+/* Named shims for the old multi-statement inline handlers: delegation
+   calls one function per element, so each compound gets a name. */
+function closeDetailGo(tab) { closeDetail(); switchTab(tab); }
+function closeDetailHelp() { closeDetail(); skHelpOpen(); }
+function closeDetailTour() { closeDetail(); onbShow(true); }
+function replayTour() { skHelpClose(); onbShow(true); }
+/* A dialog overlay that closes only when its own backdrop is clicked
+   (the old if(event.target===this)closeDetail()). Needs data-ev: the
+   dispatcher passes the event only to opted-in actions. */
+function dlgSelfClose(e) { if (e && e.target === this) closeDetail(); }
+function blurOnEnter(e, el) { if (e && e.key === "Enter" && el) el.blur(); }
+
+/* ---------------- two-level tabs: 6 sections, 15 tabs ----------------
+   The top strip holds section buttons; the strip beneath holds that
+   section's tabs. Panes, tab ids, hashes and deep links are unchanged — only
+   the bar is grouped — so every data-act="switchTab"/goTo call, the palette
+   and the drawer links keep working with the same ids. */
+const TAB_GROUPS = [
+  { id: "overview", label: "📊 Overview", tabs: ["overview"] },
+  { id: "catalog", label: "◆ Catalog", tabs: ["patterns", "scenarios", "cascades", "coverage", "live"] },
+  { id: "design", label: "🧭 Design", tabs: ["deploy", "blueprint"] },
+  { id: "labs", label: "🧪 Labs", tabs: ["guard", "discovery", "bench"] },
+  { id: "agents", label: "🛡 Agents", tabs: ["rogue", "selflearn"] },
+  { id: "architect", label: "🤖 Architect", tabs: ["copilot", "design"] },
+];
+const SUBTAB_LABELS = {
+  overview: "📊 Overview",
+  copilot: "🤖 Fox - Architect",
+  patterns: '◆ Patterns <span class="badge" id="patBadge">–</span>',
+  scenarios: '⚠ Scenarios <span class="badge" id="scnBadge">–</span>',
+  cascades: '⧉ Cascades <span class="badge" id="casBadge">–</span>',
+  coverage: "📊 Coverage &amp; Gaps",
+  deploy: "🧭 Deployment Plan",
+  blueprint: "🧩 Blueprints",
+  live: '▶ Live View <span class="badge" id="traceBadge">–</span>',
+  design: "📐 Design &amp; Architecture",
+  guard: "🛡 Guardrail Lab",
+  discovery: "🧪 Discovery Lab",
+  bench: "⚔ Battle Bench",
+  rogue: "🛑 Rogue Agents",
+  selflearn: "🧬 Self-Learning"
+};
+let currentGroup = "";
+function groupOfTab(tab) {
+  for (const g of TAB_GROUPS) if (g.tabs.indexOf(tab) >= 0) return g.id;
+  return "";
+}
+function groupLabel(gid) {
+  const g = TAB_GROUPS.find(x => x.id === gid);
+  return g ? g.label : gid;
+}
+function lastSubGet() {
+  try { return JSON.parse(localStorage.getItem("aap.grouptabs") || "{}"); }
+  catch (e) { return {}; }
+}
+function lastSubSet(map) {
+  try { localStorage.setItem("aap.grouptabs", JSON.stringify(map)); } catch (e) {}
+}
+function renderSubTabs(gid) {
+  const bar = el("subTabs");
+  const g = TAB_GROUPS.find(x => x.id === gid);
+  if (!bar || !g) return;
+  currentGroup = gid;
+  bar.innerHTML = g.tabs.map(t =>
+    '<div class="app-tab sub' + (t === currentTab ? " active" : "") + '" role="tab" aria-selected="' +
+    (t === currentTab ? "true" : "false") + '" tabindex="' + (t === currentTab ? "0" : "-1") +
+    '" aria-controls="' + t + 'Pane" data-tab="' + t + '" data-act="switchTab" data-args="[&quot;' + t + '&quot;]">' +
+    (SUBTAB_LABELS[t] || t) + "</div>").join("");
+  if (typeof paintBadges === "function") paintBadges();
+}
+function switchGroup(gid) {
+  const g = TAB_GROUPS.find(x => x.id === gid);
+  if (!g) return;
+  const mem = lastSubGet();
+  const t = (mem[gid] && g.tabs.indexOf(mem[gid]) >= 0) ? mem[gid] : g.tabs[0];
+  switchTab(t);
+}
 function switchTab(tab) {
+  const prev = currentTab;
   currentTab = tab;
-  document.querySelectorAll(".app-tab").forEach(t => {
+  const grp = groupOfTab(tab);
+  if (grp) {
+    const mem = lastSubGet();
+    if (mem[grp] !== tab) { mem[grp] = tab; lastSubSet(mem); }
+    if (grp !== currentGroup) renderSubTabs(grp);
+  }
+  document.querySelectorAll("#appTabs .app-tab").forEach(t => {
+    const on = t.dataset.group === grp;
+    t.classList.toggle("active", on);
+    t.setAttribute("aria-selected", on ? "true" : "false");
+    t.tabIndex = on ? 0 : -1;
+  });
+  document.querySelectorAll("#subTabs .app-tab").forEach(t => {
     const on = t.dataset.tab === tab;
     t.classList.toggle("active", on);
     t.setAttribute("aria-selected", on ? "true" : "false");
@@ -124,15 +650,42 @@ function switchTab(tab) {
   });
   document.querySelectorAll(".pane").forEach(p => p.classList.remove("visible"));
   const pane = document.getElementById(tab + "Pane");
-  if (pane) pane.classList.add("visible");
-  if (tabLoaders[tab]) tabLoaders[tab]();
-  try { location.hash = tab; } catch (e) {}
+  if (!pane) {
+    /* Unknown tab target (e.g. stale cached shell): fall back to overview
+       instead of leaving every pane hidden behind a blank app. */
+    if (tab !== "overview" && document.getElementById("overviewPane")) { switchTab("overview"); return; }
+    const ov = document.getElementById("overviewPane");
+    if (ov) ov.classList.add("visible");
+    return;
+  }
+  pane.classList.add("visible");
+  if (typeof paneEnsure === "function") paneEnsure(tab);
+  else if (tabLoaders[tab]) tabLoaders[tab]();
+  /* keep the active subtab on screen in its strip */
+  const active = document.querySelector('#subTabs .app-tab[data-tab="' + tab + '"]');
+  if (active && typeof active.scrollIntoView === "function") {
+    try { active.scrollIntoView({ inline: "nearest", block: "nearest" }); } catch (e) {}
+  }
+  if (typeof updateTabNav === "function") setTimeout(updateTabNav, 240);
+  if (tab !== prev) {
+    const label = active ? active.textContent.replace(/\s+/g, " ").replace(/^[^\w(]+/, "").trim() : tab;
+    announce(groupLabel(grp) + " · " + label);
+  }
+  if (typeof window.__diagDiscWatch === "function") window.__diagDiscWatch(tab === "discovery");
+  if (tab === "discovery" && typeof window.__diagDisc === "function") setTimeout(window.__diagDisc, 600);
+  /* keep the address bar in sync without stacking history entries; a drawer
+     deep link for the tab already on screen is left untouched */
+  try {
+    if (tab !== prev) history.replaceState(null, "", "#" + tab);
+  } catch (e) {}
 }
 
 /* keyboard navigation inside the tab bar (role=tablist): arrows move,
    Enter/Space activate — same behaviour screen readers expect. */
 function tabKeyNav(e) {
-  const tabs = [...document.querySelectorAll(".app-tab")];
+  /* Arrows stay inside the strip they started in (sections or tabs). */
+  const strip = (e.target && e.target.closest) ? e.target.closest(".app-tabs") : null;
+  const tabs = strip ? [...strip.querySelectorAll(".app-tab")] : [...document.querySelectorAll("#subTabs .app-tab")];
   const i = tabs.indexOf(e.target.closest(".app-tab"));
   if (i < 0) return;
   let j = -1;
@@ -140,26 +693,313 @@ function tabKeyNav(e) {
   else if (e.key === "ArrowLeft") j = (i - 1 + tabs.length) % tabs.length;
   else if (e.key === "Home") j = 0;
   else if (e.key === "End") j = tabs.length - 1;
+  else if ((e.key === "Enter" || e.key === " ") && i >= 0) {
+    /* .app-tab are divs, so keyboard activation needs an explicit handler. */
+    e.preventDefault();
+    tabs[i].click();
+    return;
+  }
   if (j >= 0) {
     e.preventDefault();
-    switchTab(tabs[j].dataset.tab);
+    tabs[j].click();
     tabs[j].focus();
   }
 }
 
 document.addEventListener("keydown", e => { if (e.target.closest && e.target.closest(".app-tabs")) tabKeyNav(e); });
 
+/* ---------------- tab bar: active tab in view + overflow chevrons ----------------
+   The section strip is short, but a narrow window can still overflow it; the
+   chevrons keep every section reachable by mouse. The wrapper (.tabs-wrap)
+   holds two chevrons outside the scroller so they stay put, and switchTab()
+   scrolls the active tab into view. */
+function tabScrollBy(dir) {
+  const bar = el("appTabs");
+  if (!bar) return;
+  bar.scrollBy({ left: dir * Math.max(180, bar.clientWidth * 0.6), behavior: "smooth" });
+  setTimeout(updateTabNav, 300);
+}
+function updateTabNav() {
+  const bar = el("appTabs");
+  const wrap = bar && bar.parentElement;
+  if (!bar || !wrap) return;
+  const left = wrap.querySelector(".tabnav.left");
+  const right = wrap.querySelector(".tabnav.right");
+  if (!left || !right) return;
+  const over = bar.scrollWidth - bar.clientWidth > 4;
+  left.classList.toggle("show", over && bar.scrollLeft > 4);
+  right.classList.toggle("show", over && bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 4);
+}
+function initTabBar() {
+  const bar = el("appTabs");
+  if (!bar || bar.dataset.nav) return;
+  const wrap = bar.parentElement;
+  if (!wrap) return;
+  bar.dataset.nav = "1";
+  const mk = (cls, label, glyph, dir) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "tabnav " + cls;
+    b.setAttribute("aria-label", label);
+    b.title = label;
+    b.textContent = glyph;
+    b.addEventListener("click", () => tabScrollBy(dir));
+    return b;
+  };
+  wrap.appendChild(mk("left", "Scroll tabs left", "‹", -1));
+  wrap.appendChild(mk("right", "Scroll tabs right", "›", 1));
+  /* roving tabindex + aria-selected at rest: the active tab is the one Tab stop,
+     the rest are reachable with the arrow keys (tabKeyNav) — the standard
+     WAI-ARIA tabs pattern, so the strip is keyboard-reachable on first paint. */
+  bar.querySelectorAll(".app-tab").forEach(t => {
+    const on = t.classList.contains("active");
+    t.setAttribute("aria-selected", on ? "true" : "false");
+    t.tabIndex = on ? 0 : -1;
+  });
+  bar.addEventListener("scroll", debounce(updateTabNav, 60));
+  window.addEventListener("resize", debounce(updateTabNav, 120));
+  updateTabNav();
+}
+
 /* ---------------- helpers ---------------- */
 function escHtml(s) {
   return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+
+/* ---------------- inline glossary (jargon) ----------------
+   Wrap known terms in <abbr title="…"> so a reader can hover any piece of
+   jargon for the definition without leaving the drawer. Operates on a plain
+   string and escapes as it goes, so it is safe on user/data text. */
+let JARGON_RE = null, JARGON_DEFS = null;
+function jargon(text) {
+  const raw = String(text == null ? "" : text);
+  if (typeof GLOSSARY === "undefined" || !GLOSSARY.length) return escHtml(raw);
+  if (!JARGON_RE) {
+    JARGON_DEFS = {};
+    GLOSSARY.forEach(g => { JARGON_DEFS[String(g[0]).toLowerCase()] = g[1]; });
+    const terms = GLOSSARY.map(g => String(g[0])).filter(Boolean)
+      .sort((a, b) => b.length - a.length)
+      .map(t => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
+    JARGON_RE = new RegExp("\\b(" + terms.join("|") + ")\\b", "gi");
+  }
+  let html = "", last = 0, m;
+  JARGON_RE.lastIndex = 0;
+  while ((m = JARGON_RE.exec(raw)) !== null) {
+    if (m[0].length === 0) { JARGON_RE.lastIndex++; continue; }
+    html += escHtml(raw.slice(last, m.index));
+    const def = JARGON_DEFS[m[0].toLowerCase()] || "";
+    html += '<abbr class="jargon" title="' + escHtml(def) + '">' + escHtml(m[0]) + "</abbr>";
+    last = m.index + m[0].length;
+  }
+  return html + escHtml(raw.slice(last));
+}
 function el(id) { return document.getElementById(id); }
+
+/* ---------------- screen-reader announcements ----------------
+   One persistent live region for things that happen outside a dialog: tab
+   changes, result counts, saved/restored state. Toasts keep their own
+   role=log/alert box; this covers navigation and progress. */
+function appStatus() {
+  let s = el("appStatus");
+  if (!s) {
+    s = document.createElement("div");
+    s.id = "appStatus";
+    s.className = "sr-only";
+    s.setAttribute("role", "status");
+    s.setAttribute("aria-live", "polite");
+    s.setAttribute("aria-atomic", "true");
+    document.body.appendChild(s);
+  }
+  return s;
+}
+let announceTimer = null;
+function announce(msg) {
+  try {
+    const s = appStatus();
+    s.textContent = "";               /* clear first so repeats re-announce */
+    clearTimeout(announceTimer);
+    announceTimer = setTimeout(function () { s.textContent = String(msg == null ? "" : msg); }, 80);
+  } catch (e) { /* never break an action for an announcement */ }
+}
+
+/* ---------------- global busy indicator ----------------
+   Long, non-blocking work (a copilot answer in flight, a model-backend probe)
+   reports here so the shell always says "working…" even when the busy thing
+   lives in a different pane than the one on screen. Ref-counted by label. */
+const busySet = new Set();
+function setBusy(label) {
+  busySet.add(label || "working…");
+  busyPaint();
+}
+function clearBusy(label) {
+  busySet.delete(label || "working…");
+  busyPaint();
+}
+function busyPaint() {
+  const on = busySet.size > 0;
+  let c = el("busyChip");
+  if (!c) {
+    if (!on) return;
+    c = document.createElement("span");
+    c.id = "busyChip";
+    c.className = "busy-chip";
+    c.setAttribute("role", "status");
+    c.setAttribute("aria-live", "polite");
+    c.innerHTML = '<span class="spin" aria-hidden="true"></span><span id="busyChipTxt"></span>';
+    const bar = document.querySelector(".topbar");
+    if (bar) bar.insertBefore(c, el("dataStatus") || null);
+  }
+  c.hidden = !on;
+  const txt = el("busyChipTxt");
+  if (txt) txt.textContent = on ? [...busySet][busySet.size - 1] : "";
+}
+
+/* ---------------- chart accessibility ----------------
+   Every bar chart here encodes value by colour and width only. Give each row
+   an image role with a spoken label built from its own text and hide the
+   decorative track, so a screen reader hears "Orchestration: 14" instead of
+   nothing. Applied post-render by a debounced observer, so every current and
+   future chart path is covered without touching each render function. */
+function a11yBars(root) {
+  const scope = (root && root.querySelectorAll) ? root : document;
+  scope.querySelectorAll(".bar-row:not([role])").forEach(row => {
+    const track = row.querySelector(".bar-track");
+    const lbl = row.querySelector(".lbl"), n = row.querySelector(".n");
+    const label = ((lbl && lbl.textContent) || "").trim();
+    const val = ((n && n.textContent) || "").trim();
+    if (track) track.setAttribute("aria-hidden", "true");
+    if (!label && !val) return;
+    row.setAttribute("role", "img");
+    row.setAttribute("aria-label", label + (val ? ": " + val : ""));
+  });
+  scope.querySelectorAll(".dp-bar:not([role])").forEach(bar => {
+    const dim = bar.closest(".dp-dim");
+    const head = dim && dim.querySelector(".dp-dimhead");
+    const txt = head ? head.textContent.replace(/\s+/g, " ").trim() : "";
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", txt ? "Dimension score — " + txt : "Dimension score");
+  });
+  scope.querySelectorAll(".dp-scorebar:not([role])").forEach(bar => {
+    const score = bar.closest(".dp-score");
+    const big = score && score.querySelector(".dp-scorebig");
+    const txt = big ? big.textContent.replace(/\s+/g, " ").trim() : "";
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label", txt ? "Overall readiness — " + txt : "Overall readiness score");
+  });
+}
+let a11yObs = null;
+function a11yBarsInit() {
+  try { a11yBars(document); } catch (e) {}
+  if (a11yObs || !window.MutationObserver || !document.body) return;
+  let t = null;
+  a11yObs = new MutationObserver(function () {
+    if (t) return;
+    t = setTimeout(function () { t = null; try { a11yBars(document); } catch (e) {} }, 150);
+  });
+  a11yObs.observe(document.body, { childList: true, subtree: true });
+}
+
+/* ---------------- offline indicator ----------------
+   This app is built to run on a LAN or air-gapped host: the catalog, filters,
+   diagrams (vendored) and saved work all run locally. When the browser reports
+   no network, say so plainly instead of letting a failing model call look like
+   a broken app. */
+function netPaint() {
+  const off = (typeof navigator !== "undefined" && navigator.onLine === false);
+  let c = el("netChip");
+  if (!off) { if (c) c.remove(); return; }
+  const ready = document.documentElement.hasAttribute("data-offline-ready");
+  if (!c) {
+    c = document.createElement("span");
+    c.id = "netChip";
+    c.className = "net-chip";
+    c.setAttribute("role", "status");
+    const bar = document.querySelector(".topbar");
+    if (bar) bar.insertBefore(c, el("dataStatus") || null);
+  }
+  c.textContent = ready ? "⚡ Offline · cached" : "⚡ Offline";
+  c.title = ready
+    ? "No network. The full app is being served from the offline cache; model answers fall back to the deterministic catalog voice."
+    : "No network connection. The catalog, filters, diagrams and saved work all run locally; model answers fall back to the deterministic catalog voice.";
+}
+window.addEventListener("online", netPaint);
+window.addEventListener("offline", netPaint);
+/* Stale-shell detector: if the cached index.html predates the JS (or vice
+   versa), tabs and panes disagree — e.g. a tab button with no pane, or a
+   first-run tour looping over an app the user already knows. Banner offers
+   a cache-busting reload instead of failing silently. */
+/* Hard reload that busts a stale service-worker cache. */
+function freshReload() {
+  try { location.href = location.pathname + "?v=" + Date.now() + location.hash; } catch (e) {}
+}
+function shellFreshCheck() {
+  try {
+    const skTabs = (typeof SK_TABS !== "undefined" ? SK_TABS : []);
+    const groups = (typeof TAB_GROUPS !== "undefined" ? TAB_GROUPS : []);
+    const grouped = groups.reduce((acc, g) => acc.concat(g.tabs), []);
+    const missing = skTabs.filter(t => !document.getElementById(t + "Pane"));
+    const orphan = [...document.querySelectorAll(".pane")].map(p => p.id.replace(/Pane$/, "")).filter(t => skTabs.indexOf(t) < 0);
+    /* The tab registry lives in four places — the group map, the DOM strips,
+       SK_TABS (keyboard nav + this check), and tabLoaders (per-tab init). */
+    const noBtn = skTabs.filter(t => grouped.indexOf(t) < 0);
+    const noSk = grouped.filter(t => skTabs.indexOf(t) < 0);
+    const emptyGroups = groups.filter(g => !g.tabs.length).map(g => g.id + " (empty section)");
+    const noLoader = skTabs.filter(t =>
+      !(typeof tabLoaders === "object" && tabLoaders && typeof tabLoaders[t] === "function"));
+    /* The strips themselves: section buttons must match the group map, and
+       the visible subtab strip must match the active section. */
+    const domGroups = Array.prototype.map.call(
+      document.querySelectorAll("#appTabs .app-tab"), function (t) { return t.dataset.group; });
+    const badStrip = [];
+    const wantGroups = groups.map(g => g.id);
+    wantGroups.filter(g => domGroups.indexOf(g) < 0).forEach(g => badStrip.push(g + " (no section button)"));
+    domGroups.filter(g => wantGroups.indexOf(g) < 0).forEach(g => badStrip.push((g || "?") + " (unwired section button)"));
+    if (typeof currentGroup === "string" && currentGroup) {
+      const g = groups.find(x => x.id === currentGroup);
+      const domSubs = Array.prototype.map.call(
+        document.querySelectorAll("#subTabs .app-tab"), function (t) { return t.dataset.tab; });
+      if (g && JSON.stringify(domSubs) !== JSON.stringify(g.tabs)) {
+        badStrip.push(currentGroup + " (subtab strip does not match the section)");
+      }
+    }
+    const bad = missing.concat(orphan.map(t => t + " (unwired)"))
+      .concat(noBtn.map(t => t + " (no section maps it)"))
+      .concat(noSk.map(t => t + " (not in SK_TABS — shortcuts skip it)"))
+      .concat(emptyGroups)
+      .concat(badStrip)
+      .concat(noLoader.map(t => t + " (no tabLoaders entry — never initialises)"));
+    if (!bad.length) return true;
+    if (!bad.length) return true;
+    let b = document.getElementById("freshBanner");
+    if (!b) {
+      b = document.createElement("div");
+      b.id = "freshBanner";
+      b.innerHTML = `<b>Update available.</b><span>This page is a stale cached copy (mismatch: ${bad.map(escHtml).join(", ")}). </span>` +
+        `<button class="btn sm primary" data-act="freshReload">Reload fresh copy</button>`;
+      document.body.appendChild(b);
+    }
+    return false;
+  } catch (e) { return true; }
+}
 /* Live catalog counts for UI copy — never hardcode 107/43/180 in strings. */
+function paintBadges() {
+  /* Badge spans live inside the lazily rendered subtab strip, so every
+     write is null-guarded; renderSubTabs repaints after building. */
+  try {
+    if (typeof DATA === "undefined" || !DATA || !DATA.patterns) return;
+    const set = (id, v) => { const b = el(id); if (b) b.textContent = v; };
+    set("patBadge", DATA.patterns.patterns.length);
+    set("scnBadge", DATA.scenarios.scenarios.length);
+    set("traceBadge", DATA.traces.traces.length);
+    set("casBadge", (DATA.cascades && DATA.cascades.cascades.length) || "…");
+  } catch (e) {}
+}
 function catN(kind, fallback) {
   try {
     if (kind === "patterns" && DATA.patterns) return DATA.patterns.patterns.length;
     if (kind === "scenarios" && DATA.scenarios) return DATA.scenarios.scenarios.length;
     if (kind === "cascades" && DATA.cascades) return DATA.cascades.cascades.length;
+    if (kind === "traces" && DATA.traces) return DATA.traces.traces.length;
   } catch (e) {}
   return fallback;
 }
@@ -216,6 +1056,16 @@ function notifBox() {
   return n;
 }
 
+let lastToast = null;                 /* newest toast, for "×N" collapsing */
+const liveToasts = [];                /* { el, dismiss } newest last */
+function dismissNewestToast() {
+  for (let i = liveToasts.length - 1; i >= 0; i--) {
+    const t = liveToasts[i];
+    if (t && document.contains(t.el)) { t.dismiss(); return true; }
+  }
+  return false;
+}
+
 function showNotif(msg, opts) {
   opts = opts || {};
   const kind = opts.kind || "info";
@@ -225,6 +1075,19 @@ function showNotif(msg, opts) {
     : acts.length ? 7000 : 4200;
 
   const n = notifBox();
+
+  /* Collapse an identical toast that is still on screen into a "×N" counter
+     instead of stacking duplicates (repeated saves, repeated filter misses). */
+  if (lastToast && lastToast.msg === msg && lastToast.kind === kind &&
+      document.contains(lastToast.el) && !acts.length && !(opts.actions || []).length) {
+    lastToast.n++;
+    const c = lastToast.el.querySelector(".notif-count");
+    if (c) { c.hidden = false; c.textContent = "×" + lastToast.n; }
+    lastToast.el.classList.remove("out");
+    if (lastToast.rearm) lastToast.rearm();
+    return;
+  }
+
   while (n.children.length >= 4) n.firstChild.remove(); /* cap the stack */
 
   const d = document.createElement("div");
@@ -235,6 +1098,11 @@ function showNotif(msg, opts) {
   m.className = "notif-msg";
   m.textContent = msg;
   d.appendChild(m);
+
+  const cnt = document.createElement("span");
+  cnt.className = "notif-count";
+  cnt.hidden = true;
+  d.appendChild(cnt);
 
   acts.forEach(a => {
     const b = document.createElement("button");
@@ -260,16 +1128,27 @@ function showNotif(msg, opts) {
   function dismiss() {
     if (timer) clearTimeout(timer);
     timer = null; remain = 0;
+    const i = liveToasts.indexOf(entry);
+    if (i >= 0) liveToasts.splice(i, 1);
+    if (lastToast && lastToast.el === d) lastToast = null;
     d.classList.add("out");
     setTimeout(() => d.remove(), 160);
     if (d.contains(document.activeElement)) x.focus();
   }
+  const entry = { el: d, dismiss: dismiss };
   d.addEventListener("mouseenter", pause);
   d.addEventListener("mouseleave", arm);
   d.addEventListener("focusin", pause);
   d.addEventListener("focusout", arm);
 
   n.appendChild(d);
+  liveToasts.push(entry);
+  if (liveToasts.length > 8) liveToasts.splice(0, liveToasts.length - 8);
+  lastToast = { el: d, msg: msg, kind: kind, n: 1, rearm: function () {
+    /* restart the countdown from a full ttl so the collapsed toast lingers */
+    if (timer) { clearTimeout(timer); timer = null; }
+    remain = ttl; arm();
+  } };
   arm();
 
   /* history + topbar badge */
@@ -299,8 +1178,8 @@ function notifLogOpen(open) {
     p.setAttribute("role", "dialog");
     p.setAttribute("aria-label", "Notification history");
     p.innerHTML = '<div class="notif-log-head"><b>Notifications</b>' +
-      '<span><button class="iconbtn" type="button" onclick="notifLogClear()">clear</button>' +
-      '<button class="iconbtn" type="button" onclick="notifLogToggle()" aria-label="Close notification history">✕</button></span></div>' +
+      '<span><button class="iconbtn" type="button" data-act="notifLogClear">clear</button>' +
+      '<button class="iconbtn" type="button" data-act="notifLogToggle" aria-label="Close notification history">✕</button></span></div>' +
       '<div class="notif-log-body" id="notifLogBody"></div>';
     document.body.appendChild(p);
   }
@@ -334,21 +1213,65 @@ const saveTimes = (function () {
   try { return JSON.parse(localStorage.getItem("aap.saved.v1") || "{}"); }
   catch (e) { return {}; }
 })();
+/* One warning per tool until a later write succeeds: saves fire on every
+   keystroke, so an unconditional failure toast would bury the UI. */
+const saveFailNotified = {};
 
 function markSaved(key) {
+  saveFailNotified[key] = false;
   saveTimes[key] = Date.now();
   try { localStorage.setItem("aap.saved.v1", JSON.stringify(saveTimes)); } catch (e) {}
   paintSaveStamps();
+  /* A tool just changed state, so the workflow rail and the "Next:" box
+     may now be wrong. Repaint them (iteration 107). */
+  if (typeof wfPaintRail === "function") wfPaintRail();
+}
+
+function markSaveFailed(key, label) {
+  if (saveFailNotified[key]) return;
+  saveFailNotified[key] = true;
+  if (typeof showNotif === "function") {
+    showNotif(label + " could not be saved — browser storage is full or blocked. " +
+      "Export a backup before closing this tab.", { kind: "error" });
+  }
 }
 
 /* ---------------- active-filter chips (catalog panes) --------------------
    paintActiveChips(id, chips) renders removable filter pills. Each chip is
    { label, title, fn } — fn is a global function name + JS-escaped argument. */
+/* Parse an old-style "fn('a', 1)" action string into a [name, argsJSON]
+   pair for delegated buttons (emptyState actions, filter chips). Returns
+   null when the string is not a plain call with literal arguments — the
+   caller then renders an inert button and logs, instead of eval-ing. */
+function actParse(fnSrc) {
+  const m = /^([A-Za-z_$][\w$]*)\((.*)\)$/.exec(String(fnSrc || "").trim());
+  if (!m) return null;
+  const args = [];
+  if (m[2].trim() !== "") {
+    const parts = m[2].split(/\s*,\s*/);
+    for (const p of parts) {
+      const s = /^'([\s\S]*)$/.exec(p);
+      if (s && s[1].slice(-1) === "'" && s[1].indexOf("'") === s[1].length - 1) {
+        args.push(JSON.stringify(s[1].slice(0, -1)));
+      } else if (/^(null|true|false|-?\d+)$/.test(p)) {
+        args.push(p);
+      } else {
+        return null;
+      }
+    }
+  }
+  return { act: m[1], json: "[" + args.join(",") + "]" };
+}
+function actButtonAttrs(fnSrc) {
+  const parsed = actParse(fnSrc);
+  if (!parsed) { console.error("unparseable action: " + fnSrc); return ""; }
+  return 'data-act="' + parsed.act + '" data-args=\'' + escHtml(parsed.json) + '\'';
+}
 function emptyState(icon, title, body, actionLabel, actionFn) {
   return `<div class="empty-state"><div class="empty-ico">${icon}</div>` +
     `<div class="empty-t">${escHtml(title)}</div>` +
     (body ? `<div class="empty-b">${body}</div>` : "") +
-    (actionLabel && actionFn ? `<button class="btn sm primary" onclick="${escHtml(actionFn)}">${escHtml(actionLabel)}</button>` : "") +
+    (actionLabel && actionFn ? `<button class="btn sm primary" ${actButtonAttrs(actionFn)}>${escHtml(actionLabel)}</button>` : "") +
     `</div>`;
 }
 function escJs(s) { return String(s == null ? "" : s).replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
@@ -358,7 +1281,7 @@ function paintActiveChips(id, chips) {
   if (!box) return;
   box.innerHTML = (chips || []).map(c =>
     `<span class="fchip" title="${escHtml(c.title || c.label)}">${escHtml(c.label)}` +
-    `<button type="button" onclick="${escHtml(c.fn)}" aria-label="Remove filter ${escHtml(c.label)}">×</button></span>`).join("");
+    `<button type="button" ${actButtonAttrs(c.fn)} aria-label="Remove filter ${escHtml(c.label)}">×</button></span>`).join("");
   box.style.display = chips && chips.length ? "" : "none";
 }
 
@@ -374,19 +1297,224 @@ function paintSaveStamps() {
   });
 }
 
+/* ---------------- storage: quota-aware persistence --------------------
+   Browser storage (localStorage, ~5MB) can fill up — long copilot chats and
+   big guardrail collections are the usual culprits. When a write fails with
+   quota errors the old code failed SILENTLY (flags never stuck, so the
+   welcome tour reappeared on every reload). These helpers make failure loud
+   and recover by trimming regenerable history. */
+function storeGet(key) {
+  try { return localStorage.getItem(key); } catch (e) { return null; }
+}
+function storeSet(key, val) {
+  try { localStorage.setItem(key, val); return true; }
+  catch (e) { return false; }
+}
+/* Writability probe for support: BLOCKED means saves, flags and runs will
+   not persist in this browser (private mode, disabled/blocked storage). */
+let storeOkCache = null;
+function storeOk() {
+  if (storeOkCache !== null) return storeOkCache;
+  try {
+    localStorage.setItem("aap.probe", "1");
+    localStorage.removeItem("aap.probe");
+    storeOkCache = true;
+  } catch (e) { storeOkCache = false; }
+  return storeOkCache;
+}
+
+/* ---------------- backup / restore & storage health --------------------
+   Everything the user creates lives in localStorage under aap.*: blueprints,
+   the saved library, guardrail analyses, the deployment plan, the copilot
+   chat, mitigations, discovery runs, pins, filters and display prefs. This
+   block gives one place to see how much is stored, download it all as a
+   single JSON file, and load it back (replacing matching keys, then reload). */
+const BACKUP_PREFIX = "aap.";
+const BACKUP_SKIP = { "aap.probe": 1 };
+let pendingRestore = null;
+
+function userStateKeys() {
+  const keys = [];
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.indexOf(BACKUP_PREFIX) === 0 && !BACKUP_SKIP[k]) keys.push(k);
+    }
+  } catch (e) {}
+  return keys.sort();
+}
+function stateUsage() {
+  let bytes = 0;
+  const rows = [];
+  userStateKeys().forEach(k => {
+    const v = storeGet(k) || "";
+    const b = (k.length + v.length) * 2;   /* localStorage counts UTF-16 units */
+    bytes += b;
+    rows.push({ key: k, bytes: b });
+  });
+  rows.sort((a, b) => b.bytes - a.bytes);
+  return { bytes: bytes, count: rows.length, rows: rows };
+}
+function fmtBytes(b) {
+  if (b >= 1048576) return (b / 1048576).toFixed(1) + " MB";
+  if (b >= 1024) return Math.round(b / 1024) + " KB";
+  return b + " B";
+}
+function backupAll() {
+  const keys = userStateKeys();
+  const data = { app: "ai-agent-patterns", kind: "aap-backup", version: 1, exportedAt: new Date().toISOString(), keys: {} };
+  keys.forEach(k => { data.keys[k] = storeGet(k); });
+  try {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "aap-backup-" + new Date().toISOString().slice(0, 10) + ".json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 3000);
+    showNotif("Backed up " + keys.length + " saved item" + (keys.length === 1 ? "" : "s") + " (" + fmtBytes(stateUsage().bytes) + ") to a JSON file.", { kind: "ok" });
+    announce("Backup downloaded, " + keys.length + " items");
+  } catch (e) {
+    showNotif("Could not build a backup in this browser.", { kind: "error" });
+  }
+  uxPaintPanel();
+}
+function restoreAll() {
+  let inp = el("aapRestoreFile");
+  if (!inp) {
+    inp = document.createElement("input");
+    inp.type = "file";
+    inp.id = "aapRestoreFile";
+    inp.accept = "application/json,.json";
+    inp.style.display = "none";
+    inp.addEventListener("change", restoreApply);
+    document.body.appendChild(inp);
+  }
+  inp.value = "";
+  inp.click();
+}
+function restoreApply(e) {
+  const f = e.target.files && e.target.files[0];
+  if (!f) return;
+  const r = new FileReader();
+  r.onload = function () {
+    let data = null;
+    try { data = JSON.parse(String(r.result)); } catch (err) { data = null; }
+    const keys = data && data.keys && typeof data.keys === "object"
+      ? Object.keys(data.keys).filter(k => k.indexOf(BACKUP_PREFIX) === 0 && !BACKUP_SKIP[k]) : null;
+    if (!data || !keys || (!keys.length && data.kind !== "aap-backup")) {
+      showNotif("That file doesn't look like an app backup.", { kind: "error" });
+      return;
+    }
+    pendingRestore = data;
+    const when = data.exportedAt ? new Date(data.exportedAt).toLocaleString() : "an unknown date";
+    showNotif("Restore " + keys.length + " saved item" + (keys.length === 1 ? "" : "s") + " from " + when + "? This replaces matching data in this browser and reloads.", {
+      kind: "warn", ttl: 20000, actions: [
+        { label: "Restore & reload", primary: true, fn: restoreCommit },
+        { label: "Cancel", fn: function () { pendingRestore = null; showNotif("Restore cancelled."); } }
+      ]
+    });
+  };
+  r.readAsText(f);
+}
+function restoreCommit() {
+  const data = pendingRestore;
+  pendingRestore = null;
+  if (!data || !data.keys) return;
+  let n = 0;
+  Object.keys(data.keys).forEach(function (k) {
+    if (k.indexOf(BACKUP_PREFIX) === 0 && !BACKUP_SKIP[k] && data.keys[k] != null) { if (storeSet(k, data.keys[k])) n++; }
+  });
+  showNotif("Restored " + n + " item" + (n === 1 ? "" : "s") + " — reloading to apply.", { kind: "ok", ttl: 1400 });
+  setTimeout(() => { try { location.reload(); } catch (e) {} }, 900);
+}
+/* Trim regenerable history first when storage is tight — chat is the usual
+   culprit. Mirrors the trim into memory so a later autosave can't undo it. */
+function trimState() {
+  let freed = 0;
+  const cp = storeGet("aap.copilot");
+  if (cp) {
+    try {
+      const o = JSON.parse(cp);
+      if (o && Array.isArray(o.messages) && o.messages.length > 12) {
+        const before = cp.length;
+        o.messages = o.messages.slice(-12);
+        const after = JSON.stringify(o);
+        if (storeSet("aap.copilot", after)) {
+          freed += (before - after.length) * 2;
+          if (typeof cpMessages !== "undefined" && Array.isArray(cpMessages) && cpMessages.length > 12) cpMessages = o.messages;
+          if (typeof cpRenderLog === "function") { try { cpRenderLog(); } catch (e) {} }
+        }
+      }
+    } catch (e) {}
+  }
+  const u = stateUsage();
+  if (freed > 0) showNotif("Trimmed chat history — freed about " + fmtBytes(freed) + ". Now using " + fmtBytes(u.bytes) + ".", { kind: "ok" });
+  else showNotif("Nothing to trim — no oversized history found (" + fmtBytes(u.bytes) + " in use).", { kind: "info" });
+  uxPaintPanel();
+}
+
 /* ---------------- onboarding: first-run welcome tour --------------------
-   Three guided paths for the three real jobs. Shown once (flag in
-   localStorage); replayable from the shortcuts help overlay. */
+   Shown once (flag in localStorage, sessionStorage fallback, in-memory last
+   resort — so a full/broken store can nag at most once per session). */
 const ONB_STORE = "aap.onboard.v1";
+let onbSeenMem = false;
 
 function onbSeen() {
-  try { return localStorage.getItem(ONB_STORE) === "seen"; } catch (e) { return true; }
+  if (onbSeenMem) return true;
+  if (storeGet(ONB_STORE) === "seen") return true;
+  try { if (sessionStorage.getItem(ONB_STORE) === "seen") return true; } catch (e) {}
+  return false;
 }
 function onbMarkSeen() {
-  try { localStorage.setItem(ONB_STORE, "seen"); } catch (e) {}
+  onbSeenMem = true;
+  if (storeGet(ONB_STORE) === "seen") return;
+  if (storeSet(ONB_STORE, "seen")) return;
+  try { sessionStorage.setItem(ONB_STORE, "seen"); } catch (e) {}
+}
+/* A returning user has THEIR OWN state (not boot-seeded defaults): a chat
+   with a real user turn, a named deployment target, a non-seed analysis, a
+   blueprint with components, library entries, or pins. Only a true
+   first-run — none of the above — gets the auto tour. Manual replay via the
+   shortcuts help always works. */
+function onbHasHistory() {
+  try {
+    const cp = JSON.parse(localStorage.getItem("aap.copilot") || "null");
+    if (cp && Array.isArray(cp.messages) && cp.messages.some(m => m && m.role === "user" && String(m.content || "").trim())) return true;
+    const dp = JSON.parse(localStorage.getItem("aap.deploy") || "null");
+    if (dp && dp.a && typeof dp.a.system === "string" && dp.a.system.trim()) return true;
+    if (dp && dp.done === true) return true;
+    const g = JSON.parse(localStorage.getItem("aap.guardrail.collection.v1") || "[]");
+    if (Array.isArray(g) && g.some(it => it && it.origin !== "seed")) return true;
+    const bp = JSON.parse(localStorage.getItem("aap.blueprint.v1") || "null");
+    if (bp && Array.isArray(bp.comps) && bp.comps.length) return true;
+    const bl = JSON.parse(localStorage.getItem("aap.blueprints.v1") || "[]");
+    if (Array.isArray(bl) && bl.length) return true;
+    const pins = JSON.parse(localStorage.getItem("aap.pins.v1") || "null");
+    if (pins && ((pins.patterns || []).length + (pins.scenarios || []).length + (pins.cascades || []).length) > 0) return true;
+  } catch (e) {}
+  return false;
+}
+/* Storage probe: localStorage can be full or blocked outright. When writes
+   fail, "seen" flags never stick and a first-run tour would nag on every
+   reload while saves silently die — so the auto tour requires PROVEN
+   writable storage (manual replay always works). */
+let onbStorageOk = null;
+function onbStorageWorks() {
+  if (onbStorageOk !== null) return onbStorageOk;
+  try {
+    localStorage.setItem("aap.probe", "1");
+    localStorage.removeItem("aap.probe");
+    onbStorageOk = true;
+  } catch (e) { onbStorageOk = false; }
+  return onbStorageOk;
 }
 function onbShow(force) {
   if (!force && onbSeen()) return;
+  if (!force && !onbStorageWorks()) return;
+  if (!force && onbHasHistory()) { onbMarkSeen(); return; } /* returning user, never auto-tour */
+  onbMarkSeen(); /* mark on SHOW, not on dismiss: refreshing mid-tour must not nag again */
   let o = document.getElementById("onbOverlay");
   if (!o) {
     o = document.createElement("div");
@@ -397,35 +1525,55 @@ function onbShow(force) {
     o.setAttribute("aria-label", "Welcome — choose a starting path");
     o.innerHTML =
       `<div class="onb-box">` +
+      `<button class="onb-x" data-act="onbGo" data-args="[null]" aria-label="Close welcome tour">✕</button>` +
       `<div class="onb-kicker">AI AGENT PATTERNS &amp; GUARDRAILS</div>` +
       `<h2 class="onb-title">What are you designing today?</h2>` +
       `<p class="onb-sub">This is an advisory workbench, not a dashboard. Pick the job — the app lines up the catalog, the planner and the copilot behind it.</p>` +
       `<div class="onb-cards">` +
       `<div class="onb-card"><div class="onb-ico">🧭</div><b>Ship an agent safely</b>` +
       `<span>Answer 4 intake questions → readiness score, recommended stack, rollout plan, risks and ADR.</span>` +
-      `<button class="btn primary" onclick="onbGo('deploy')">Start the deployment plan</button></div>` +
+      `<button class="btn primary" data-act="onbGo" data-args="[&quot;deploy&quot;]">Start the deployment plan</button></div>` +
       `<div class="onb-card"><div class="onb-ico">🧩</div><b>Architect the system</b>` +
       `<span>Compose stages and controls → live coverage, cost, threat exposure and cascade analysis.</span>` +
-      `<button class="btn primary" onclick="onbGo('blueprint')">Open the blueprint builder</button></div>` +
+      `<button class="btn primary" data-act="onbGo" data-args="[&quot;blueprint&quot;]">Open the blueprint builder</button></div>` +
       `<div class="onb-card"><div class="onb-ico">⧉</div><b>Study how agents fail</b>` +
       `<span>${catN("patterns", 107)} patterns, ${catN("scenarios", 43)} scenarios, ${catN("cascades", 180)} cascades — how small faults cross boundaries and amplify.</span>` +
-      `<button class="btn primary" onclick="onbGo('cascades')">Explore the cascade catalog</button></div>` +
+      `<button class="btn primary" data-act="onbGo" data-args="[&quot;cascades&quot;]">Explore the cascade catalog</button></div>` +
       `</div>` +
-      `<div class="onb-foot"><button class="btn sm ghost" onclick="onbGo('copilot')">Just ask Fox - Architect instead →</button>` +
+      `<div class="onb-foot"><button class="btn sm ghost" data-act="onbGo" data-args="[&quot;copilot&quot;]">Just ask Fox - Architect instead →</button>` +
       `<span style="flex:1"></span>` +
-      `<button class="btn sm" onclick="onbGo(null)">Skip — I'll explore</button></div>` +
+      `<button class="btn sm" data-act="onbGo" data-args="[null]">Skip — I'll explore</button></div>` +
       `</div>`;
     o.addEventListener("mousedown", e => { if (e.target === o) onbGo(null); });
+    o.addEventListener("keydown", onbTrapTab);
     document.body.appendChild(o);
   }
+  onbOpener = document.activeElement;
   o.classList.add("open");
   const f = o.querySelector(".onb-card button");
   if (f) f.focus();
+}
+/* Same focus discipline as the palette: trap Tab while open, hand focus
+   back to whoever was there when the tour opened. */
+let onbOpener = null;
+function onbTrapTab(e) {
+  const o = document.getElementById("onbOverlay");
+  if (!o || !o.classList.contains("open") || e.key !== "Tab") return;
+  const list = Array.prototype.filter.call(
+    o.querySelectorAll("button, [tabindex]"), n => !n.disabled && n.tabIndex >= 0);
+  if (!list.length) return;
+  const first = list[0], last = list[list.length - 1];
+  if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
 }
 function onbGo(tab) {
   onbMarkSeen();
   const o = document.getElementById("onbOverlay");
   if (o) o.classList.remove("open");
+  if (onbOpener && document.contains(onbOpener)) {
+    try { onbOpener.focus(); } catch (e) {}
+  }
+  onbOpener = null;
   if (tab) { switchTab(tab); focusPane(tab); }
 }
 document.addEventListener("keydown", function (e) {
@@ -490,7 +1638,30 @@ document.addEventListener("keydown", e => {
 
 /* ---------------- mermaid engine (sequential queue) ---------------- */
 let mmQueue = Promise.resolve();
-let mmLoaded = false;
+let mmLibPromise = null;
+
+/* Lazy-load Mermaid the first time a diagram is needed. The vendored copy is
+   authoritative (works LAN-only / air-gapped); the CDN is a last-resort
+   fallback only if the local file is unavailable. Keeps 3.3 MB off first paint. */
+function mmEnsure() {
+  if (window.mermaid) return Promise.resolve(window.mermaid);
+  if (mmLibPromise) return mmLibPromise;
+  mmLibPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.async = true;
+    /* The vendored copy is the only source: loading a diagram renderer from
+       a third-party CDN would break the offline/air-gapped promise and hand
+       every diagram view to an outside host. If the file is missing the
+       install is broken — say so instead of phoning home. */
+    s.src = "js/vendor/mermaid.min.js";
+    s.onload = () => (window.mermaid
+      ? resolve(window.mermaid)
+      : reject(new Error("js/vendor/mermaid.min.js loaded but defined no mermaid global")));
+    s.onerror = () => reject(new Error("js/vendor/mermaid.min.js missing — diagrams need the vendored copy"));
+    document.head.appendChild(s);
+  });
+  return mmLibPromise;
+}
 
 function mmTheme() {
   const light = document.documentElement.classList.contains("light");
@@ -510,11 +1681,17 @@ function mmTheme() {
 function mmRender(nodes) {
   const list = [...nodes].filter(Boolean);
   if (!list.length) return Promise.resolve();
-  if (!window.mermaid) { list.forEach(n => noteMmErr(n, "mermaid library not loaded (offline?)")); return Promise.resolve(); }
-  try {
-    window.mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "base", themeVariables: mmTheme(), flowchart: { htmlLabels: true, curve: "basis" } });
-  } catch (e) { console.warn("mermaid init failed", e); }
+  /* Everything — including mermaid.initialize, which resets shared global
+     state — runs inside the queue. Two back-to-back mmRenderAll calls (e.g.
+     the Guardrail Lab rendering its architecture diagram and then the mock
+     replay) used to interleave initialize + run and corrupt each other into
+     spurious "Syntax error in text" diagrams. */
   const job = mmQueue.then(async () => {
+    try { await mmEnsure(); }
+    catch (e) { list.forEach(n => noteMmErr(n, "mermaid library not loaded (offline?)")); return; }
+    try {
+      window.mermaid.initialize({ startOnLoad: false, securityLevel: "strict", theme: "base", themeVariables: mmTheme(), flowchart: { htmlLabels: true, curve: "basis" } });
+    } catch (e) { console.warn("mermaid init failed", e); }
     for (const node of list) {
       const src = node.dataset && node.dataset.src;
       // reset any previous render state so mermaid will process the node again
@@ -528,9 +1705,33 @@ function mmRender(nodes) {
         if (!node.querySelector("svg")) noteMmErr(node, src || node.textContent);
       } catch (e) { noteMmErr(node, src || ""); }
     }
+    mmScheduleHeal(list);
   }).catch(e => console.warn("mermaid queue error", e));
   mmQueue = job.catch(() => {});
   return job;
+}
+
+/* Heal pass for diagrams mermaid laid out before fonts arrived: a NaN
+   translate means measurement failed, not that the source is bad. Re-run
+   ONLY the affected nodes once fonts are ready (capped retries, so a truly
+   broken diagram can never loop). */
+function mmScheduleHeal(list) {
+  const bad = (list || []).filter(n => {
+    if (!n || !document.contains(n)) return false;
+    const svg = n.querySelector("svg");
+    if (!svg) return false;
+    if (!svg.querySelector('[transform*="NaN"], [transform*="undefined"]')) return false;
+    const tries = parseInt(n.getAttribute("data-mmheal") || "0", 10);
+    if (tries >= 2) return false;
+    n.setAttribute("data-mmheal", String(tries + 1));
+    return true;
+  });
+  if (!bad.length) return;
+  const heal = () => mmRender(bad);
+  try {
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => setTimeout(heal, 60)).catch(() => setTimeout(heal, 1200));
+    else setTimeout(heal, 1200);
+  } catch (e) { setTimeout(heal, 1200); }
 }
 function noteMmErr(node, src) {
   if (!node.parentElement || node.parentElement.querySelector(".mm-err-note")) { node.innerHTML = ""; }
@@ -551,7 +1752,7 @@ function mmRenderAll(root) {
 
 /* Build a <pre class="mermaid"> block with an enlarge button */
 function diagramHtml(src, title) {
-  return `<div class="diagram-wrap"><button class="design-expand" onclick="openZoom(this)" title="Open large with zoom">⤢ enlarge</button>` +
+  return `<div class="diagram-wrap"><button class="design-expand" data-act="openZoom" data-first="el" title="Open large with zoom">⤢ enlarge</button>` +
     `<pre class="mermaid" data-src="${escHtml(src)}">${escHtml(src)}</pre></div>`;
 }
 
@@ -592,6 +1793,8 @@ function zoomApply() {
   el("zoomInner").style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
 }
 function zoomBy(f) { zoomState.scale = Math.min(8, Math.max(0.1, zoomState.scale * f)); zoomApply(); }
+function zoomIn() { zoomBy(1.2); }
+function zoomOut() { zoomBy(1 / 1.2); }
 function zoomFit() {
   const stage = el("zoomStage"), svg = el("zoomInner").querySelector("svg");
   if (!svg || !stage.clientWidth) return;
@@ -632,10 +1835,233 @@ function zoomKeys(e) {
 
 /* ---------------- detail drawer (patterns & scenarios) ---------------- */
 let detailOpener = null; /* element to restore focus to on close */
-function openDetail(title, catLabel, html) {
+/* ---------------- deep links & share row: #tab/itemId ----------------
+   The hash addresses a tab and, once a drawer is open, the item in it — so a
+   view can be shared, bookmarked, and the browser Back button closes the
+   drawer instead of leaving the app. */
+let dlApplying = false;   /* true while applying a hash change */
+let dlBooted = false;     /* after first paint, opens push instead of replace */
+let dlShare = null;       /* { tab, id, title } for the open drawer */
+
+function dlParse(h) {
+  const raw = String(h || "").replace(/^#/, "");
+  const i = raw.indexOf("/");
+  const tab = (i < 0 ? raw : raw.slice(0, i)).trim();
+  const id = i < 0 ? "" : raw.slice(i + 1);
+  return { tab: tab, id: decodeURIComponent(id) };
+}
+function dlSet(tab, id) {
+  if (dlApplying || !tab || !id) return;
+  const target = "#" + tab + "/" + encodeURIComponent(id);
+  try {
+    if (location.hash === target) return;
+    if (!dlBooted) history.replaceState(null, "", target);
+    else history.pushState({ dl: id }, "", target);
+  } catch (e) {}
+}
+/* Close = leave the item. If this entry was pushed by us, step back so the
+   browser Back button and the app stay in agreement; otherwise just rewrite
+   the hash (never navigate away from the app). */
+function dlClear() {
+  const tab = currentTab || "overview";
+  try {
+    if (!dlApplying && history.state && history.state.dl != null) { history.back(); return; }
+    if (location.hash !== "#" + tab) history.replaceState(null, "", "#" + tab);
+  } catch (e) {}
+}
+function dlWhenReady(tab, fn) {
+  let tries = 0;
+  (function poll() {
+    if (paneInited[tab] === true || tries++ > 40) { setTimeout(fn, 60); return; }
+    setTimeout(poll, 80);
+  })();
+}
+
+/* ---------------- one navigation primitive (iteration 108) ----------------
+   The app had 13 hand-rolled cross-pane navigations, each of them a race:
+
+       switchTab('patterns'); setTimeout(() => openPattern(id), 80);
+
+   The delay was a guess: it worked only because the target pane happened
+   to finish initialising inside the window. On a slow boot, a cold pane or
+   a slow disk, the item simply did not open — and the user was left on the
+   right tab with nothing selected and no error.
+
+   goTo() replaces all of them with one call that:
+     - switches the tab,
+     - waits for the pane to actually be ready (the same poll the deep-link
+       router already used),
+     - runs the open action,
+     - and keeps the deep link (#tab/item) intact, so the destination is
+       shareable and the Back button still closes it.
+
+   goTo('patterns', 'chain-of-thought') is the whole thing. */
+function goTo(tab, id, opts) {
+  opts = opts || {};
+  if (!tab) return false;
+  if (!document.getElementById(tab + "Pane")) { switchTab(tab); return false; }
+
+  const closeFirst = opts.close !== false;
+  if (closeFirst && typeof closeDetail === "function") {
+    try { closeDetail(); } catch (e) { /* no drawer open */ }
+  }
+  switchTab(tab);
+
+  const action = opts.action || (id ? goToActionFor(tab, id) : null);
+  if (!action) {
+    if (id) goToHash(tab, id);
+    return true;
+  }
+  dlWhenReady(tab, function () {
+    try { action(); } catch (e) { console.warn("goTo failed", e); }
+    /* If the action opened a drawer, openDetail -> dlSet already pushed the
+       #tab/item history entry — leave it alone, so Back closes the drawer
+       instead of leaving the app. If it did not (a trace, a template),
+       write the item hash ourselves so the destination is still shareable. */
+    if (id) goToHash(tab, id);
+  });
+  return true;
+}
+
+/* Write the #tab/item hash for a destination that did not open a drawer. */
+function goToHash(tab, id) {
+  const target = "#" + tab + "/" + encodeURIComponent(id);
+  if (location.hash === target) return;
+  try { history.replaceState(null, "", target); } catch (e) {}
+}
+/* The default "open this item" action for a tab. */
+function goToActionFor(tab, id) {
+  if (tab === "patterns" && typeof openPattern === "function") return function () { openPattern(id); };
+  if (tab === "scenarios" && typeof openScenario === "function") return function () { openScenario(id); };
+  if (tab === "cascades" && typeof openCascade === "function") return function () { openCascade(id); };
+  if (tab === "design" && typeof designShow === "function") return function () { designShow(id); };
+  if (tab === "guard" && typeof openGuardItem === "function") return function () { openGuardItem(id); };
+  if (tab === "live" && typeof loadTrace === "function") return function () { loadTrace(id); focusPane("live"); };
+  if (tab === "blueprint" && typeof bpApplyTemplate === "function" && id && id.indexOf("tpl:") === 0) {
+    return function () { bpApplyTemplate(id.slice(4)); };
+  }
+  if (tab === "blueprint" && typeof bpLoadLib === "function" && id && id.indexOf("lib:") === 0) {
+    return function () { bpLoadLib(Number(id.slice(4))); };
+  }
+  /* the current blueprint, as a shareable destination (iteration 109) */
+  if (tab === "blueprint" && id === "current" && typeof bpRender === "function") {
+    return function () { bpRender(); };
+  }
+  /* the deployment plan (iteration 109) */
+  if (tab === "deploy" && id === "plan" && typeof dpRender === "function") {
+    return function () { dpRender(); };
+  }
+  /* a discovery run (iteration 109) */
+  if (tab === "discovery" && id === "run" && typeof discRender === "function") {
+    return function () { discRender(); };
+  }
+  /* a project (iteration 109) */
+  if (tab === "overview" && id && id.indexOf("proj:") === 0 && typeof projSwitch === "function") {
+    return function () { projSwitch(id.slice(5)); };
+  }
+  return null;
+}
+
+/* ---------------- shareable destinations (iteration 109) ---------------
+   The catalog was addressable (#patterns/chain-of-thought) but the *work*
+   was not: a blueprint, a deployment plan, a guardrail analysis, a
+   discovery run and a project could not be linked, bookmarked or shared.
+   These are the ids that make them addressable, and the share rows that
+   put them in front of the user. */
+/* Copy a link to any addressable destination, not just the open drawer. */
+function dlCopyWorkLink(tab, id) {
+  if (!tab || !id) return;
+  copyText(location.origin + location.pathname + "#" + tab + "/" + encodeURIComponent(id), "Link");
+}
+/* Deep-link shim for delegation (the old inline handler built the
+   project link address inline). */
+function dlCopyProject() {
+  if (typeof dlCopyWorkLink !== "function") return;
+  const p = (typeof projGet === "function" && projGet()) || {};
+  if (p.id) dlCopyWorkLink("overview", "proj:" + p.id);
+}
+function dlOpen(tab, id, fromHash) {
+  if (!tab || !id || !document.getElementById(tab + "Pane")) return false;
+  const target = "#" + tab + "/" + encodeURIComponent(id);
+  /* goTo() does the tab switch, waits for the pane to be ready and opens the
+     item — one navigation primitive instead of a second, hand-rolled copy
+     of the same logic. The hash is restored afterwards, because switchTab
+     rewrites it to the bare tab. */
+  const ok = goTo(tab, id, { close: false, action: function () {
+    try {
+      if (fromHash) dlApplying = true;
+      const fn = goToActionFor(tab, id);
+      if (fn) fn();
+      else console.warn("deep link target not found:", tab, id);
+    } catch (e) { console.warn("deep link failed", e); }
+    finally { dlApplying = false; }
+  } });
+  /* switchTab may have rewritten the hash to the bare tab — restore the item */
+  if (fromHash && location.hash !== target) {
+    try { history.replaceState(null, "", target); } catch (e) {}
+  }
+  return ok;
+}
+
+/* Robust copy: the clipboard API needs a secure context, and a LAN host on
+   plain http:// does not have one — fall back to a hidden textarea. */
+function copyText(text, label) {
+  const ok = () => showNotif((label || "Copied") + " to clipboard", { kind: "ok" });
+  const bad = () => showNotif("Clipboard blocked — select the text and copy manually", { kind: "warn" });
+  const fallback = () => {
+    try {
+      const ta = document.createElement("textarea");
+      ta.value = String(text == null ? "" : text);
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed"; ta.style.top = "-1000px"; ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      const done = document.execCommand("copy");
+      ta.remove();
+      done ? ok() : bad();
+    } catch (e) { bad(); }
+  };
+  try {
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+      navigator.clipboard.writeText(String(text == null ? "" : text)).then(ok).catch(fallback);
+      return;
+    }
+  } catch (e) {}
+  fallback();
+}
+function dlShareRow() {
+  if (!dlShare) return "";
+  return '<button class="btn sm ghost" type="button" data-act="dlCopyLink" title="Copy a link that opens this item directly">🔗 Copy link</button>' +
+    '<button class="btn sm ghost" type="button" data-act="dlCopyId" title="Copy the catalog id">⧉ Copy id</button>' +
+    '<button class="btn sm ghost" type="button" data-act="dlCopySummary" title="Copy this drawer as Markdown">⧉ Copy as Markdown</button>';
+}
+function dlCopyLink() {
+  if (!dlShare) return;
+  copyText(location.origin + location.pathname + "#" + dlShare.tab + "/" + encodeURIComponent(dlShare.id), "Link");
+}
+function dlCopyId() { if (dlShare) copyText(dlShare.id, "Id"); }
+function dlCopySummary() {
+  if (!dlShare) return;
+  const body = el("detailBody");
+  const cat = el("detailCat");
+  const txt = "# " + dlShare.title + "\n\n" +
+    (cat && cat.textContent ? "_" + cat.textContent + "_\n\n" : "") +
+    (body ? body.innerText.replace(/\n{3,}/g, "\n\n").trim() : "");
+  copyText(txt, "Summary");
+}
+
+function openDetail(title, catLabel, html, share) {
+  dlShare = share || null;
   el("detailTitle").textContent = title;
   el("detailCat").textContent = catLabel;
   el("detailBody").innerHTML = html;
+  const shareBox = el("detailShare");
+  if (shareBox) shareBox.innerHTML = dlShareRow();
+  if (dlShare) dlSet(dlShare.tab, dlShare.id);
+  /* a drawer with no catalog target (tab guide, grounding preview) should not
+     leave a stale #tab/itemId in the address bar */
+  else { try { if (location.hash.indexOf("/") >= 0) history.replaceState(null, "", "#" + (currentTab || "overview")); } catch (e) {} }
   detailOpener = document.activeElement;
   el("detailOverlay").classList.add("open");
   mmRenderAll(el("detailBody"));
@@ -646,8 +2072,12 @@ function closeDetail() {
   const ov = el("detailOverlay");
   if (!ov.classList.contains("open")) return;
   ov.classList.remove("open");
+  const shareBox = el("detailShare");
+  if (shareBox) shareBox.innerHTML = "";
+  dlShare = null;
   if (detailOpener && document.contains(detailOpener)) { try { detailOpener.focus(); } catch (e) {} }
   detailOpener = null;
+  if (typeof dlClear === "function") dlClear();
 }
 document.addEventListener("keydown", e => {
   if (e.key === "Escape") {
@@ -655,7 +2085,9 @@ document.addEventListener("keydown", e => {
     if (log && log.classList.contains("open")) { notifLogToggle(); return; }
     const pal = document.getElementById("palOverlay");
     if (pal && pal.classList.contains("open")) return; /* palette handles its own Esc */
-    closeDetail();
+    const ov = document.getElementById("detailOverlay");
+    if (ov && ov.classList.contains("open")) { closeDetail(); return; }
+    dismissNewestToast();   /* last resort: clear the newest toast */
   }
 });
 /* click outside closes the notification log */
@@ -669,37 +2101,149 @@ document.addEventListener("mousedown", e => {
 /* ---------------- boot ---------------- */
 async function loadAll() {
   const get = async p => (await fetch(p)).json();
+  /* One failing module must never kill the whole boot: run each init in
+     isolation and announce the culprit instead of failing silently. */
+  async function safeInit(name, fn) {
+    try { await fn(); }
+    catch (e) {
+      console.warn("init " + name + " failed", e);
+      if (typeof showNotif === "function") showNotif("Could not start " + name + " — other tabs are unaffected", { kind: "warn" });
+    }
+  }
   try {
-    const [pats, scns, trcs, cass, cova] = await Promise.all([
-      get("data/patterns.json"), get("data/scenarios.json"), get("data/traces.json"), get("data/cascades.json"), get("data/coverage.json").catch(()=>null)
+    /* Phase 1 — only what the first paint and the first panes read. The two
+       remaining datasets load in parallel; cascades (the largest, ~423 KB) is
+       awaited only by the panes that need it, keeping it off the first-pane
+       path. Traces stay eager because the Overview stat cards read its count. */
+    const [pats, scns, trcs, cova] = await Promise.all([
+      get("data/patterns.json"), get("data/scenarios.json"),
+      get("data/traces.json"), get("data/coverage.json").catch(() => null)
     ]);
-    DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: cass, coverage: cova };
-    el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces · ${cass.cascades.length} cascades`;
-    el("patBadge").textContent = pats.patterns.length;
-    el("scnBadge").textContent = scns.scenarios.length;
-    el("traceBadge").textContent = trcs.traces.length;
-    if (el("casBadge")) el("casBadge").textContent = cass.cascades.length;
-    initOverview(); initPatterns(); initScenarios(); initLive(); initDesign(); initGuardrail(); initCopilot(); initCascades();
-    if (typeof initCoverage === "function") initCoverage();
-    if (typeof initDeploy === "function") initDeploy();
-    if (typeof initBlueprint === "function") initBlueprint();
-    if (typeof initPalette === "function") initPalette();
-    if (typeof initShortcuts === "function") initShortcuts();
-    if (typeof dashRender === "function") dashRender();
-    if (typeof initLanding === "function") initLanding();
+    DATA = { patterns: pats, scenarios: scns, traces: trcs, cascades: null, coverage: cova };
+    const paintCounts = () => {
+      el("dataStatus").textContent = `${pats.patterns.length} patterns · ${scns.scenarios.length} scenarios · ${trcs.traces.length} traces · ${DATA.cascades ? DATA.cascades.cascades.length : "…"} cascades`;
+      paintBadges();
+    };
+    paintCounts();
+    /* Phase 2 — kick off cascades now so it downloads while the first panes
+       render; the boot awaits it before the panes/dashboard/landing that read
+       it, so ordering stays correct. */
+    const cascadesP = get("data/cascades.json").then(c => {
+      DATA.cascades = c; paintCounts(); return c;
+    }).catch(e => { console.warn("cascades failed to load", e); return null; });
+    catalogReady = cascadesP.then(() => {}, () => {});
+    /* ---- boot order ---------------------------------------------------
+       Registry first: PANE_INIT lets switchTab() run a pane's init on demand,
+       so a tab visit never waits for the idle queue. */
+    const has = n => typeof window[n] === "function";
+    const PANES = [
+      has("initOverview") && ["overview", "Overview", () => initOverview()],
+      has("initPatterns") && ["patterns", "Patterns", () => initPatterns()],
+      has("initScenarios") && ["scenarios", "Scenarios", () => initScenarios()],
+      has("initLive") && ["live", "Live View", () => initLive()],
+      has("initDesign") && ["design", "Design docs", () => initDesign()],
+      has("initGuardrail") && ["guard", "Guardrail Lab", () => initGuardrail()],
+      has("initCopilot") && ["copilot", "Fox - Architect", () => initCopilot()],
+      has("initCascades") && ["cascades", "Cascades", () => initCascades()],
+      has("initCoverage") && ["coverage", "Coverage", () => initCoverage()],
+      has("initDeploy") && ["deploy", "Deployment Plan", () => initDeploy()],
+      has("initBlueprint") && ["blueprint", "Blueprints", () => initBlueprint()],
+      has("initDiscovery") && ["discovery", "Discovery Lab", () => initDiscovery()],
+      has("initBench") && ["bench", "Battle Bench", () => initBench()],
+      has("initRogue") && ["rogue", "Rogue Agents", () => initRogue()],
+      has("initSelflearn") && ["selflearn", "Self-Learning", () => initSelflearn()]
+    ].filter(Boolean);
+    PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; });
+    const paneRun = async p => {
+      if (paneInited[p[0]]) return;
+      paneInited[p[0]] = "starting";
+      await safeInit(p[1], p[2]);
+      paneInited[p[0]] = true;
+      paneSkeletonOff(p[0]);
+    };
+
+    /* First paint path: overview, the pane you asked for, and the catalog
+       panes the dashboard and palette link into. */
+    const bootTab = (function () {
+      const h = (location.hash || "").replace("#", "");
+      return document.getElementById(h + "Pane") ? h : "overview";
+    })();
+    const EARLY = ["overview", "patterns", "scenarios"];
+    const first = PANES.filter(p => EARLY.indexOf(p[0]) >= 0 || p[0] === bootTab);
+    const rest = PANES.filter(p => first.indexOf(p) < 0);
+
+    PANES.forEach(p => paneSkeletonOn(p[0]));
+    /* panes are programmatic focus targets (skip link, deep links, AT
+       navigation) without entering the Tab order */
+    document.querySelectorAll(".pane").forEach(p => { if (p.tabIndex < 0) p.tabIndex = -1; });
+    for (const p of first) await paneRun(p);
+
+    /* First panes are on screen; the catalog-wide pieces below (palette index,
+       dashboard, landing) read cascades, so make sure phase 2 has landed. */
+    await cascadesP;
+
+    if (typeof initPalette === "function") await safeInit("palette", async () => initPalette());
+    if (typeof initShortcuts === "function") await safeInit("shortcuts", async () => initShortcuts());
+    if (typeof initTabBar === "function") await safeInit("tab bar", async () => initTabBar());
+    if (typeof renderSubTabs === "function") renderSubTabs("overview");
+    if (typeof initProject === "function") await safeInit("projects", async () => initProject());
+    if (typeof dashRender === "function") await safeInit("dashboard", async () => dashRender());
+    if (typeof initLanding === "function") await safeInit("landing", async () => initLanding());
     if (typeof LLM !== "undefined" && typeof LLM.bootPill === "function") LLM.bootPill();
     if (typeof paintSaveStamps === "function") paintSaveStamps();
     if (typeof uxPaintViewSegs === "function") uxPaintViewSegs();
+    if (typeof shellFreshCheck === "function") shellFreshCheck();
+    if (typeof a11yBarsInit === "function") a11yBarsInit();
+    if (typeof netPaint === "function") netPaint();
     if (typeof onbShow === "function") setTimeout(() => onbShow(false), 350);
     const hash = (location.hash || "").replace("#", "");
-    if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
+    const dl = dlParse(location.hash);
+    if (dl.id) dlOpen(dl.tab, dl.id, false);
+    else if (hash && document.getElementById(hash + "Pane")) switchTab(hash);
+    dlBooted = true;
+
+    /* the rest, one pane per idle slice — never on the first-paint path */
+    const queue = rest.slice();
+    const idle = window.requestIdleCallback
+      ? (fn) => window.requestIdleCallback(fn, { timeout: 900 })
+      : (fn) => setTimeout(fn, 40);
+    const pump = () => {
+      const p = queue.shift();
+      if (!p) return;
+      Promise.resolve(paneRun(p)).catch(() => {}).then(() => { if (queue.length) idle(pump); });
+    };
+    idle(pump);
   } catch (e) {
     el("dataStatus").textContent = "failed to load data — serve via `python3 serve.py`";
     console.error(e);
   }
 }
 window.addEventListener("hashchange", () => {
-  const h = (location.hash || "").replace("#", "");
-  if (h && h !== currentTab && document.getElementById(h + "Pane")) switchTab(h);
+  const dl = dlParse(location.hash);
+  if (dl.id) { dlOpen(dl.tab, dl.id, true); return; }
+  /* bare tab hash: closing an open drawer (browser Back) lands here */
+  dlApplying = true;
+  try { closeDetail(); } catch (e) {}
+  dlApplying = false;
+  if (dl.tab && dl.tab !== currentTab && document.getElementById(dl.tab + "Pane")) switchTab(dl.tab);
 });
 loadAll();
+
+/* ---------------- offline app shell ----------------
+   Register the service worker so a LAN/air-gapped visit keeps working with no
+   network. Fails silently where SW is unavailable (file://, old browsers) —
+   the app then behaves exactly as before, online only. */
+(function registerOfflineShell() {
+  if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").then((reg) => {
+      const mark = () => document.documentElement.setAttribute("data-offline-ready", "1");
+      if (navigator.serviceWorker.controller || reg.active) mark();
+      navigator.serviceWorker.addEventListener("controllerchange", mark);
+      reg.addEventListener("updatefound", () => {
+        const sw = reg.installing;
+        if (sw) sw.addEventListener("statechange", () => { if (sw.state === "activated") mark(); });
+      });
+    }).catch(() => { /* offline shell unavailable; the app still works online */ });
+  });
+})();

@@ -5,5 +5,28 @@ __pycache__/
 *.py[cod]
 *.log
 
+# node tooling (lint + tests) — dev-only, never shipped.
+node_modules/
+npm-debug.log*
+
 # graft's local graph cache — regenerable, not committed (run `graft build`).
 graft/
+Agentic_Design_Patterns.pdf
+
+# book build — `npm run book` regenerates these. The Markdown and the PDF ship;
+# the HTML and the renderer's scratch files (pass-1 PDF, bookmark spec) are
+# intermediates — page numbers and bookmarks are folded into the shipped PDF.
+book/agent-patterns-and-guardrails.html
+book/.pass1.pdf
+book/.outline-spec.json
+# supplement book — `npm run book:rogue` regenerates these; same split.
+book/rogue-agents.html
+book/Rogue-Agents.pdf.pass1.pdf
+book/Rogue-Agents.pdf.outline-spec.json
+# self-learning supplement — `npm run book:self` regenerates these; same split.
+book/self-learning-agents.html
+book/Self-Learning-Agents.pdf.pass1.pdf
+book/Self-Learning-Agents.pdf.outline-spec.json
+
+# local social/draft copy — personal, not part of the project.
+LINKEDIN-POST.md

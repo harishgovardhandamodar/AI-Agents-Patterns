@@ -48,24 +48,28 @@ const LANDING_NOTES = [
 ];
 
 function landLink(kind, id) {
-  let label = id, fn = null, cls = "";
+  let label = id, tab = null, cls = "";
   try {
     if (kind === "pattern") {
       const p = (DATA.patterns.patterns || []).find(x => x.id === id);
       if (!p) return "";
-      label = p.name; fn = "openPattern"; cls = "p";
+      label = p.name; tab = "patterns"; cls = "p";
     } else if (kind === "scenario") {
       const s = (DATA.scenarios.scenarios || []).find(x => x.id === id);
       if (!s) return "";
-      label = s.title; fn = "openScenario"; cls = "s";
+      label = s.title; tab = "scenarios"; cls = "s";
     } else if (kind === "cascade") {
       const c = (DATA.cascades.cascades || []).find(x => x.id === id);
       if (!c) return "";
-      label = c.name; fn = "openCascade"; cls = "c";
+      label = c.name; tab = "cascades"; cls = "c";
     } else return "";
   } catch (e) { return ""; }
   const mark = cls === "p" ? "◆" : cls === "s" ? "⚠" : "⧉";
-  return `<span class="cp-cite ${cls}" onclick="${fn}('${id}')" title="Open in catalog">${mark} ${escHtml(label)}</span>`;
+  /* a real link, so it is focusable, copyable and openable in a new tab
+     (iteration 111) */
+  return `<a class="cp-cite ${cls}" href="#${tab}/${encodeURIComponent(id)}" title="Open in catalog" ` +
+    `data-act="goTo" data-args="${dataArgs(tab, id)}">` +
+    `${mark} ${escHtml(label)}</a>`;
 }
 
 function landSpotlight() {
@@ -73,13 +77,13 @@ function landSpotlight() {
     const s = (DATA.scenarios.scenarios || []).find(x => x.id === id);
     if (!s) return "";
     const sevColor = s.severity === "critical" ? "var(--red)" : s.severity === "high" ? "var(--orange)" : "var(--accent)";
-    return `<div class="land-spot" onclick="openScenario('${s.id}')" role="listitem" tabindex="0" onkeydown="if(event.key==='Enter')openScenario('${s.id}')">` +
+    return `<div class="land-spot" data-act="openScenario" data-args="[&quot;${s.id}&quot;]" role="listitem" tabindex="0" data-keys="Enter">` +
       `<div class="land-spot-sev" style="color:${sevColor}">${escHtml(s.severity.toUpperCase())} · ${escHtml(s.domain)}</div>` +
       `<div class="land-spot-t">${escHtml(s.title)}</div>` +
       `<div class="land-spot-d">${escHtml(s.description.slice(0, 110))}…</div></div>`;
   }).join("");
   return `<div class="land-sec"><div class="land-sec-h"><h3>🆕 New in the catalog: self-improving agents</h3>` +
-    `<button class="btn sm ghost" onclick="switchTab('scenarios')">All ${DATA.scenarios.scenarios.length} scenarios →</button></div>` +
+    `<button class="btn sm ghost" data-act="switchTab" data-args="[&quot;scenarios&quot;]">All ${DATA.scenarios.scenarios.length} scenarios →</button></div>` +
     `<p class="muted small" style="margin:0 0 10px">Five failure scenarios added for agents that rewrite their own rewards, prompts, successors and fleets — the surface SEABench just measured.</p>` +
     `<div class="land-spots" role="list">${cards}</div></div>`;
 }
@@ -120,7 +124,7 @@ function landChart() {
       `<div class="bar-track"><div class="bar-fill" style="width:${Math.round(100 * n / max)}%"></div></div><span class="n">${n}</span></div>`;
   }).join("");
   return `<div class="land-sec"><div class="land-sec-h"><h3>📊 Cascade classes in this catalog</h3>` +
-    `<button class="btn sm ghost" onclick="switchTab('cascades')">Open explorer →</button></div>` +
+    `<button class="btn sm ghost" data-act="switchTab" data-args="[&quot;cascades&quot;]">Open explorer →</button></div>` +
     `<div class="panel" style="margin:0">${bars}<p class="muted small" style="margin:8px 0 0">Inherent failures dominate the count; cascading ones dominate the damage. The threat model weights them accordingly (×1 / ×1.5 / ×1.25 / ×2).</p></div></div>`;
 }
 
@@ -128,9 +132,9 @@ function landHero() {
   return `<div class="land-hero"><div><div class="land-kicker">ADVISORY WORKBENCH · ${DATA.patterns.patterns.length} PATTERNS · ${DATA.scenarios.scenarios.length} SCENARIOS · ${DATA.cascades.cascades.length} CASCADES</div>` +
     `<h2 class="land-title">Design the agent. Then try to break it — here first.</h2>` +
     `<p class="land-sub">A grounded catalog of how AI agents fail and what stops them: patterns to build with, scenarios that attack them, cascades that propagate, and tools that turn it all into a deployment plan, a reference architecture and enforceable guardrails.</p></div>` +
-    `<div class="land-ctas"><button class="btn primary" onclick="onbGo('deploy')">🧭 Plan a deployment</button>` +
-    `<button class="btn primary" onclick="onbGo('blueprint')">🧩 Architect the system</button>` +
-    `<button class="btn" onclick="onbGo('cascades')">⧉ Study how agents fail</button></div></div>`;
+    `<div class="land-ctas"><button class="btn primary" data-act="onbGo" data-args="[&quot;deploy&quot;]">🧭 Plan a deployment</button>` +
+    `<button class="btn primary" data-act="onbGo" data-args="[&quot;blueprint&quot;]">🧩 Architect the system</button>` +
+    `<button class="btn" data-act="onbGo" data-args="[&quot;cascades&quot;]">⧉ Study how agents fail</button></div></div>`;
 }
 
 function initLanding() {

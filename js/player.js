@@ -80,7 +80,7 @@ function LivePlayer(container, opts) {
     }
     q("speed").value = String(st.speed);
     q("flow").innerHTML =
-      `<button class="design-expand" onclick="openZoom(this)">⤢ enlarge</button>` +
+      `<button class="design-expand" data-act="openZoom" data-first="el">⤢ enlarge</button>` +
       `<pre class="mermaid" data-src="${escHtml(data.flow)}">${escHtml(data.flow)}</pre>`;
     q("steps").innerHTML = data.steps.map((s, i) => `
       <div class="step-row" data-p="sr-${i}">

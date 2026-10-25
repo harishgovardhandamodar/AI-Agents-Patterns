@@ -10,12 +10,36 @@ function initGuardrail() {
   try { guardState.items = JSON.parse(localStorage.getItem(GUARD_STORE) || "[]"); } catch (e) { guardState.items = []; }
   if (!guardState.items.length) { guardState.items = [seedExample()]; persistGuard(); }
   renderGuardCollection();
-  showGuardIntro();
+  /* Re-open the analysis you were last looking at (iteration 104): the pane
+     used to always land on the intro, so returning to the tab threw away
+     your place in the collection. */
+  const last = (function () {
+    try { return localStorage.getItem("aap.guardrail.last.v1"); } catch (e) { return null; }
+  })();
+  const it = last ? guardState.items.find(x => x.id === last) : null;
+  if (it) { guardState.currentId = it.id; renderGuardReport(it); }
+  else showGuardIntro();
 }
 
 function persistGuard() {
-  try { localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items)); } catch (e) { showNotif("Could not persist collection (storage unavailable)"); }
-  if (typeof markSaved === "function") markSaved("guard");
+  let ok = false;
+  try {
+    localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+    ok = true;
+  } catch (e) {
+    /* Storage full: drop oldest analyses (keep the 20 newest) and retry once
+       instead of failing silently — a collection that can't save looks saved. */
+    guardState.items = guardState.items.slice(-20);
+    renderGuardCollection();
+    try {
+      localStorage.setItem(GUARD_STORE, JSON.stringify(guardState.items));
+      ok = true;
+      showNotif("Browser storage was full — trimmed the collection to the 20 newest analyses", { kind: "warn" });
+    } catch (e2) { ok = false; }
+  }
+  if (ok) { if (typeof markSaved === "function") markSaved("guard"); }
+  else if (typeof markSaveFailed === "function") markSaveFailed("guard", "Guardrail collection");
+  if (typeof projTouch === "function") projTouch();
 }
 function seedExample() {
   return analyzeRequest(
@@ -27,7 +51,7 @@ function seedExample() {
 /* ---------------- collection UI ---------------- */
 function renderGuardCollection() {
   el("guardCollection").innerHTML = guardState.items.map(it => `
-    <div class="g-item ${it.id === guardState.currentId ? "active" : ""}" role="listitem" onclick="openGuardItem('${it.id}')">
+    <div class="g-item ${it.id === guardState.currentId ? "active" : ""}" role="listitem" data-act="openGuardItem" data-args="[&quot;${it.id}&quot;]">
       <div class="t">${escHtml(it.title)}</div>
       <div class="m">${escHtml(it.meta.domain)} · risk ${it.meta.riskScore} · ${escHtml(it.meta.tier)} · ${it.controls.length} controls</div>
     </div>`).join("");
@@ -39,9 +63,17 @@ function newGuardAnalysis() {
 }
 function openGuardItem(id) {
   guardState.currentId = id;
+  try { localStorage.setItem("aap.guardrail.last.v1", id); } catch (e) {}
   renderGuardCollection();
   const it = guardState.items.find(x => x.id === id);
   if (it) renderGuardReport(it);
+}
+/* Delegation passes item ids, not objects — resolve back to the item.
+   Direct callers may still pass the object itself. */
+function guardItem(idOrItem) {
+  return (typeof idOrItem === "string")
+    ? guardState.items.find(x => x.id === idOrItem)
+    : idOrItem;
 }
 function deleteGuardItem(id, ev) {
   if (ev) ev.stopPropagation();
@@ -70,17 +102,24 @@ function showGuardIntro() {
   el("guardMain").innerHTML = `
     <div class="g-input-box">
       <h3 style="margin:0 0 8px;font-size:13px">Describe the agent you're building (or the risk you're worried about)</h3>
-      <textarea id="guardInput" placeholder="e.g. Think of an AI agent that can spend money using company cards to complete tasks. One prompt injection may trigger a $50,000 purchase of unnecessary services. How do I design financial guardrails for autonomous agents?"></textarea>
+      <textarea id="guardInput" aria-label="Describe the agent, tools and task to analyze" placeholder="e.g. Think of an AI agent that can spend money using company cards to complete tasks. One prompt injection may trigger a $50,000 purchase of unnecessary services. How do I design financial guardrails for autonomous agents?"></textarea>
       <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
-        <button class="btn primary" onclick="submitGuard()">⚡ Analyze & design guardrails</button>
+        <button class="btn primary" data-act="submitGuard">⚡ Analyze & design guardrails</button>
         <span class="muted small">The analyzer detects domain, action classes, risk signals — and produces advice, proposals, architecture, and a mock run.</span>
       </div>
       <div class="g-examples">
-        <span class="g-example" onclick="fillExample(0)">💳 corporate-card spend agent</span>
-        <span class="g-example" onclick="fillExample(1)">💻 coding agent with prod access</span>
-        <span class="g-example" onclick="fillExample(2)">📨 auto-emailing support agent</span>
-        <span class="g-example" onclick="fillExample(3)">🏥 clinical triage agent</span>
-        <span class="g-example" onclick="fillExample(4)">📊 autonomous trading agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[0]">💳 corporate-card spend agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[1]">💻 coding agent with prod access</span>
+        <span class="g-example" data-act="fillExample" data-args="[2]">📨 auto-emailing support agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[3]">🏥 clinical triage agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[4]">📊 autonomous trading agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[5]">🌐 finance agent swarm</span>
+        <span class="g-example" data-act="fillExample" data-args="[6]">🔁 self-tuning spend controls</span>
+        <span class="g-example" data-act="fillExample" data-args="[7]">🏥 clinical agent swarm</span>
+        <span class="g-example" data-act="fillExample" data-args="[8]">🧠 self-learning triage agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[9]">💊 drug-discovery agent</span>
+        <span class="g-example" data-act="fillExample" data-args="[10]">🔬 novelty-check research</span>
+        <span class="g-example" data-act="fillExample" data-args="[11]">🗺 risk-landscape monitor</span>
       </div>
     </div>
     <div class="g-sec">
@@ -100,7 +139,14 @@ const EXAMPLES = [
   "I want a coding agent with access to our production database and deploy pipeline so it can fix incidents autonomously. What guardrails does it need so one bad prompt can't wipe our data?",
   "Build an email-drafting support agent that can look up customer accounts and send replies automatically, including refunds. What can go wrong and how do I protect against it?",
   "A clinical triage agent that talks to patients, reads their records, and suggests next steps. Design the safety architecture.",
-  "An autonomous trading agent that adjusts strategy based on market news it reads from the web. Guardrails?"
+  "An autonomous trading agent that adjusts strategy based on market news it reads from the web. Guardrails?",
+  "A swarm of finance sub-agents that split work across subsidiaries: one reconciles each invoice, one issues each refund payment, one chases approvals — all delegating to each other automatically. How do I stop runaway delegation, duplicate payments and approval shopping?",
+  "A finance assistant that must learn from past approvals and automatically tunes its own spend thresholds and vendor allowlist over time. How do I keep its self-improvement from silently loosening the controls?",
+  "A swarm of clinical sub-agents — triage, scheduling and pharmacy — that hands each patient off between steps and escalates without human supervision. How do I keep handoffs safe and make sure urgent cases still reach a human?",
+  "A clinical documentation agent with long-term memory of physician edits that rewrites its own triage prompts to close cases faster, operating automatically between reviews. How do I stop it from gaming its metrics and hiding urgent patient referrals?",
+  "An AI agent for designing new drugs that searches the web for prior art, reads research papers, proposes novel compounds, and places each synthesis order with external vendors. What guardrails keep bad compounds, leaked IP, and runaway orders in check?",
+  "A novelty-check agent that certifies a result as novel before we file a patent: it searches the web and preprint servers, combs citation records and internal reports, must remember every search so repeat checks are cheap, then writes the disclosure. How do I stop it from leaking the invention, caching a poisoned verdict, or hallucinating prior art?",
+  "A risk-landscape agent that continuously watches and analyzes markets, vendors and threat feeds from thousands of sources across the web, then briefs the board with a ranked risk register. How do I keep its monitoring honest and its briefings traceable?"
 ];
 function fillExample(i) { el("guardInput").value = EXAMPLES[i]; el("guardInput").focus(); }
 function submitGuard() {
@@ -220,6 +266,208 @@ function buildCascadeRules(domainId, text) {
       prevent: (mit.prevent || []).slice(0, 2)
     };
   });
+}
+
+/* ---------------- reference control -> catalog pattern map (iteration 104)
+   The Guardrail Lab names nine concrete controls. Each one is an
+   *implementation* of a control family, and every control family already
+   exists in the catalog as a design pattern. This table is the bridge: it
+   turns the lab's prose controls into ids the Blueprint canvas accepts, so
+   an analysis can become an architecture instead of staying a document.
+
+   Matching is deliberately narrow. It runs against the control's **name**
+   first (the name is the control's identity), then against its rationale
+   with word-boundary patterns, and it takes the **first** rule that fires.
+   A loose match here would silently add patterns the user never chose to
+   the canvas — the same class of mistake the "add all" button makes.
+
+   Every candidate id is verified against the catalog before it is used, so
+   a mapping can never put a ghost component on the blueprint. */
+const GUARD_CONTROL_MAP = [
+  /* --- most specific first: a rule that has already fired wins, so the
+         generic "approval" rule must not shadow "dual control" --- */
+  { name: /\bdual control|\bfour-eyes/i,
+    why: /\bnot its own approver|\btwo independent/i,
+    ids: ["dual-control"] },
+  { name: /\bin-depth|\bprocessor/i,
+    why: /\boutside the agent runtime|\bprocessor-level/i,
+    ids: ["sandbox-execution", "tool-sandbox"] },
+  { name: /\ballowlist|\bpayee/i,
+    why: /\bnew payees|\bfirst-seen/i,
+    ids: ["egress-control", "policy-engine"] },
+  { name: /\bper-transaction|\brolling-window/i,
+    why: /\bthreshold-splitting/i,
+    ids: ["budget-guardrails", "quota-rate-limit"] },
+  { name: /\bapproval|\bhuman\b/i,
+    why: /\brequire-human|\b2-human-approval|\bevidence pack/i,
+    ids: ["approval-gates", "human-in-the-loop"] },
+  { name: /\bbudget|\bcap(s|ping)?\b|\bceiling/i,
+    why: /\bhard-stop|\bthe model cannot raise/i,
+    ids: ["budget-guardrails", "quota-rate-limit"] },
+  { name: /\baudit|\bhash-chain|\btrail\b/i,
+    why: /\breconstruct|\bappend-only/i,
+    ids: ["audit-trail"] },
+  { name: /\binjection|\buntrusted/i,
+    why: /\bnever instructions|\bquarantine/i,
+    ids: ["input-sanitization", "content-shielding"] },
+  { name: /\bpolicy engine/i,
+    why: /\bdefault-deny|\ballow\/deny/i,
+    ids: ["policy-engine"] },
+  { name: /\bsandbox|\bdry-run/i,
+    why: /\brehearsed/i,
+    ids: ["sandbox-execution", "tool-sandbox"] },
+  { name: /\begress|\boutbound/i,
+    why: /\bleaving|\bdisclosure/i,
+    ids: ["egress-control", "output-filtering-pii"] },
+  { name: /\bpii|\bredact/i,
+    why: /\bsensitive data/i,
+    ids: ["output-filtering-pii"] },
+  { name: /\bscoped|\bcredential|\bleast privilege/i,
+    why: /\bper task/i,
+    ids: ["least-privilege", "agent-identity"] },
+  { name: /\bdrift|\bmonitor/i,
+    why: /\bbaseline/i,
+    ids: ["drift-monitoring"] },
+  { name: /\beval|\bred-team|\bregression/i,
+    why: /\bcontinuous/i,
+    ids: ["eval-harness-redteam"] },
+  { name: /\bkill switch|\brevocation|\bfreeze/i,
+    why: /\bcannot self-reset/i,
+    ids: ["circuit-breaker", "checkpoint-rollback"] },
+  { name: /\bmemory|\bretrieval|\bprovenance/i,
+    why: /\bpersists/i,
+    ids: ["provenance-citation"] },
+  { name: /\bfan-out|\bconcurren|\bdelegat/i,
+    why: /\bdescendant/i,
+    ids: ["fan-out-caps"] },
+  { name: /\bvalid|\bverif/i,
+    why: /\bstep\b/i,
+    ids: ["validation-loop", "chain-of-verification"] },
+  { name: /\bcanary|\bshadow|\bstaged|\brollout/i,
+    why: /\bcompare it against/i,
+    ids: ["canary-shadow", "shadow-agents"] },
+  { name: /\bescalat|\bexception|\bfallback/i,
+    why: /\bfalls outside policy/i,
+    ids: ["fallback-chain"] }
+];
+
+/* Map one control to the catalog pattern ids that implement it. */
+function guardControlPatternIds(c) {
+  const name = String(c.name || "");
+  const why = String(c.why || "");
+  const known = (typeof DATA !== "undefined" && DATA.patterns)
+    ? (DATA.patterns.patterns || []).map(p => p.id) : [];
+  for (const m of GUARD_CONTROL_MAP) {
+    const hit = m.name.test(name) || (m.why && m.why.test(why));
+    if (!hit) continue;
+    return m.ids.filter(id => known.indexOf(id) >= 0);
+  }
+  return [];
+}
+
+/* Every control of an analysis, mapped — the payload the "add to blueprint"
+   button uses. */
+function guardAnalysisPatternIds(item) {
+  const out = [];
+  ((item && item.controls) || []).forEach(c => {
+    guardControlPatternIds(c).forEach(id => { if (out.indexOf(id) < 0) out.push(id); });
+  });
+  return out;
+}
+
+/* Add an analysis's controls to the blueprint as real components. */
+function guardAddToBlueprint(item, mode) {
+  item = guardItem(item);
+  if (!item) return;
+  if (typeof bpAddMany !== "function") { showNotif("Blueprint builder unavailable"); return; }
+  const ids = guardAnalysisPatternIds(item);
+  if (!ids.length) {
+    showNotif("No catalog pattern matches these controls yet", { kind: "warn" });
+    return;
+  }
+  if (mode === "replace" && bpState.comps.length) {
+    const had = bpState.comps.slice();
+    const hadName = bpState.name;
+    bpState.comps = [];
+    if (!bpState.name) bpState.name = item.title || "";
+    bpAddMany(ids);
+    undoPush("replace blueprint with the guardrail analysis",
+      () => { bpState.comps = had; bpState.name = hadName; bpSave(); bpRender(); bpRenderPalette(); },
+      () => { bpState.comps = ids.slice(); bpSave(); bpRender(); bpRenderPalette(); });
+    showNotif("Blueprint replaced from the guardrail analysis — " + ids.length + " patterns", {
+      kind: "ok",
+      actions: [{ label: "Undo", primary: true, fn: undoOnce },
+                { label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }]
+    });
+    switchTab("blueprint"); focusPane("blueprint");
+    return;
+  }
+  if (!bpState.name) bpState.name = item.title || "";
+  const added = bpAddMany(ids);
+  showNotif(added
+    ? "Added " + added + " pattern" + (added === 1 ? "" : "s") + " from the guardrail analysis"
+    : "Those controls are already on the blueprint", {
+    kind: "ok",
+    actions: [{ label: "View", fn: () => { switchTab("blueprint"); focusPane("blueprint"); } }]
+  });
+  switchTab("blueprint");
+  focusPane("blueprint");
+}
+
+/* ---------------- promote the mock run into the trace library (iteration 105)
+   The Guardrail Lab's section 7 already *is* a replayable trace — a flow
+   diagram, steps, events and metrics — it just lives inside the analysis
+   instead of the Live View. Promoting it puts it in the same player, under
+   the same filters, next to the 39 catalog traces, so "show me the run" is
+   one click instead of a re-read of the report. */
+/* Copy-JSON shim for delegation (the old inline handler serialized the
+   item inline). */
+function copyAnalysisJSON(id) {
+  const it = guardItem(id);
+  if (!it) return;
+  copyText(JSON.stringify(it, null, 2), "Analysis JSON");
+}
+function guardPromoteToTrace(item) {
+  item = guardItem(item);
+  if (!item || !item.mockRun) { showNotif("This analysis has no mock run", { kind: "warn" }); return; }
+  const m = item.mockRun;
+  const id = "trace-local-" + item.id;
+  const trace = {
+    id: id,
+    name: item.title + " — synthetic replay",
+    scenarioId: null,
+    local: true,
+    guardId: item.id,
+    domain: (item.meta && item.meta.domain ? String(item.meta.domain).toLowerCase() : "local"),
+    severity: (item.meta && item.meta.tier === "CRITICAL" ? "critical" : item.meta && item.meta.tier === "HIGH" ? "high" : "medium"),
+    verdict: "blocked",
+    summary: item.request,
+    metrics: m.metrics || { durationMs: 0, steps: (m.steps || []).length, tokensIn: 0, tokensOut: 0, costUsd: 0, budgetUsd: 25, toolCalls: 0, guardrailHits: 0 },
+    flow: m.flow, steps: m.steps, events: m.events
+  };
+  const list = liveLocal().filter(t => t.id !== id);
+  list.push(trace);
+  liveLocalSave(list);
+  if (typeof renderTraceList === "function") renderTraceList();
+  showNotif("Mock run added to the Live View trace library", {
+    kind: "ok",
+    actions: [{ label: "Open", fn: function () { goTo("live", id); } }]
+  });
+}
+
+/* Ask Fox - Architect about a guardrail analysis, sending the design
+   itself rather than its title (iteration 110). */
+function askAboutGuard(item) {
+  item = guardItem(item);
+  if (!item) return;
+  const m = item.meta || {};
+  const q = "Guardrail design for: " + item.title + " (" + (m.domain || "") + ", risk " +
+    (m.riskScore || 0) + "/100, " + (m.tier || "") + " tier). " +
+    "The request was: " + (item.request || "") + " " +
+    "Recommended controls: " + (item.controls || []).slice(0, 6).map(c => c.name + " [" + c.layer + "/" + c.mode + "]").join("; ") + ". " +
+    "Cascade-aware rules cite: " + (item.cascadeRules || []).slice(0, 4).map(r => r.name + " (" + r.cls + ")").join("; ") + ". " +
+    "Which catalog patterns should I add to the architecture, and what is still uncovered?";
+  askCopilotAbout(q);
 }
 
 function crRuleText(r) {
@@ -359,6 +607,17 @@ function buildArchitecture(cls, controls) {
 }
 
 /* ---- synthetic mock run ---- */
+/* Mermaid-safe node label: even inside "..." labels, ", #, ;, [] and {}
+   break the parse (or truncate the label), so normalize them. Titles stay
+   human-readable; node ids (N01…) are unchanged so the player still joins
+   steps to diagram nodes. */
+function flowLabel(s) {
+  return String(s == null ? "" : s)
+    .replace(/"/g, "'").replace(/`/g, "'").replace(/#/g, "no.")
+    .replace(/;/g, ",").replace(/\|/g, "/")
+    .replace(/[\[\]]/g, "(").replace(/[\{\}]/g, "(")
+    .replace(/\s+/g, " ").trim().slice(0, 44);
+}
 function buildMockRun(text, cls, signals, tier) {
   const has = x => cls.has(x);
   const steps = [];
@@ -411,7 +670,9 @@ function buildMockRun(text, cls, signals, tier) {
   const done = push("guardrail", "Audit sealed + monitoring", "Hash-chained log complete: inputs, policy decisions, approvals, execution. Drift metrics updated. Attack sample added to eval corpus.", "ok");
   link(done);
 
-  const flow = ["flowchart TB", ...lines].join("\n");
+  const flow = ["flowchart TB",
+    ...steps.map(s => `  ${s.node}["${flowLabel(s.title)}"]`),
+    ...lines].join("\n");
   const tokensIn = steps.reduce((s, x) => s + x.tokens, 0);
   return { verdict: "blocked-then-approved", flow, steps, events,
     metrics: {
@@ -456,13 +717,27 @@ function renderGuardReport(it) {
   const m = it.meta;
   const sevColor = m.tier === "CRITICAL" ? "var(--red)" : m.tier === "HIGH" ? "var(--orange)" : m.tier === "MEDIUM" ? "var(--accent)" : "var(--green)";
   const badge = it.proposals.some(p => p.recommended) ? "" : "";
+  /* how many of this analysis's controls are real catalog patterns */
+  const mappedIds = guardAnalysisPatternIds(it);
+  const mapped = mappedIds.length;
+  const ctrlMapped = (it.controls || []).filter(c => guardControlPatternIds(c).length).length;
   el("guardMain").innerHTML = `
     <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
       <h2 style="margin:0;font-size:16px">${escHtml(it.title)}</h2>
       <span class="g-badge" style="color:${sevColor};border-color:${sevColor}">${m.tier} RISK</span>
       <div style="flex:1"></div>
       <span class="muted small mono">${escHtml(it.meta.domain)} · ${escHtml(it.createdAt.slice(0, 16).replace("T", " "))}</span>
-      <button class="btn" onclick="deleteGuardItem('${it.id}', event)">🗑</button>
+      <button class="btn" data-act="deleteGuardItem" data-args="${dataArgs(it.id)}" data-ev>🗑</button>
+    </div>
+
+    <div class="g-handoff">
+      <b>Take this further</b>
+      <button class="btn sm primary" data-act="guardAddToBlueprint" data-args="${dataArgs(it.id, "add")}" ${mapped ? "" : "disabled"}>🧩 Add ${mapped || "no"} pattern${mapped === 1 ? "" : "s"} to blueprint</button>
+      <button class="btn sm" data-act="guardAddToBlueprint" data-args="${dataArgs(it.id, "replace")}" ${mapped ? "" : "disabled"}>↺ Replace canvas</button>
+      <button class="btn sm" data-act="askAboutGuard" data-args="${dataArgs(it.id)}">🤖 Ask Fox - Architect</button>
+      <button class="btn sm" data-act="copyAnalysisJSON" data-args="${dataArgs(it.id)}">⧉ Copy JSON</button>
+      <button class="btn sm" data-act="guardPromoteToTrace" data-args="${dataArgs(it.id)}">▶ Promote mock run to Live View</button>
+      <span class="muted small">${mapped ? ctrlMapped + " of " + (it.controls || []).length + " controls map to " + mapped + " catalog patterns" : "No control maps to a catalog pattern yet"}</span>
     </div>
 
     <div class="g-input-box" style="margin-bottom:14px">
@@ -515,7 +790,7 @@ function renderGuardReport(it) {
         ${it.cascadeRules.map(r => `
           <div class="cr-rule">
             <div class="cr-head">
-              <a class="cr-name" onclick="openCascade('${escHtml(r.cas)}')">${escHtml(r.name)}</a>
+              <a class="cr-name" data-act="openCascade" data-args="[&quot;${escHtml(r.cas)}&quot;]">${escHtml(r.name)}</a>
               <span class="chip cr-cls cr-cls-${escHtml(r.cls)}">${escHtml(r.cls)}</span>
               <span class="muted small">${escHtml(r.impact)} impact · ${escHtml(r.likelihood)} likely · score ${r.score}</span>
             </div>
