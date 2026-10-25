@@ -150,6 +150,19 @@ h1.chapter + .pb { display: none; }
 <h1 id="part-i-the-workbench-and-its-three-jobs" class="">Part I — The workbench and its three jobs</h1>
 <h2 id="chapter-1-the-three-jobs" class="chapter">Chapter 1: The three jobs</h2>
 <p>Ship an agent safely, architect the system, study how agents fail. Each job lines up a different slice of the catalog, the planner and the copilot behind it, so the first click already has a purpose — and each job ends with an artifact, not a browse history: a readiness score with a rollout plan and an ADR, stages with controls and estimates in the library, or rehearsed shapes with measured bands.</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  Q[&quot;What do you need this week?&quot;]
+  Q --&gt; D1{Ship something safely?}
+  D1 --&gt;|yes| J1[&quot;Deployment planner: intake to ADR&quot;]
+  D1 --&gt;|no| D2{Design the system?}
+  D2 --&gt;|yes| J2[&quot;Blueprint builder: stages to library&quot;]
+  D2 --&gt;|no| J3[&quot;Study failure: catalog to bench&quot;]">flowchart TB
+  Q[&quot;What do you need this week?&quot;]
+  Q --&gt; D1{Ship something safely?}
+  D1 --&gt;|yes| J1[&quot;Deployment planner: intake to ADR&quot;]
+  D1 --&gt;|no| D2{Design the system?}
+  D2 --&gt;|yes| J2[&quot;Blueprint builder: stages to library&quot;]
+  D2 --&gt;|no| J3[&quot;Study failure: catalog to bench&quot;]</pre><figcaption>Pick the job.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I read the three jobs as the only onboarding that sticks: ship an agent safely, architect the system, study how agents fail. Each job lines up a different slice of the catalog, the planner and the copilot behind it, so the first click already has a purpose. My dispute is with feature tours that end at awareness; a job ends at an artifact. Monday morning, enter through one job card and finish what it starts.</li><li><b>Memory-systems researcher:</b> I focus on what each job keeps: the deployment job keeps a readiness score, a stack, a rollout plan and an ADR; the architect job keeps stages, controls and estimates in the library; the study job keeps rehearsed shapes and measured bands. Jobs are distinguished by their artifacts, not their clicks. Others emphasize the starting point; I insist the kept record is what makes it a job. Monday morning, name the artifact before starting the job.</li><li><b>Evaluation methodologist:</b> I value that the three jobs are testable claims: a deployment plan either scores readiness or it does not, a blueprint either estimates or it does not, a failure study either rehearses or it does not. Vague jobs produce vague outcomes. My caution is against treating the onboarding cards as marketing; they are routers with acceptance criteria. Monday morning, define done for the job you pick.</li><li><b>Safety researcher:</b> I staff the three jobs as the minimum viable program: every team shipping agents should be able to show a deployment plan, a system architecture, and a recent failure rehearsal on demand. If any of the three is missing, that is the gap to work first. My disagreement is with programs that do two of three and call it coverage. Monday morning, check which of the three you cannot produce this week.</li></ul>
 <h2 id="chapter-2-shell-palette-and-projects" class="chapter">Chapter 2: Shell, palette, and projects</h2>
 <p>Fifteen panes in six sections, one palette that jumps anywhere by name, keyboard shortcuts for the pointerless, and deep links for everything with an identity — drawers, cases, scenarios, runs. The shell is navigable at speed and linkable for handoff: send the link, not the screenshot.</p>
@@ -165,9 +178,65 @@ h1.chapter + .pb { display: none; }
   SEC --&gt; MEM[&quot;Projects, library, runs, boards&quot;]
   MEM --&gt; EXP[&quot;Exports: JSON, Markdown, CSV, PDF&quot;]</pre><figcaption>Shell, palette, tabs, memory.</figcaption></figure>
 <p>Under the shell sits the memory: the current-project chip, per-tab save stamps, the blueprint library, saved runs and boards and promoted drafts — persisted in the browser, exportable as JSON, working from a static host with no backend at all. Context that survives is context that compounds.</p>
+<figure class="diagram"><pre class="mermaid" data-src="classDiagram
+    class Workflow {
+        +label
+        +stages
+    }
+    class CatalogWorkflow {
+        +browse, rehearse, export
+    }
+    class PlanningWorkflow {
+        +intake, estimate, decide
+    }
+    class LabWorkflow {
+        +configure, run, measure
+    }
+    class CounselWorkflow {
+        +ask, read, rebuild
+    }
+    Workflow &lt;|-- CatalogWorkflow
+    Workflow &lt;|-- PlanningWorkflow
+    Workflow &lt;|-- LabWorkflow
+    Workflow &lt;|-- CounselWorkflow
+    Scenario --&gt; Workflow : served by
+    Domain o-- Scenario : holds">classDiagram
+    class Workflow {
+        +label
+        +stages
+    }
+    class CatalogWorkflow {
+        +browse, rehearse, export
+    }
+    class PlanningWorkflow {
+        +intake, estimate, decide
+    }
+    class LabWorkflow {
+        +configure, run, measure
+    }
+    class CounselWorkflow {
+        +ask, read, rebuild
+    }
+    Workflow &lt;|-- CatalogWorkflow
+    Workflow &lt;|-- PlanningWorkflow
+    Workflow &lt;|-- LabWorkflow
+    Workflow &lt;|-- CounselWorkflow
+    Scenario --&gt; Workflow : served by
+    Domain o-- Scenario : holds</pre><figcaption>Workflow taxonomy.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I see the shell as speed without loss of place: the command palette jumps anywhere by name, section tabs keep fifteen panes in six groups, and keyboard shortcuts move without a pointer. Fluency here compounds — every jump you memorize is seconds back forever. My dispute is with mouse-only operators; the palette is the fastest way to work this catalog. Monday morning, learn three palette queries by heart.</li><li><b>Memory-systems researcher:</b> I emphasize the project layer that wraps the shell: current-project chip, per-tab save stamps, library persistence and JSON export mean the workbench remembers across sessions and machines. Context that survives is context that compounds. Others focus on navigation; I insist the shell is a memory system with a search box. Monday morning, export one project and confirm the round trip.</li><li><b>Evaluation methodologist:</b> I treat shell fluency as measurable: palette results ranked, shortcuts discoverable through the help overlay, tab state restorable from the address bar. The deep-link habit matters most — every drawer, case and scenario has an address you can send. My caution is link rot across versions; pin the version with the link. Monday morning, send one deep link instead of a screenshot.</li><li><b>Safety researcher:</b> I map the shell to shared situational awareness: the same palette, the same tabs, the same links mean the on-call and the auditor look at the same objects. Consistency of address is a safety property when minutes matter. My disagreement is with private workflows that cannot be linked or exported. Monday morning, verify your current investigation is shareable as links and exports.</li></ul>
 <h2 id="chapter-3-yours-offline-first-and-exportable" class="chapter">Chapter 3: Yours: offline-first and exportable</h2>
 <p>Static hosting, browser persistence, deterministic fallbacks when backends are unreachable, and exports that stand alone: JSON for state, Markdown for reports, CSV for backlogs, PDF for books. Nothing rehearsed here needs production credentials or real customer data — mock and open data exercise the same paths.</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  A[&quot;Work in the tab&quot;]
+  A --&gt; E[&quot;Export JSON, Markdown, CSV, PDF&quot;]
+  E --&gt; R[&quot;Read it without the app&quot;]
+  R --&gt; I[&quot;Reimport or file it&quot;]
+  I --&gt; A">flowchart TB
+  A[&quot;Work in the tab&quot;]
+  A --&gt; E[&quot;Export JSON, Markdown, CSV, PDF&quot;]
+  E --&gt; R[&quot;Read it without the app&quot;]
+  R --&gt; I[&quot;Reimport or file it&quot;]
+  I --&gt; A</pre><figcaption>Export round-trip.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I read local-first as the precondition for honest rehearsal: static hosting, browser persistence, deterministic fallbacks when backends are unreachable, and exports that stand alone. You can run the whole program on your own machines with your own data. My dispute is with cloud-mandatory tooling for sensitive work; the lab should fit inside your boundary. Monday morning, confirm what leaves your machine when you use each tab — and prefer the answer nothing.</li><li><b>Memory-systems researcher:</b> I focus on the export discipline: JSON for state, Markdown for reports, CSV for backlogs, PDF for books — every artifact readable without the app that made it. Vendor-neutral artifacts outlive every tool. Others celebrate features; I celebrate file formats. Monday morning, open one export in a plain editor and confirm it stands alone.</li><li><b>Evaluation methodologist:</b> I value determinism as the audit property: seeded runs, versioned data files, and builds that fail rather than drift. Reproducibility is what separates rehearsal from storytelling, and local-first makes it cheap. My caution is stale caches — the shell checks its own freshness and says so. Monday morning, confirm your outputs carry versions and seeds.</li><li><b>Safety researcher:</b> I staff local-first as a containment boundary for the work itself: rehearsals of exfiltration, rogue behavior and live fire should never need production credentials or real customer data. Mock and open data exercise the same paths. My disagreement is with labs that rehearse on production; the fence starts at the lab door. Monday morning, verify no rehearsal touches a production system.</li></ul>
 <h1 id="part-ii-catalog-workflows" class="">Part II — Catalog workflows</h1>
 <h2 id="chapter-4-patterns-search-filter-drawer-handoff" class="chapter">Chapter 4: Patterns: search, filter, drawer, handoff</h2>
@@ -186,6 +255,25 @@ h1.chapter + .pb { display: none; }
   H1 --&gt; B[&quot;Convert a failure into a bench case&quot;]
   H2 --&gt; B</pre><figcaption>Catalog loop.</figcaption></figure>
 <p>Of the catalog&#x27;s 107 patterns, each carries its protections as future blueprint controls and its failure modes as future bench cases. Convert at least one of each: a protection into a stage control, a failure into a test.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant P as Patterns
+    participant D as Drawer
+    participant B as Blueprint
+    U-&gt;&gt;P: search and filter
+    P-&gt;&gt;D: open full record
+    D-&gt;&gt;B: add pattern as control
+    B-&gt;&gt;U: estimate updates live">sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant P as Patterns
+    participant D as Drawer
+    participant B as Blueprint
+    U-&gt;&gt;P: search and filter
+    P-&gt;&gt;D: open full record
+    D-&gt;&gt;B: add pattern as control
+    B-&gt;&gt;U: estimate updates live</pre><figcaption>Catalog handoff.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I read the patterns workflow as search, filter, read, hand off: find the shape by name or failure, narrow by category and domain, open the drawer for the full record with diagram and protections, then send it to a blueprint or ask the copilot about it. The handoff is the point — a pattern that never leaves the drawer never ships. Monday morning, move one pattern into a blueprint instead of just reading it.</li><li><b>Memory-systems researcher:</b> I emphasize the drawer as the unit of knowledge: control flow, failures, protections and links live together, addressable by deep link, so a pattern can be cited in a review or pasted into a plan. Knowledge that cannot be linked rots in place. Others focus on browsing; I insist addressability is the workflow. Monday morning, link one pattern into a live document.</li><li><b>Evaluation methodologist:</b> I treat the catalog as generated from data files, which means counts, categories and cross-references are computed rather than typed. Trust the structure but verify the edges you rely on. My caution is that generated does not mean complete; coverage gaps are themselves catalogued. Monday morning, check the gap the catalog admits before trusting the part you need.</li><li><b>Safety researcher:</b> I map patterns to the build workflow: protections listed per pattern become controls per blueprint stage, and failure modes become test cases for the bench. The catalog earns its keep when it changes what gets built. My disagreement is with reading the catalog as literature; it is a parts list with warnings attached. Monday morning, convert one failure mode into one bench case.</li></ul>
 <h2 id="chapter-5-scenarios-read-the-story-run-the-trace" class="chapter">Chapter 5: Scenarios: read the story, run the trace</h2>
 <p>Severity, vector and domain get you to the story; the attack chain shows the moves; protections show the answers; the mock run lets you watch it happen. Fifty-four scenarios, each with a road and an archetype, each assigned to the workflows in this chapter&#x27;s table by the introduction&#x27;s rule.</p>
@@ -201,6 +289,25 @@ h1.chapter + .pb { display: none; }
   P --&gt; M[&quot;Mock run: watch it happen&quot;]
   M --&gt; RH[&quot;Rehearse your version&quot;]</pre><figcaption>Scenario anatomy.</figcaption></figure>
 <p>The mix: 32 emergent, 18 injected, 4 both — with hijack leading the archetypes at 19 scenarios. Weight rehearsal by these counts, not by drama.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant S as Scenarios
+    participant L as Live trace
+    participant R as Rogue ops
+    U-&gt;&gt;S: read story and chain
+    S-&gt;&gt;L: replay the mock run
+    L-&gt;&gt;R: rehearse the archetype
+    R-&gt;&gt;U: detectors proven or gaps found">sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant S as Scenarios
+    participant L as Live trace
+    participant R as Rogue ops
+    U-&gt;&gt;S: read story and chain
+    S-&gt;&gt;L: replay the mock run
+    L-&gt;&gt;R: rehearse the archetype
+    R-&gt;&gt;U: detectors proven or gaps found</pre><figcaption>Scenario to rehearsal.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I see scenarios as the rehearsal scripts of the catalog: severity, vector and domain get you to the story, the attack chain shows the moves, protections show the answers, and the mock run lets you watch it happen. Read the story, run the trace, then rehearse your version. My dispute is with teams that read scenarios like news; they are drills with names attached. Monday morning, run one mock trace end to end.</li><li><b>Memory-systems researcher:</b> I focus on the chain as the durable artifact: individual steps change with tooling, but the shape — entry, escalation, impact — transfers across stacks. Learn shapes, not screenshots. Others emphasize the narrative; I insist the attack chain is the part to memorize. Monday morning, redraw one chain from memory and check it.</li><li><b>Evaluation methodologist:</b> I value that every scenario carries its protections and a replayable trace, so claims are checkable rather than asserted. The trace is the experiment you can re-run. My caution is mock fidelity; synthetic replays prove wiring, not adversary behavior. Monday morning, note what each trace cannot show before citing it.</li><li><b>Safety researcher:</b> I map scenarios to authorities: where the story involves money, production, prescribing or publishing, the corresponding protection is not advice but a gate requirement. Each scenario ends at a grant or a gate that would have bounded it. My disagreement is with reading without mapping; trace every story to its control. Monday morning, map one scenario to your own grants.</li></ul>
 <h2 id="chapter-6-cascades-browse-by-class-plan-mitigations" class="chapter">Chapter 6: Cascades: browse by class, plan mitigations</h2>
 <p>Filter by the four classes first — inherent, emergent, derived, cascading live in different places and demand different controls — then domain and blast radius. Page through the ranked list with progress shown; the pager never loses your place across 191 records.</p>
@@ -227,6 +334,19 @@ h1.chapter + .pb { display: none; }
   G --&gt; X[&quot;Export Markdown or CSV&quot;]
   X --&gt; T[&quot;File the top item in the sprint&quot;]</pre><figcaption>Coverage to backlog.</figcaption></figure>
 <p>Targets are advisory, printed beside the verdicts — a met target is not a defended domain. Fund by gap: thin domains get rehearsal priority, missing cascade classes get authoring priority in discovery.</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  H[&quot;Read your domain row&quot;]
+  H --&gt; D{Below target?}
+  D --&gt;|yes| G[&quot;Open the gap card&quot;]
+  D --&gt;|no| M[&quot;Monitor next release&quot;]
+  G --&gt; X[&quot;Export backlog item&quot;]
+  X --&gt; F[&quot;File it in the sprint&quot;]">flowchart TB
+  H[&quot;Read your domain row&quot;]
+  H --&gt; D{Below target?}
+  D --&gt;|yes| G[&quot;Open the gap card&quot;]
+  D --&gt;|no| M[&quot;Monitor next release&quot;]
+  G --&gt; X[&quot;Export backlog item&quot;]
+  X --&gt; F[&quot;File it in the sprint&quot;]</pre><figcaption>Coverage triage.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I see coverage as the map of what the catalog actually defends: the heatmap shows per-domain depth, gap cards name what is missing, and the backlog export turns gaps into assignable work. A catalog you cannot audit is a comfort object. Monday morning, open your domain row and read it honestly.</li><li><b>Memory-systems researcher:</b> I focus on the backlog as the artifact: Markdown checklist or CSV, each gap with its fix, ready for a sprint rather than a slide. Coverage work that does not produce tickets does not happen. Others admire the heatmap; I insist the export is the workflow. Monday morning, export the backlog and file the top item.</li><li><b>Evaluation methodologist:</b> I value that targets are explicit and heuristic: patterns and scenario counts per domain, derived and cascading minimums, with the methodology printed beside the verdicts. Advisory, not authoritative — and labeled as such. My caution is target worship; a met target is not a defended domain. Monday morning, re-derive one target from your own incident history.</li><li><b>Safety researcher:</b> I staff coverage as the planning input: thin domains get rehearsal priority, missing cascade classes get authoring priority, and the budget view says which domains meet the scenario minimum. Fund by gap, not by comfort. My disagreement is with uniform investment across domains; weight by adversary interest and blast radius. Monday morning, move one unit of effort to your thinnest domain.</li></ul>
 <h2 id="chapter-8-live-traces-press-play-keep-the-log" class="chapter">Chapter 8: Live traces: press play, keep the log</h2>
 <p>Pick a trace and press play: control flow highlights while steps, guardrail decisions, budget burn and the event log stay in sync. Step through for briefings, enlarge for war rooms, replay at speed for drills. The same trace serves onboarding, review and incident prep.</p>
@@ -258,6 +378,25 @@ h1.chapter + .pb { display: none; }
   ST --&gt; RO[&quot;Rollout plan&quot;]
   RO --&gt; RK[&quot;Risks and ADR&quot;]</pre><figcaption>Deployment spine.</figcaption></figure>
 <p>The score is a checklist with arithmetic — coverage, cost, threat exposure and cascade analysis computed from the catalog, inspectable all the way down. Improve the inputs, not the number; halve rollout steps until nothing breaks.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant P as Planner
+    participant R as Readiness score
+    participant G as Human gate
+    U-&gt;&gt;P: answer the four questions
+    P-&gt;&gt;R: score with sources
+    R-&gt;&gt;G: below bar? hold
+    G-&gt;&gt;U: approve with rollout plan">sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant P as Planner
+    participant R as Readiness score
+    participant G as Human gate
+    U-&gt;&gt;P: answer the four questions
+    P-&gt;&gt;R: score with sources
+    R-&gt;&gt;G: below bar? hold
+    G-&gt;&gt;U: approve with rollout plan</pre><figcaption>Deployment gate.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I read the deployment planner as four questions that refuse to be skipped: what are you building, how ready is it, what is the stack, and what could go wrong on day one. Answer in order and the planner returns a readiness score, a recommended stack, a rollout plan, risks and an ADR. My dispute is with deployment by vibes; the intake makes the implicit explicit. Monday morning, answer the four questions for your riskiest agent.</li><li><b>Memory-systems researcher:</b> I focus on the ADR as the artifact: a decision record outlives the meeting, the chat thread and the engineer who wrote it. Readiness without a record evaporates. Others celebrate the score; I insist the document is the deliverable. Monday morning, file one ADR from the planners output.</li><li><b>Evaluation methodologist:</b> I treat the readiness score as a checklist with arithmetic, not a verdict: coverage, cost, threat exposure and cascade analysis computed from the catalog, inspectable all the way down. A score you cannot audit is a mood. My caution is score-chasing; improve the inputs, not the number. Monday morning, trace one readiness point to its source row.</li><li><b>Safety researcher:</b> I staff deployment planning as the last gate before grants: no readiness review, no production credentials. The rollout plan sequences exposure so the blast radius grows only as evidence accumulates. My disagreement is with big-bang launches of agentic systems; roll out like the blast radius matters, because it does. Monday morning, halve one rollout step and watch nothing break.</li></ul>
 <h2 id="chapter-10-blueprint-builder-compose-estimate-stress-test" class="chapter">Chapter 10: Blueprint builder: compose, estimate, stress-test</h2>
 <p>Start from a template or an empty canvas: compose stages, attach controls per stage, watch cost, coverage and exposure estimate live, stress-test with the copilot, then save to the library or export. A blueprint is a system you can price and attack on paper before building it.</p>
@@ -286,6 +425,25 @@ h1.chapter + .pb { display: none; }
   D --&gt; A[&quot;Threat analysis against the catalog&quot;]
   A --&gt; C[&quot;Accumulate a versioned collection&quot;]
   C --&gt; X[&quot;Export JSON; re-run per grant&quot;]</pre><figcaption>Guardrail analysis lifecycle.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant U as Builder
+    participant L as Guardrail lab
+    participant C as Catalog
+    participant E as Export
+    U-&gt;&gt;L: describe the agent
+    L-&gt;&gt;C: ground threats in records
+    C-&gt;&gt;L: matched patterns and gaps
+    L-&gt;&gt;E: save versioned analysis">sequenceDiagram
+    autonumber
+    participant U as Builder
+    participant L as Guardrail lab
+    participant C as Catalog
+    participant E as Export
+    U-&gt;&gt;L: describe the agent
+    L-&gt;&gt;C: ground threats in records
+    C-&gt;&gt;L: matched patterns and gaps
+    L-&gt;&gt;E: save versioned analysis</pre><figcaption>Guardrail analysis.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I read the guardrail lab as describe-then-test: say what agent you are building in plain language, get a threat analysis grounded in the catalog, and export the collection as JSON when it is solid. The collection is the unit — analyses accumulate instead of evaporating. My dispute is with one-off analyses; guardrails need a collection with history. Monday morning, start one collection for your current build.</li><li><b>Memory-systems researcher:</b> I focus on the collection as longitudinal memory: saved analyses, timestamps, export and re-import mean last quarters reasoning is this quarters baseline. Amnesia is the default without it. Others run analyses; I insist the versioned collection is the workflow. Monday morning, re-open your oldest analysis and update it.</li><li><b>Evaluation methodologist:</b> I treat the lab output as falsifiable or it is not output: threats named against catalog records, with the catalog behind every claim. The export carries the evidence with it. My caution is generic advice that fits any agent and therefore none; demand record-level grounding. Monday morning, trace one lab claim to its catalog record.</li><li><b>Safety researcher:</b> I staff the guardrail lab as the cheapest review in the building: an hour of structured analysis before granting beats a quarter of incident response after. Run it before every authority expansion, not just at launch. My disagreement is with launch-only reviews; every grant widening deserves a fresh analysis. Monday morning, analyze the next grant before approving it.</li></ul>
 <h2 id="chapter-12-discovery-lab-gap-seeded-rounds-promoted-winners" class="chapter">Chapter 12: Discovery lab: gap-seeded rounds, promoted winners</h2>
 <p>Start a gap-seeded run and watch the rounds: candidates proposed from catalog gaps, novelty-ranked, with forgetting rounds pruning the rest. Promote winners into catalog-shaped scenarios, export the run with its drafts, and assign every promoted shape to a rehearsal.</p>
@@ -314,6 +472,23 @@ h1.chapter + .pb { display: none; }
   R --&gt; M[&quot;Read the pass-fail matrix&quot;]
   M --&gt; A[&quot;Ablate to find what carries it&quot;]
   A --&gt; G[&quot;Gate the rollout on the winner&quot;]</pre><figcaption>Bench campaign.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  M[&quot;Read the pass-fail matrix&quot;]
+  M --&gt; V{Clear winner?}
+  V --&gt;|no| T[&quot;Tune and re-run&quot;]
+  T --&gt; M
+  V --&gt;|yes| A[&quot;Ablate the load-bearing control&quot;]
+  A --&gt; K{Result holds without it?}
+  K --&gt;|yes| R[&quot;Retire the control&quot;]
+  K --&gt;|no| G[&quot;Gate the rollout on it&quot;]">flowchart TB
+  M[&quot;Read the pass-fail matrix&quot;]
+  M --&gt; V{Clear winner?}
+  V --&gt;|no| T[&quot;Tune and re-run&quot;]
+  T --&gt; M
+  V --&gt;|yes| A[&quot;Ablate the load-bearing control&quot;]
+  A --&gt; K{Result holds without it?}
+  K --&gt;|yes| R[&quot;Retire the control&quot;]
+  K --&gt;|no| G[&quot;Gate the rollout on it&quot;]</pre><figcaption>Bench verdict.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I read the bench as the question what carries the result, asked with configurations instead of opinions: set up rival stacks, run the same cases, read the pass-fail matrix, and ablate to find the load-bearing piece. Arguments end where matrices begin. My dispute is with architecture by seniority; run the bench and let the loser concede. Monday morning, bench one decision you already made and check the matrix agrees.</li><li><b>Memory-systems researcher:</b> I focus on the matrix as the durable artifact: scenarios down, configurations across, one cell per case — a result you can revisit when the stack changes. Opinions fade; matrices persist. Others watch the run; I insist the saved matrix is the product. Monday morning, archive one matrix with its configuration.</li><li><b>Evaluation methodologist:</b> I treat ablation as the load-bearing analysis: remove one control, re-run, and watch which failures return — that control carries the result and earns its budget. Full-stack passing proves nothing about any part. My caution is benchmark overfitting; rotate cases and re-run before decommissioning anything. Monday morning, ablate the control everyone assumes is essential.</li><li><b>Safety researcher:</b> I staff the bench as pre-deployment proof: no configuration ships without a passing matrix, and no control retires without an ablation showing nothing breaks. The bench is the gate with numbers. My disagreement is with ship-then-measure cultures; the bench runs before the grant, not after the incident. Monday morning, gate one rollout on a fresh bench run.</li></ul>
 <h2 id="chapter-14-rogue-ops-setup-results-board-guardrails" class="chapter">Chapter 14: Rogue ops: setup, results, board, guardrails</h2>
 <p>Configure the swarm and the injection; read per-rogue outcomes; open owned cases with deadlines on the board; verify what carries the result with counterfactuals. Run the guarded preset first and change nothing — it is the control group for every later claim. Live fire sparingly, for new shapes, with caps on and fallbacks flagged.</p>
@@ -328,6 +503,25 @@ h1.chapter + .pb { display: none; }
   R --&gt; B[&quot;Board: owned cases with deadlines&quot;]
   B --&gt; G[&quot;Guardrails: what carries it&quot;]
   G --&gt; F[&quot;Live fire sparingly&quot;]</pre><figcaption>Rogue board clock.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="stateDiagram-v2
+    [*] --&gt; open : detection opens case
+    open --&gt; acknowledged : owner assigned
+    acknowledged --&gt; escalated : deadline at risk
+    acknowledged --&gt; released : remediate and re-verify
+    escalated --&gt; released : remediate and re-verify
+    released --&gt; [*]
+    open --&gt; terminated : rogue terminated
+    acknowledged --&gt; terminated : rogue terminated
+    terminated --&gt; [*]">stateDiagram-v2
+    [*] --&gt; open : detection opens case
+    open --&gt; acknowledged : owner assigned
+    acknowledged --&gt; escalated : deadline at risk
+    acknowledged --&gt; released : remediate and re-verify
+    escalated --&gt; released : remediate and re-verify
+    released --&gt; [*]
+    open --&gt; terminated : rogue terminated
+    acknowledged --&gt; terminated : rogue terminated
+    terminated --&gt; [*]</pre><figcaption>Board case lifecycle.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I see rogue ops as setup, results, board, guardrails: configure the swarm and the injection, read per-rogue outcomes, open cases with deadlines, and verify which controls carry the result. The loop from simulation to owned case is the whole point. My dispute is with simulation as spectacle; every run should open or close a case. Monday morning, seed the board from your last run.</li><li><b>Memory-systems researcher:</b> I emphasize the board as incident memory: cases with owners, clocks, steps and evidence, persisting across runs so the same rogue does not get re-learned every quarter. The board is where simulation becomes operations. Others admire detection rates; I insist the owned case is the output. Monday morning, open one case with a real owner and a real deadline.</li><li><b>Evaluation methodologist:</b> I value the preset matrix as the control group for every claim: unmanaged shows the blast, detect-only shows found-but-unstopped, enforce-only shows bounded-but-unfound, guarded shows the mechanism working. Without the matrix, results are anecdotes. My caution is live-fire mystique; synthetic presets compare fairly, live campaigns surprise — use each for its job. Monday morning, run the full preset matrix before changing anything.</li><li><b>Safety researcher:</b> I staff the halt as the load-bearing control: pausing the fleet stops the exponential before attribution finishes, and the kill switch must be tested like a fire alarm. Detection without a halt is observation. My disagreement is with response plans that end at alerts; the workflow ends at release from a clean image. Monday morning, test the halt on purpose, on a schedule.</li></ul>
 <h2 id="chapter-15-self-learning-loop-stream-to-checkpoint" class="chapter">Chapter 15: Self-learning loop: stream to checkpoint</h2>
 <p>Point the loop at a stream and read the first lesson file: router, evolver, harness, policy, grader, lesson, checkpoint. Improvement with a ledger — and forgetting as a designed operation, with TTLs and eviction keeping context honest. Learn in rehearsal, promote deliberately, gate every policy update like a deploy.</p>
@@ -358,11 +552,41 @@ h1.chapter + .pb { display: none; }
   A --&gt; F[&quot;Follow-ups inside the thread&quot;]
   F --&gt; X[&quot;Export threads worth keeping&quot;]</pre><figcaption>Ask loop.</figcaption></figure>
 <p>Use the copilot to go safer, not just faster: stress-test the blueprint, red-team the deployment plan, second-guess the guardrail set — before granting anything. An adversary will ask these questions; better the copilot first.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant C as Copilot
+    participant K as Catalog
+    participant M as Model backend
+    U-&gt;&gt;C: ask about record or run
+    C-&gt;&gt;K: fetch records first
+    C-&gt;&gt;M: draft with badge
+    M--&gt;&gt;C: answer plus backend name
+    C-&gt;&gt;U: answer with follow-ups">sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant C as Copilot
+    participant K as Catalog
+    participant M as Model backend
+    U-&gt;&gt;C: ask about record or run
+    C-&gt;&gt;K: fetch records first
+    C-&gt;&gt;M: draft with badge
+    M--&gt;&gt;C: answer plus backend name
+    C-&gt;&gt;U: answer with follow-ups</pre><figcaption>Ask with provenance.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I see the copilot as the analyst on call: ask about a pattern, a scenario, a cascade, a blueprint or a run, and get an answer argued from catalog records with follow-ups attached. The suggested prompts are the fastest onboarding in the app. My dispute is with chatbots that answer from vibes; every copilot claim should trace to a record. Monday morning, ask about the control you trust most and check its citations.</li><li><b>Memory-systems researcher:</b> I emphasize conversation as working memory: threads persist, follow-ups build, and the good answers get exported before the session ends. A brilliant answer you cannot find next week never happened. Others chat; I insist the exported thread is the artifact. Monday morning, export one thread worth keeping.</li><li><b>Evaluation methodologist:</b> I value the deterministic fallback as the honesty baseline: with no backend reachable, the copilot still answers from local analysis, and the backend badge always says which model spoke. Provenance travels with every claim. My caution is model-mystique; the badge matters more than the brand. Monday morning, check which backend answered your last three questions.</li><li><b>Safety researcher:</b> I staff the copilot as the pre-mortem partner: stress-test the blueprint, red-team the deployment plan, second-guess the guardrail set — before granting anything. An adversary will ask these questions; better the copilot first. My disagreement is with using AI assistance only to go faster; use it to go safer. Monday morning, ask the copilot to break one plan.</li></ul>
 <h2 id="chapter-17-reading-the-design-docs" class="chapter">Chapter 17: Reading the design docs</h2>
 <p>Eleven documents, each answering one question completely — start at the threat model, then open the doc the task touches:</p>
 <ul><li>01-system-context — System Context</li><li>02-uml — UML — Components &amp; Classes</li><li>03-control-flow — Control Flow &amp; Runtime</li><li>04-guardrails — Financial Guardrail Architecture</li><li>05-data-model — Data Model</li><li>06-threat-model — Threat Model &amp; Protections Map</li><li>07-architect-analysis — Architect Value Map &amp; Cascade Taxonomy</li><li>08-runtime-offline — Runtime, Offline &amp; Delivery</li><li>09-battle-bench — Battle Bench — Testing Agents</li><li>10-rogue-agents — Rogue Agents — Detection &amp; Quarantine</li><li>11-self-learning-addon — Self-Learning Add-on — Bridging the Lab</li></ul>
 <p>The docs ship with the app, so verify them like code: check one diagram against the running tab, and link docs into reviews instead of reconstructing context from code archaeology.</p>
+<figure class="diagram"><pre class="mermaid" data-src="flowchart TB
+  T[&quot;Threat model first&quot;]
+  T --&gt; N[&quot;The doc your task touches&quot;]
+  N --&gt; V[&quot;Check one diagram live&quot;]
+  V --&gt; L[&quot;Link it into your review&quot;]">flowchart TB
+  T[&quot;Threat model first&quot;]
+  T --&gt; N[&quot;The doc your task touches&quot;]
+  N --&gt; V[&quot;Check one diagram live&quot;]
+  V --&gt; L[&quot;Link it into your review&quot;]</pre><figcaption>Design reading order.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I read the design docs as the apps own architecture, written down where decisions live: system context, UML, control flow, guardrails, data model, threat model and the rest. Eleven documents, each answering one question completely. My dispute is with oral-tradition engineering; if it is not written, it was not decided. Monday morning, read the one design doc closest to your current task.</li><li><b>Memory-systems researcher:</b> I focus on the docs as onboarding that scales: every new teammate reads the same context, the same threat model, the same data shapes, instead of reconstructing them from code archaeology. Written context compounds; hallway context evaporates. Others grep code; I insist the doc explains why the code is shaped that way. Monday morning, link one design doc from your next review.</li><li><b>Evaluation methodologist:</b> I treat the design set as the audit surface: threat model against implementation, data model against stored reality, control flow against rendered behavior. Docs that drift from code are worse than no docs. My caution is documentation rot; the docs ship with the app, so verify them like code. Monday morning, check one diagram against the running tab.</li><li><b>Safety researcher:</b> I map the threat model doc to every other workflow: it names what the guardrails guard, what the bench tests, what the rogue tab rehearses. Read it first and the rest of the app makes sense. My disagreement is with security as a later chapter; the threat model is chapter zero. Monday morning, brief one teammate from the threat model alone.</li></ul>
 <h2 id="chapter-18-bookshelf-status-collect-build-typeset" class="chapter">Chapter 18: Bookshelf: status, collect, build, typeset</h2>
 <p>The pipeline made visible: the status panel says fresh or stale with reasons, one action collects the landscape inventory, rebuilds Markdown and print HTML, and typesets PDFs with page numbers verified and bookmarks checked. The build proves its own output — read the log, not just the file.</p>
@@ -376,6 +600,25 @@ h1.chapter + .pb { display: none; }
   C --&gt; B[&quot;Build Markdown and print HTML&quot;]
   B --&gt; T[&quot;Typeset PDFs, verify page numbers&quot;]</pre><figcaption>Bookshelf pipeline.</figcaption></figure>
 <p>Cite version and seed with every figure: generated books version themselves, and a changed tab yields a changed edition automatically. Stale books are flagged, not silently shelved.</p>
+<figure class="diagram"><pre class="mermaid" data-src="sequenceDiagram
+    autonumber
+    participant OP as Operator
+    participant ST as Status panel
+    participant C as Collector
+    participant T as Typesetter
+    OP-&gt;&gt;ST: check fresh or stale
+    ST-&gt;&gt;C: collect landscape
+    C-&gt;&gt;T: build Markdown and HTML
+    T-&gt;&gt;OP: PDFs with verified numbers">sequenceDiagram
+    autonumber
+    participant OP as Operator
+    participant ST as Status panel
+    participant C as Collector
+    participant T as Typesetter
+    OP-&gt;&gt;ST: check fresh or stale
+    ST-&gt;&gt;C: collect landscape
+    C-&gt;&gt;T: build Markdown and HTML
+    T-&gt;&gt;OP: PDFs with verified numbers</pre><figcaption>Bookshelf build.</figcaption></figure>
 <p><b>Council deliberation.</b></p><ul><li><b>Continual-learning researcher:</b> I see the bookshelf as the pipeline made visible: landscape inventory collected, Markdown generated, print HTML emitted, PDFs typeset with page numbers verified — for every book, from the same data. The status panel says fresh or stale with reasons, and one button rebuilds all. My dispute is with manual publishing rituals; the pipeline is the publisher. Monday morning, check the freshness panel before quoting any book.</li><li><b>Memory-systems researcher:</b> I emphasize generated artifacts as memory that cannot drift: the books are compiled from the catalog, so a changed tab yields a changed edition automatically. Stale books are flagged, not silently shelved. Others version documents; I insist generated documents version themselves. Monday morning, rebuild one book after a catalog change and diff the result.</li><li><b>Evaluation methodologist:</b> I value the two-pass typesetting with verification: contents page numbers read back from the PDF, bookmarks checked, link targets confirmed — the build proves its own output. A pipeline that does not verify itself is a rumor mill. My caution is PDF complacency; trust the verification line, not the file size. Monday morning, read the build log, not just the PDF.</li><li><b>Safety researcher:</b> I staff the bookshelf as evidence infrastructure: versioned, seeded, attributable books are what auditors and reviewers can actually rely on. The colophon states methods, limits and provenance in every edition. My disagreement is with screenshot-and-slide evidence; ship the deterministic artifact. Monday morning, cite one book figure with its version and seed.</li></ul>
 <h1 id="part-vi-domain-playbooks-every-scenario-every-domain" class="">Part VI — Domain playbooks: every scenario, every domain</h1>
 <p>One chapter per catalog domain: what is at stake, the real scenarios that rehearse it, and the workflows that serve each one under the introduction&#x27;s rule — read the story in Scenarios, rehearse the shape in Rogue ops, check the domain gap in Coverage, with traces, guardrails, blueprints and deployment planning where the scenario earns them.</p>
@@ -396,6 +639,43 @@ h1.chapter + .pb { display: none; }
   RH --&gt; BP[&quot;Compose controls in Blueprints&quot;]
   CV --&gt; DP[&quot;Plan high-stakes deploys carefully&quot;]
   RD --&gt; LV[&quot;Replay the trace where one exists&quot;]</pre><figcaption>Scenarios fan out to workflows.</figcaption></figure>
+<figure class="diagram"><pre class="mermaid" data-src="classDiagram
+    class Scenario {
+        +road
+        +archetype
+        +domain
+    }
+    class Workflow {
+        +label
+        +stages
+    }
+    class Assignment {
+        +rule
+    }
+    class Domain {
+        +name
+    }
+    Scenario --&gt; Assignment : read by rule
+    Assignment --&gt; Workflow : served by
+    Domain o-- Scenario : holds">classDiagram
+    class Scenario {
+        +road
+        +archetype
+        +domain
+    }
+    class Workflow {
+        +label
+        +stages
+    }
+    class Assignment {
+        +rule
+    }
+    class Domain {
+        +name
+    }
+    Scenario --&gt; Assignment : read by rule
+    Assignment --&gt; Workflow : served by
+    Domain o-- Scenario : holds</pre><figcaption>Scenario assignment model.</figcaption></figure>
 <p>Coverage note: 19 of 26 domains hold a single catalog scenario — content, cybersecurity, data, devops, education, energy, governance, hr, iot, legal, logistics, marketing, operations, procurement, public-sector, robotics, sales, strategy, trading. Treat those chapters as prompts, not coverage: author the neighbor shapes in discovery and promote them.</p>
 <h2 id="chapter-19-domain-playbook-content" class="chapter">Chapter 19: Domain playbook: content</h2>
 <p>At stake: Publishing credentials, embargoed drafts, recommender weights, and the public record itself.</p>

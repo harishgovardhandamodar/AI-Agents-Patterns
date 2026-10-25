@@ -272,6 +272,7 @@ def main():
         "history: a readiness score with a rollout plan and an ADR, stages with controls and "
         "estimates in the library, or rehearsed shapes with measured bands."
     )
+    os_fig(body, "Pick the job")
     deliberate(body, "jobs-three")
 
     CH("Shell, palette, and projects")
@@ -288,6 +289,7 @@ def main():
         "the browser, exportable as JSON, working from a static host with no backend at "
         "all. Context that survives is context that compounds."
     )
+    os_fig(body, "Workflow taxonomy")
     deliberate(body, "jobs-shell")
 
     CH("Yours: offline-first and exportable")
@@ -297,6 +299,7 @@ def main():
         "CSV for backlogs, PDF for books. Nothing rehearsed here needs production "
         "credentials or real customer data — mock and open data exercise the same paths."
     )
+    os_fig(body, "Export round-trip")
     deliberate(body, "jobs-yours")
 
     # -- Part II --------------------------------------------------------- #
@@ -315,6 +318,7 @@ def main():
         f"as future blueprint controls and its failure modes as future bench cases. Convert "
         f"at least one of each: a protection into a stage control, a failure into a test."
     )
+    os_fig(body, "Catalog handoff")
     deliberate(body, "cat-patterns")
 
     CH("Scenarios: read the story, run the trace")
@@ -332,6 +336,7 @@ def main():
         f"{road_n.get('both', 0)} both — with hijack leading the archetypes at "
         f"{arch_n.get('hijack', 0)} scenarios. Weight rehearsal by these counts, not by drama."
     )
+    os_fig(body, "Scenario to rehearsal")
     deliberate(body, "cat-scenarios")
 
     CH("Cascades: browse by class, plan mitigations")
@@ -363,6 +368,7 @@ def main():
         "domain. Fund by gap: thin domains get rehearsal priority, missing cascade classes "
         "get authoring priority in discovery."
     )
+    os_fig(body, "Coverage triage")
     deliberate(body, "cat-coverage")
 
     CH("Live traces: press play, keep the log")
@@ -396,6 +402,7 @@ def main():
         "cascade analysis computed from the catalog, inspectable all the way down. Improve "
         "the inputs, not the number; halve rollout steps until nothing breaks."
     )
+    os_fig(body, "Deployment gate")
     deliberate(body, "plan-deploy")
 
     CH("Blueprint builder: compose, estimate, stress-test")
@@ -423,6 +430,7 @@ def main():
         "at launch."
     )
     os_fig(body, "Guardrail analysis lifecycle")
+    os_fig(body, "Guardrail analysis")
     deliberate(body, "lab-guard")
 
     CH("Discovery lab: gap-seeded rounds, promoted winners")
@@ -443,6 +451,7 @@ def main():
         "and earns its budget."
     )
     os_fig(body, "Bench campaign")
+    os_fig(body, "Bench verdict")
     deliberate(body, "lab-bench")
 
     CH("Rogue ops: setup, results, board, guardrails")
@@ -454,6 +463,7 @@ def main():
         "fallbacks flagged."
     )
     os_fig(body, "Rogue board clock")
+    os_fig(body, "Board case lifecycle")
     deliberate(body, "lab-rogue")
 
     CH("Self-learning loop: stream to checkpoint")
@@ -483,6 +493,7 @@ def main():
         "the deployment plan, second-guess the guardrail set — before granting anything. "
         "An adversary will ask these questions; better the copilot first."
     )
+    os_fig(body, "Ask with provenance")
     deliberate(body, "know-copilot")
 
     CH("Reading the design docs")
@@ -496,6 +507,7 @@ def main():
         "the running tab, and link docs into reviews instead of reconstructing context "
         "from code archaeology."
     )
+    os_fig(body, "Design reading order")
     deliberate(body, "know-design")
 
     CH("Bookshelf: status, collect, build, typeset")
@@ -511,6 +523,7 @@ def main():
         "a changed tab yields a changed edition automatically. Stale books are flagged, "
         "not silently shelved."
     )
+    os_fig(body, "Bookshelf build")
     deliberate(body, "know-bookshelf")
 
     # -- Part VI --------------------------------------------------------- #
@@ -524,6 +537,7 @@ def main():
         "scenario earns them."
     )
     os_fig(body, "Scenarios fan out to workflows")
+    os_fig(body, "Scenario assignment model")
     thin = sorted(d for d in cov if len([s for s in cat["scenarios"] if s["domain"] == d]) == 1)
     body.p(
         f"Coverage note: {len(thin)} of {len(cov)} domains hold a single catalog scenario — "

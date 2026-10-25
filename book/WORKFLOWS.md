@@ -118,6 +118,16 @@ The assignment rule, printed here so it can be argued with: every scenario start
 
 Ship an agent safely, architect the system, study how agents fail. Each job lines up a different slice of the catalog, the planner and the copilot behind it, so the first click already has a purpose — and each job ends with an artifact, not a browse history: a readiness score with a rollout plan and an ADR, stages with controls and estimates in the library, or rehearsed shapes with measured bands.
 
+```mermaid
+flowchart TB
+  Q["What do you need this week?"]
+  Q --> D1{Ship something safely?}
+  D1 -->|yes| J1["Deployment planner: intake to ADR"]
+  D1 -->|no| D2{Design the system?}
+  D2 -->|yes| J2["Blueprint builder: stages to library"]
+  D2 -->|no| J3["Study failure: catalog to bench"]
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I read the three jobs as the only onboarding that sticks: ship an agent safely, architect the system, study how agents fail. Each job lines up a different slice of the catalog, the planner and the copilot behind it, so the first click already has a purpose. My dispute is with feature tours that end at awareness; a job ends at an artifact. Monday morning, enter through one job card and finish what it starts.
@@ -140,6 +150,32 @@ flowchart TB
 
 Under the shell sits the memory: the current-project chip, per-tab save stamps, the blueprint library, saved runs and boards and promoted drafts — persisted in the browser, exportable as JSON, working from a static host with no backend at all. Context that survives is context that compounds.
 
+```mermaid
+classDiagram
+    class Workflow {
+        +label
+        +stages
+    }
+    class CatalogWorkflow {
+        +browse, rehearse, export
+    }
+    class PlanningWorkflow {
+        +intake, estimate, decide
+    }
+    class LabWorkflow {
+        +configure, run, measure
+    }
+    class CounselWorkflow {
+        +ask, read, rebuild
+    }
+    Workflow <|-- CatalogWorkflow
+    Workflow <|-- PlanningWorkflow
+    Workflow <|-- LabWorkflow
+    Workflow <|-- CounselWorkflow
+    Scenario --> Workflow : served by
+    Domain o-- Scenario : holds
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I see the shell as speed without loss of place: the command palette jumps anywhere by name, section tabs keep fifteen panes in six groups, and keyboard shortcuts move without a pointer. Fluency here compounds — every jump you memorize is seconds back forever. My dispute is with mouse-only operators; the palette is the fastest way to work this catalog. Monday morning, learn three palette queries by heart.
@@ -150,6 +186,15 @@ Under the shell sits the memory: the current-project chip, per-tab save stamps, 
 ## Chapter 3: Yours: offline-first and exportable
 
 Static hosting, browser persistence, deterministic fallbacks when backends are unreachable, and exports that stand alone: JSON for state, Markdown for reports, CSV for backlogs, PDF for books. Nothing rehearsed here needs production credentials or real customer data — mock and open data exercise the same paths.
+
+```mermaid
+flowchart TB
+  A["Work in the tab"]
+  A --> E["Export JSON, Markdown, CSV, PDF"]
+  E --> R["Read it without the app"]
+  R --> I["Reimport or file it"]
+  I --> A
+```
 
 **Council deliberation.**
 
@@ -176,6 +221,19 @@ flowchart TB
 
 Of the catalog's 107 patterns, each carries its protections as future blueprint controls and its failure modes as future bench cases. Convert at least one of each: a protection into a stage control, a failure into a test.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant P as Patterns
+    participant D as Drawer
+    participant B as Blueprint
+    U->>P: search and filter
+    P->>D: open full record
+    D->>B: add pattern as control
+    B->>U: estimate updates live
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I read the patterns workflow as search, filter, read, hand off: find the shape by name or failure, narrow by category and domain, open the drawer for the full record with diagram and protections, then send it to a blueprint or ask the copilot about it. The handoff is the point — a pattern that never leaves the drawer never ships. Monday morning, move one pattern into a blueprint instead of just reading it.
@@ -197,6 +255,19 @@ flowchart TB
 ```
 
 The mix: 32 emergent, 18 injected, 4 both — with hijack leading the archetypes at 19 scenarios. Weight rehearsal by these counts, not by drama.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant S as Scenarios
+    participant L as Live trace
+    participant R as Rogue ops
+    U->>S: read story and chain
+    S->>L: replay the mock run
+    L->>R: rehearse the archetype
+    R->>U: detectors proven or gaps found
+```
 
 **Council deliberation.**
 
@@ -239,6 +310,16 @@ flowchart TB
 ```
 
 Targets are advisory, printed beside the verdicts — a met target is not a defended domain. Fund by gap: thin domains get rehearsal priority, missing cascade classes get authoring priority in discovery.
+
+```mermaid
+flowchart TB
+  H["Read your domain row"]
+  H --> D{Below target?}
+  D -->|yes| G["Open the gap card"]
+  D -->|no| M["Monitor next release"]
+  G --> X["Export backlog item"]
+  X --> F["File it in the sprint"]
+```
 
 **Council deliberation.**
 
@@ -286,6 +367,19 @@ flowchart TB
 
 The score is a checklist with arithmetic — coverage, cost, threat exposure and cascade analysis computed from the catalog, inspectable all the way down. Improve the inputs, not the number; halve rollout steps until nothing breaks.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant P as Planner
+    participant R as Readiness score
+    participant G as Human gate
+    U->>P: answer the four questions
+    P->>R: score with sources
+    R->>G: below bar? hold
+    G->>U: approve with rollout plan
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I read the deployment planner as four questions that refuse to be skipped: what are you building, how ready is it, what is the stack, and what could go wrong on day one. Answer in order and the planner returns a readiness score, a recommended stack, a rollout plan, risks and an ADR. My dispute is with deployment by vibes; the intake makes the implicit explicit. Monday morning, answer the four questions for your riskiest agent.
@@ -329,6 +423,19 @@ flowchart TB
   C --> X["Export JSON; re-run per grant"]
 ```
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Builder
+    participant L as Guardrail lab
+    participant C as Catalog
+    participant E as Export
+    U->>L: describe the agent
+    L->>C: ground threats in records
+    C->>L: matched patterns and gaps
+    L->>E: save versioned analysis
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I read the guardrail lab as describe-then-test: say what agent you are building in plain language, get a threat analysis grounded in the catalog, and export the collection as JSON when it is solid. The collection is the unit — analyses accumulate instead of evaporating. My dispute is with one-off analyses; guardrails need a collection with history. Monday morning, start one collection for your current build.
@@ -369,6 +476,18 @@ flowchart TB
   A --> G["Gate the rollout on the winner"]
 ```
 
+```mermaid
+flowchart TB
+  M["Read the pass-fail matrix"]
+  M --> V{Clear winner?}
+  V -->|no| T["Tune and re-run"]
+  T --> M
+  V -->|yes| A["Ablate the load-bearing control"]
+  A --> K{Result holds without it?}
+  K -->|yes| R["Retire the control"]
+  K -->|no| G["Gate the rollout on it"]
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I read the bench as the question what carries the result, asked with configurations instead of opinions: set up rival stacks, run the same cases, read the pass-fail matrix, and ablate to find the load-bearing piece. Arguments end where matrices begin. My dispute is with architecture by seniority; run the bench and let the loser concede. Monday morning, bench one decision you already made and check the matrix agrees.
@@ -387,6 +506,19 @@ flowchart TB
   R --> B["Board: owned cases with deadlines"]
   B --> G["Guardrails: what carries it"]
   G --> F["Live fire sparingly"]
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> open : detection opens case
+    open --> acknowledged : owner assigned
+    acknowledged --> escalated : deadline at risk
+    acknowledged --> released : remediate and re-verify
+    escalated --> released : remediate and re-verify
+    released --> [*]
+    open --> terminated : rogue terminated
+    acknowledged --> terminated : rogue terminated
+    terminated --> [*]
 ```
 
 **Council deliberation.**
@@ -433,6 +565,20 @@ flowchart TB
 
 Use the copilot to go safer, not just faster: stress-test the blueprint, red-team the deployment plan, second-guess the guardrail set — before granting anything. An adversary will ask these questions; better the copilot first.
 
+```mermaid
+sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant C as Copilot
+    participant K as Catalog
+    participant M as Model backend
+    U->>C: ask about record or run
+    C->>K: fetch records first
+    C->>M: draft with badge
+    M-->>C: answer plus backend name
+    C->>U: answer with follow-ups
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I see the copilot as the analyst on call: ask about a pattern, a scenario, a cascade, a blueprint or a run, and get an answer argued from catalog records with follow-ups attached. The suggested prompts are the fastest onboarding in the app. My dispute is with chatbots that answer from vibes; every copilot claim should trace to a record. Monday morning, ask about the control you trust most and check its citations.
@@ -458,6 +604,14 @@ Eleven documents, each answering one question completely — start at the threat
 
 The docs ship with the app, so verify them like code: check one diagram against the running tab, and link docs into reviews instead of reconstructing context from code archaeology.
 
+```mermaid
+flowchart TB
+  T["Threat model first"]
+  T --> N["The doc your task touches"]
+  N --> V["Check one diagram live"]
+  V --> L["Link it into your review"]
+```
+
 **Council deliberation.**
 
 - **Continual-learning researcher:** I read the design docs as the apps own architecture, written down where decisions live: system context, UML, control flow, guardrails, data model, threat model and the rest. Eleven documents, each answering one question completely. My dispute is with oral-tradition engineering; if it is not written, it was not decided. Monday morning, read the one design doc closest to your current task.
@@ -478,6 +632,19 @@ flowchart TB
 ```
 
 Cite version and seed with every figure: generated books version themselves, and a changed tab yields a changed edition automatically. Stale books are flagged, not silently shelved.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant OP as Operator
+    participant ST as Status panel
+    participant C as Collector
+    participant T as Typesetter
+    OP->>ST: check fresh or stale
+    ST->>C: collect landscape
+    C->>T: build Markdown and HTML
+    T->>OP: PDFs with verified numbers
+```
 
 **Council deliberation.**
 
@@ -500,6 +667,28 @@ flowchart TB
   RH --> BP["Compose controls in Blueprints"]
   CV --> DP["Plan high-stakes deploys carefully"]
   RD --> LV["Replay the trace where one exists"]
+```
+
+```mermaid
+classDiagram
+    class Scenario {
+        +road
+        +archetype
+        +domain
+    }
+    class Workflow {
+        +label
+        +stages
+    }
+    class Assignment {
+        +rule
+    }
+    class Domain {
+        +name
+    }
+    Scenario --> Assignment : read by rule
+    Assignment --> Workflow : served by
+    Domain o-- Scenario : holds
 ```
 
 Coverage note: 19 of 26 domains hold a single catalog scenario — content, cybersecurity, data, devops, education, energy, governance, hr, iot, legal, logistics, marketing, operations, procurement, public-sector, robotics, sales, strategy, trading. Treat those chapters as prompts, not coverage: author the neighbor shapes in discovery and promote them.

@@ -233,4 +233,151 @@ WF_FIGS = {
   RH --> BP["Compose controls in Blueprints"]
   CV --> DP["Plan high-stakes deploys carefully"]
   RD --> LV["Replay the trace where one exists"]""",
+    "Pick the job": """flowchart TB
+  Q["What do you need this week?"]
+  Q --> D1{Ship something safely?}
+  D1 -->|yes| J1["Deployment planner: intake to ADR"]
+  D1 -->|no| D2{Design the system?}
+  D2 -->|yes| J2["Blueprint builder: stages to library"]
+  D2 -->|no| J3["Study failure: catalog to bench"]""",
+    "Workflow taxonomy": """classDiagram
+    class Workflow {
+        +label
+        +stages
+    }
+    class CatalogWorkflow {
+        +browse, rehearse, export
+    }
+    class PlanningWorkflow {
+        +intake, estimate, decide
+    }
+    class LabWorkflow {
+        +configure, run, measure
+    }
+    class CounselWorkflow {
+        +ask, read, rebuild
+    }
+    Workflow <|-- CatalogWorkflow
+    Workflow <|-- PlanningWorkflow
+    Workflow <|-- LabWorkflow
+    Workflow <|-- CounselWorkflow
+    Scenario --> Workflow : served by
+    Domain o-- Scenario : holds""",
+    "Export round-trip": """flowchart TB
+  A["Work in the tab"]
+  A --> E["Export JSON, Markdown, CSV, PDF"]
+  E --> R["Read it without the app"]
+  R --> I["Reimport or file it"]
+  I --> A""",
+    "Catalog handoff": """sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant P as Patterns
+    participant D as Drawer
+    participant B as Blueprint
+    U->>P: search and filter
+    P->>D: open full record
+    D->>B: add pattern as control
+    B->>U: estimate updates live""",
+    "Scenario to rehearsal": """sequenceDiagram
+    autonumber
+    participant U as Reader
+    participant S as Scenarios
+    participant L as Live trace
+    participant R as Rogue ops
+    U->>S: read story and chain
+    S->>L: replay the mock run
+    L->>R: rehearse the archetype
+    R->>U: detectors proven or gaps found""",
+    "Coverage triage": """flowchart TB
+  H["Read your domain row"]
+  H --> D{Below target?}
+  D -->|yes| G["Open the gap card"]
+  D -->|no| M["Monitor next release"]
+  G --> X["Export backlog item"]
+  X --> F["File it in the sprint"]""",
+    "Deployment gate": """sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant P as Planner
+    participant R as Readiness score
+    participant G as Human gate
+    U->>P: answer the four questions
+    P->>R: score with sources
+    R->>G: below bar? hold
+    G->>U: approve with rollout plan""",
+    "Guardrail analysis": """sequenceDiagram
+    autonumber
+    participant U as Builder
+    participant L as Guardrail lab
+    participant C as Catalog
+    participant E as Export
+    U->>L: describe the agent
+    L->>C: ground threats in records
+    C->>L: matched patterns and gaps
+    L->>E: save versioned analysis""",
+    "Bench verdict": """flowchart TB
+  M["Read the pass-fail matrix"]
+  M --> V{Clear winner?}
+  V -->|no| T["Tune and re-run"]
+  T --> M
+  V -->|yes| A["Ablate the load-bearing control"]
+  A --> K{Result holds without it?}
+  K -->|yes| R["Retire the control"]
+  K -->|no| G["Gate the rollout on it"]""",
+    "Board case lifecycle": """stateDiagram-v2
+    [*] --> open : detection opens case
+    open --> acknowledged : owner assigned
+    acknowledged --> escalated : deadline at risk
+    acknowledged --> released : remediate and re-verify
+    escalated --> released : remediate and re-verify
+    released --> [*]
+    open --> terminated : rogue terminated
+    acknowledged --> terminated : rogue terminated
+    terminated --> [*]""",
+    "Ask with provenance": """sequenceDiagram
+    autonumber
+    participant U as Operator
+    participant C as Copilot
+    participant K as Catalog
+    participant M as Model backend
+    U->>C: ask about record or run
+    C->>K: fetch records first
+    C->>M: draft with badge
+    M-->>C: answer plus backend name
+    C->>U: answer with follow-ups""",
+    "Design reading order": """flowchart TB
+  T["Threat model first"]
+  T --> N["The doc your task touches"]
+  N --> V["Check one diagram live"]
+  V --> L["Link it into your review"]""",
+    "Bookshelf build": """sequenceDiagram
+    autonumber
+    participant OP as Operator
+    participant ST as Status panel
+    participant C as Collector
+    participant T as Typesetter
+    OP->>ST: check fresh or stale
+    ST->>C: collect landscape
+    C->>T: build Markdown and HTML
+    T->>OP: PDFs with verified numbers""",
+    "Scenario assignment model": """classDiagram
+    class Scenario {
+        +road
+        +archetype
+        +domain
+    }
+    class Workflow {
+        +label
+        +stages
+    }
+    class Assignment {
+        +rule
+    }
+    class Domain {
+        +name
+    }
+    Scenario --> Assignment : read by rule
+    Assignment --> Workflow : served by
+    Domain o-- Scenario : holds""",
 }
