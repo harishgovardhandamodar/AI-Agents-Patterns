@@ -569,8 +569,8 @@ function casShowMore() { casState.limit += CAS_LIST_STEP; renderCascadeList(); c
 function casShowAll() { casState.limit = casFilterList().length; renderCascadeList(); casScrollKeep(); }
 function casShowFewer() { casState.limit = CAS_LIST_STEP; renderCascadeList(); }
 function casScrollKeep() {
-  const grid = el("casGrid");
-  if (grid && grid.lastElementChild) grid.lastElementChild.scrollIntoView({ block: "nearest" });
+  const ft = el("casFooter");
+  if (ft && ft.firstElementChild) ft.firstElementChild.scrollIntoView({ block: "nearest" });
 }
 
 function casClearQ() {
@@ -611,25 +611,50 @@ function renderCascadeList() {
   if (!grid) return;
   const list = casFilterList();
   const shown = list.slice(0, casState.limit);
+  const total = casAll().length;
   const cnt = el("casCount");
-  if (cnt) cnt.textContent = "showing " + shown.length + " of " + list.length + " cascades" + (list.length !== casAll().length ? " (" + casAll().length + " total)" : "");
+  if (cnt) cnt.textContent = "showing " + shown.length + " of " + list.length + " cascades" + (list.length !== total ? " (" + total + " total)" : "");
   if (typeof paintActiveChips === "function") paintActiveChips("casActive", casActiveChips());
-  grid.innerHTML = shown.map(casCardHtml).join("") +
-    (list.length > shown.length
-      ? '<div class="cas-more"><button class="btn" data-act="casShowMore">Show ' + Math.min(CAS_LIST_STEP, list.length - shown.length) + ' more (' + (list.length - shown.length) + ' remaining)</button>' +
-        '<button class="btn ghost" data-act="casShowAll">Show all ' + list.length + "</button></div>"
-      : (casState.limit > CAS_LIST_STEP && list.length > CAS_LIST_STEP
-        ? '<div class="cas-more"><button class="btn ghost" data-act="casShowFewer">Show fewer</button></div>' : "")) ||
-    (typeof emptyState === "function"
+  const ft = el("casFooter");
+  if (!list.length) {
+    grid.innerHTML = (typeof emptyState === "function"
       ? emptyState("⧉", "No cascades match", catN("cascades", 180) + " cascade records and nothing fits — a filter is probably too narrow. Reset to browse the full taxonomy.", "Reset filters", "resetCasFilters()")
       : `<p class="muted">No cascades match the current filters.</p>`);
+    if (ft) ft.innerHTML = "";
+    return;
+  }
+  grid.innerHTML = shown.map(casCardHtml).join("");
+  if (ft) ft.innerHTML = casFooterHtml(shown.length, list.length, total);
+}
+/* Pager footer rendered outside the card grid: progress + plain-language
+   status + one primary action, so buttons never squeeze into a grid cell. */
+function casFooterHtml(shown, matched, total) {
+  const remaining = matched - shown;
+  const pct = matched ? Math.round(100 * shown / matched) : 0;
+  const filterNote = matched !== total ? " · filtered from " + total + " total" : "";
+  const status = remaining > 0
+    ? "<strong>Showing " + shown + " of " + matched + "</strong>" +
+      '<span class="muted small">' + remaining + " remaining · " + pct + "% shown" + filterNote + "</span>"
+    : "<strong>All " + matched + " shown</strong>" +
+      '<span class="muted small">100% shown' + filterNote + "</span>";
+  let actions = "";
+  if (remaining > 0) {
+    actions = '<button class="btn" data-act="casShowMore">Show ' + Math.min(CAS_LIST_STEP, remaining) + ' more</button>' +
+      '<button class="btn ghost" data-act="casShowAll">Show all ' + matched + "</button>";
+  } else if (casState.limit > CAS_LIST_STEP && matched > CAS_LIST_STEP) {
+    actions = '<button class="btn ghost" data-act="casShowFewer">Show fewer</button>';
+  }
+  return '<div class="cas-footer"><div class="cas-prog"><div class="cas-prog-labels">' + status + "</div>" +
+    '<span class="bar-track" role="progressbar" aria-valuenow="' + pct + '" aria-valuemin="0" aria-valuemax="100">' +
+    '<span class="bar-fill" style="width:' + pct + '%"></span></span></div>' +
+    (actions ? '<div class="cas-actions">' + actions + "</div>" : "") + "</div>";
 }
 function casCardHtml(c) {
   const hi = casBlastRank(c) >= 4 ? " hi" : "";
   const mit = c.mitigations || {};
   const mc = ["prevent", "detect", "contain", "recover"].reduce(function (n, k) { return n + ((mit[k] || []).length); }, 0);
   return `<div class="cas-card" role="listitem" tabindex="0" aria-haspopup="dialog" aria-label="Open cascade: ${escHtml(c.name)}" ` +
-    `data-act="openCascade" data-args="[&quot;${c.id}&quot;]" data-keys="Enter, ">`;
+    `data-act="openCascade" data-args="[&quot;${c.id}&quot;]" data-keys="Enter, ">` +
     '<div class="t"><span class="cls-chip ' + c.cls + '">' + c.cls + '</span> ' + escHtml(c.name) + "</div>" +
     '<div class="m"><span class="blast-chip' + hi + '">blast: ' + escHtml(c.blastRadius) + "</span>" +
     '<span class="blast-chip">' + escHtml(c.impact) + " impact</span>" +
