@@ -8,7 +8,7 @@ First edition — October 2026
 
 ---
 
-A supplement to *Agentic Design Patterns & Guardrails*: continual learning, task-scoped adaptation and the evaluation discipline — with the lab's 18 scenarios, 6 evolvers, 21 concepts and 51 verified works. Generated from the lab, the catalog and the design figures; nothing in it is hand-typed from memory.
+A supplement to *Agentic Design Patterns & Guardrails*: continual learning, task-scoped adaptation and the evaluation discipline — with the lab's 18 scenarios, 6 evolvers, 21 concepts and 51 verified works, plus the research graphs' 35 RL works and 7 reading trails. Generated from the lab, the catalog, the research graphs and the design figures; nothing in it is hand-typed from memory.
 
 ---
 
@@ -44,6 +44,12 @@ A supplement to *Agentic Design Patterns & Guardrails*: continual learning, task
   - Chapter 17 · The lab
   - Chapter 18 · The add-on tab
   - Chapter 19 · The honest caveat
+- Part VII: The research graphs
+  - Chapter 20 · Why reinforcement learning belongs in this book
+  - Chapter 21 · 8 dimensions, 18 concepts
+  - Chapter 22 · 35 works, verified
+  - Chapter 23 · Five concepts, two graphs
+  - Chapter 24 · Reading trails and the collectors that tend them
 
 - Appendix A: Configuration reference
 - Appendix B: How this book was built
@@ -1783,6 +1789,829 @@ A passing sweep proves the harness is wired, not that any agent learns safely. T
 
 ---
 
+# Part VII: The research graphs
+
+## Chapter 20: Why reinforcement learning belongs in this book
+
+This book studies learning with the weights frozen: lessons in prose, skills in libraries, memory under operators, evolvers that never touch a gradient. That narrowing is productive only while its outside stays visible, so this part maps the outside — 35 reinforcement-learning works from Bellman to RLVR, curated in this repository's own graph, joined to the lab's landscape by shared concepts and explicit links. Every verbal mechanism in the earlier parts has a gradient ancestor here; the graph lets you walk from descendant to ancestor before claiming novelty.
+
+The direction of borrowing runs one way and the book states it plainly: mechanisms travel from RL into the lab, while evidence must be re-earned on drifting streams with per-boundary checkpoints. A return curve from the deep-RL era proves competence at games, not continual learning; a trust region is a stability idea worth translating into scope fences and TTL decay, not a result that transfers. The per-work verdicts below enforce the direction — what to borrow, what to re-measure — in one line each.
+
+```mermaid
+flowchart LR
+  subgraph SIB["sibling lab checkout"]
+    LREF["reference/landscape.json<br>51 works · 9 dims · 21 concepts"]
+    LREF2["reference/benchmarks.json"]
+  end
+  subgraph REPO["this repo"]
+    SL["data/sl_landscape.json<br>vendored snapshot"]
+    RL["data/rl_landscape.json<br>curated · 35 works · 8 dims · 18 concepts"]
+    COL["data/research_collectors.json<br>7 trails · 3 collectors"]
+    TAB["js/research.js<br>Research Graphs tab"]
+    TOOL["tools/collect_research.py<br>sync-sl · fetch-arxiv · validate"]
+  end
+  LREF -->|"sync-sl (byte copy)"| SL
+  SL --> TAB
+  RL --> TAB
+  COL --> TAB
+  TOOL -->|"validates"| SL
+  TOOL -->|"validates"| RL
+  TOOL -->|"validates"| COL
+```
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** This book studies learning with the weights frozen: reflections, skill libraries, memory operators, prose evolvers — reinforcement without gradients, optimised in language and gated by task success. That is a deliberate narrowing, and narrowings need their outside named, or readers mistake the fence for the field. Reinforcement learning is that outside: the seventy-year lineage of reward, bootstrapping, policy gradients, trust regions and learned rewards from which the lab borrows its vocabulary while refusing its machinery. The research graphs exist so the refusal stays explicit — every verbal mechanism in this book has a gradient ancestor, and the graph lets you walk from the descendant back to the ancestor before you claim novelty.
+- **Memory-systems researcher:** The kinship that matters most is the memory policy, because that is where the two graphs touch rather than merely rhyme. Classical RL learns a policy over states; MemRL and A-MEM learn a policy over memory operations — what to store, link, summarise and discard — with task success as the reward. Same mathematics of credit assignment, different substrate: weights there, the note graph here. Reading the RL foundations first changes how you operate the lab: TTL decay stops looking like a housekeeping hack and reveals itself as the stability control, the successor to clipping and trust regions, translated from parameter space into memory space.
+- **Evaluation methodologist:** I would insist on the asymmetry before anyone gets romantic: the RL graph is mostly unmeasured by this book's own gates, and that is stated, not hidden. Tabular foundations report no stability control, no holdout discipline, no cost — they are design priors, borrowable as mathematics, citable as nothing about agents. The honest direction of borrowing runs one way: mechanisms travel from RL into the lab, while evidence must be re-earned on drifting streams with per-boundary checkpoints. A reader who cites a return curve from the deep-RL era as proof about a memory bank has crossed that direction without a visa.
+- **Safety researcher:** The safety case for the pairing is reward hacking, which the RL lineage names and the lab inherits. Optimise a proxy and the optimizer finds the crack: the grader edited until everything passes, the metric gamed instead of the patient triaged, the reflection that flatters rather than corrects. Classical RL documents the disease across decades; the continual-learning chapters document its recurrence in language. Read the concrete-problems agenda beside the lab's own failure scenarios and the pattern is unmistakable — every learning loop needs an admission gate, a scope fence and an expiry, whatever the substrate being updated.
+
+**Council reading.**
+
+- **Red team:** A foundations part is where authority launders itself: famous rows with no closed gates will be cited as proof by readers who skip the verdict column. The defence is the column itself — quote the tier, not the title — and the discipline of never letting a tabular result testify about an agent.
+- **Blue team:** Teach the borrowing direction before the works: mechanisms in, evidence re-earned. Teams that memorise the direction stop importing game scores as learning claims, which is most of what a foundations chapter has to accomplish.
+- **Operator:** Use this part the way the trails order it — foundations, optimisers, offline, preferences, verbal, memory-policy, evaluation last. Each walk reframes the last, and the evaluation trail is the gate all the others must pass.
+
+## Chapter 21: 8 dimensions, 18 concepts
+
+| Dimension | What it separates |
+|---|---|
+| family | RL family |
+| signal | Learning signal |
+| policy | Policy substrate |
+| exploration | Exploration |
+| stability | Update stability |
+| evaluation | Evaluation discipline |
+| cost | Cost reported |
+| scope | Agent scope |
+
+Dimensions turn a reading list into something countable: every RL work below is placed on all 8, and the three gates that matter most are stability, evaluation and cost — a stability control says the update cannot destroy the past, a holdout or banded evaluation says the gain is not memorisation, and a reported cost says the win was not bought with volume.
+
+*RL family* (`family`) asks: Which family of reinforcement learning does the work belong to? Options run tabular, deep-value, policy-gradient, actor-critic, model-based — plus 'unknown', which is always legal. Family names the lineage a work belongs to — tabular, deep-value, policy-gradient, actor-critic, model-based, offline, preference, verbal, memory-policy. Read it first: it tells you which ancestors' assumptions the work inherits, and therefore which of their failures to check for.
+
+*Learning signal* (`signal`) asks: What scalar or textual signal does the agent learn from? Options run reward, human-preference, verifier, binary-success, language-feedback — plus 'unknown', which is always legal. Signal names what is optimised: reward, human preference, verifier verdict, binary success, language feedback — or nothing at all. The modern arc of the graph runs along this axis, from given rewards through learned preferences to checkable outcomes; each step changes what gaming looks like.
+
+*Policy substrate* (`policy`) asks: What is the thing that changes when the agent learns? Options run table, linear, deep-net, llm-prompt, llm-finetune — plus 'unknown', which is always legal. Policy names what changes when the agent learns: tables, linear weights, deep nets, prompts, finetunes, memory operators. This is the substrate axis, and the book's thesis lives on it — the lab studies the last three while borrowing vocabulary from the first three.
+
+*Exploration* (`exploration`) asks: How does the agent try things it has not tried before? Options run epsilon-greedy, entropy-bonus, intrinsic, prompt-perturbation, none — plus 'unknown', which is always legal. Exploration names how the agent tries the untried: epsilon-greedy randomness, entropy bonuses, intrinsic curiosity, prompt perturbation — or nothing, in offline work that never acts. Every result prices this trade somewhere; rows that hide it usually paid in sample cost.
+
+*Update stability* (`stability`) asks: What stops one update from destroying what earlier updates learned? Options run none, trust-region, clipping, kl-penalty, scope-fence — plus 'unknown', which is always legal. Stability names what stops one update from destroying earlier ones: trust regions, clipping, KL penalties, scope fences, TTL decay — or nothing, in most of the graph. This is the first of the three verdict gates, and the direct ancestor of the lab's forgetting meter.
+
+*Evaluation discipline* (`evaluation`) asks: How is improvement measured — and is degradation measured too? Options run regret, return, winrate, holdout, banded — plus 'unknown', which is always legal. Evaluation names how improvement is shown: return curves, winrates, holdouts, bands. Only the last two close the gate, because only they separate learning from memorisation and priced competence from anecdote. This is the second verdict gate.
+
+*Cost reported* (`cost`) asks: Does the work report what learning costs: environment steps, tokens, or both? Options run unreported, env-steps, tokens, both, unknown — plus 'unknown', which is always legal. Cost names what learning burned: environment steps, tokens, both — or unreported, in most rows. A win without a price cannot be budgeted into a gate, which makes this the third verdict gate and the one the field skips most.
+
+*Agent scope* (`scope`) asks: Does the work study one agent's policy or behaviour shared across agents? Options run single, multi, both, unknown — plus 'unknown', which is always legal. Scope names whose behaviour is studied: one agent, many, or both. Almost the entire graph is single-agent; shared-memory results do not transfer across this axis without new interference analysis.
+
+| Concept | Kind | Gloss | Shared |
+|---|---|---|---|
+| mdp | mechanism | States, actions, rewards and transitions: the formal frame every RL result is stated in. | — |
+| td-learning | mechanism | Learn from the difference between successive predictions instead of waiting for the final outcome. | — |
+| value-methods | mechanism | Learn how good states or actions are (Q-learning, DQN, Rainbow) and act greedily on the values. | — |
+| policy-gradient | mechanism | Move the policy directly uphill on expected return (REINFORCE, A3C, PPO): the optimizer is the gradient of performance. | — |
+| actor-critic | mechanism | A policy (actor) proposes, a value function (critic) judges: lower variance than pure gradients, broader than pure values. | — |
+| trust-region | mechanism | Bound each update so the new policy cannot leave the neighbourhood of the old one (TRPO, PPO clipping, KL penalties). | — |
+| model-based | mechanism | Learn a model of the world, then plan inside it (MuZero, Dreamer) instead of learning purely from trial and error. | — |
+| offline-rl | paradigm | Learn a policy from a fixed log of past behaviour with no new environment interaction — the counterfactual discipline. | — |
+| preference-rl | paradigm | Learn the reward itself from human comparisons before optimising it: the reward is a model, not a given. | — |
+| rlhf | mechanism | Fine-tune a language model against a learned human-preference reward with a KL anchor to the base policy (InstructGPT). | — |
+| rlvr | mechanism | Reinforcement learning with verifiable rewards: grade reasoning chains on checkable outcomes and let long chains emerge (DeepSeek-R1, GRPO). | — |
+| reward-hacking | problem | Optimising the proxy instead of the goal: the better the optimizer, the worse the hack. | — |
+| exploration-dilemma | problem | Trying the unknown against milking the known — every RL result prices this trade somewhere. | — |
+| credit-assignment | problem | Deciding which part of a long trajectory deserves credit. | yes — same id in both graphs |
+| memory-policy-learning | mechanism | The agent learns how to manage memory - what to store, retrieve, update or discard - not just what to remember. A-MEM's RL-trained memory operators and MemRL's runtime RL are the first instances. | yes — same id in both graphs |
+| experience-evolution | paradigm | Forward learning from the experience stream itself: each interaction updates the reusable repertoire (reasoning memory, latent memory, skill set) rather than only the current answer. | yes — same id in both graphs |
+| continual-learning | paradigm | Learning over a stream that keeps changing, with interference and forgetting as the cost. | yes — same id in both graphs |
+| verifier-feedback | mechanism | A checker, grader or environment decides success, and only success is learned from. | yes — same id in both graphs |
+
+**Markov decision processes** (`mdp`, mechanism) — States, actions, rewards and transitions: the formal frame every RL result is stated in. The formal frame — states, actions, rewards, transitions — in which every RL result below is stated. Borrow the frame for precision about sequential decisions; leave its stationarity assumptions at the door of any drifting stream.
+
+**Temporal-difference learning** (`td-learning`, mechanism) — Learn from the difference between successive predictions instead of waiting for the final outcome. Learning from successive predictions instead of final outcomes. The bootstrapping idea behind every critic in the graph; the lab's binary task reward is TD's coarsest descendant.
+
+**Value-based methods** (`value-methods`, mechanism) — Learn how good states or actions are (Q-learning, DQN, Rainbow) and act greedily on the values. Learning how good states and actions are, then acting greedily. Q-learning through Rainbow: the lineage that taught the field about overestimation, and therefore about twin critics and conservatism.
+
+**Policy gradients** (`policy-gradient`, mechanism) — Move the policy directly uphill on expected return (REINFORCE, A3C, PPO): the optimizer is the gradient of performance. Moving the policy directly uphill on expected return, from REINFORCE through PPO. High variance tamed by baselines, critics and clipping — the optimiser family behind RLHF.
+
+**Actor-critic** (`actor-critic`, mechanism) — A policy (actor) proposes, a value function (critic) judges: lower variance than pure gradients, broader than pure values. A policy proposes, a value function judges. Lower variance than pure gradients, broader than pure values; the architecture of A3C, SAC and TD3, and the template the lab's evaluator-optimizer pattern mirrors.
+
+**Trust regions and clipping** (`trust-region`, mechanism) — Bound each update so the new policy cannot leave the neighbourhood of the old one (TRPO, PPO clipping, KL penalties). Bounding each update inside the old policy's neighbourhood. TRPO's constraint, PPO's clip, RLHF's KL anchor — one idea in three costumes, and the ancestor of every stability control in this book.
+
+**Model-based planning** (`model-based`, mechanism) — Learn a model of the world, then plan inside it (MuZero, Dreamer) instead of learning purely from trial and error. Learning a world model and planning inside it, from AlphaGo's search through MuZero's latent dynamics to Dreamer's imagination. Borrow the plan-inside-a-model shape; re-measure model-error compounding before trusting the dream.
+
+**Offline reinforcement learning** (`offline-rl`, paradigm) — Learn a policy from a fixed log of past behaviour with no new environment interaction — the counterfactual discipline. Learning from fixed logs with no new interaction. CQL's conservatism, IQL's in-sample values, the Decision Transformer's return-conditioning — the counterfactual discipline, and the closest classical cousin of learning from episode banks.
+
+**Preference-based RL** (`preference-rl`, paradigm) — Learn the reward itself from human comparisons before optimising it: the reward is a model, not a given. Learning the reward itself from human comparisons before optimising it. The Christiano template behind InstructGPT: the reward is a model, with all the over-optimisation risk that implies.
+
+**RLHF** (`rlhf`, mechanism) — Fine-tune a language model against a learned human-preference reward with a KL anchor to the base policy (InstructGPT). Finetuning language models against learned human preference with a KL anchor. The recipe that made assistants follow instructions — and made reward-model auditing a safety discipline.
+
+**RLVR and reasoning RL** (`rlvr`, mechanism) — Reinforcement learning with verifiable rewards: grade reasoning chains on checkable outcomes and let long chains emerge (DeepSeek-R1, GRPO). Reinforcement learning with verifiable rewards: grade reasoning chains on checkable outcomes and let long chains emerge. DeepSeek-R1's demonstration that pure RL without supervised traces can incentivise reasoning.
+
+**Reward hacking** (`reward-hacking`, problem) — Optimising the proxy instead of the goal: the better the optimizer, the worse the hack. Optimising the proxy instead of the goal — the better the optimiser, the worse the hack. Named by the concrete-problems agenda, recurring in every lab failure scenario; the problem that prices all the mechanisms.
+
+**Exploration vs exploitation** (`exploration-dilemma`, problem) — Trying the unknown against milking the known — every RL result prices this trade somewhere. Trying the unknown against milking the known. Every row prices this trade somewhere — in epsilon schedules, entropy bonuses, perturbation rates — and rows that hide it paid in samples.
+
+**Credit assignment** (`credit-assignment`, problem) — Deciding which part of a long trajectory deserves credit. Which part of a long trajectory deserves credit — a shared concept with the lab's landscape, where sparse binary feedback makes verifier design the real work on both sides of the interlink.
+
+**Memory-policy learning** (`memory-policy-learning`, mechanism) — The agent learns how to manage memory - what to store, retrieve, update or discard - not just what to remember. A-MEM's RL-trained memory operators and MemRL's runtime RL are the first instances. Learning how to manage memory rather than what to remember — a shared concept, and the genuine joint between the graphs: RL's newest family and the lab's scoped evolver are the same mathematics on different substrates.
+
+**Experience evolution** (`experience-evolution`, paradigm) — Forward learning from the experience stream itself: each interaction updates the reusable repertoire (reasoning memory, latent memory, skill set) rather than only the current answer. Forward learning from the experience stream itself — a shared concept: Voyager's skill library and ReasoningBank's repertoire on the RL side, the lab's lesson write path on the other.
+
+**Continual learning** (`continual-learning`, paradigm) — Learning over a stream that keeps changing, with interference and forgetting as the cost. Learning over a changing stream priced in interference and forgetting — a shared concept, and the lab's own paradigm: the RL rows that close the evaluation gate are the ones that speak this language.
+
+**Verifier feedback** (`verifier-feedback`, mechanism) — A checker, grader or environment decides success, and only success is learned from. A checker or environment decides success and only success is learned from — a shared concept: rule-checked outcomes in reasoning RL, binary task success in the lab, coarse on purpose in both.
+
+```mermaid
+classDiagram
+  class Work {
+    +id
+    +title
+    +kind
+    +summary
+    +mechanism
+    +align
+    +concepts
+    +patterns
+    +sl_links
+    +rl_links
+  }
+  class Concept {
+    +id
+    +label
+    +kind
+    +gloss
+  }
+  class Dimension {
+    +id
+    +label
+    +question
+    +options
+  }
+  class Trail {
+    +id
+    +label
+    +scope
+    +works
+  }
+  class Collector {
+    +id
+    +tool
+    +sources
+    +outputs
+  }
+  Work --> Concept : carries
+  Work --> Dimension : placed on
+  Work --> Work : builds on
+  Trail --> Work : addresses
+  Collector --> Work : tends
+```
+
+**Council deliberation.**
+
+- **Evaluation methodologist:** Eight dimensions do for RL what nine do for the lab's landscape: they turn a reading list into something countable. Family names the lineage, signal names what is optimised, policy names what changes, exploration names how novelty is tried, stability names what survives an update, evaluation names how improvement is shown, cost names what it burned, scope names whose behaviour is studied. The three gates that matter most are stability, evaluation and cost, because they separate a result from a story: a stability control says the update cannot destroy the past, a holdout or banded evaluation says the gain is not memorisation, a reported cost says the win was not bought with volume.
+- **Continual-learning researcher:** Stability deserves its primacy because it is forgetting under another name. Trust regions, clipping and KL penalties all bound how far one update may carry the policy — the tabular era had none of this, and the deep era learned it the hard way. Translated into the lab, the same role is played by scope fences and TTL decay: mechanisms that stop today's lesson from eating yesterday's competence. When the verdict table marks a work unmeasured on stability, read it as a plasticity claim with no forgetting meter — interesting, borrowable, and unpriced.
+- **Memory-systems researcher:** The signal dimension is where the modern era turns, and the graph makes the turn visible. Reward gives way to human preference, preference gives way to verifiers, and the policy substrate moves from tables through deep nets into prompts and memory operators. Each step changes what compounding means: weight updates compound silently, prose reflections compound legibly, memory writes compound durably. The evaluation dimension has to keep up — return curves sufficed for game scores, but only holdouts and bands say anything about a bank that remembers everything it was told.
+- **Safety researcher:** Cost is the gate the field skips, and skipping it is a safety problem, not a bookkeeping one. An update that costs ten times the harness to find is an update nobody will re-run, which means nobody will verify it — and unverifiable learning is where poisoned lessons go to retire. The alignment rows that report cost honestly, in environment steps or tokens or both, are the ones an operator can budget a gate around. Demand the ledger with the same seriousness as the holdout: a win without a price is a rumour with a chart.
+
+**Council reading.**
+
+- **Red team:** Eight dimensions with an 'unknown' option map the reviewer's ignorance alongside the field: sort the works by unclosed gates and the least-examined claims surface first. Unknown across the row is where the next incident already lives.
+- **Blue team:** Hold every RL work to the three gates before it enters your reasoning: a stability control, a holdout or banded evaluation, a reported cost. The validator script exists so the bar does not move when the pile grows.
+- **Operator:** Use the dimensions as procurement questions for any 'RL-powered' vendor claim: which family, what signal, what substrate changes, what bounds the update, how was it graded, what did it burn. Missing answers are pricing signals.
+
+## Chapter 22: 35 works, verified
+
+| Work | Venue · year | Mechanism |
+|---|---|---|
+| Dynamic Programming | Princeton University Press, 1957 · 1957 | The Bellman optimality equation; value iteration and policy iteration on known models. |
+| Learning to Predict by the Methods of Temporal Differences | Machine Learning, 1988 · 1988 | TD(lambda): eligibility traces blend Monte Carlo targets with one-step bootstrapping. |
+| Q-learning | Machine Learning, 1992 · 1992 | One-step Q-learning with epsilon-greedy exploration; convergence guarantees in the tabular case. |
+| Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning | Machine Learning, 1992 · 1992 | REINFORCE with baselines; unbiased but high-variance gradient estimates from full episodes. |
+| Reinforcement Learning: An Introduction (2nd ed.) | MIT Press, 2018 · 2018 | Textbook synthesis, not one algorithm: the multi-step bootstrapping view that unifies the families. |
+| Concrete Problems in AI Safety | arXiv, 2016 · 2016 | Problem taxonomy with accident-driven research directions; no new algorithm. |
+| Human-level Control through Deep Reinforcement Learning | Nature, 2015 · 2015 | Deep Q-network with experience replay and a frozen target network to stabilise bootstrapping. |
+| Asynchronous Methods for Deep Reinforcement Learning | ICML, 2016 · 2016 | Asynchronous advantage actor-critic; n-step returns with a learned baseline. |
+| Trust Region Policy Optimization | ICML, 2015 · 2015 | Constrained optimisation on the surrogate advantage with a KL-divergence bound and line search. |
+| Proximal Policy Optimization Algorithms | arXiv, 2017 · 2017 | Clipped surrogate objective with multiple minibatch epochs; the KL anchor behind RLHF fine-tuning. |
+| Rainbow: Combining Improvements in Deep Reinforcement Learning | AAAI, 2018 · 2017 | Double, dueling, prioritized replay, multi-step, distributional, noisy nets in a single update. |
+| Soft Actor-Critic: Off-Policy Maximum Entropy Deep RL | ICML, 2018 · 2018 | Off-policy actor-critic on the maximum-entropy objective with twin critics and auto-tuned temperature. |
+| Addressing Function Approximation Error in Actor-Critic Methods | ICML, 2018 · 2018 | Clipped double Q-learning with delayed actor updates on top of DDPG. |
+| Mastering the Game of Go with Deep Neural Networks and Tree Search | Nature, 2016 · 2016 | SL policy init, RL policy improvement by self-play, value network, MCTS at decision time. |
+| Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model | Nature, 2020 · 2020 | Representation, dynamics and prediction networks trained end-to-end; MCTS over learned latent states. |
+| Dream to Control: Learning Behaviors by Latent Imagination | ICLR, 2020 · 2020 | Latent state-space world model; actor-critic trained on imagined rollouts, not environment steps. |
+| Evolution Strategies as a Scalable Alternative to Reinforcement Learning | arXiv, 2017 · 2017 | Gaussian perturbations of the parameter vector; update along the reward-weighted average direction. |
+| Conservative Q-Learning for Offline Reinforcement Learning | NeurIPS, 2020 · 2020 | Conservative regulariser penalising out-of-distribution action values on top of standard Bellman updates. |
+| Offline Reinforcement Learning with Implicit Q-Learning | ICLR, 2023 · 2022 | Implicit Q-learning via expectiles; policy extraction by advantage-weighted regression, no OOD queries. |
+| Decision Transformer: RL via Sequence Modeling | NeurIPS, 2021 · 2021 | Offline trajectories as return-state-action sequences; condition on return-to-go at inference. |
+| Deep Reinforcement Learning from Human Preferences | NeurIPS, 2017 · 2017 | Bradley-Terry reward model on trajectory-pair labels; policy optimisation against the fitted reward. |
+| Training Language Models to Follow Instructions with Human Feedback | NeurIPS, 2022 · 2022 | SFT, then preference reward model, then PPO with a KL anchor to the supervised policy. |
+| Constitutional AI: Harmlessness from AI Feedback | arXiv, 2022 · 2022 | Supervised critique-revision, then preference modelling on AI-ranked pairs, then RL — RLAIF. |
+| Direct Preference Optimization | NeurIPS, 2023 · 2023 | Closed-form reward reparameterisation; supervised-style loss with a reference-policy KL term. |
+| DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via RL | arXiv, 2025 · 2025 | GRPO on rule-checked outcomes (math, code); cold-start SFT plus rejection-sampled RL for the released model. |
+| Reflexion: Language Agents with Verbal Reinforcement Learning | NeurIPS, 2023 · 2023 | Actor-evaluator-self-reflection loop with episodic verbal memory; binary or scalar task reward gates what is kept. |
+| Voyager: An Open-Ended Embodied Agent with Large Language Models | arXiv, 2023 · 2023 | Automatic curriculum, code-skill generation, self-verification gate before library admission. |
+| GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning | arXiv, 2025 · 2025 | Genealogy of candidate programs; failure reflection proposes mutations, evaluation keeps the winners. |
+| MemRL: Self-Evolving Agents via Runtime Reinforcement Learning on Episodic Memory | arXiv, 2026 · 2026 | Runtime RL over episodic-memory actions with task-success reward; the lab's reference bands calibrate it. |
+| A-MEM: Agentic Memory for LLM Agents | arXiv, 2025 · 2025 | Zettelkasten-style note graph with learned link, merge and evict operators. |
+| ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory | arXiv, 2025 · 2025 | Top-k retrieval of past reasonings keyed on task plus workflow; write-back gated on graded success. |
+| Generative Agents: Interactive Simulacra of Human Behavior | UIST, 2023 · 2023 | Observation memory with recency-importance-relevance retrieval and periodic natural-language reflection. |
+| SWE-bench: Can Language Models Resolve Real-World GitHub Issues? | ICLR, 2024 · 2024 | Instance-level fail-to-pass plus pass-to-pass tests; resolved-rate as the binary task reward. |
+| Continual Learning, Not Training: Online Adaptation For Agents | arXiv, 2025 · 2025 | Experience replay plus scoped consolidation measured with interference and forgetting metrics. |
+| Gymnasium: The Maintained RL Environment API | Open source, 2023 · 2023 | Env API plus vectorised wrappers and seeding discipline; the harness half of every RL claim. |
+
+On the current graph of 35 works: **5** are measured and priced, **7** on two gates, **14** on one gate, and **9** are unmeasured by their own protocol. The unmeasured rows are mostly the tabular foundations — load-bearing mathematics, citable as priors, never as agent evidence.
+
+*Measured and priced (5):* a-mem-2025, atlas-2025, deepseek-r1-2025, memrl-2026, reasoningbank-2025. Quote these first; re-measure everything else on your own stream.
+
+```mermaid
+flowchart LR
+  TAB["tabular - Bellman, TD, Q"] --> DV["deep value - DQN, Rainbow"]
+  TAB --> PG["policy gradient - REINFORCE, PPO"]
+  PG --> AC["actor-critic - A3C, SAC, TD3"]
+  PG --> MB["model-based - AlphaGo, MuZero, Dreamer"]
+  DV --> OFF["offline - CQL, IQL, DT"]
+  PG --> PREF["preference - RLHF, DPO"]
+  PREF --> RLVR["verifiers - R1, RLVR"]
+  RLVR --> VERB["verbal - Reflexion, GEPA"]
+  VERB --> MEM["memory-policy - MemRL, A-MEM"]
+```
+
+### Papers (33)
+**Council deliberation.**
+
+- **Continual-learning researcher:** Papers are where mechanisms get named, but a mechanism without a stream is only a proposal. This corpus shows the pattern clearly: many memory and workflow papers report partial learning effects with no holdout, so their alignment rows cannot separate improvement from memorisation. Read papers for the update rule and the retrieval key, then demand per-boundary checkpoints before believing the learning claim.
+- **Evaluation methodologist:** A paper earns falsifiability only when both gates close: degradation measured across a changing stream and grading on disjoint instances. In this landscape only a handful of papers meet both, while the partially falsifiable middle grades holdout tasks without pricing forgetting. Treat that middle as promising scaffolding, and re-run the stream with isolation checks before promoting any result to practice.
+
+#### Dynamic Programming
+*bellman-1957* — R. Bellman, Princeton University Press, 1957 · 1957 · paper. https://scholar.google.com/scholar?q=Bellman+1957+%22dynamic+programming%22
+**What it does.** Optimal sequential decisions satisfy a recursion: the value of a state is the best immediate reward plus the value of what follows.
+**Mechanism.** The Bellman optimality equation; value iteration and policy iteration on known models.
+**Alignment.** family=tabular · signal=reward · policy=table · exploration=none · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `mdp` **Catalog patterns.** `plan-and-execute`
+**Links.** Self-learning: — · RL builds-on: —
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Tabular foundations: recursion, bootstrapping, off-policy updates — priors, not agent evidence.
+**Researcher note.** Dynamic Programming contributes the optimality recursion every value method stands on: state value as best immediate reward plus what follows. Its alignment row reads tabular family with no stability control, return evaluation and unreported cost, so it is unmeasured by its own protocol. Borrow the recursion as mathematics, but cite it as no evidence about agents.
+
+
+#### Learning to Predict by the Methods of Temporal Differences
+*sutton-td-1988* — R. S. Sutton, Machine Learning, 1988 · 1988 · paper. https://scholar.google.com/scholar?q=Sutton+1988+%22learning+to+predict+by+the+methods+of+temporal+differences%22
+**What it does.** Predict without waiting for the outcome: bootstrap each estimate off the next one.
+**Mechanism.** TD(lambda): eligibility traces blend Monte Carlo targets with one-step bootstrapping.
+**Alignment.** family=tabular · signal=reward · policy=table · exploration=none · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `mdp`, `td-learning`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `bellman-1957`
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Tabular foundations: recursion, bootstrapping, off-policy updates — priors, not agent evidence.
+**Researcher note.** Temporal-difference learning contributes bootstrapping: predict from the next prediction instead of waiting for the outcome, with eligibility traces blending horizons. Its alignment row reads tabular family with no stability control, return evaluation and unreported cost, so it is unmeasured by its own protocol. Borrow TD as the update idea behind every critic, but re-measure everything about deployment separately.
+
+
+#### Q-learning
+*watkins-q-1992* — C. Watkins, P. Dayan, Machine Learning, 1992 · 1992 · paper. https://scholar.google.com/scholar?q=Watkins+Dayan+1992+Q-learning
+**What it does.** Learn the optimal action-value function off-policy: update toward the best next action whatever you actually did.
+**Mechanism.** One-step Q-learning with epsilon-greedy exploration; convergence guarantees in the tabular case.
+**Alignment.** family=tabular · signal=reward · policy=table · exploration=epsilon-greedy · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `mdp`, `td-learning`, `value-methods`, `exploration-dilemma` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `bellman-1957`, `sutton-td-1988`
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Tabular foundations: recursion, bootstrapping, off-policy updates — priors, not agent evidence.
+**Researcher note.** Q-learning contributes off-policy optimal control: update toward the best next action whatever was actually taken, with tabular convergence guarantees. Its alignment row reads tabular family with epsilon-greedy exploration but no stability control, return evaluation and unreported cost, so it is unmeasured by its own protocol. Borrow the off-policy update, but re-measure exploration and forgetting outside tables.
+
+
+#### Simple Statistical Gradient-Following Algorithms for Connectionist Reinforcement Learning
+*williams-reinforce-1992* — R. J. Williams, Machine Learning, 1992 · 1992 · paper. https://scholar.google.com/scholar?q=Williams+1992+%22simple+statistical+gradient-following%22
+**What it does.** Move policy weights uphill on sampled return: the policy-gradient theorem's first practical form.
+**Mechanism.** REINFORCE with baselines; unbiased but high-variance gradient estimates from full episodes.
+**Alignment.** family=policy-gradient · signal=reward · policy=linear · exploration=intrinsic · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `mdp`, `policy-gradient`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `bellman-1957`
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Policy-gradient lineage: the optimiser family behind RLHF; verify the clip binds on your distribution.
+**Researcher note.** REINFORCE contributes the first practical policy gradient: move weights uphill on sampled return with baselines against variance. Its alignment row reads policy-gradient family with no stability control, return evaluation and unreported cost, so it is unmeasured by its own protocol. Borrow the gradient-of-performance framing behind PPO and RLHF, but re-measure variance and cost on your own workload.
+
+
+#### Human-level Control through Deep Reinforcement Learning
+*dqn-2015* — V. Mnih et al., Nature, 2015 · 2015 · paper. https://www.nature.com/articles/nature14236
+**What it does.** One network, one algorithm, 49 Atari games from pixels: deep RL's founding demonstration.
+**Mechanism.** Deep Q-network with experience replay and a frozen target network to stabilise bootstrapping.
+**Alignment.** family=deep-value · signal=reward · policy=deep-net · exploration=epsilon-greedy · stability=none · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `mdp`, `td-learning`, `value-methods`, `exploration-dilemma` **Catalog patterns.** `evaluator-optimizer`, `episodic-memory`
+**Links.** Self-learning: — · RL builds-on: `watkins-q-1992`, `sutton-td-1988`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Deep value methods: replay and target stabilisers to borrow; re-price exploration and cost.
+**Researcher note.** The deep Q-network contributes the founding demonstration: one network and one algorithm reaching across dozens of games from pixels, stabilised by replay and a frozen target. Its alignment row reads deep-value family with return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow replay and target networks as stabilisers, but re-measure exploration cost and forgetting yourself.
+
+
+#### Trust Region Policy Optimization
+*trpo-2015* — J. Schulman et al., ICML, 2015 · 2015 · paper. https://arxiv.org/abs/1502.05477
+**What it does.** Monotonic improvement by constraining each update inside a KL trust region around the old policy.
+**Mechanism.** Constrained optimisation on the surrogate advantage with a KL-divergence bound and line search.
+**Alignment.** family=policy-gradient · signal=reward · policy=deep-net · exploration=entropy-bonus · stability=trust-region · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on two gates** — because no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `policy-gradient`, `trust-region` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `williams-reinforce-1992`
+**Lab reading.** Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim. Policy-gradient lineage: the optimiser family behind RLHF; verify the clip binds on your distribution.
+**Researcher note.** Trust region policy optimisation contributes monotonic improvement by constraining each update inside a KL neighbourhood of the old policy. Its alignment row reads policy-gradient family with a trust-region control and return evaluation priced in environment steps, so it is measured on two gates. Borrow the trust region as the ancestor of every stability control below, but re-measure wall-clock cost since constraints are not free.
+
+
+#### Asynchronous Methods for Deep Reinforcement Learning
+*a3c-2016* — V. Mnih et al., ICML, 2016 · 2016 · paper. https://arxiv.org/abs/1602.01783
+**What it does.** Parallel actors decorrelate experience: stable policy learning with no replay buffer.
+**Mechanism.** Asynchronous advantage actor-critic; n-step returns with a learned baseline.
+**Alignment.** family=actor-critic · signal=reward · policy=deep-net · exploration=entropy-bonus · stability=none · evaluation=return · cost=env-steps · scope=multi.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `actor-critic`, `policy-gradient` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `williams-reinforce-1992`, `dqn-2015`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Actor-critic designs: twin critics and entropy where bias or exploration dominate; re-measure cadence.
+**Researcher note.** Asynchronous advantage actor-critic contributes decorrelated experience without a replay buffer: parallel actors stabilise policy learning. Its alignment row reads actor-critic family with entropy exploration and return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow parallel decorrelation as a training device, but re-measure sample cost before budgeting it.
+
+
+#### Mastering the Game of Go with Deep Neural Networks and Tree Search
+*alphago-2016* — D. Silver et al., Nature, 2016 · 2016 · paper. https://www.nature.com/articles/nature16961
+**What it does.** Supervised policy plus value network plus Monte Carlo tree search beats the European champion 5-0.
+**Mechanism.** SL policy init, RL policy improvement by self-play, value network, MCTS at decision time.
+**Alignment.** family=model-based · signal=reward · policy=deep-net · exploration=intrinsic · stability=none · evaluation=winrate · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `policy-gradient`, `model-based`, `verifier-feedback` **Catalog patterns.** `evaluator-optimizer`, `self-consistency`
+**Links.** Self-learning: — · RL builds-on: `dqn-2015`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Model-based planning: plan inside a learned model; re-measure error compounding before trusting imagination.
+**Researcher note.** AlphaGo contributes supervised policy initialisation plus self-play improvement plus value estimation plus tree search at decision time. Its alignment row reads model-based family with winrate evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow the pipeline shape — imitate, improve by play, verify by search — but re-measure its six-figure compute appetite before admiring the result.
+
+
+#### Concrete Problems in AI Safety
+*concrete-problems-2016* — D. Amodei et al., arXiv, 2016 · 2016 · paper. https://arxiv.org/abs/1606.06565
+**What it does.** Names the failure agenda for RL agents: reward hacking, side effects, scalable oversight, safe exploration, distributional shift.
+**Mechanism.** Problem taxonomy with accident-driven research directions; no new algorithm.
+**Alignment.** family=unknown · signal=reward · policy=unknown · exploration=intrinsic · stability=none · evaluation=unknown · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `reward-hacking`, `exploration-dilemma` **Catalog patterns.** `eval-harness-redteam`, `sandbox-execution`
+**Links.** Self-learning: — · RL builds-on: —
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Context for the field (a benchmark, an environment, or an argument), not a learning result.
+**Researcher note.** Concrete Problems in AI Safety contributes the failure agenda RL agents inherit: reward hacking, side effects, scalable oversight, safe exploration, distributional shift. Its alignment row reads unknown family with unknown evaluation and unreported cost, so it is unmeasured by its own protocol. Borrow the taxonomy as the review checklist for every learning loop in this book, but re-measure each item where you deploy.
+
+
+#### Evolution Strategies as a Scalable Alternative to Reinforcement Learning
+*es-2017* — T. Salimans et al., arXiv, 2017 · 2017 · paper. https://arxiv.org/abs/1712.06567
+**What it does.** Black-box parameter search scales linearly with workers and needs no gradients, backprop or value functions.
+**Mechanism.** Gaussian perturbations of the parameter vector; update along the reward-weighted average direction.
+**Alignment.** family=policy-gradient · signal=reward · policy=deep-net · exploration=intrinsic · stability=none · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `policy-gradient`, `exploration-dilemma` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `williams-reinforce-1992`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Policy-gradient lineage: the optimiser family behind RLHF; verify the clip binds on your distribution.
+**Researcher note.** Evolution strategies contribute black-box parameter search that scales linearly with workers and needs no gradients or value functions. Its alignment row reads policy-gradient family with return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow it as the gradient-free baseline that embarrasses fancy methods, but re-measure parameter-space sample cost at your dimensionality.
+
+
+#### Proximal Policy Optimization Algorithms
+*ppo-2017* — J. Schulman et al., arXiv, 2017 · 2017 · paper. https://arxiv.org/abs/1707.06347
+**What it does.** TRPO's stability with first-order simplicity: clip the objective and it just works — the default RL optimizer for a decade.
+**Mechanism.** Clipped surrogate objective with multiple minibatch epochs; the KL anchor behind RLHF fine-tuning.
+**Alignment.** family=policy-gradient · signal=reward · policy=deep-net · exploration=entropy-bonus · stability=clipping · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on two gates** — because no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `policy-gradient`, `trust-region` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `trpo-2015`, `a3c-2016`
+**Lab reading.** Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim. Policy-gradient lineage: the optimiser family behind RLHF; verify the clip binds on your distribution.
+**Researcher note.** Proximal policy optimisation contributes TRPO's stability with first-order simplicity: clip the surrogate objective and optimise for epochs. Its alignment row reads policy-gradient family with a clipping control and return evaluation priced in environment steps, so it is measured on two gates. Borrow clipping as the default optimiser — including behind RLHF — but re-measure that the clip binds on your distribution, not just Atari's.
+
+
+#### Rainbow: Combining Improvements in Deep Reinforcement Learning
+*rainbow-2017* — M. Hessel et al., AAAI, 2018 · 2017 · paper. https://arxiv.org/abs/1710.10044
+**What it does.** Seven DQN extensions in one agent: the ablation that shows which value-method ideas actually stack.
+**Mechanism.** Double, dueling, prioritized replay, multi-step, distributional, noisy nets in a single update.
+**Alignment.** family=deep-value · signal=reward · policy=deep-net · exploration=intrinsic · stability=none · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `value-methods`, `td-learning` **Catalog patterns.** `evaluator-optimizer`, `episodic-memory`
+**Links.** Self-learning: — · RL builds-on: `dqn-2015`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Deep value methods: replay and target stabilisers to borrow; re-price exploration and cost.
+**Researcher note.** Rainbow contributes the ablation that shows which value-method ideas stack: double, dueling, prioritised replay, multi-step, distributional and noisy nets in one update. Its alignment row reads deep-value family with return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow the combination as a parts catalogue, but re-measure which parts earn their complexity on your task.
+
+
+#### Deep Reinforcement Learning from Human Preferences
+*rlhp-christiano-2017* — P. Christiano et al., NeurIPS, 2017 · 2017 · paper. https://arxiv.org/abs/1706.03741
+**What it does.** Learn the reward from human comparisons, then RL on the learned reward: the preference-RL template.
+**Mechanism.** Bradley-Terry reward model on trajectory-pair labels; policy optimisation against the fitted reward.
+**Alignment.** family=preference · signal=human-preference · policy=deep-net · exploration=entropy-bonus · stability=none · evaluation=winrate · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `preference-rl`, `reward-hacking`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`, `llm-judge`
+**Links.** Self-learning: — · RL builds-on: `a3c-2016`, `ppo-2017`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Preference recipes: learned rewards with anchors; audit whose preferences and what the anchor cost.
+**Researcher note.** Deep RL from human preferences contributes the preference template: fit a reward model on trajectory comparisons, then optimise the fitted reward. Its alignment row reads preference family on human-preference signal with winrate evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow the two-stage recipe behind all RLHF, but re-measure reward-model over-optimisation before trusting the policy.
+
+
+#### Soft Actor-Critic: Off-Policy Maximum Entropy Deep RL
+*sac-2018* — T. Haarnoja et al., ICML, 2018 · 2018 · paper. https://arxiv.org/abs/1801.01290
+**What it does.** Maximise return plus entropy: the sample-efficient continuous-control standard that explores by staying stochastic.
+**Mechanism.** Off-policy actor-critic on the maximum-entropy objective with twin critics and auto-tuned temperature.
+**Alignment.** family=actor-critic · signal=reward · policy=deep-net · exploration=entropy-bonus · stability=none · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `actor-critic`, `exploration-dilemma` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `a3c-2016`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Actor-critic designs: twin critics and entropy where bias or exploration dominate; re-measure cadence.
+**Researcher note.** Soft actor-critic contributes the maximum-entropy objective for sample-efficient continuous control: maximise return plus stochasticity. Its alignment row reads actor-critic family with entropy exploration and return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow entropy-regularised objectives where exploration is expensive, but re-measure temperature behaviour outside benchmarks.
+
+
+#### Reinforcement Learning: An Introduction (2nd ed.)
+*sutton-barto-book* — R. S. Sutton, A. G. Barto, MIT Press, 2018 · 2018 · paper. http://incompleteideas.net/book/the-book-2nd.html
+**What it does.** The field's reference text: bandits, DP, TD, function approximation, policy gradients and the deadly triad in one frame.
+**Mechanism.** Textbook synthesis, not one algorithm: the multi-step bootstrapping view that unifies the families.
+**Alignment.** family=tabular · signal=reward · policy=unknown · exploration=epsilon-greedy · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `mdp`, `td-learning`, `value-methods`, `policy-gradient`, `exploration-dilemma`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `bellman-1957`, `sutton-td-1988`, `watkins-q-1992`, `williams-reinforce-1992`
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Tabular foundations: recursion, bootstrapping, off-policy updates — priors, not agent evidence.
+**Researcher note.** The Sutton and Barto textbook contributes the field's shared frame: bandits, dynamic programming, TD, approximation, gradients and the deadly triad in one volume. Its alignment row reads tabular family with return evaluation and unreported cost, so it is unmeasured by its own protocol. Borrow it as the reference shelf for every mechanism below, but cite chapters as priors, never as results.
+
+
+#### Addressing Function Approximation Error in Actor-Critic Methods
+*td3-2018* — S. Fujimoto et al., ICML, 2018 · 2018 · paper. https://arxiv.org/abs/1802.09477
+**What it does.** Twin critics, delayed policy updates, target smoothing: the overestimation fix for deterministic policies.
+**Mechanism.** Clipped double Q-learning with delayed actor updates on top of DDPG.
+**Alignment.** family=actor-critic · signal=reward · policy=deep-net · exploration=intrinsic · stability=none · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `actor-critic`, `value-methods` **Catalog patterns.** `evaluator-optimizer`, `ensemble-verify`
+**Links.** Self-learning: — · RL builds-on: `a3c-2016`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Actor-critic designs: twin critics and entropy where bias or exploration dominate; re-measure cadence.
+**Researcher note.** Twin delayed DDPG contributes the overestimation fix for deterministic policies: clipped double critics, delayed actor updates, smoothed targets. Its alignment row reads actor-critic family with return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow twin critics wherever Q-bias is suspected, but re-measure the delay cadence on your own control task.
+
+
+#### Conservative Q-Learning for Offline Reinforcement Learning
+*cql-2020* — A. Kumar et al., NeurIPS, 2020 · 2020 · paper. https://arxiv.org/abs/2006.04779
+**What it does.** Offline Q-learning overestimates the unseen: learn a lower bound on values so the policy trusts only the data.
+**Mechanism.** Conservative regulariser penalising out-of-distribution action values on top of standard Bellman updates.
+**Alignment.** family=offline · signal=reward · policy=deep-net · exploration=none · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `offline-rl`, `value-methods` **Catalog patterns.** `evaluator-optimizer`, `uncertainty-abstention`
+**Links.** Self-learning: — · RL builds-on: `dqn-2015`, `rainbow-2017`
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Offline discipline: conservatism and in-sample values; demand the data-collection story with the number.
+**Researcher note.** Conservative Q-learning contributes the offline overestimation fix: learn a lower bound on values so the policy trusts only logged data. Its alignment row reads offline family with return evaluation but no stability control and unreported cost, so it is unmeasured by its own protocol. Borrow conservatism wherever logs replace environments, but re-measure with the data-collection story attached.
+
+
+#### Dream to Control: Learning Behaviors by Latent Imagination
+*dreamer-2020* — D. Hafner et al., ICLR, 2020 · 2020 · paper. https://arxiv.org/search/?query=Dream+to+Control+Hafner+latent+imagination&searchtype=all
+**What it does.** Learn a world model from pixels, then learn the policy purely by imagining trajectories inside it.
+**Mechanism.** Latent state-space world model; actor-critic trained on imagined rollouts, not environment steps.
+**Alignment.** family=model-based · signal=reward · policy=deep-net · exploration=intrinsic · stability=none · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `model-based`, `actor-critic` **Catalog patterns.** `evaluator-optimizer`, `simulation-twin`
+**Links.** Self-learning: — · RL builds-on: `dqn-2015`, `muzero-2020`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Model-based planning: plan inside a learned model; re-measure error compounding before trusting imagination.
+**Researcher note.** Dream to Control contributes behaviour learned purely by latent imagination: a world model from pixels, then an actor-critic trained on dreams rather than steps. Its alignment row reads model-based family with return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow imagination-based training for sample efficiency, but re-measure the sim-to-real gap the world model introduces.
+
+
+#### Mastering Atari, Go, Chess and Shogi by Planning with a Learned Model
+*muzero-2020* — J. Schrittwieser et al., Nature, 2020 · 2020 · paper. https://arxiv.org/abs/1911.08265
+**What it does.** Plan without knowing the rules: learn a latent dynamics model and search inside it.
+**Mechanism.** Representation, dynamics and prediction networks trained end-to-end; MCTS over learned latent states.
+**Alignment.** family=model-based · signal=reward · policy=deep-net · exploration=intrinsic · stability=none · evaluation=winrate · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `model-based`, `verifier-feedback` **Catalog patterns.** `evaluator-optimizer`, `simulation-twin`
+**Links.** Self-learning: — · RL builds-on: `alphago-2016`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Model-based planning: plan inside a learned model; re-measure error compounding before trusting imagination.
+**Researcher note.** MuZero contributes planning without known rules: learn representation, dynamics and prediction end to end, then search inside latent states. Its alignment row reads model-based family with winrate evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow latent planning where the rules are unavailable, but re-measure model error compounding before trusting imagined rollouts.
+
+
+#### Decision Transformer: RL via Sequence Modeling
+*decision-transformer-2021* — L. Chen et al., NeurIPS, 2021 · 2021 · paper. https://arxiv.org/abs/2106.01345
+**What it does.** Treat RL as next-token prediction conditioned on desired return: the transformer is the policy.
+**Mechanism.** Offline trajectories as return-state-action sequences; condition on return-to-go at inference.
+**Alignment.** family=offline · signal=reward · policy=deep-net · exploration=none · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `offline-rl`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `cql-2020`
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Offline discipline: conservatism and in-sample values; demand the data-collection story with the number.
+**Researcher note.** Decision Transformer contributes RL as next-token prediction conditioned on desired return: the transformer is the policy. Its alignment row reads offline family with return evaluation but no stability control and unreported cost, so it is unmeasured by its own protocol. Borrow return-conditioning as a modelling trick, but re-measure stitching and generalisation rather than treating sequence loss as control.
+
+
+#### Constitutional AI: Harmlessness from AI Feedback
+*constitutional-2022* — Y. Bai et al., arXiv, 2022 · 2022 · paper. https://arxiv.org/abs/2212.08073
+**What it does.** Replace most human labels with model self-critique against a written constitution: supervision scales without proportional labelling.
+**Mechanism.** Supervised critique-revision, then preference modelling on AI-ranked pairs, then RL — RLAIF.
+**Alignment.** family=preference · signal=human-preference · policy=llm-finetune · exploration=entropy-bonus · stability=kl-penalty · evaluation=winrate · cost=tokens · scope=single.
+**Verdict: measured on two gates** — because no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `rlhf`, `preference-rl` **Catalog patterns.** `self-critique`, `evaluator-optimizer`, `llm-judge`
+**Links.** Self-learning: `self-refine` · RL builds-on: `instructgpt-2022`
+**Lab reading.** Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim. Preference recipes: learned rewards with anchors; audit whose preferences and what the anchor cost.
+**Researcher note.** Constitutional AI contributes supervision that scales without proportional labelling: model self-critique against a written constitution, then preference modelling on AI-ranked pairs. Its alignment row reads preference family on human-preference signal with a KL-penalty control and winrate evaluation priced in tokens, so it is measured on two gates. Borrow AI feedback for scale, but re-measure constitution coverage and judge consistency yourself.
+
+
+#### Training Language Models to Follow Instructions with Human Feedback
+*instructgpt-2022* — L. Ouyang et al., NeurIPS, 2022 · 2022 · paper. https://arxiv.org/abs/2203.02155
+**What it does.** Supervise, rank, reinforce: the three-stage RLHF recipe that made assistants follow instructions.
+**Mechanism.** SFT, then preference reward model, then PPO with a KL anchor to the supervised policy.
+**Alignment.** family=preference · signal=human-preference · policy=llm-finetune · exploration=entropy-bonus · stability=kl-penalty · evaluation=winrate · cost=both · scope=single.
+**Verdict: measured on two gates** — because no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `rlhf`, `preference-rl`, `trust-region` **Catalog patterns.** `evaluator-optimizer`, `llm-judge`, `chain-of-verification`
+**Links.** Self-learning: `llm-agent-survey` · RL builds-on: `ppo-2017`, `rlhp-christiano-2017`
+**Lab reading.** Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim. Preference recipes: learned rewards with anchors; audit whose preferences and what the anchor cost.
+**Researcher note.** InstructGPT contributes the three-stage RLHF recipe that made assistants follow instructions: supervise, rank, reinforce with a KL anchor. Its alignment row reads preference family on human-preference signal with a KL-penalty control and winrate evaluation priced in both steps and tokens, so it is measured on two gates. Borrow the anchor as the stability control of the LLM era, but re-measure whose preferences the reward encodes.
+
+
+#### Offline Reinforcement Learning with Implicit Q-Learning
+*iql-2022* — I. Kostrikov et al., ICLR, 2023 · 2022 · paper. https://arxiv.org/abs/2110.06169
+**What it does.** Never ask what unseen actions are worth: fit values with expectile regression on in-sample actions only.
+**Mechanism.** Implicit Q-learning via expectiles; policy extraction by advantage-weighted regression, no OOD queries.
+**Alignment.** family=offline · signal=reward · policy=deep-net · exploration=none · stability=none · evaluation=return · cost=unreported · scope=single.
+**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `offline-rl`, `value-methods` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `cql-2020`
+**Lab reading.** No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents. Offline discipline: conservatism and in-sample values; demand the data-collection story with the number.
+**Researcher note.** Implicit Q-learning contributes values fitted without ever asking what unseen actions are worth, via expectile regression and advantage-weighted extraction. Its alignment row reads offline family with return evaluation but no stability control and unreported cost, so it is unmeasured by its own protocol. Borrow in-sample learning as the cleaner offline habit, but re-measure coverage limits of the log you learn from.
+
+
+#### Direct Preference Optimization
+*dpo-2023* — R. Rafailov et al., NeurIPS, 2023 · 2023 · paper. https://arxiv.org/abs/2305.18290
+**What it does.** Skip the reward model: the optimal-policy equation turns pairwise preferences directly into a classification loss.
+**Mechanism.** Closed-form reward reparameterisation; supervised-style loss with a reference-policy KL term.
+**Alignment.** family=preference · signal=human-preference · policy=llm-finetune · exploration=none · stability=kl-penalty · evaluation=winrate · cost=tokens · scope=single.
+**Verdict: measured on two gates** — because no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `rlhf`, `preference-rl` **Catalog patterns.** `evaluator-optimizer`
+**Links.** Self-learning: — · RL builds-on: `instructgpt-2022`, `rlhp-christiano-2017`
+**Lab reading.** Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim. Preference recipes: learned rewards with anchors; audit whose preferences and what the anchor cost.
+**Researcher note.** Direct preference optimisation contributes preference learning without a reward model: the optimal-policy equation turns pairs into a classification loss with a reference-policy term. Its alignment row reads preference family on human-preference signal with a KL-penalty control and winrate evaluation priced in tokens, so it is measured on two gates. Borrow it as the simpler stable alternative to PPO pipelines, but re-measure reference dependence and distribution shift.
+
+
+#### Generative Agents: Interactive Simulacra of Human Behavior
+*generative-agents-2023* — J. Park et al., UIST, 2023 · 2023 · paper. https://arxiv.org/abs/2304.03442
+**What it does.** Memory stream plus reflection plus retrieval: believable multi-agent days with no weight updates at all.
+**Mechanism.** Observation memory with recency-importance-relevance retrieval and periodic natural-language reflection.
+**Alignment.** family=verbal · signal=none · policy=llm-prompt · exploration=none · stability=none · evaluation=unknown · cost=tokens · scope=multi.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `experience-evolution`, `continual-learning` **Catalog patterns.** `episodic-memory`, `reflexion`, `long-term-vector-memory`
+**Links.** Self-learning: `generative-agents`, `g-memory` · RL builds-on: `reflexion-2023`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Verbal mechanisms: reflection, skills, prose evolution; fence per family and re-measure forgetting.
+**Researcher note.** Generative Agents contribute a memory stream with recency and relevance retrieval plus periodic reflection, producing believable multi-agent days with no weight updates. Its alignment row reads verbal family with no learning signal, unknown evaluation and token cost reported but no stability control, so it is measured on one gate. Borrow the stream-plus-reflection continuity design, but re-measure whether reflections help later tasks rather than merely enriching them.
+
+
+#### Reflexion: Language Agents with Verbal Reinforcement Learning
+*reflexion-2023* — N. Shinn, F. Cassano, E. Gopinath, K. Narasimhan, S. Yao, NeurIPS, 2023 · 2023 · paper. https://arxiv.org/abs/2303.11366
+**What it does.** The RL update is prose: reflect on failure in words, store the reflection, condition on it next episode.
+**Mechanism.** Actor-evaluator-self-reflection loop with episodic verbal memory; binary or scalar task reward gates what is kept.
+**Alignment.** family=verbal · signal=language-feedback · policy=llm-prompt · exploration=prompt-perturbation · stability=none · evaluation=holdout · cost=tokens · scope=single.
+**Verdict: measured on two gates** — because no stability control — one update may destroy earlier ones.
+**Concepts.** `verifier-feedback`, `credit-assignment`, `experience-evolution` **Catalog patterns.** `reflexion`, `episodic-memory`, `evaluator-optimizer`
+**Links.** Self-learning: `reflexion`, `self-refine`, `expel` · RL builds-on: `rlhp-christiano-2017`, `deepseek-r1-2025`
+**Lab reading.** Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim. Verbal mechanisms: reflection, skills, prose evolution; fence per family and re-measure forgetting.
+**Researcher note.** Reflexion contributes the RL update as prose: reflect on failure in words, store the reflection, condition on it next episode. Its alignment row reads verbal family on language feedback with holdout evaluation and token cost reported but no stability control, so it is measured on two gates. Borrow the actor-evaluator-reflection loop, but re-measure cross-task interference and fence reflections per family.
+
+
+#### Voyager: An Open-Ended Embodied Agent with Large Language Models
+*voyager-2023* — G. Wang et al., arXiv, 2023 · 2023 · paper. https://arxiv.org/abs/2305.16291
+**What it does.** A growing skill library plus self-verified curriculum: lifelong learning in Minecraft with no weight updates.
+**Mechanism.** Automatic curriculum, code-skill generation, self-verification gate before library admission.
+**Alignment.** family=verbal · signal=verifier · policy=llm-prompt · exploration=prompt-perturbation · stability=none · evaluation=return · cost=tokens · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `experience-evolution`, `verifier-feedback`, `continual-learning` **Catalog patterns.** `skill-library`, `evaluator-optimizer`, `chain-of-verification`
+**Links.** Self-learning: `voyager`, `godel-agent` · RL builds-on: `reflexion-2023`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Verbal mechanisms: reflection, skills, prose evolution; fence per family and re-measure forgetting.
+**Researcher note.** Voyager contributes lifelong learning with no weight updates: automatic curriculum, code-skill generation and a self-verification admission gate. Its alignment row reads verbal family on verifier signal with return evaluation and token cost reported but no stability control, so it is measured on one gate. Borrow the verify-before-admit gate for every library you grow, but re-measure open-ended drift and skill staleness.
+
+
+#### A-MEM: Agentic Memory for LLM Agents
+*a-mem-2025* — A-MEM authors, arXiv, 2025 · 2025 · paper. https://arxiv.org/abs/2502.12110
+**What it does.** Memory with structure and operators: link notes, evolve them with RL-trained management, forget on principle.
+**Mechanism.** Zettelkasten-style note graph with learned link, merge and evict operators.
+**Alignment.** family=memory-policy · signal=binary-success · policy=memory-operators · exploration=prompt-perturbation · stability=ttl-decay · evaluation=holdout · cost=tokens · scope=single.
+**Verdict: measured and priced** — it closes all three gates: a stability control, a holdout or banded evaluation, and a reported cost.
+**Concepts.** `memory-policy-learning`, `continual-learning` **Catalog patterns.** `memory-consolidation`, `semantic-memory-kg`, `forgetting-decay`
+**Links.** Self-learning: `a-mem`, `meminsight`, `memoryos` · RL builds-on: `memrl-2026`
+**Lab reading.** Closes all three gates — quote its claims, then still re-test the mechanism on your own stream before promoting them to practice. Memory-policy designs — the family this lab extends, so compare evolver-to-evolver on bands.
+**Researcher note.** A-MEM contributes agentic memory as a note graph with learned link, merge and evict operators and principled forgetting. Its alignment row reads memory-policy family on binary success with TTL-decay control, holdout evaluation and token cost reported, so it is measured and priced. Borrow the link-and-evict operators and the eviction discipline, but re-measure retrieval precision and retention on your own stream.
+
+
+#### Continual Learning, Not Training: Online Adaptation For Agents
+*atlas-2025* — Atlas authors, arXiv, 2025 · 2025 · paper. https://arxiv.org/abs/2511.01093
+**What it does.** Online adaptation under drift with per-boundary accounting: the continual-RL framing the lab's streams test.
+**Mechanism.** Experience replay plus scoped consolidation measured with interference and forgetting metrics.
+**Alignment.** family=memory-policy · signal=binary-success · policy=memory-operators · exploration=prompt-perturbation · stability=scope-fence · evaluation=banded · cost=tokens · scope=single.
+**Verdict: measured and priced** — it closes all three gates: a stability control, a holdout or banded evaluation, and a reported cost.
+**Concepts.** `continual-learning`, `experience-evolution`, `memory-policy-learning` **Catalog patterns.** `memory-consolidation`, `drift-monitoring`, `forgetting-decay`
+**Links.** Self-learning: `atlas`, `self-evolving-continual-learners` · RL builds-on: `cql-2020`, `memrl-2026`
+**Lab reading.** Closes all three gates — quote its claims, then still re-test the mechanism on your own stream before promoting them to practice. Memory-policy designs — the family this lab extends, so compare evolver-to-evolver on bands.
+**Researcher note.** ATLAS contributes online adaptation at inference time through a teacher-student pair with persistent distilled memory, framed as continual rather than training. Its alignment row reads memory-policy family on binary success with a scope-fence control, banded evaluation and token cost reported, so it is measured and priced. Borrow the distilled-guidance design and its continual framing, but re-measure full cross-stream forgetting before claiming the label.
+
+
+#### DeepSeek-R1: Incentivizing Reasoning Capability in LLMs via RL
+*deepseek-r1-2025* — DeepSeek-AI, arXiv, 2025 · 2025 · paper. https://arxiv.org/abs/2501.12948
+**What it does.** Pure RL on verifiable rewards lets long reasoning chains emerge with no supervised reasoning traces — then distil them.
+**Mechanism.** GRPO on rule-checked outcomes (math, code); cold-start SFT plus rejection-sampled RL for the released model.
+**Alignment.** family=preference · signal=verifier · policy=llm-finetune · exploration=entropy-bonus · stability=clipping · evaluation=holdout · cost=tokens · scope=single.
+**Verdict: measured and priced** — it closes all three gates: a stability control, a holdout or banded evaluation, and a reported cost.
+**Concepts.** `rlvr`, `verifier-feedback`, `trust-region`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`, `chain-of-verification`, `self-consistency`
+**Links.** Self-learning: `self-evolving-continual-learners`, `swe-bench` · RL builds-on: `ppo-2017`, `instructgpt-2022`, `dpo-2023`
+**Lab reading.** Closes all three gates — quote its claims, then still re-test the mechanism on your own stream before promoting them to practice. Preference recipes: learned rewards with anchors; audit whose preferences and what the anchor cost.
+**Researcher note.** DeepSeek-R1 contributes pure RL on verifiable rewards that lets long reasoning chains emerge with no supervised reasoning traces, then distils them. Its alignment row reads preference family on verifier signal with a clipping control, holdout evaluation and token cost reported, so it is measured and priced. Borrow verifiable rewards as the honest signal, but re-measure generalisation beyond checkable domains before calling it reasoning.
+
+
+#### GEPA: Reflective Prompt Evolution Can Outperform Reinforcement Learning
+*gepa-2025* — L. Agrawal et al., arXiv, 2025 · 2025 · paper. https://arxiv.org/search/?query=GEPA+reflective+prompt+evolution&searchtype=all
+**What it does.** Reflect on failures in natural language and propose program edits: prose optimisation that beats RL on sample efficiency.
+**Mechanism.** Genealogy of candidate programs; failure reflection proposes mutations, evaluation keeps the winners.
+**Alignment.** family=verbal · signal=language-feedback · policy=llm-prompt · exploration=prompt-perturbation · stability=none · evaluation=holdout · cost=tokens · scope=single.
+**Verdict: measured on two gates** — because no stability control — one update may destroy earlier ones.
+**Concepts.** `verifier-feedback`, `credit-assignment`, `continual-learning` **Catalog patterns.** `reflexion`, `evaluator-optimizer`, `self-consistency`
+**Links.** Self-learning: `dspy`, `agent-workflow-memory` · RL builds-on: `reflexion-2023`, `dpo-2023`
+**Lab reading.** Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim. Verbal mechanisms: reflection, skills, prose evolution; fence per family and re-measure forgetting.
+**Researcher note.** GEPA contributes prose optimisation that beats RL on sample efficiency: reflect on failures in natural language and propose program edits, keeping evaluated winners. Its alignment row reads verbal family on language feedback with holdout evaluation and token cost reported but no stability control, so it is measured on two gates. Borrow reflection-driven mutation for prompt programs, but re-measure cross-block forgetting since a shared program is a shared fate.
+
+
+#### ReasoningBank: Scaling Agent Self-Evolving with Reasoning Memory
+*reasoningbank-2025* — ReasoningBank authors, arXiv, 2025 · 2025 · paper. https://arxiv.org/abs/2509.25140
+**What it does.** A bank of scored reasonings the agent retrieves from and writes back to: memory that compounds across tasks.
+**Mechanism.** Top-k retrieval of past reasonings keyed on task plus workflow; write-back gated on graded success.
+**Alignment.** family=verbal · signal=verifier · policy=llm-prompt · exploration=prompt-perturbation · stability=scope-fence · evaluation=banded · cost=tokens · scope=single.
+**Verdict: measured and priced** — it closes all three gates: a stability control, a holdout or banded evaluation, and a reported cost.
+**Concepts.** `experience-evolution`, `verifier-feedback`, `continual-learning` **Catalog patterns.** `long-term-vector-memory`, `memory-consolidation`, `scratchpad-external`
+**Links.** Self-learning: `reasoningbank`, `mem0`, `atlas` · RL builds-on: `reflexion-2023`, `memrl-2026`
+**Lab reading.** Closes all three gates — quote its claims, then still re-test the mechanism on your own stream before promoting them to practice. Verbal mechanisms: reflection, skills, prose evolution; fence per family and re-measure forgetting.
+**Researcher note.** ReasoningBank contributes a bank of scored reasonings retrieved and written back across tasks: memory that compounds. Its alignment row reads verbal family on verifier signal with a scope-fence control, banded evaluation and token cost reported, so it is measured and priced. Borrow the distil-and-retrieve repertoire with its fence, but re-measure growth, cost and interference as the bank fills.
+
+
+#### MemRL: Self-Evolving Agents via Runtime Reinforcement Learning on Episodic Memory
+*memrl-2026* — MemRL authors, arXiv, 2026 · 2026 · paper. https://arxiv.org/abs/2601.03192
+**What it does.** Run RL at runtime on the memory operators themselves: what to store, retrieve and discard is a learned policy.
+**Mechanism.** Runtime RL over episodic-memory actions with task-success reward; the lab's reference bands calibrate it.
+**Alignment.** family=memory-policy · signal=binary-success · policy=memory-operators · exploration=prompt-perturbation · stability=ttl-decay · evaluation=banded · cost=tokens · scope=single.
+**Verdict: measured and priced** — it closes all three gates: a stability control, a holdout or banded evaluation, and a reported cost.
+**Concepts.** `memory-policy-learning`, `experience-evolution`, `continual-learning`, `credit-assignment` **Catalog patterns.** `memory-consolidation`, `forgetting-decay`, `evaluator-optimizer`
+**Links.** Self-learning: `memrl`, `reasoningbank`, `a-mem` · RL builds-on: `ppo-2017`, `reflexion-2023`
+**Lab reading.** Closes all three gates — quote its claims, then still re-test the mechanism on your own stream before promoting them to practice. Memory-policy designs — the family this lab extends, so compare evolver-to-evolver on bands.
+**Researcher note.** MemRL contributes RL at runtime on the memory operators themselves: store, link, summarise and discard become a learned policy under task-success reward. Its alignment row reads memory-policy family on binary success with TTL-decay control, banded evaluation and token cost reported, so it is measured and priced. Borrow the learned-operator framing as the sharpest instance of memory policy, but re-measure long-stream stability and ledger cost.
+
+
+### Benchmarks (1)
+**Council deliberation.**
+
+- **Evaluation methodologist:** Benchmarks supply the disjoint holdout almost by construction, yet nearly all of them score fixed tasks with no degradation axis. That makes them necessary but insufficient for continual-learning claims: they can falsify a capability statement on unseen instances, but they cannot falsify a learning statement without a stream wrapped around them. Use GAIA, SWE-bench, LoCoMo and their successors as probes, then add the stream yourself.
+- **Memory-systems researcher:** Memory benchmarks grade recall over long histories, which operators easily misread as learning. A high long-memory score says the retrieval layer found the right fact, not that the repertoire improved without corrupting neighbours. Borrow benchmarks for apples-to-apples retrieval comparisons, but measure intake incrementally with forgetting and cost ledgers before claiming the memory learns.
+
+#### SWE-bench: Can Language Models Resolve Real-World GitHub Issues?
+*swe-bench-2024* — C. Jimenez et al., ICLR, 2024 · 2024 · benchmark. https://arxiv.org/abs/2310.06770
+**What it does.** Real GitHub issues with hidden tests: the agentic-coding reward that RLVR pipelines optimise against.
+**Mechanism.** Instance-level fail-to-pass plus pass-to-pass tests; resolved-rate as the binary task reward.
+**Alignment.** family=unknown · signal=verifier · policy=unknown · exploration=unknown · stability=none · evaluation=holdout · cost=unreported · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and unreported cost — the win cannot be budgeted into a gate.
+**Concepts.** `verifier-feedback` **Catalog patterns.** `eval-harness-redteam`, `evaluator-optimizer`
+**Links.** Self-learning: `swe-bench`, `swe-agent` · RL builds-on: `deepseek-r1-2025`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Context for the field (a benchmark, an environment, or an argument), not a learning result.
+**Researcher note.** SWE-bench contributes real GitHub issues with hidden fail-to-pass tests as the agentic-coding reward that RLVR pipelines optimise against. Its alignment row reads unknown family on verifier signal with holdout evaluation but unreported cost and no stability control, so it is measured on one gate. Borrow it as the held-out coding probe both graphs grade on, but re-measure stream-level forgetting with checkpoints yourself.
+
+
+### Frameworks (1)
+**Council deliberation.**
+
+- **Continual-learning researcher:** Frameworks ship the harness in which learning would have to happen: graphs, checkpointers, flows, sessions and guardrails. Their alignment rows therefore read workflow surfaces with partial isolation and no degradation measurement, which is honest infrastructure rather than evidence. Adopt a framework for durable state and composition, but do not inherit a learning claim from it; the stream protocol and the admission gate still need building.
+- **Safety researcher:** The framework layer is where controls live or die: checkpointers enable rollback, guardrails enable deterministic checks, and stores decide what persists across threads. None of that proves the agent improves safely, because frameworks are graded without holdouts or forgetting measures. Borrow the control points for canary and rollback design, and re-measure every memory or training hook under drift.
+
+#### Gymnasium: The Maintained RL Environment API
+*gymnasium-envs* — Farama Foundation, Open source, 2023 · 2023 · framework. https://gymnasium.farama.org/
+**What it does.** The standard reset-step loop every RL result runs on: environments as versioned, reproducible harnesses.
+**Mechanism.** Env API plus vectorised wrappers and seeding discipline; the harness half of every RL claim.
+**Alignment.** family=unknown · signal=reward · policy=unknown · exploration=unknown · stability=none · evaluation=return · cost=env-steps · scope=single.
+**Verdict: measured on one gate** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation.
+**Concepts.** `mdp` **Catalog patterns.** `eval-harness-redteam`, `sandbox-execution`, `audit-trail`
+**Links.** Self-learning: `self-evolving-continual-learners` · RL builds-on: `dqn-2015`, `ppo-2017`
+**Lab reading.** One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself. Context for the field (a benchmark, an environment, or an argument), not a learning result.
+**Researcher note.** Gymnasium contributes the maintained environment API every RL result runs on: reset-step loops as versioned reproducible harnesses. Its alignment row reads unknown family on reward signal with return evaluation priced in environment steps but no stability control, so it is measured on one gate. Borrow the seeding and versioning discipline for every harness you build, but re-measure learning separately since environments grade nothing by themselves.
+
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** Read the works table as three eras with a bridge, not as a ranking. The tabular foundations are unmeasured on every gate and load-bearing anyway — Bellman recursion, temporal differences, Q-learning, REINFORCE are the mathematics everything else stands on, borrowable as priors and citable as nothing about agents. The deep-RL middle measures return and prices environment steps but carries almost no stability control and no holdout discipline, which is why its numbers describe game competence, not continual learning. The preference era adds the KL anchor and the verifier, and only at the far end — reasoning RL, verbal reflection, memory-policy operators — do holdouts and bands appear beside reported cost.
+- **Memory-systems researcher:** The bridge works are the ones this lab extends, and they should be read evolver-to-evolver rather than as isolated triumphs. Reflexion's prose update against the lab's GEPA evolver, Voyager's verified skill admission against the lab's lesson write path, ReasoningBank's scored retrieval against the lab's reasoning bank, MemRL's runtime memory operators against the scoped evolver — each pair shares a mechanism and differs in fencing, and the bands price the difference. That is the correct use of a landscape: not to admire the pile, but to find the nearest neighbour of your own mechanism and ask what fence it lacks.
+- **Evaluation methodologist:** The verdict column exists so the table can be used in a meeting, and its rule is deliberately coarse: a stability control, a holdout or banded evaluation, a reported cost — three gates, counted, never averaged into a score. Works that close all three are the only ones whose claims travel without re-measurement; works that close none are context, however famous. The middle is where judgment lives: a benchmark with a holdout but no cost is a probe awaiting a ledger, a deep-RL result with priced steps but no stability control is competence without a forgetting meter. Quote the tier, not the title.
+- **Safety researcher:** My dissent is with the fame gradient: the most-cited rows are the least gated, and teams borrow authority along with mechanism. Nobody re-derives Bellman, but everybody re-cites game scores as though return curves transfer across substrates, tasks and decades. The per-work reading answers in one line — what to borrow, what to re-measure — and the re-measure half is the load-bearing half. Borrow the trust region, re-measure the forgetting; borrow the verifier, re-price the cost; borrow the skill library, re-build the admission gate.
+
+**Council reading.**
+
+- **Red team:** Fame concentrates where gates are open: the most-cited rows close the fewest, and teams borrow authority with mechanism. The per-work reading answers in one line — borrow this, re-measure that — and the re-measure half is load-bearing.
+- **Blue team:** Run every RL import through the three gates before it enters your reasoning: stability control, holdout or bands, reported cost. A benchmark with a holdout but no ledger is a probe awaiting prices; a return curve with priced steps but no stability control is competence without a forgetting meter.
+- **Operator:** Use the verdict tier live in meetings: measured-and-priced travels, two gates travel with the missing gate named, one gate is directional, unmeasured is mathematics. Anyone quoting a title without its tier is selling, not citing.
+
+## Chapter 23: Five concepts, two graphs
+
+| Shared concept | RL gloss |
+|---|---|
+| credit-assignment | Deciding which part of a long trajectory deserves credit. |
+| memory-policy-learning | The agent learns how to manage memory - what to store, retrieve, update or discard - not just what to remember. A-MEM's RL-trained memory operators and MemRL's runtime RL are the first instances. |
+| experience-evolution | Forward learning from the experience stream itself: each interaction updates the reusable repertoire (reasoning memory, latent memory, skill set) rather than only the current answer. |
+| continual-learning | Learning over a stream that keeps changing, with interference and forgetting as the cost. |
+| verifier-feedback | A checker, grader or environment decides success, and only success is learned from. |
+
+Five concepts carry identical identifiers in both graphs, so they carry shared obligations: credit assignment, memory-policy learning, experience evolution, continual learning and verifier feedback must mean one thing on both sides, or the interlink is decoration. The bridge works below are readable from either side — a verbal mechanism to the lab, a policy result to RL — and following those edges is how hidden assumptions surface.
+
+| RL work | Self-learning links |
+|---|---|
+| a-mem-2025 | `a-mem`, `meminsight`, `memoryos` |
+| memrl-2026 | `memrl`, `reasoningbank`, `a-mem` |
+| reasoningbank-2025 | `reasoningbank`, `mem0`, `atlas` |
+| reflexion-2023 | `reflexion`, `self-refine`, `expel` |
+| atlas-2025 | `atlas`, `self-evolving-continual-learners` |
+| deepseek-r1-2025 | `self-evolving-continual-learners`, `swe-bench` |
+| generative-agents-2023 | `generative-agents`, `g-memory` |
+| gepa-2025 | `dspy`, `agent-workflow-memory` |
+| swe-bench-2024 | `swe-bench`, `swe-agent` |
+| voyager-2023 | `voyager`, `godel-agent` |
+| constitutional-2022 | `self-refine` |
+| gymnasium-envs | `self-evolving-continual-learners` |
+| instructgpt-2022 | `llm-agent-survey` |
+
+13 of the 35 RL works link explicitly into the lab's landscape, and every lab work they touch lists the RL citer back — the interlink reads both ways. Read each pair, not each paper: the mechanism tells you what it does, the lab-side failure scenario tells you what it does to you.
+
+```mermaid
+flowchart LR
+  subgraph RLG2["RL graph"]
+    R1["reflexion-2023"]
+    R2["memrl-2026"]
+    R3["deepseek-r1-2025"]
+  end
+  subgraph HUBS["shared concepts"]
+    H1["credit-assignment"]
+    H2["memory-policy-learning"]
+    H3["verifier-feedback"]
+  end
+  subgraph SLL2["self-learning graph"]
+    S1["sl:reflexion"]
+    S2["sl:memrl"]
+    S3["sl:swe-bench"]
+  end
+  R1 -.-> S1
+  R2 -.-> S2
+  R3 -.-> S3
+  R1 -.- H1
+  R2 -.- H2
+  R3 -.- H3
+  S1 -.- H1
+  S2 -.- H2
+  S3 -.- H3
+```
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** Five concepts carry the same identifier in both graphs, and shared identifiers are shared obligations. Credit assignment, memory-policy learning, experience evolution, continual learning and verifier feedback mean one thing in the RL graph and must mean the same thing in the lab, or the interlink is decoration. The bridge works — Reflexion, Voyager, MemRL, A-MEM, ReasoningBank and their neighbours — are where the obligation is tested: each one is readable from either side, a verbal mechanism to the lab and a policy result to RL. Follow those edges when a claim feels too comfortable in one vocabulary; translation is where hidden assumptions surface.
+- **Memory-systems researcher:** The memory-policy concept is the genuine joint, not merely a shared label. In RL it names the newest family — operators over a store, learned by reward. In the lab it names the scoped evolver, the TTL control, the reasoning bank with provenance. Same mathematics of what to keep and what to discard, argued once in gradients and once in language. Operators who understand eviction as a learned decision rather than a cache setting will design better stores in both substrates, because the failure is identical: whatever the policy refuses to forget becomes the attacker's foothold.
+- **Evaluation methodologist:** The verifier concept guards the joint, because both graphs grade on success and success is gameable in both. Binary task reward in the lab and rule-checked outcomes in reasoning RL share the same virtue — coarseness that resists style gaming — and the same limit, which is that shallow heuristics can clear any fixed bar. Cross-check verdicts across the graphs: a mechanism that survives the lab's holdouts and the RL graph's bands has passed two independent examinations, while one that shines in exactly one vocabulary should be re-tested in the other before it is trusted.
+- **Safety researcher:** Interlinks cut both ways, and the honest chapter admits the reverse direction: poison travels shared concepts faster than insight. A planted reasoning compounds in a bank the same way a hacked reward compounds in a policy — experience evolution does not distinguish teacher from attacker. That is why every bridge work in this part carries its lab-side failure scenario beside its RL-side mechanism: Reflexion beside prompt self-editing, the memory bank beside memory poisoning, the skill library beside fleet runaway. Read the pair, not the paper; the mechanism tells you what it does, the scenario tells you what it does to you.
+
+**Council reading.**
+
+- **Red team:** Interlinks carry poison faster than insight: a planted reasoning compounds in a bank the way a hacked reward compounds in a policy, and shared concepts do not distinguish teacher from attacker. Audit the bridge works against their lab-side failure scenarios, not their abstracts.
+- **Blue team:** Cross-check verdicts across graphs before trusting either: a mechanism that survives the lab's holdouts and the RL graph's bands has passed two independent examinations. Shining in exactly one vocabulary means re-test in the other.
+- **Operator:** Keep the five shared glosses identical in both graphs — same id, same meaning — and fail any edit that forks them. A forked concept is two teams arguing about words while believing they argue about evidence.
+
+## Chapter 24: Reading trails and the collectors that tend them
+
+| Trail | Scope | Works |
+|---|---|---|
+| RL foundations trail | rl | `rl:bellman-1957`, `rl:sutton-td-1988`, `rl:watkins-q-1992`, `rl:williams-reinforce-1992`, `rl:sutton-barto-book`, `rl:concrete-problems-2016` |
+| Deep RL trail | rl | `rl:dqn-2015`, `rl:a3c-2016`, `rl:trpo-2015`, `rl:ppo-2017`, `rl:rainbow-2017`, `rl:sac-2018`, `rl:td3-2018`, `rl:alphago-2016`, `rl:muzero-2020`, `rl:dreamer-2020`, `rl:es-2017` |
+| Offline RL trail | rl | `rl:cql-2020`, `rl:iql-2022`, `rl:decision-transformer-2021` |
+| LLM RL trail (RLHF to RLVR) | both | `rl:rlhp-christiano-2017`, `rl:instructgpt-2022`, `rl:constitutional-2022`, `rl:dpo-2023`, `rl:deepseek-r1-2025`, `sl:self-evolving-continual-learners` |
+| Memory-policy RL trail | both | `rl:memrl-2026`, `rl:a-mem-2025`, `rl:reasoningbank-2025`, `sl:memrl`, `sl:a-mem`, `sl:reasoningbank`, `sl:atlas` |
+| Verbal RL trail | both | `rl:reflexion-2023`, `rl:voyager-2023`, `rl:gepa-2025`, `sl:reflexion`, `sl:voyager`, `sl:dspy`, `sl:expel` |
+| Evaluation discipline trail | both | `rl:swe-bench-2024`, `rl:gymnasium-envs`, `rl:atlas-2025`, `sl:swe-bench`, `sl:gaia`, `sl:longmemeval`, `sl:self-evolving-continual-learners` |
+
+Seven trails order the two graphs' works into walks with destinations: foundations, deep RL, offline, the LLM arc from preferences to verifiers, the verbal and memory-policy trails where the lab lives, and evaluation last — the gate every other trail must pass. Walk them in order; each trail reframes the last, and that reframing is the curation.
+
+| Collector | Command | Flow |
+|---|---|---|
+| Self-learning snapshot sync | python3 tools/collect_research.py sync-sl | ../self-learning-agents/reference/landscape.json → data/sl_landscape.json |
+| arXiv RL watch | python3 tools/collect_research.py fetch-arxiv --query <q> [--apply] | arXiv API (export.arxiv.org) → exports/research_inbox.json |
+| Graph integrity gate | python3 tools/collect_research.py validate | data/rl_landscape.json; data/sl_landscape.json; data/research_collectors.json; data/patterns.json → exit status + report (also enforced by npm test) |
+
+Three collectors tend the graphs and none of them writes silently: the snapshot sync copies bytes, the arXiv watch stages an inbox, the validator fails loudly on any dangling reference. Drafts enter flagged and stay flagged until a human replaces the staged summary with a read one — a landscape, not a landfill, kept quarterly.
+
+```mermaid
+flowchart LR
+  SYNC["sl-vendor-sync<br>byte copy, no-op if equal"] --> VAL["graph-validate<br>exit 1 on dangling ref"]
+  ARX["arxiv-rl-watch<br>stages inbox only"] --> INBOX["exports/research_inbox.json<br>triage queue"]
+  INBOX -->|"human edit + --apply<br>needs_review=true"| RLG["data/rl_landscape.json"]
+  RLG --> VAL
+  VAL --> CI["npm test · CI gate"]
+```
+
+```mermaid
+flowchart LR
+  DATA["rsGData: filtered works<br>+ toggled edges"] --> LAY["rsGLayout: deterministic<br>force layout, 140 iters"]
+  LAY --> SVG["rsGSvg: one SVG<br>nodes + edge lines"]
+  SVG --> PZ["rsGPaint: pan/zoom<br>transform-only updates"]
+  SVG --> CL["rsGNode: click paints<br>detail div only"]
+  PZ --> SVG
+```
+
+**Council deliberation.**
+
+- **Continual-learning researcher:** Seven trails order the eighty-six works into walks with different destinations, and the ordering is the curation. Foundations first, because no RL opinion is licensed without Bellman, TD, Q-learning and REINFORCE; deep RL second, because optimizers and stability controls are the vocabulary; offline third, because fixed logs are the counterfactual discipline; then the LLM arc from preferences through verifiers to reasoning chains; then the verbal and memory-policy trails where the lab lives; evaluation last, because it is the gate every other trail must pass. Walk them in order and each trail reframes the last — that reframing is the point, not the coverage count.
+- **Memory-systems researcher:** The memory-policy trail is the one I would walk twice: A-MEM's operators, MemRL's runtime RL, ReasoningBank's compounding bank on the RL side, their lab twins on the other, Atlas as the continual framing that holds them together. Read each pair as a controlled experiment in substrate — same learning question, weights versus language versus store — and the design lesson emerges on its own: fencing and expiry matter more than the optimizer, in every substrate, every time. The trail is short enough to finish in an afternoon and dense enough to argue about for a quarter.
+- **Evaluation methodologist:** The evaluation trail belongs last and should be walked with a pencil: holdouts, bands, sweeps, benchmarks, the gymnasium harness discipline. Its lesson is that no trail above it proves anything on its own — foundations prove mathematics, deep RL proves competence, preferences prove alignment to sampled judges, verbal methods prove eloquence under grading. Proof of learning arrives only with a stream, a holdout, a forgetting meter and a cost ledger, which is why the collectors end where they begin: stage candidates in the inbox, admit nothing without a human reading the alignment row.
+- **Safety researcher:** The collectors are the only honest answer to a growing pile: snapshot the lab's landscape by bytes, watch arXiv by query, validate every reference by script — and let no machine write to the graphs. The inbox is a triage queue, not a pipeline; drafts enter flagged and stay flagged until a human replaces the staged summary with a read one. That gate is the difference between a landscape and a landfill. Tend it quarterly: re-sync the snapshot, re-run the validator, retire trails whose works stopped being the frontier.
+
+**Council reading.**
+
+- **Red team:** Trails are opinions with nice typography: the ordering flatters the lab's own family by placing memory-policy last like a destination. Walk them backwards at least once — evaluation first — and see which earlier claims survive the gate being open from the start.
+- **Blue team:** Tend the collectors on a schedule, not on enthusiasm: re-sync the snapshot, re-run the validator, retire trails whose frontier moved on. A graph nobody re-validates is a rumour with good type.
+- **Operator:** Assign the inbox a human and a cadence: staged candidates rot into implied endorsement if nobody triages them. Flagged drafts are honest only while someone reads the flag.
+
+---
+
 # Appendix A: Configuration reference
 
 | Setting | Default | Meaning |
@@ -1801,7 +2630,7 @@ A passing sweep proves the harness is wired, not that any agent learns safely. T
 
 This supplement is generated by `tools/build_sl_book.py` from the lab (`app/streams.py`, `app/evolvers.py`, `reference/*.json`, `design/*.md` figures) and this catalog (`data/*.json`). Scenario and evolver inventories are imported from the lab's own modules at build time; the build fails if the sibling checkout is absent, any mapped id leaves either catalog, or any placed figure goes missing — so the next edition cannot silently disagree with the lab it describes.
 
-It carries 18 lab scenarios, 6 evolvers, 21 concepts and 51 verified works, 16 bridge patterns and 14 bridge scenarios, 12 figures rendered by the same vendored Mermaid as the app, and measured bands plus a live calibration in Part III.
+It carries 18 lab scenarios, 6 evolvers, 21 concepts and 51 verified works, 16 bridge patterns and 14 bridge scenarios, 35 RL works with 7 reading trails across 18 concepts on 8 dimensions, 12 placed figures plus hand-authored research figures rendered by the same vendored Mermaid as the app, and measured bands plus a live calibration in Part III.
 
 # Conclusion
 

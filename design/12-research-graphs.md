@@ -93,6 +93,141 @@ flowchart LR
   PZ --> SVG
 ```
 
+## Module view
+
+```mermaid
+flowchart TB
+  subgraph DATAFILES["data files"]
+    SLF["sl_landscape.json<br>vendored snapshot"]
+    RLF["rl_landscape.json<br>curated graph"]
+    COLF["research_collectors.json<br>trails + collectors"]
+  end
+  subgraph TAB["js/research.js"]
+    LISTS["list views<br>filter + cards + detail"]
+    GRAPH["graph view<br>rsGData + rsGLayout + rsGSvg"]
+    TRAILS["trails view<br>walks + collector table"]
+  end
+  subgraph TOOLS["tools + gates"]
+    COLL["collect_research.py<br>validate + sync-sl + fetch-arxiv"]
+    TEST["test/research.test.mjs<br>render + layout gates"]
+  end
+  SLF --> LISTS
+  RLF --> LISTS
+  COLF --> TRAILS
+  SLF --> GRAPH
+  RLF --> GRAPH
+  COLL --> SLF
+  COLL --> RLF
+  COLL --> COLF
+  TEST --> TAB
+```
+
+## Graph data model
+
+```mermaid
+classDiagram
+  class Work {
+    +id
+    +title
+    +kind
+    +summary
+    +mechanism
+    +align
+    +concepts
+    +patterns
+    +sl_links
+    +rl_links
+  }
+  class Concept {
+    +id
+    +label
+    +kind
+    +gloss
+  }
+  class Dimension {
+    +id
+    +label
+    +question
+    +options
+  }
+  class Trail {
+    +id
+    +label
+    +scope
+    +works
+  }
+  class Collector {
+    +id
+    +tool
+    +sources
+    +outputs
+  }
+  Work --> Concept : carries
+  Work --> Dimension : placed on
+  Work --> Work : builds on
+  Trail --> Work : addresses
+  Collector --> Work : tends
+```
+
+## Interlink sketch
+
+```mermaid
+flowchart LR
+  subgraph RLG2["RL graph"]
+    R1["reflexion-2023"]
+    R2["memrl-2026"]
+    R3["deepseek-r1-2025"]
+  end
+  subgraph HUBS["shared concepts"]
+    H1["credit-assignment"]
+    H2["memory-policy-learning"]
+    H3["verifier-feedback"]
+  end
+  subgraph SLL2["self-learning graph"]
+    S1["sl:reflexion"]
+    S2["sl:memrl"]
+    S3["sl:swe-bench"]
+  end
+  R1 -.-> S1
+  R2 -.-> S2
+  R3 -.-> S3
+  R1 -.- H1
+  R2 -.- H2
+  R3 -.- H3
+  S1 -.- H1
+  S2 -.- H2
+  S3 -.- H3
+```
+
+## Reader activity
+
+```mermaid
+flowchart TB
+  START["open Research Graphs"] --> PICK["pick a view<br>list · graph · trails"]
+  PICK --> FILTER["filter by kind + concept<br>search titles + mechanisms"]
+  FILTER --> OPEN["open a work<br>alignment + verdict + note"]
+  OPEN --> JUMP["follow a link<br>sl-node · rl-node · pattern"]
+  JUMP --> TRAIL["walk a trail<br>foundations first, evaluation last"]
+  TRAIL --> KEEP["keep the verdict tier<br>with the title"]
+```
+
+## Cross-graph jump
+
+```mermaid
+sequenceDiagram
+  participant R as Reader
+  participant Tab as Research tab
+  participant RL as RL detail
+  participant SL as SL detail
+  R->>RL: open deepseek-r1-2025
+  RL->>R: alignment plus verdict plus links
+  R->>Tab: click sl self-evolving-continual-learners
+  Tab->>SL: switch graph and select node
+  SL->>R: lab record plus inbound RL citers
+  R->>Tab: walk memory-policy trail
+  Tab->>R: paired works across both graphs
+```
+
 ## Freshness contract
 
 | Artefact | Fresh when | Checked by |

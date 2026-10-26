@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from build_book import CSS, HTML_SHELL, Doc, esc, inline_html, load_catalog, pattern_council_points
 from build_book import CSS, HTML_SHELL, Doc, esc, inline_html, load_catalog, pattern_council_points
 from sl_book_prose import KIND_ESSAYS, PROSE, WORK_NOTES
+from sl_book_prose import RL_CONCEPT_NOTES, RL_DIM_NOTES, RL_WORK_NOTES
 
 ROOT = Path(__file__).resolve().parent.parent
 BOOK_DIR = ROOT / "book"
@@ -153,6 +154,40 @@ def extract_sib_figs():
     return out
 
 
+def local_fig(rel, heading):
+    """First Mermaid block under `heading` in an in-repo design doc — the same
+    source the app's Design tab renders, so the book and the app cannot diverge.
+    Fails loudly if the heading or its block moved."""
+    text = (ROOT / rel).read_text()
+    m = re.search(rf"^#+\s+{re.escape(heading)}\s*$", text, re.M)
+    if not m:
+        sys.exit(f"tools/build_sl_book.py: {rel}: no heading {heading!r}")
+    rest = text[m.end():]
+    nxt = re.search(r"^#+\s+", rest, re.M)
+    if nxt:
+        rest = rest[:nxt.start()]
+    start = rest.find("```mermaid")
+    if start < 0:
+        sys.exit(f"tools/build_sl_book.py: {rel}: no figure under {heading!r}")
+    end = rest.find("```", start + 9)
+    if end < 0:
+        sys.exit(f"tools/build_sl_book.py: {rel}: unterminated figure under {heading!r}")
+    return rest[start + len("```mermaid"):end].strip("\n")
+
+
+def place_local(body, rel, heading, caption):
+    src = local_fig(rel, heading)
+    body.m("```mermaid")
+    body.m(src)
+    body.m("```")
+    body.m()
+    body.h(
+        '<figure class="diagram">'
+        f'<pre class="mermaid" data-src="{esc(src)}">{esc(src)}</pre>'
+        f"<figcaption>{esc(caption)}</figcaption></figure>"
+    )
+
+
 def pct(x, d=1):
     return "—" if x is None else f"{x * 100:.{d}f}%"
 
@@ -214,6 +249,12 @@ def main():
     landscape = sl_json("reference/landscape.json")
     benchmarks = sl_json("reference/benchmarks.json")
     live = sl_json("reference/live_validation.json")
+    rl_land = json.loads((ROOT / "data" / "rl_landscape.json").read_text())
+    collectors = json.loads((ROOT / "data" / "research_collectors.json").read_text())
+    rl_works = rl_land.get("works", [])
+    rl_concepts = rl_land.get("concepts", [])
+    rl_dims = rl_land.get("dimensions", [])
+    trails = collectors.get("trails", [])
     best_term = Counter()
     for sce, evs in benchmarks["bands"].items():
         best_term[max(evs, key=lambda e: evs[e]["terminal_advantage"][0])] += 1
@@ -238,6 +279,9 @@ def main():
     _wids = {w.get("id") for w in landscape.get("works", [])}
     if set(WORK_NOTES) != _wids:
         sys.exit(f"tools/build_sl_book.py: researcher notes drifted (missing={sorted(_wids - set(WORK_NOTES))}, extra={sorted(set(WORK_NOTES) - _wids)})")
+    _rids = {w.get("id") for w in rl_works}
+    if set(RL_WORK_NOTES) != _rids:
+        sys.exit(f"tools/build_sl_book.py: RL researcher notes drifted (missing={sorted(_rids - set(RL_WORK_NOTES))}, extra={sorted(set(RL_WORK_NOTES) - _rids)})")
     _kinds = {w.get("kind", "paper") for w in landscape.get("works", [])}
     if _kinds - set(KIND_ESSAYS):
         sys.exit(f"tools/build_sl_book.py: kind essays missing {sorted(_kinds - set(KIND_ESSAYS))}")
@@ -1153,6 +1197,251 @@ def main():
         ("Operator", "Rehearse with the suite, decide with the bands, verify with live hold-outs — in that order, every time. Skip a step and you are not moving fast, you are moving blind with good telemetry."),
     ])
 
+    # -- Part VII: the research graphs ------------------------------------- #
+    body.chapter_break()
+    entries.append(("part", "Part VII: The research graphs",
+                    h(1, "Part VII: The research graphs")))
+    n_rl, n_rlc, n_rld = len(rl_works), len(rl_concepts), len(rl_dims)
+
+    def rl_assess(w):
+        a = w.get("align") or {}
+        gates = [
+            (a.get("stability", "none") not in ("none", "unknown"),
+             "no stability control — one update may destroy earlier ones"),
+            (a.get("evaluation") in ("holdout", "banded"),
+             "no holdout or banded evaluation — gain may be memorisation"),
+            (a.get("cost", "unreported") not in ("unreported", "unknown"),
+             "unreported cost — the win cannot be budgeted into a gate"),
+        ]
+        closed = sum(1 for ok, _ in gates if ok)
+        verdict = ("measured and priced" if closed == 3 else
+                   "measured on two gates" if closed == 2 else
+                   "measured on one gate" if closed == 1 else
+                   "unmeasured by its own protocol")
+        why = ("it closes all three gates: a stability control, a holdout or banded "
+               "evaluation, and a reported cost") if closed == 3 else \
+              "because " + " and ".join(m for ok, m in gates if not ok)
+        return verdict, why
+
+    def rl_reading(w, verdict):
+        fam = (w.get("align") or {}).get("family", "unknown")
+        base = {
+            "measured and priced": "Closes all three gates — quote its claims, then still re-test the mechanism on your own stream before promoting them to practice.",
+            "measured on two gates": "Two gates closed — cite the numbers with the missing gate named beside them, and close it yourself before repeating the claim.",
+            "measured on one gate": "One gate closed — treat it as a directional result, borrow the mechanism, and supply the other two measurements yourself.",
+            "unmeasured by its own protocol": "No gate closed — treat it as a design prior (borrow the mathematics), never as evidence about agents.",
+        }[verdict]
+        fam_note = {
+            "tabular": "Tabular foundations: recursion, bootstrapping, off-policy updates — priors, not agent evidence.",
+            "deep-value": "Deep value methods: replay and target stabilisers to borrow; re-price exploration and cost.",
+            "policy-gradient": "Policy-gradient lineage: the optimiser family behind RLHF; verify the clip binds on your distribution.",
+            "actor-critic": "Actor-critic designs: twin critics and entropy where bias or exploration dominate; re-measure cadence.",
+            "model-based": "Model-based planning: plan inside a learned model; re-measure error compounding before trusting imagination.",
+            "offline": "Offline discipline: conservatism and in-sample values; demand the data-collection story with the number.",
+            "preference": "Preference recipes: learned rewards with anchors; audit whose preferences and what the anchor cost.",
+            "verbal": "Verbal mechanisms: reflection, skills, prose evolution; fence per family and re-measure forgetting.",
+            "memory-policy": "Memory-policy designs — the family this lab extends, so compare evolver-to-evolver on bands.",
+        }.get(fam, "Context for the field (a benchmark, an environment, or an argument), not a learning result.")
+        return f"{base} {fam_note}".strip()
+
+    CH("Why reinforcement learning belongs in this book")
+    body.p(
+        "This book studies learning with the weights frozen: lessons in prose, skills in "
+        "libraries, memory under operators, evolvers that never touch a gradient. That "
+        "narrowing is productive only while its outside stays visible, so this part maps "
+        f"the outside — {n_rl} reinforcement-learning works from Bellman to RLVR, curated "
+        "in this repository's own graph, joined to the lab's landscape by shared concepts "
+        "and explicit links. Every verbal mechanism in the earlier parts has a gradient "
+        "ancestor here; the graph lets you walk from descendant to ancestor before "
+        "claiming novelty."
+    )
+    body.p(
+        "The direction of borrowing runs one way and the book states it plainly: "
+        "mechanisms travel from RL into the lab, while evidence must be re-earned on "
+        "drifting streams with per-boundary checkpoints. A return curve from the "
+        "deep-RL era proves competence at games, not continual learning; a trust region "
+        "is a stability idea worth translating into scope fences and TTL decay, not a "
+        "result that transfers. The per-work verdicts below enforce the direction — "
+        "what to borrow, what to re-measure — in one line each."
+    )
+    place_local(body, "design/12-research-graphs.md", "What lives where",
+                "Ownership map: the sibling landscape is vendored by byte copy while the RL graph is curated in-repo — one validator checks both, and the tab draws what the files say.")
+    voices(body, "rg1")
+    council(body, [
+        ("Red team", "A foundations part is where authority launders itself: famous rows with no closed gates will be cited as proof by readers who skip the verdict column. The defence is the column itself — quote the tier, not the title — and the discipline of never letting a tabular result testify about an agent."),
+        ("Blue team", "Teach the borrowing direction before the works: mechanisms in, evidence re-earned. Teams that memorise the direction stop importing game scores as learning claims, which is most of what a foundations chapter has to accomplish."),
+        ("Operator", "Use this part the way the trails order it — foundations, optimisers, offline, preferences, verbal, memory-policy, evaluation last. Each walk reframes the last, and the evaluation trail is the gate all the others must pass."),
+    ])
+    CH(f"{n_rld} dimensions, {n_rlc} concepts")
+    body.table(["Dimension", "What it separates"],
+               [[d.get("id", ""), d.get("label", "")] for d in rl_dims if isinstance(d, dict)])
+    body.p(
+        "Dimensions turn a reading list into something countable: every RL work below is "
+        f"placed on all {n_rld}, and the three gates that matter most are stability, "
+        "evaluation and cost — a stability control says the update cannot destroy the "
+        "past, a holdout or banded evaluation says the gain is not memorisation, and a "
+        "reported cost says the win was not bought with volume."
+    )
+    for d in rl_dims:
+        if not isinstance(d, dict):
+            continue
+        did, label = d.get("id", ""), d.get("label", d.get("id", ""))
+        body.p(
+            f"*{label}* (`{did}`) asks: {d.get('question', '')} "
+            f"Options run {', '.join(d.get('options', [])[:5])} — plus 'unknown', which is always legal. "
+            + RL_DIM_NOTES.get(did, "Every work gets an explicit cell instead of the reviewer's benefit of the doubt.")
+        )
+    sl_concept_ids = {c.get("id") for c in landscape.get("concepts", [])}
+    body.table(["Concept", "Kind", "Gloss", "Shared"],
+               [[c.get("id", ""), c.get("kind", ""), c.get("gloss", ""),
+                 "yes — same id in both graphs" if c.get("id") in sl_concept_ids else "—"]
+                for c in rl_concepts])
+    for c in rl_concepts:
+        cid = c.get("id", "")
+        note = RL_CONCEPT_NOTES.get(cid)
+        if note:
+            body.p(f"**{c.get('label', cid)}** (`{cid}`, {c.get('kind', '?')}) — {c.get('gloss', '')} {note}")
+    place_local(body, "design/12-research-graphs.md", "Graph data model",
+                "The graph data model: works placed on dimensions, carrying concepts, linking works, addressed by trails, tended by collectors.")
+    voices(body, "rg2")
+    council(body, [
+        ("Red team", "Eight dimensions with an 'unknown' option map the reviewer's ignorance alongside the field: sort the works by unclosed gates and the least-examined claims surface first. Unknown across the row is where the next incident already lives."),
+        ("Blue team", f"Hold every RL work to the three gates before it enters your reasoning: a stability control, a holdout or banded evaluation, a reported cost. The validator script exists so the bar does not move when the pile grows."),
+        ("Operator", "Use the dimensions as procurement questions for any 'RL-powered' vendor claim: which family, what signal, what substrate changes, what bounds the update, how was it graded, what did it burn. Missing answers are pricing signals."),
+    ])
+    CH(f"{n_rl} works, verified")
+    body.table(["Work", "Venue · year", "Mechanism"],
+               [[w.get("title", w["id"]), f"{w.get('venue', '')} · {w.get('year', '')}", w.get("mechanism", "")]
+                for w in rl_works])
+    verdict_counts = Counter()
+    rl_assessed = []
+    for w in rl_works:
+        verdict, why = rl_assess(w)
+        verdict_counts[verdict] += 1
+        rl_assessed.append((w, verdict, why))
+    body.p(
+        f"On the current graph of {n_rl} works: **{verdict_counts.get('measured and priced', 0)}** "
+        f"are measured and priced, **{verdict_counts.get('measured on two gates', 0)}** on two gates, "
+        f"**{verdict_counts.get('measured on one gate', 0)}** on one gate, and "
+        f"**{verdict_counts.get('unmeasured by its own protocol', 0)}** are unmeasured by their own "
+        "protocol. The unmeasured rows are mostly the tabular foundations — load-bearing "
+        "mathematics, citable as priors, never as agent evidence."
+    )
+    priced_ids = sorted(w["id"] for w, v, _ in rl_assessed if v == "measured and priced")
+    if priced_ids:
+        body.p(f"*Measured and priced ({len(priced_ids)}):* {', '.join(priced_ids)}. Quote these first; re-measure everything else on your own stream.")
+    sl_fig(body,
+        'flowchart LR\n  TAB["tabular - Bellman, TD, Q"] --> DV["deep value - DQN, Rainbow"]\n  TAB --> PG["policy gradient - REINFORCE, PPO"]\n  PG --> AC["actor-critic - A3C, SAC, TD3"]\n  PG --> MB["model-based - AlphaGo, MuZero, Dreamer"]\n  DV --> OFF["offline - CQL, IQL, DT"]\n  PG --> PREF["preference - RLHF, DPO"]\n  PREF --> RLVR["verifiers - R1, RLVR"]\n  RLVR --> VERB["verbal - Reflexion, GEPA"]\n  VERB --> MEM["memory-policy - MemRL, A-MEM"]',
+        "The RL lineage in this book's graph: tabular foundations to deep optimizers to preferences to verbal and memory-policy learning.")
+    by_kind = defaultdict(list)
+    for item in rl_assessed:
+        by_kind[item[0].get("kind", "paper")].append(item)
+    for kind in ["paper", "benchmark", "framework"] + sorted(set(by_kind) - {"paper", "benchmark", "framework"}):
+        items = sorted(by_kind.get(kind, []), key=lambda t: (t[0].get("year") or 0, t[0]["id"]))
+        if not items:
+            continue
+        body.m(f"### {kind.title()}s ({len(items)})")
+        body.h(f"<h3>{esc(kind.title())}s ({len(items)})</h3>")
+        if kind in KIND_ESSAYS:
+            voices_items(body, KIND_ESSAYS[kind])
+        for w, verdict, why in items:
+            wid = w["id"]
+            body.m(f"#### {w.get('title', wid)}")
+            body.h(f"<h4>{esc(w.get('title', wid))}</h4>")
+            url = w.get("url", "")
+            body.m(f"*{wid}* — {w.get('authors', '')}, {w.get('venue', '')} · {w.get('year', '')} · {w.get('kind', '')}. {url}")
+            body.h(f"<p><code>{esc(wid)}</code> — {esc(str(w.get('authors', '')))}, {esc(str(w.get('venue', '')))} · {esc(str(w.get('year', '')))} · {esc(str(w.get('kind', '')))}. {esc(url)}</p>")
+            body.m(f"**What it does.** {w.get('summary', '')}")
+            body.h(f"<p><b>What it does.</b> {esc(str(w.get('summary', '')))}</p>")
+            body.m(f"**Mechanism.** {w.get('mechanism', '')}")
+            body.h(f"<p><b>Mechanism.</b> {esc(str(w.get('mechanism', '')))}</p>")
+            align_str = " · ".join(f"{k}={a}" for k, a in (w.get("align") or {}).items())
+            body.m(f"**Alignment.** {align_str}.")
+            body.h(f"<p><b>Alignment.</b> {esc(align_str)}.</p>")
+            body.m(f"**Verdict: {verdict}** — {why}.")
+            body.h(f"<p><b>Verdict: {esc(verdict)}</b> — {esc(why)}.</p>")
+            conc = ", ".join(f"`{c}`" for c in (w.get("concepts") or [])) or "—"
+            pats = ", ".join(f"`{p}`" for p in (w.get("patterns") or [])) or "—"
+            sll = ", ".join(f"`{s}`" for s in (w.get("sl_links") or [])) or "—"
+            rll = ", ".join(f"`{r}`" for r in (w.get("rl_links") or [])) or "—"
+            body.m(f"**Concepts.** {conc} **Catalog patterns.** {pats}")
+            body.h(f"<p><b>Concepts.</b> {conc} <b>Catalog patterns.</b> {pats}</p>")
+            body.m(f"**Links.** Self-learning: {sll} · RL builds-on: {rll}")
+            body.h(f"<p><b>Links.</b> Self-learning: {sll} · RL builds-on: {rll}</p>")
+            body.m(f"**Lab reading.** {rl_reading(w, verdict)}")
+            body.h(f"<p><b>Lab reading.</b> {esc(rl_reading(w, verdict))}</p>")
+            if wid not in RL_WORK_NOTES:
+                sys.exit(f"tools/build_sl_book.py: no researcher note for RL work `{wid}` in tools/sl_book_prose.py")
+            body.p(f"**Researcher note.** {RL_WORK_NOTES[wid]}")
+            body.m()
+    voices(body, "rg3")
+    council(body, [
+        ("Red team", "Fame concentrates where gates are open: the most-cited rows close the fewest, and teams borrow authority with mechanism. The per-work reading answers in one line — borrow this, re-measure that — and the re-measure half is load-bearing."),
+        ("Blue team", "Run every RL import through the three gates before it enters your reasoning: stability control, holdout or bands, reported cost. A benchmark with a holdout but no ledger is a probe awaiting prices; a return curve with priced steps but no stability control is competence without a forgetting meter."),
+        ("Operator", "Use the verdict tier live in meetings: measured-and-priced travels, two gates travel with the missing gate named, one gate is directional, unmeasured is mathematics. Anyone quoting a title without its tier is selling, not citing."),
+    ])
+    CH("Five concepts, two graphs")
+    shared = [c for c in rl_concepts if c.get("id") in sl_concept_ids]
+    body.table(["Shared concept", "RL gloss"],
+               [[c.get("id", ""), c.get("gloss", "")] for c in shared])
+    body.p(
+        f"Five concepts carry identical identifiers in both graphs, so they carry shared "
+        "obligations: credit assignment, memory-policy learning, experience evolution, "
+        "continual learning and verifier feedback must mean one thing on both sides, or "
+        "the interlink is decoration. The bridge works below are readable from either "
+        "side — a verbal mechanism to the lab, a policy result to RL — and following "
+        "those edges is how hidden assumptions surface."
+    )
+    bridged = sorted(((w["id"], len(w.get("sl_links", []))) for w in rl_works if w.get("sl_links")),
+                     key=lambda t: (-t[1], t[0]))
+    body.table(["RL work", "Self-learning links"],
+               [[wid, ", ".join(f"`{s}`" for s in next(w["sl_links"] for w in rl_works if w["id"] == wid))] for wid, _ in bridged])
+    body.p(
+        f"{len(bridged)} of the {n_rl} RL works link explicitly into the lab's landscape, "
+        "and every lab work they touch lists the RL citer back — the interlink reads both "
+        "ways. Read each pair, not each paper: the mechanism tells you what it does, the "
+        "lab-side failure scenario tells you what it does to you."
+    )
+    place_local(body, "design/12-research-graphs.md", "Interlink sketch",
+                "Three interlink mechanisms on one sketch: dashed cross-graph links, dotted shared-concept spokes, solid builds-on edges inside the RL graph.")
+    voices(body, "rg4")
+    council(body, [
+        ("Red team", "Interlinks carry poison faster than insight: a planted reasoning compounds in a bank the way a hacked reward compounds in a policy, and shared concepts do not distinguish teacher from attacker. Audit the bridge works against their lab-side failure scenarios, not their abstracts."),
+        ("Blue team", "Cross-check verdicts across graphs before trusting either: a mechanism that survives the lab's holdouts and the RL graph's bands has passed two independent examinations. Shining in exactly one vocabulary means re-test in the other."),
+        ("Operator", "Keep the five shared glosses identical in both graphs — same id, same meaning — and fail any edit that forks them. A forked concept is two teams arguing about words while believing they argue about evidence."),
+    ])
+    CH("Reading trails and the collectors that tend them")
+    body.table(["Trail", "Scope", "Works"],
+               [[t.get("label", t.get("id", "")), t.get("scope", ""),
+                 ", ".join(f"`{r}`" for r in (t.get("works") or []))] for t in trails])
+    body.p(
+        f"Seven trails order the two graphs' works into walks with destinations: "
+        "foundations, deep RL, offline, the LLM arc from preferences to verifiers, the "
+        "verbal and memory-policy trails where the lab lives, and evaluation last — the "
+        "gate every other trail must pass. Walk them in order; each trail reframes the "
+        "last, and that reframing is the curation."
+    )
+    body.table(["Collector", "Command", "Flow"],
+               [[c.get("label", c.get("id", "")), c.get("tool", ""),
+                 f"{'; '.join(c.get('sources', []))} → {'; '.join(c.get('outputs', []))}"] for c in collectors.get("collectors", [])])
+    body.p(
+        "Three collectors tend the graphs and none of them writes silently: the snapshot "
+        "sync copies bytes, the arXiv watch stages an inbox, the validator fails loudly "
+        "on any dangling reference. Drafts enter flagged and stay flagged until a human "
+        "replaces the staged summary with a read one — a landscape, not a landfill, kept "
+        "quarterly."
+    )
+    place_local(body, "design/12-research-graphs.md", "The collectors (human-gated by design)",
+                "The collectors, human-gated: bytes, inbox, validator — and a human between the inbox and the graph.")
+    place_local(body, "design/12-research-graphs.md", "The graph view",
+                "The graph-view pipeline: filtered data to deterministic layout to one SVG, with pan and zoom that never re-render and clicks that paint only the detail.")
+    voices(body, "rg5")
+    council(body, [
+        ("Red team", "Trails are opinions with nice typography: the ordering flatters the lab's own family by placing memory-policy last like a destination. Walk them backwards at least once — evaluation first — and see which earlier claims survive the gate being open from the start."),
+        ("Blue team", "Tend the collectors on a schedule, not on enthusiasm: re-sync the snapshot, re-run the validator, retire trails whose frontier moved on. A graph nobody re-validates is a rumour with good type."),
+        ("Operator", "Assign the inbox a human and a cadence: staged candidates rot into implied endorsement if nobody triages them. Flagged drafts are honest only while someone reads the flag."),
+    ])
+
     # -- appendices ------------------------------------------------------ #
     body.chapter_break()
     entries.append(("back", "Appendix A: Configuration reference",
@@ -1183,7 +1472,9 @@ def main():
         f"It carries {len(scenarios)} lab scenarios, {len(ev_ids)} evolvers, "
         f"{len(landscape.get('concepts', []))} concepts and {n_w} verified works, "
         f"{len(SL_PATTERNS)} bridge patterns and {len(SL_SCENARIOS)} bridge scenarios, "
-        f"{len(figs)} figures rendered by the same vendored Mermaid as the app, and measured "
+        f"{len(rl_works)} RL works with {len(trails)} reading trails across "
+        f"{len(rl_concepts)} concepts on {len(rl_dims)} dimensions, "
+        f"{len(figs)} placed figures plus hand-authored research figures rendered by the same vendored Mermaid as the app, and measured "
         "bands plus a live calibration in Part III."
     )
     body.heading(1, "Conclusion")
@@ -1217,8 +1508,9 @@ def main():
         f"A supplement to *Agentic Design Patterns & Guardrails*: continual learning, "
         f"task-scoped adaptation and the evaluation discipline — with the lab's {len(scenarios)} "
         f"scenarios, {len(ev_ids)} evolvers, {len(landscape.get('concepts', []))} concepts and "
-        f"{len(landscape.get('works', []))} verified works. Generated from the lab, the catalog "
-        "and the design figures; nothing in it is hand-typed from memory."
+        f"{len(landscape.get('works', []))} verified works, plus the research graphs' "
+        f"{len(rl_works)} RL works and {len(trails)} reading trails. Generated from the lab, the catalog, "
+        "the research graphs and the design figures; nothing in it is hand-typed from memory."
     )
     doc.pagebreak()
     doc.heading(1, "Contents")

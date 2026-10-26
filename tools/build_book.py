@@ -625,7 +625,7 @@ APP_PART_INTRO = [
     "where that argument is applied to the tool itself — a rule engine instead "
     "of a model for the analysis, a gate instead of a build step, a cache "
     "instead of a CDN dependency, and a same-origin proxy instead of a "
-    "third-party API. The seven chapters below follow the same shape as every "
+    "third-party API. The eight chapters below follow the same shape as every "
     "chapter above them, and every claim in them points at a file in the "
     "repository the catalog ships in.",
 ]
@@ -1772,6 +1772,181 @@ APP_CHAPTERS = [
             "peroration.",
         ],
     },
+    {
+        "title": "The Research Landscape",
+        "covers": "The self-learning and RL knowledge graphs behind the Research tab",
+        "overview": [
+            "Behind the Research Graphs tab sit two knowledge graphs that read "
+            "each other. One is the self-learning landscape — {sl_works} works "
+            "across {sl_concepts} concepts, vendored as a byte snapshot from "
+            "the sibling lab so this repository can never silently fork its "
+            "curation. The other is the reinforcement-learning graph, curated "
+            "here: {rl_works} works across {rl_concepts} concepts on {rl_dims} "
+            "dimensions, from Bellman recursion through deep RL and offline "
+            "methods to RLHF, verifiable rewards, verbal reflection and "
+            "memory-policy learning.",
+            "They interlink three ways. Five concept identifiers exist in both "
+            "graphs with identical meaning — credit assignment, "
+            "memory-policy learning, experience evolution, continual learning "
+            "and verifier feedback. Every RL work carries explicit links: "
+            "`rl_links` to the gradient ancestors it builds on, `sl_links` "
+            "into the lab's landscape. And seven reading trails address works "
+            "as `rl:` and `sl:` references, so a trail is a cross-graph path "
+            "rather than a list.",
+            "This chapter is the condensed map. The full excerpts — every one "
+            "of the {rl_works} RL works with its alignment row, verdict tier "
+            "and researcher note, argued by a council of researchers — live in "
+            "the *Self-Learning Agents* supplement's research-graphs part, "
+            "generated from the same files by the same fail-loud discipline.",
+        ],
+        "why": [
+            "The lab studies learning with the weights frozen — prose, skills, "
+            "memory operators — and that narrowing is productive only while "
+            "its outside stays visible. Reinforcement learning is that "
+            "outside: the lineage of reward, bootstrapping, policy gradients, "
+            "trust regions and learned rewards from which the lab borrows its "
+            "vocabulary while refusing its machinery.",
+            "The borrowing direction is stated, not hidden: mechanisms travel "
+            "from RL into the lab, while evidence must be re-earned on "
+            "drifting streams with per-boundary checkpoints. A return curve "
+            "from the deep-RL era proves game competence, not continual "
+            "learning; a trust region is a stability idea worth translating "
+            "into scope fences, not a result that transfers.",
+            "The safety case is reward hacking, which the RL lineage names "
+            "and the lab inherits. Optimise a proxy and the optimiser finds "
+            "the crack — in weights or in language, the disease is the same, "
+            "and so is the prescription: an admission gate, a scope fence and "
+            "an expiry on every learning loop.",
+        ],
+        "how": [
+            "**Two graphs, split ownership.** The self-learning snapshot is "
+            "copied byte-for-byte from the sibling checkout (`sync-sl` is a "
+            "no-op when equal); the RL graph is curated in "
+            "`data/rl_landscape.json`. One validator checks both, and the "
+            "test suite enforces it in CI.",
+            "**Three gates per RL work.** Each work is placed on all {rl_dims} "
+            "dimensions, and the verdict counts three of them: a stability "
+            "control (trust region, clipping, KL anchor, scope fence, TTL "
+            "decay), a holdout or banded evaluation, and a reported cost. "
+            "Three closed is measured and priced; none closed is a design "
+            "prior, never evidence about agents.",
+            "**Trails order the pile.** Seven curated walks — foundations, "
+            "deep RL, offline, the LLM arc, verbal, memory-policy and "
+            "evaluation last — each reframing the last. Evaluation walks "
+            "last because it is the gate all the others must pass.",
+            "**Collectors tend the graphs, human-gated.** Snapshot sync, an "
+            "arXiv watch that stages an inbox, and the integrity gate. "
+            "Drafts enter flagged and stay flagged until a human replaces "
+            "the staged summary with a read one.",
+            "**The tab draws what the files say.** Filterable lists plus a "
+            "force-layout graph view — solid builds-on edges, dashed "
+            "cross-graph edges, diamond hubs for the five shared concepts — "
+            "with click-for-record into the catalog's own patterns.",
+        ],
+        "components": (
+            "table",
+            ["Piece", "File", "Responsibility"],
+            [
+                ["Self-learning graph", "`data/sl_landscape.json`", "Vendored snapshot of the sibling lab's landscape; owned there, copied here, validated here."],
+                ["RL graph", "`data/rl_landscape.json`", "{rl_works} curated works on {rl_dims} dimensions with explicit `sl_links` and `rl_links`; every reference validated."],
+                ["Trails and collectors", "`data/research_collectors.json`", "{trails} reading trails plus the three collector definitions (sync, watch, validate)."],
+                ["Collector scripts", "`tools/collect_research.py`", "`validate` / `sync-sl` / `fetch-arxiv` / `report`: stdlib only, network only for the arXiv watch, graphs never written silently."],
+                ["Interface", "`js/research.js`", "Lists, trails and the SVG graph view (deterministic layout, pan/zoom, click-for-record); lazy-loaded, offline-precached."],
+                ["Full excerpts", "`tools/build_sl_book.py` + `tools/sl_book_prose.py`", "The supplement's research-graphs part: all {rl_works} works with verdicts and researcher notes in the council's voice."],
+            ],
+        ),
+        "figures": [
+            ("Two Graphs, One Tab", "design/12-research-graphs.md",
+             "What lives where",
+             "The sibling lab's landscape is vendored by byte copy while the RL graph is curated in-repo; one validator checks both, and the tab draws what the files say."),
+            ("Tab Modules", "design/12-research-graphs.md",
+             "Module view",
+             "The tab's modules over the three data files, with the collector script and the render/layout test gates beside them."),
+            ("Reader Activity", "design/12-research-graphs.md",
+             "Reader activity",
+             "The reader journey the tab is built for: pick a view, filter, open a record, follow a link, walk a trail, keep the verdict tier."),
+            ("Cross-Graph Jump", "design/12-research-graphs.md",
+             "Cross-graph jump",
+             "One click across the interlink: an RL detail hands its self-learning twin to the other graph, with inbound citers listed back."),
+        ],
+        "risks": [
+            "Fame concentrates where gates are open: the most-cited RL rows "
+            "close the fewest, and teams borrow authority along with "
+            "mechanism. The verdict tier travels with every citation in the "
+            "supplement; quote the tier, not the title.",
+            "A foundations section launders authority for readers who skip "
+            "the verdict column. Tabular results are mathematics, not agent "
+            "evidence — never let one testify about a deployment.",
+            "Shared concept identifiers are shared obligations. If the two "
+            "graphs ever fork a gloss, two teams will argue about words "
+            "while believing they argue about evidence.",
+            "The arXiv watch stages candidates; unstaged triage rots into "
+            "implied endorsement. Flagged drafts are honest only while "
+            "someone reads the flag.",
+            "Return curves do not transfer across substrates, tasks or "
+            "decades. Borrow the optimiser, re-measure the forgetting, "
+            "re-price the cost — every time.",
+        ],
+        "safeguards": [
+            "Every cross-graph reference is validated by script and by the "
+            "test suite: patterns resolve in the catalog, every link and "
+            "trail reference resolves, no self-links, no duplicate ids.",
+            "The borrowing direction is printed, not implied — mechanisms "
+            "in, evidence re-earned — in the supplement's opening chapter "
+            "and in every per-work reading line.",
+            "The snapshot sync copies bytes and reports no-op when equal, "
+            "so drift between the lab and the vendored copy shows as a "
+            "diff, never a silent merge.",
+            "The book generators fail loudly on drift: a renamed work "
+            "without its researcher note, a figure heading that moved, a "
+            "count cited from memory instead of disk — all fail the build "
+            "rather than shipping wrong.",
+            "The tab degrades to lists and tables when the graphs cannot "
+            "load, and the graphs it draws are the files on disk — served "
+            "offline from the precache after one visit.",
+        ],
+        "glance": [
+            ["Self-learning graph", "{sl_works} works · {sl_concepts} concepts (vendored snapshot)"],
+            ["RL graph", "{rl_works} works · {rl_concepts} concepts · {rl_dims} dimensions (curated)"],
+            ["Shared concepts", "credit-assignment · memory-policy-learning · experience-evolution · continual-learning · verifier-feedback"],
+            ["Verdict gates", "stability control · holdout/banded evaluation · reported cost"],
+            ["Trails", "{trails} curated walks, evaluation last"],
+            ["Collectors", "sync-sl (bytes) · arXiv watch (inbox) · validate (gate)"],
+            ["Full text", "supplement research-graphs part: all {rl_works} works with notes"],
+            ["Honesty", "mechanisms in, evidence re-earned — printed, not implied"],
+        ],
+        "takeaways": [
+            "Keep the lab's narrowing honest by mapping its outside: every "
+            "verbal mechanism has a gradient ancestor, and the graph walks "
+            "you to it before you claim novelty.",
+            "Judge RL imports by three gates — stability control, holdout "
+            "or bands, reported cost — and quote the tier with the title.",
+            "Share concept identifiers across graphs only with shared "
+            "meanings; a forked gloss is two teams arguing about words.",
+            "Tend the collectors on a schedule: re-sync, re-validate, "
+            "retire trails whose frontier moved on.",
+            "Read the full excerpts in the supplement, where the council of "
+            "researchers argues every work before the verdict.",
+        ],
+        "refs": [
+            "`data/rl_landscape.json`, `data/sl_landscape.json`, `data/research_collectors.json` — the graphs and the trails.",
+            "`tools/collect_research.py` — the three collectors.",
+            "`design/12-research-graphs.md` — the architecture: ownership, interlinks, collectors, freshness contract.",
+            "`js/research.js` — the tab: lists, trails and the graph view.",
+            "`tools/build_sl_book.py`, `tools/sl_book_prose.py` — the supplement's research-graphs part with all {rl_works} researcher notes.",
+        ],
+        "conclusion": [
+            "The research landscape is the book's method applied to its own "
+            "context: enumerate the outside, place every work on explicit "
+            "dimensions, count the gates each one closes, and let a validator "
+            "— not a memory — keep the references honest. It will not tell "
+            "you which mechanism to adopt; it will tell you, work by work, "
+            "what you may borrow and what you must re-measure. That receipt "
+            "is what makes a literature review a tool instead of a shelf, "
+            "and it is why the book closes its application part with a map "
+            "rather than a moral.",
+        ],
+    },
 ]
 
 
@@ -1835,9 +2010,17 @@ def book_stats(cat):
         "precache": len(re.findall(r'"[^"]+"', precache)),
         "pattern_diagrams": sum(1 for p in cat["patterns"] if p.get("diagram")),
         "serve_lines": len((ROOT / "serve.py").read_text().splitlines()),
-        # The battle-bench chapter is appended last in APP_CHAPTERS, so its
-        # number is patterns + app chapters — recomputed, never hardcoded.
-        "bench_ch": len(cat["patterns"]) + len(APP_CHAPTERS),
+        # The research landscape both graphs are curated from: counts read
+        # from data at build time so the Research Landscape chapter cannot rot.
+        "rl_works": len(load_json("rl_landscape.json")["works"]),
+        "rl_concepts": len(load_json("rl_landscape.json")["concepts"]),
+        "rl_dims": len(load_json("rl_landscape.json")["dimensions"]),
+        "sl_works": len(load_json("sl_landscape.json")["works"]),
+        "sl_concepts": len(load_json("sl_landscape.json")["concepts"]),
+        "trails": len(load_json("research_collectors.json")["trails"]),
+        # The battle-bench chapter's number, by title rather than position, so
+        # appending later Part X chapters never steals its self-reference.
+        "bench_ch": len(cat["patterns"]) + [c["title"] for c in APP_CHAPTERS].index("Testing the Defenses") + 1,
     }
 
 
@@ -1867,7 +2050,7 @@ def write_app_part(doc, part, stats):
     doc.mermaid(part["diagram"], f"The {part['name']} container overview.")
 
 
-# Council readings for the seven Part X chapters: same red/blue/operator device
+# Council readings for the eight Part X chapters: same red/blue/operator device
 # as the pattern chapters, written against the repository the chapters describe.
 # No braces here — chapter text goes through format_map(stats).
 APP_COUNCIL = {
@@ -1905,6 +2088,11 @@ APP_COUNCIL = {
         "The guardrail adapter is instant and deterministic, which also makes it gameable — tune to it and you get eval-overfit with a passing matrix; the live adapter is the one allowed to surprise you.",
         "The oracle derives assertions from each scenario's own protections and an errored run is never counted as a pass, so green means held, not merely attempted.",
         "Run the full matrix before every model swap and diff the verdicts with Compare models: regressions listed explicitly beat vibes, every time.",
+    ],
+    "The Research Landscape": [
+        "Fame concentrates where gates are open — the most-cited RL rows close the fewest, so quote the verdict tier with the title and never let a tabular result testify about a deployment.",
+        "Shared concept identifiers are shared obligations: five glosses, identical on both sides, checked by script — a forked concept is two teams arguing about words.",
+        "Walk the trails in order and tend the collectors on schedule; a graph nobody re-validates is a rumour with good type, and flagged drafts are honest only while someone reads the flag.",
     ],
 }
 

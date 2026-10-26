@@ -46,7 +46,7 @@ The catalog behind this book was built in the open, one entry at a time, with a 
 
 AI agents are programs that decide their own steps. That single property is why the design vocabulary below exists: once a system chooses its own actions, you cannot enumerate its behavior in advance, so you have to design its boundaries instead.
 
-The book is organized as 114 chapters across 10 parts — 107 of them, one per catalog pattern, across 9 parts, then 7 chapters on the application that publishes the catalog. Each of the first 9 parts is one category of the catalog:
+The book is organized as 115 chapters across 10 parts — 107 of them, one per catalog pattern, across 9 parts, then 8 chapters on the application that publishes the catalog. Each of the first 9 parts is one category of the catalog:
 
 | Part | Category | Chapters | What it covers |
 |---|---|---|---|
@@ -59,7 +59,7 @@ The book is organized as 114 chapters across 10 parts — 107 of them, one per c
 | VII | Safety, Security & Governance | 27 | Guardrails: permissions, budgets, approvals, injection defenses, audit. |
 | VIII | Resilience & Reliability | 9 | Degrading gracefully when the model, tools or world misbehave. |
 | IX | Domain Playbooks | 7 | End-to-end reference architectures per industry, guardrails included. |
-| X | The Application | 7 | The dashboard that publishes the catalog — what it is, how it carries a design workflow, how it is designed and built, how it tests the defenses it recommends, and how it keeps your data and your model on hardware you control. |
+| X | The Application | 8 | The dashboard that publishes the catalog — what it is, how it carries a design workflow, how it is designed and built, how it tests the defenses it recommends, and how it keeps your data and your model on hardware you control. |
 
 **How to read a chapter.** Every chapter follows the same shape:
 
@@ -70,7 +70,7 @@ The book is organized as 114 chapters across 10 parts — 107 of them, one per c
 - *Failure Modes and Risks* then *Protections* — the honest half.
 - *At a Glance*, *Key Takeaways*, *References and Related Patterns*, *Conclusion*.
 
-**Part X uses the same order.** Its 7 chapters open with *Overview* and *Why It Matters*, then *How It Works*, *Components*, the chapter's diagram, *Risks and Limitations*, *Safeguards*, *At a Glance*, *Key Takeaways*, *References* and *Conclusion* — the same shape, applied to the application instead of to a pattern.
+**Part X uses the same order.** Its 8 chapters open with *Overview* and *Why It Matters*, then *How It Works*, *Components*, the chapter's diagram, *Risks and Limitations*, *Safeguards*, *At a Glance*, *Key Takeaways*, *References* and *Conclusion* — the same shape, applied to the application instead of to a pattern.
 
 **Severity.** Failure modes, scenarios and cascades carry one of four severity labels — critical, high, medium, low — used consistently across the catalog so a critical entry in one part means the same thing as a critical entry in another.
 
@@ -242,6 +242,7 @@ Everything else in the catalog follows from it. Memory exists so the loop can ca
 - Chapter 112: Privacy: Local Models and Data That Stay Put
 - Chapter 113: Isolation, Hardening and Offline Operation
 - Chapter 114: Testing the Defenses
+- Chapter 115: The Research Landscape
 
 - Glossary
 - Index of Terms
@@ -13060,7 +13061,7 @@ The dashboard that publishes the catalog — what it is, how it carries a design
 
 This book has been read through an application for its whole life, and so has every diagram in it. *AI Agent Patterns & Guardrails* is a 0-tab single-page dashboard of plain HTML, CSS and JavaScript, served by one small Python program, rendered by a vendored Mermaid engine, and reachable over a LAN, a tailnet or no network at all. This part opens that machine up.
 
-It closes the book deliberately. The pattern chapters argue that safety comes from deterministic enforcement outside the model; the application is where that argument is applied to the tool itself — a rule engine instead of a model for the analysis, a gate instead of a build step, a cache instead of a CDN dependency, and a same-origin proxy instead of a third-party API. The seven chapters below follow the same shape as every chapter above them, and every claim in them points at a file in the repository the catalog ships in.
+It closes the book deliberately. The pattern chapters argue that safety comes from deterministic enforcement outside the model; the application is where that argument is applied to the tool itself — a rule engine instead of a model for the analysis, a gate instead of a build step, a cache instead of a CDN dependency, and a same-origin proxy instead of a third-party API. The eight chapters below follow the same shape as every chapter above them, and every claim in them points at a file in the repository the catalog ships in.
 
 | Chapter | Chapter title | Covers |
 |---|---|---|
@@ -13071,10 +13072,11 @@ It closes the book deliberately. The pattern chapters argue that safety comes fr
 | 112 | Privacy: Local Models and Data That Stay Put | Where your data goes, and where it does not |
 | 113 | Isolation, Hardening and Offline Operation | Boundaries, container hardening and the offline shell |
 | 114 | Testing the Defenses | The battle-test bench: the catalog testing itself |
+| 115 | The Research Landscape | The self-learning and RL knowledge graphs behind the Research tab |
 
 ```mermaid
 flowchart LR
-  subgraph BROWSER["Browser (single page, 15 tabs)"]
+  subgraph BROWSER["Browser (single page, 16 tabs)"]
     TABS["Tab strip<br/>Overview · Fox-Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab · Battle Bench<br/>Rogue Agents · Self-Learning"]
     ENG1["Pattern catalog engine"]
     ENG2["Scenario catalog engine"]
@@ -13108,7 +13110,7 @@ flowchart LR
 
 This book's catalog does not arrive as a folder of JSON files. It arrives as *AI Agent Patterns & Guardrails* — a 0-tab single-page dashboard of plain HTML, CSS and JavaScript, rendered at view time by a vendored Mermaid engine, with no build step, no bundler, no framework and no account anywhere in the stack.
 
-The lifecycle it covers is the one this book describes from its first chapter: design patterns, then what can go wrong, then how to protect against it, then a live replay of the control flow, then the architecture, and finally a lab that turns your own agent idea into a guardrail design with a mock run. The whole thing is served by `serve.py`, 867 lines of standard-library Python that also doubles as a same-origin relay to an optional model running on your own network.
+The lifecycle it covers is the one this book describes from its first chapter: design patterns, then what can go wrong, then how to protect against it, then a live replay of the control flow, then the architecture, and finally a lab that turns your own agent idea into a guardrail design with a mock run. The whole thing is served by `serve.py`, 897 lines of standard-library Python that also doubles as a same-origin relay to an optional model running on your own network.
 
 It is a reference you can interrogate rather than a shelf you can only read: filter, sort, replay, compose, compare, and take the result out as Markdown, JSON, CSV or a print-friendly page.
 
@@ -13144,7 +13146,7 @@ And it runs where it is needed: after a single visit the service worker holds th
 | Deployment Plan | Four-step intake, readiness scorecard, recommended stack, autonomy and rollout dial, residual-risk register, and an ADR generator with validated citations. |
 | Blueprints | Reference-architecture builder with Mermaid export, deterministic warnings, a cost/latency/risk estimator, a per-blueprint threat model and baseline compare. |
 | Live View | 55 filterable mock execution traces, replayed on the control-flow diagram with step tracker, gauges and streaming event log. |
-| Design & Architecture | 11 design documents rendered live with their Mermaid diagrams, a scroll-spy outline, a source toggle and a zoom viewer. |
+| Design & Architecture | 12 design documents rendered live with their Mermaid diagrams, a scroll-spy outline, a source toggle and a zoom viewer. |
 | Guardrail Lab | Any agent idea analyzed into a full guardrail design with a mock run, saved to a collection in `localStorage` and exportable as JSON. |
 | Discovery Lab | Deterministic ideation of novel scenarios: candidates compete, winners are kept, the rest are forgotten. Winners are drafts only, never auto-added. |
 | Battle Bench | The catalog testing itself: all 54 failure scenarios run as test cases against a configuration, through deterministic simulation, trace replay or the live model — graded by an oracle, attacked by an adversary (chapter 114). |
@@ -13213,12 +13215,12 @@ flowchart TB
 | Field | Value |
 |---|---|
 | Form | Static single-page app; no build step, no account |
-| Tabs | 0 tabs over one shell and 31 modules |
+| Tabs | 0 tabs over one shell and 32 modules |
 | Catalog | 107 patterns · 9 categories · 207 failure modes · 289 protections |
 | Evidence | 54 scenarios · 191 cascades · 55 traces · 26 domains |
 | Diagrams | Vendored Mermaid in one queue; CDN only as a fallback |
 | Server | `serve.py` — static host plus same-origin model proxy |
-| Offline | Service worker precaches the shell (50 entries) |
+| Offline | Service worker precaches the shell (55 entries) |
 | Persistence | `localStorage`; exports are user-initiated |
 | Model | Optional; local backend first, deterministic fallback |
 | Gate | ESLint · node:test · headless smoke · CI |
@@ -13448,7 +13450,7 @@ And claims about speed and offline behaviour are worthless unless they are measu
 - **The shell** — `index.html` plus `js/app.js`: one namespace, two registries, and `typeof`-guarded edges between them.
 - **The gate** — lint, the `node:test` suite, the headless smoke test, and CI wiring that makes lint and data integrity blocking.
 - **The queue** — one promise chain around Mermaid, preserving each block's `data-src` so a re-render never feeds the engine its own generated CSS.
-- **The worker** — `sw.js`, with a `VERSION`, a 50-entry precache list, network-first fetches and `/api/*` excluded.
+- **The worker** — `sw.js`, with a `VERSION`, a 55-entry precache list, network-first fetches and `/api/*` excluded.
 - **The store** — plain JSON on disk, `localStorage` in the browser, exports on the way out.
 - **The budget** — the Display panel, reading the worker's own size records instead of a hard-coded number.
 
@@ -13551,7 +13553,7 @@ Principles are only worth writing down if you can point at where they are enforc
 
 ## Overview
 
-The deployed shape is static files plus one small server process: a delivery layer that serves and hardens those files, a shell that owns the tab switcher and its registries, 31 feature modules that register into it, five JSON datasets loaded in phases, 11 markdown documents fetched live, a service worker that caches the shell, and an optional same-origin model proxy.
+The deployed shape is static files plus one small server process: a delivery layer that serves and hardens those files, a shell that owns the tab switcher and its registries, 32 feature modules that register into it, five JSON datasets loaded in phases, 12 markdown documents fetched live, a service worker that caches the shell, and an optional same-origin model proxy.
 
 Nothing is compiled, so the architecture you read in the source is the architecture that runs: no bundle to unwind, no generated code to trace back, and no build output that can drift away from the repository.
 
@@ -13565,10 +13567,10 @@ It also explains the deployment story. The image copies exactly what the server 
 
 1. **Delivery.** `serve.py` serves the files with gzip, conditional revalidation for a cheap 304, immutable caching for the vendored engine, and the same header block on every single response.
 2. **Shell.** `index.html` and `js/app.js` own the tab switcher, theme, data load, Mermaid queue, zoom viewer and the registries every module plugs into.
-3. **Feature modules.** 31 plain scripts: one per pane — overview, catalog, scenarios, cascades, coverage, deployment planner, blueprints, Fox-Architect, live view, design, guardrail lab, discovery and battle bench — plus the shared playback widget, LLM client, grounding context, report, dashboard, help, command palette and shortcuts.
+3. **Feature modules.** 32 plain scripts: one per pane — overview, catalog, scenarios, cascades, coverage, deployment planner, blueprints, Fox-Architect, live view, design, guardrail lab, discovery and battle bench — plus the shared playback widget, LLM client, grounding context, report, dashboard, help, command palette and shortcuts.
 4. **Data.** Five JSON datasets. Phase one (patterns, scenarios, traces, coverage) is awaited for first paint; `cascades.json` streams in beside it and is awaited only by the panes that read it.
-5. **Documents.** `design/*.md` — 11 of them — are fetched live and rendered, which is the one reason a server is needed at all beyond hosting the optional model proxy.
-6. **Offline.** `sw.js` precaches 50 entries, answers same-origin GETs network-first with a cache fallback, and never touches `/api/*`.
+5. **Documents.** `design/*.md` — 12 of them — are fetched live and rendered, which is the one reason a server is needed at all beyond hosting the optional model proxy.
+6. **Offline.** `sw.js` precaches 55 entries, answers same-origin GETs network-first with a cache fallback, and never touches `/api/*`.
 7. **Model.** `/api/llm/*` relays to a configured backend in failover order with watchdog timeouts, streaming the reply back chunked so the interface can render it as it arrives.
 
 ## Components
@@ -13577,10 +13579,10 @@ It also explains the deployment story. The image copies exactly what the server 
 |---|---|---|
 | Delivery | `serve.py` | Static host: gzip, ETag and Last-Modified revalidation, immutable vendor cache, security headers, CSP. |
 | Shell | `index.html` · `js/app.js` | Tab switcher, theme, data load, Mermaid queue, zoom viewer, `tabLoaders` and `PANE_INIT` registries. |
-| Feature modules | `js/*.js` — 31 files | One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, Fox-Architect, live view, design, guardrail lab, discovery, battle bench — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts. |
+| Feature modules | `js/*.js` — 32 files | One per pane — overview, catalog, scenarios, cascades, coverage, planner, blueprints, Fox-Architect, live view, design, guardrail lab, discovery, battle bench — plus the shared player, LLM client, context, report, dashboard, help, palette and shortcuts. |
 | Data | `data/*.json` — 5 datasets | Patterns, scenarios, cascades, traces and coverage; plain, versioned, diffable. |
-| Documents | `design/*.md` — 11 docs | Architecture documents fetched at view time and rendered with live Mermaid. |
-| Offline | `sw.js` | 50 precache entries; network-first with cache fallback; `/api/*` exempt. |
+| Documents | `design/*.md` — 12 docs | Architecture documents fetched at view time and rendered with live Mermaid. |
+| Offline | `sw.js` | 55 precache entries; network-first with cache fallback; `/api/*` exempt. |
 | Model | `serve.py` → `/api/llm/*` | Same-origin proxy: failover list, watchdogs, chunked relay, deterministic fallback. |
 
 ## Component Diagram
@@ -13664,7 +13666,7 @@ flowchart TB
 - The Design pane needs an HTTP origin, because `file://` blocks its fetch — so even a bare static host is required for that pane, however the rest of the app is deployed.
 - State lives in each browser's `localStorage` rather than in a database: no multi-user sync, and a fresh profile starts from nothing.
 - Modules share one global namespace, so an accidental redefinition is possible; the lint configuration is the guard (chapter 110).
-- The corpus is loaded rather than paged: five datasets and 11 documents sit in memory together, which is right at catalog scale and a limit well before it.
+- The corpus is loaded rather than paged: five datasets and 12 documents sit in memory together, which is right at catalog scale and a limit well before it.
 
 ## Safeguards
 
@@ -13680,10 +13682,10 @@ flowchart TB
 |---|---|
 | Delivery | `serve.py` — gzip, 304 revalidation, immutable vendor |
 | Shell | `index.html` + `js/app.js`, one global namespace |
-| Modules | 31 scripts, one pane each, `typeof`-guarded |
+| Modules | 32 scripts, one pane each, `typeof`-guarded |
 | Data | 5 JSON datasets, phased load with cascades deferred |
-| Documents | 11 `design/*.md`, fetched live |
-| Offline | `sw.js`, 50 entries, network-first |
+| Documents | 12 `design/*.md`, fetched live |
+| Offline | `sw.js`, 55 entries, network-first |
 | Model | `/api/llm/*` — failover, watchdogs, chunked relay |
 | Container | python:3.12-slim, non-root, read-only, about 42 MB |
 | Health | urllib healthcheck on `/`, 3s interval, 1s timeout |
@@ -13881,7 +13883,7 @@ And a LAN or air-gapped deployment is only honest if it keeps working with the c
 | Privilege | Read-only rootfs · `cap_drop: ALL` · `no-new-privileges` · tmpfs `/tmp` | The process cannot write, escalate or hold a capability |
 | Exposure | Published on your LAN, tailnet or CIDR; loopback behind `tailscale serve` | The port exists exactly where you put it |
 | Model path | Same-origin proxy, no secrets, `/api/*` never cached, watchdogs, truncated beacon | The one outbound path is bounded and auditable |
-| Time | `sw.js` precaches 50 entries; network-first; `VERSION` invalidation | After one visit, no network is needed |
+| Time | `sw.js` precaches 55 entries; network-first; `VERSION` invalidation | After one visit, no network is needed |
 
 ## The App's Own Threat Model
 
@@ -13934,7 +13936,7 @@ flowchart TB
 | Container | slim image, non-root uid, read-only rootfs, `cap_drop: ALL`, health check |
 | Network | LAN / tailnet / CIDR scope; loopback only behind `tailscale serve` |
 | Model path | same-origin proxy, no secrets, `/api/*` never cached |
-| Offline | 50 precached entries, network-first with cache fallback |
+| Offline | 55 precached entries, network-first with cache fallback |
 | Invalidation | `VERSION` bump drops every older cache on activate |
 | Retention | no server-side store; exports are how data leaves |
 | Scope | a team tool on infrastructure you control — not an internet service |
@@ -14124,6 +14126,189 @@ flowchart LR
 ## Conclusion
 
 The bench is the book's thesis with the serial numbers filed back on: deterministic enforcement outside the model, verification outside the enforcement, and every claim pointing at a record. It will not tell you an agent is safe — nothing synthetic can — but it will tell you, case by case and run by run, whether the controls you named are the controls you built. That receipt is the difference between a design and a document, and it is why this part of the book closes with a test harness rather than a peroration.
+
+---
+
+# Chapter 115: The Research Landscape
+
+**Part X — The Application**
+
+## Overview
+
+Behind the Research Graphs tab sit two knowledge graphs that read each other. One is the self-learning landscape — 51 works across 21 concepts, vendored as a byte snapshot from the sibling lab so this repository can never silently fork its curation. The other is the reinforcement-learning graph, curated here: 35 works across 18 concepts on 8 dimensions, from Bellman recursion through deep RL and offline methods to RLHF, verifiable rewards, verbal reflection and memory-policy learning.
+
+They interlink three ways. Five concept identifiers exist in both graphs with identical meaning — credit assignment, memory-policy learning, experience evolution, continual learning and verifier feedback. Every RL work carries explicit links: `rl_links` to the gradient ancestors it builds on, `sl_links` into the lab's landscape. And seven reading trails address works as `rl:` and `sl:` references, so a trail is a cross-graph path rather than a list.
+
+This chapter is the condensed map. The full excerpts — every one of the 35 RL works with its alignment row, verdict tier and researcher note, argued by a council of researchers — live in the *Self-Learning Agents* supplement's research-graphs part, generated from the same files by the same fail-loud discipline.
+
+## Why It Matters
+
+The lab studies learning with the weights frozen — prose, skills, memory operators — and that narrowing is productive only while its outside stays visible. Reinforcement learning is that outside: the lineage of reward, bootstrapping, policy gradients, trust regions and learned rewards from which the lab borrows its vocabulary while refusing its machinery.
+
+The borrowing direction is stated, not hidden: mechanisms travel from RL into the lab, while evidence must be re-earned on drifting streams with per-boundary checkpoints. A return curve from the deep-RL era proves game competence, not continual learning; a trust region is a stability idea worth translating into scope fences, not a result that transfers.
+
+The safety case is reward hacking, which the RL lineage names and the lab inherits. Optimise a proxy and the optimiser finds the crack — in weights or in language, the disease is the same, and so is the prescription: an admission gate, a scope fence and an expiry on every learning loop.
+
+## How It Works
+
+1. **Two graphs, split ownership.** The self-learning snapshot is copied byte-for-byte from the sibling checkout (`sync-sl` is a no-op when equal); the RL graph is curated in `data/rl_landscape.json`. One validator checks both, and the test suite enforces it in CI.
+2. **Three gates per RL work.** Each work is placed on all 8 dimensions, and the verdict counts three of them: a stability control (trust region, clipping, KL anchor, scope fence, TTL decay), a holdout or banded evaluation, and a reported cost. Three closed is measured and priced; none closed is a design prior, never evidence about agents.
+3. **Trails order the pile.** Seven curated walks — foundations, deep RL, offline, the LLM arc, verbal, memory-policy and evaluation last — each reframing the last. Evaluation walks last because it is the gate all the others must pass.
+4. **Collectors tend the graphs, human-gated.** Snapshot sync, an arXiv watch that stages an inbox, and the integrity gate. Drafts enter flagged and stay flagged until a human replaces the staged summary with a read one.
+5. **The tab draws what the files say.** Filterable lists plus a force-layout graph view — solid builds-on edges, dashed cross-graph edges, diamond hubs for the five shared concepts — with click-for-record into the catalog's own patterns.
+
+## Components
+
+| Piece | File | Responsibility |
+|---|---|---|
+| Self-learning graph | `data/sl_landscape.json` | Vendored snapshot of the sibling lab's landscape; owned there, copied here, validated here. |
+| RL graph | `data/rl_landscape.json` | 35 curated works on 8 dimensions with explicit `sl_links` and `rl_links`; every reference validated. |
+| Trails and collectors | `data/research_collectors.json` | 7 reading trails plus the three collector definitions (sync, watch, validate). |
+| Collector scripts | `tools/collect_research.py` | `validate` / `sync-sl` / `fetch-arxiv` / `report`: stdlib only, network only for the arXiv watch, graphs never written silently. |
+| Interface | `js/research.js` | Lists, trails and the SVG graph view (deterministic layout, pan/zoom, click-for-record); lazy-loaded, offline-precached. |
+| Full excerpts | `tools/build_sl_book.py` + `tools/sl_book_prose.py` | The supplement's research-graphs part: all 35 works with verdicts and researcher notes in the council's voice. |
+
+## Two Graphs, One Tab
+
+```mermaid
+flowchart LR
+  subgraph SIB["sibling lab checkout"]
+    LREF["reference/landscape.json<br>51 works · 9 dims · 21 concepts"]
+    LREF2["reference/benchmarks.json"]
+  end
+  subgraph REPO["this repo"]
+    SL["data/sl_landscape.json<br>vendored snapshot"]
+    RL["data/rl_landscape.json<br>curated · 35 works · 8 dims · 18 concepts"]
+    COL["data/research_collectors.json<br>7 trails · 3 collectors"]
+    TAB["js/research.js<br>Research Graphs tab"]
+    TOOL["tools/collect_research.py<br>sync-sl · fetch-arxiv · validate"]
+  end
+  LREF -->|"sync-sl (byte copy)"| SL
+  SL --> TAB
+  RL --> TAB
+  COL --> TAB
+  TOOL -->|"validates"| SL
+  TOOL -->|"validates"| RL
+  TOOL -->|"validates"| COL
+```
+
+## Tab Modules
+
+```mermaid
+flowchart TB
+  subgraph DATAFILES["data files"]
+    SLF["sl_landscape.json<br>vendored snapshot"]
+    RLF["rl_landscape.json<br>curated graph"]
+    COLF["research_collectors.json<br>trails + collectors"]
+  end
+  subgraph TAB["js/research.js"]
+    LISTS["list views<br>filter + cards + detail"]
+    GRAPH["graph view<br>rsGData + rsGLayout + rsGSvg"]
+    TRAILS["trails view<br>walks + collector table"]
+  end
+  subgraph TOOLS["tools + gates"]
+    COLL["collect_research.py<br>validate + sync-sl + fetch-arxiv"]
+    TEST["test/research.test.mjs<br>render + layout gates"]
+  end
+  SLF --> LISTS
+  RLF --> LISTS
+  COLF --> TRAILS
+  SLF --> GRAPH
+  RLF --> GRAPH
+  COLL --> SLF
+  COLL --> RLF
+  COLL --> COLF
+  TEST --> TAB
+```
+
+## Reader Activity
+
+```mermaid
+flowchart TB
+  START["open Research Graphs"] --> PICK["pick a view<br>list · graph · trails"]
+  PICK --> FILTER["filter by kind + concept<br>search titles + mechanisms"]
+  FILTER --> OPEN["open a work<br>alignment + verdict + note"]
+  OPEN --> JUMP["follow a link<br>sl-node · rl-node · pattern"]
+  JUMP --> TRAIL["walk a trail<br>foundations first, evaluation last"]
+  TRAIL --> KEEP["keep the verdict tier<br>with the title"]
+```
+
+## Cross-Graph Jump
+
+```mermaid
+sequenceDiagram
+  participant R as Reader
+  participant Tab as Research tab
+  participant RL as RL detail
+  participant SL as SL detail
+  R->>RL: open deepseek-r1-2025
+  RL->>R: alignment plus verdict plus links
+  R->>Tab: click sl self-evolving-continual-learners
+  Tab->>SL: switch graph and select node
+  SL->>R: lab record plus inbound RL citers
+  R->>Tab: walk memory-policy trail
+  Tab->>R: paired works across both graphs
+```
+
+## Risks and Limitations
+
+- Fame concentrates where gates are open: the most-cited RL rows close the fewest, and teams borrow authority along with mechanism. The verdict tier travels with every citation in the supplement; quote the tier, not the title.
+- A foundations section launders authority for readers who skip the verdict column. Tabular results are mathematics, not agent evidence — never let one testify about a deployment.
+- Shared concept identifiers are shared obligations. If the two graphs ever fork a gloss, two teams will argue about words while believing they argue about evidence.
+- The arXiv watch stages candidates; unstaged triage rots into implied endorsement. Flagged drafts are honest only while someone reads the flag.
+- Return curves do not transfer across substrates, tasks or decades. Borrow the optimiser, re-measure the forgetting, re-price the cost — every time.
+
+## Safeguards
+
+1. Every cross-graph reference is validated by script and by the test suite: patterns resolve in the catalog, every link and trail reference resolves, no self-links, no duplicate ids.
+2. The borrowing direction is printed, not implied — mechanisms in, evidence re-earned — in the supplement's opening chapter and in every per-work reading line.
+3. The snapshot sync copies bytes and reports no-op when equal, so drift between the lab and the vendored copy shows as a diff, never a silent merge.
+4. The book generators fail loudly on drift: a renamed work without its researcher note, a figure heading that moved, a count cited from memory instead of disk — all fail the build rather than shipping wrong.
+5. The tab degrades to lists and tables when the graphs cannot load, and the graphs it draws are the files on disk — served offline from the precache after one visit.
+
+## At a Glance
+
+| Field | Value |
+|---|---|
+| Self-learning graph | 51 works · 21 concepts (vendored snapshot) |
+| RL graph | 35 works · 18 concepts · 8 dimensions (curated) |
+| Shared concepts | credit-assignment · memory-policy-learning · experience-evolution · continual-learning · verifier-feedback |
+| Verdict gates | stability control · holdout/banded evaluation · reported cost |
+| Trails | 7 curated walks, evaluation last |
+| Collectors | sync-sl (bytes) · arXiv watch (inbox) · validate (gate) |
+| Full text | supplement research-graphs part: all 35 works with notes |
+| Honesty | mechanisms in, evidence re-earned — printed, not implied |
+
+## Key Takeaways
+
+- Keep the lab's narrowing honest by mapping its outside: every verbal mechanism has a gradient ancestor, and the graph walks you to it before you claim novelty.
+- Judge RL imports by three gates — stability control, holdout or bands, reported cost — and quote the tier with the title.
+- Share concept identifiers across graphs only with shared meanings; a forked gloss is two teams arguing about words.
+- Tend the collectors on a schedule: re-sync, re-validate, retire trails whose frontier moved on.
+- Read the full excerpts in the supplement, where the council of researchers argues every work before the verdict.
+
+## References
+
+- `data/rl_landscape.json`, `data/sl_landscape.json`, `data/research_collectors.json` — the graphs and the trails.
+- `tools/collect_research.py` — the three collectors.
+- `design/12-research-graphs.md` — the architecture: ownership, interlinks, collectors, freshness contract.
+- `js/research.js` — the tab: lists, trails and the graph view.
+- `tools/build_sl_book.py`, `tools/sl_book_prose.py` — the supplement's research-graphs part with all 35 researcher notes.
+
+## Council deliberation
+
+- **Memory-systems researcher:** The landscape chapter maps the outside the lab deliberately excludes: a vendored self-learning snapshot the repository cannot silently fork, plus a curated RL graph from Bellman through reasoning models, joined by five shared concepts and explicit cross-links. I value the ownership split most, since byte-copy snapshots plus a validator turn curation drift into a visible diff rather than a quiet fork. Reading the bridge works evolver-to-evolver against the lab mechanisms is where this earns its keep, because fencing and expiry matter more than the optimizer in every substrate.
+- **Evaluation methodologist:** What persuades me is the three-gate verdict device applied uniformly: a stability control, a holdout or banded evaluation, and a reported cost, counted per work and never averaged into a score. Only a handful of rows close all three, which correctly marks the tabular foundations as mathematics rather than agent evidence. I consider unmeasured rows context however famous, so the tier column lets a meeting quote claims that travel while naming the re-measurement the rest still owe.
+
+## Council reading
+
+- **Red team:** Fame concentrates where gates are open — the most-cited RL rows close the fewest, so quote the verdict tier with the title and never let a tabular result testify about a deployment.
+- **Blue team:** Shared concept identifiers are shared obligations: five glosses, identical on both sides, checked by script — a forked concept is two teams arguing about words.
+- **Operator:** Walk the trails in order and tend the collectors on schedule; a graph nobody re-validates is a rumour with good type, and flagged drafts are honest only while someone reads the flag.
+
+## Conclusion
+
+The research landscape is the book's method applied to its own context: enumerate the outside, place every work on explicit dimensions, count the gates each one closes, and let a validator — not a memory — keep the references honest. It will not tell you which mechanism to adopt; it will tell you, work by work, what you may borrow and what you must re-measure. That receipt is what makes a literature review a tool instead of a shelf, and it is why the book closes its application part with a map rather than a moral.
 
 ---
 
