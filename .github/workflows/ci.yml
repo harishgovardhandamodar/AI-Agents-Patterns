@@ -40,5 +40,5 @@ jobs:
           python-version: "3.x"
       - name: Install (full, with Chromium)
         run: npm ci
-      - name: Headless smoke (15 tabs, 0 errors)
+      - name: Headless smoke (16 tabs, 0 errors)
         run: npm run test:e2e

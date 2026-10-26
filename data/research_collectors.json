@@ -1,0 +1,90 @@
+{
+ "version": "2026-11",
+ "note": "Research collectors: the curated reading trails (seed collections) and the scripts that keep the two knowledge graphs fresh. Trails reference work ids in data/rl_landscape.json (rl:*) and data/sl_landscape.json (sl:*); tools/collect_research.py validates every reference. Script collectors never mutate data/*.json without an explicit --apply flag.",
+ "trails": [
+  {
+   "id": "foundations-trail",
+   "label": "RL foundations trail",
+   "scope": "rl",
+   "blurb": "The six works to read before any RL opinion: Bellman recursion, TD, Q-learning, REINFORCE, the textbook, and the safety agenda.",
+   "works": ["rl:bellman-1957", "rl:sutton-td-1988", "rl:watkins-q-1992", "rl:williams-reinforce-1992", "rl:sutton-barto-book", "rl:concrete-problems-2016"]
+  },
+  {
+   "id": "deep-rl-trail",
+   "label": "Deep RL trail",
+   "scope": "rl",
+   "blurb": "From pixels to policies: DQN, A3C, TRPO/PPO, Rainbow, SAC/TD3, AlphaGo, MuZero, Dreamer and evolution strategies.",
+   "works": ["rl:dqn-2015", "rl:a3c-2016", "rl:trpo-2015", "rl:ppo-2017", "rl:rainbow-2017", "rl:sac-2018", "rl:td3-2018", "rl:alphago-2016", "rl:muzero-2020", "rl:dreamer-2020", "rl:es-2017"]
+  },
+  {
+   "id": "offline-rl-trail",
+   "label": "Offline RL trail",
+   "scope": "rl",
+   "blurb": "Learning from fixed logs: conservatism (CQL), in-sample values (IQL), and RL as sequence modelling.",
+   "works": ["rl:cql-2020", "rl:iql-2022", "rl:decision-transformer-2021"]
+  },
+  {
+   "id": "llm-rl-trail",
+   "label": "LLM RL trail (RLHF to RLVR)",
+   "scope": "both",
+   "blurb": "Preference learning to verifiable rewards: the Christiano template, InstructGPT, Constitutional AI, DPO, DeepSeek-R1 — read against the lab's continual-learning protocol.",
+   "works": ["rl:rlhp-christiano-2017", "rl:instructgpt-2022", "rl:constitutional-2022", "rl:dpo-2023", "rl:deepseek-r1-2025", "sl:self-evolving-continual-learners"]
+  },
+  {
+   "id": "memory-policy-trail",
+   "label": "Memory-policy RL trail",
+   "scope": "both",
+   "blurb": "Where RL meets the memory store: A-MEM's operators, MemRL's runtime RL, ReasoningBank's compounding bank — the interlink heart of the two graphs.",
+   "works": ["rl:memrl-2026", "rl:a-mem-2025", "rl:reasoningbank-2025", "sl:memrl", "sl:a-mem", "sl:reasoningbank", "sl:atlas"]
+  },
+  {
+   "id": "verbal-rl-trail",
+   "label": "Verbal RL trail",
+   "scope": "both",
+   "blurb": "The update is prose: Reflexion, Voyager's skill library, GEPA's program evolution, Generative Agents — optimisation without gradients.",
+   "works": ["rl:reflexion-2023", "rl:voyager-2023", "rl:gepa-2025", "sl:reflexion", "sl:voyager", "sl:dspy", "sl:expel"]
+  },
+  {
+   "id": "eval-discipline-trail",
+   "label": "Evaluation discipline trail",
+   "scope": "both",
+   "blurb": "How to tell learning from gaming: hold-outs, bands, sweeps, and the benchmarks both graphs grade on.",
+   "works": ["rl:swe-bench-2024", "rl:gymnasium-envs", "rl:atlas-2025", "sl:swe-bench", "sl:gaia", "sl:longmemeval", "sl:self-evolving-continual-learners"]
+  }
+ ],
+ "collectors": [
+  {
+   "id": "sl-vendor-sync",
+   "label": "Self-learning snapshot sync",
+   "kind": "script",
+   "scope": "sl",
+   "tool": "python3 tools/collect_research.py sync-sl",
+   "sources": ["../self-learning-agents/reference/landscape.json"],
+   "outputs": ["data/sl_landscape.json"],
+   "schedule": "on lab checkout change; verified by npm test",
+   "status": "active"
+  },
+  {
+   "id": "arxiv-rl-watch",
+   "label": "arXiv RL watch",
+   "kind": "script",
+   "scope": "rl",
+   "tool": "python3 tools/collect_research.py fetch-arxiv --query <q> [--apply]",
+   "sources": ["arXiv API (export.arxiv.org)"],
+   "outputs": ["exports/research_inbox.json"],
+   "schedule": "manual; inbox triage before any graph edit",
+   "status": "active"
+  },
+  {
+   "id": "graph-validate",
+   "label": "Graph integrity gate",
+   "kind": "script",
+   "scope": "both",
+   "tool": "python3 tools/collect_research.py validate",
+   "sources": ["data/rl_landscape.json", "data/sl_landscape.json", "data/research_collectors.json", "data/patterns.json"],
+   "outputs": ["exit status + report (also enforced by npm test)"],
+   "schedule": "every commit via CI",
+   "status": "active"
+  }
+ ]
+}

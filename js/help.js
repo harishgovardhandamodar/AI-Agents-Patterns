@@ -81,7 +81,7 @@ const HELP = {
   },
   design: {
     t: "Design & Architecture",
-    b: `<p>The <b>nine design documents</b> behind the app: system context, UML, control flow, the financial guardrail architecture, data model, threat model, the architect value map, runtime/offline delivery, and the Battle Bench.</p>
+    b: `<p>The <b>twelve design documents</b> behind the app: system context, UML, control flow, the financial guardrail architecture, data model, threat model, the architect value map, runtime/offline delivery, the Battle Bench, Rogue Agents, the self-learning add-on bridge, and the research-graphs architecture.</p>
     <ul><li>Read 07 for the “why” (the cascade taxonomy the app is built on) and 08 for how it boots, renders diagrams, works offline and is delivered.</li><li>Read 09 for how the catalog <b>tests itself</b> — the battle-test bench that runs the 54 failure scenarios against a configuration and grades the controls.</li><li>⤢ enlarges any diagram with zoom and pan.</li></ul>`
   },
   guard: {
@@ -114,6 +114,12 @@ const HELP = {
     b: `<p><b>The add-on bridge</b> to the Self-Learning Agent Lab (sibling checkout, FastAPI on :8220): continual learning, task-scoped adaptation, and the evaluation discipline that keeps them honest.</p>
     <ul><li><b>Status dot</b> probes the lab with a no-cors fetch — reachable or not, everything below works either way.</li><li><b>Concept bridge</b> maps each lab mechanism to the catalog patterns and scenarios that already cover it — click through to the record.</li><li>Run the lab with <span class="mono">./run.sh</span> or <span class="mono">docker compose up --build -d</span>, then open its dashboard from the tab.</li></ul>
     <p class="muted small">The bridge is a map, not a measurement: run the lab's 50-iteration gate for proof. The companion book is built by <span class="mono">npm run book:self</span>.</p>`
+  },
+  research: {
+    t: "Research Graphs",
+    b: `<p><b>Two knowledge graphs that read each other.</b> The self-learning graph (vendored from the sibling lab) and the RL graph (curated here, from Bellman to RLVR) share five concepts; RL works link into both graphs, and the trails walk them in reading order.</p>
+    <ul><li>Filter by kind or concept, search across titles, summaries and mechanisms, then open any work for its alignment, catalog patterns and outbound links.</li><li><b>⛓ links</b> jump across graphs: an RL work's <b>sl_links</b> land on the self-learning node, and every SL node lists the RL works that cite it.</li><li><b>🕸 Graph</b> draws the same data as a force-layout: solid builds-on edges, dashed cross-graph edges, diamond hubs for the five shared concepts — drag to pan, wheel to zoom, click any node for its record.</li><li><b>Trails &amp; collectors</b> holds the seven curated reading trails plus the three collector scripts — snapshot sync, arXiv watch, integrity gate. Copy any command and run it locally.</li></ul>
+    <p class="muted small">Nothing enters a graph silently: <span class="mono">python3 tools/collect_research.py validate</span> gates every reference, and the arXiv watch only stages an inbox for human triage.</p>`
   }
 };
 

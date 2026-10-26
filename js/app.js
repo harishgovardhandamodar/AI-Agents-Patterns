@@ -17,7 +17,8 @@ const DESIGN_DOCS = [
   { id: "08-runtime-offline", file: "design/08-runtime-offline.md", title: "Runtime, Offline & Delivery", group: "Dynamics", answers: "Phased boot, vendored Mermaid, the offline service worker, caching, headers and CI gates" },
   { id: "09-battle-bench", file: "design/09-battle-bench.md", title: "Battle Bench — Testing Agents", group: "Safety", answers: "How the catalog tests itself: cases, adapters, the oracle, the adversary" },
   { id: "10-rogue-agents", file: "design/10-rogue-agents.md", title: "Rogue Agents — Detection & Quarantine", group: "Safety", answers: "Simulated insider threat: six rogue archetypes, three detectors, the quarantine workflow, live fire" },
-  { id: "11-self-learning-addon", file: "design/11-self-learning-addon.md", title: "Self-Learning Add-on — Bridging the Lab", group: "Architecture", answers: "The sibling lab on :8220: status bridge, concept map, and the data flow the supplement book is built from" }
+  { id: "11-self-learning-addon", file: "design/11-self-learning-addon.md", title: "Self-Learning Add-on — Bridging the Lab", group: "Architecture", answers: "The sibling lab on :8220: status bridge, concept map, and the data flow the supplement book is built from" },
+  { id: "12-research-graphs", file: "design/12-research-graphs.md", title: "Research Graphs — Self-Learning × RL", group: "Architecture", answers: "Two knowledge graphs, five shared concepts, cross-graph links, trails and collectors" }
 ];
 
 /* ---------------- theme ---------------- */
@@ -562,7 +563,7 @@ function replayTour() { skHelpClose(); onbShow(true); }
 function dlgSelfClose(e) { if (e && e.target === this) closeDetail(); }
 function blurOnEnter(e, el) { if (e && e.key === "Enter" && el) el.blur(); }
 
-/* ---------------- two-level tabs: 6 sections, 15 tabs ----------------
+/* ---------------- two-level tabs: 6 sections, 16 tabs ----------------
    The top strip holds section buttons; the strip beneath holds that
    section's tabs. Panes, tab ids, hashes and deep links are unchanged — only
    the bar is grouped — so every data-act="switchTab"/goTo call, the palette
@@ -571,7 +572,7 @@ const TAB_GROUPS = [
   { id: "overview", label: "📊 Overview", tabs: ["overview"] },
   { id: "catalog", label: "◆ Catalog", tabs: ["patterns", "scenarios", "cascades", "coverage", "live"] },
   { id: "design", label: "🧭 Design", tabs: ["deploy", "blueprint"] },
-  { id: "labs", label: "🧪 Labs", tabs: ["guard", "discovery", "bench"] },
+  { id: "labs", label: "🧪 Labs", tabs: ["guard", "discovery", "bench", "research"] },
   { id: "agents", label: "🛡 Agents", tabs: ["rogue", "selflearn"] },
   { id: "architect", label: "🤖 Architect", tabs: ["copilot", "design"] },
 ];
@@ -590,7 +591,8 @@ const SUBTAB_LABELS = {
   discovery: "🧪 Discovery Lab",
   bench: "⚔ Battle Bench",
   rogue: "🛑 Rogue Agents",
-  selflearn: "🧬 Self-Learning"
+  selflearn: "🧬 Self-Learning",
+  research: "📚 Research Graphs"
 };
 let currentGroup = "";
 function groupOfTab(tab) {
@@ -2151,7 +2153,8 @@ async function loadAll() {
       has("initDiscovery") && ["discovery", "Discovery Lab", () => initDiscovery()],
       has("initBench") && ["bench", "Battle Bench", () => initBench()],
       has("initRogue") && ["rogue", "Rogue Agents", () => initRogue()],
-      has("initSelflearn") && ["selflearn", "Self-Learning", () => initSelflearn()]
+      has("initSelflearn") && ["selflearn", "Self-Learning", () => initSelflearn()],
+      has("initResearch") && ["research", "Research Graphs", () => initResearch()]
     ].filter(Boolean);
     PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; });
     const paneRun = async p => {

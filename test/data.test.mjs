@@ -268,3 +268,59 @@ test("self-learning bridge references resolve in the catalog", () => {
   assert.deepEqual(badP, [], `selflearn.js references unknown patterns:\n  ${badP.join("\n  ")}`);
   assert.deepEqual(badS, [], `selflearn.js references unknown scenarios:\n  ${badS.join("\n  ")}`);
 });
+
+// The Research Graphs tab reads two knowledge graphs plus the collectors.
+// Every cross-graph reference must resolve: rl works -> catalog patterns,
+// rl_links, sl_links and concepts; trails -> rl:/sl: work ids. This mirrors
+// tools/collect_research.py validate so CI enforces it without Python.
+test("research graphs are internally consistent and interlinked", () => {
+  const rl = JSON.parse(readFileSync(join(ROOT, "data", "rl_landscape.json"), "utf8"));
+  const sl = JSON.parse(readFileSync(join(ROOT, "data", "sl_landscape.json"), "utf8"));
+  const col = JSON.parse(readFileSync(join(ROOT, "data", "research_collectors.json"), "utf8"));
+  const patIds = new Set(patterns.map((p) => p.id));
+  const rlIds = new Set(rl.works.map((w) => w.id));
+  const slIds = new Set(sl.works.map((w) => w.id));
+  const rlConcepts = new Set(rl.concepts.map((c) => c.id));
+  const rlDims = new Set(rl.dimensions.map((d) => d.id));
+  assert.equal(rlIds.size, rl.works.length, "rl_landscape has duplicate work ids");
+  assert.equal(slIds.size, sl.works.length, "sl_landscape has duplicate work ids");
+  const bad = [];
+  for (const w of rl.works) {
+    for (const p of w.patterns || []) if (!patIds.has(p)) bad.push(`rl:${w.id} -> unknown pattern ${p}`);
+    for (const t of w.rl_links || []) {
+      if (!rlIds.has(t)) bad.push(`rl:${w.id} -> unknown rl_link ${t}`);
+      if (t === w.id) bad.push(`rl:${w.id} links to itself`);
+    }
+    for (const t of w.sl_links || []) if (!slIds.has(t)) bad.push(`rl:${w.id} -> unknown sl_link ${t}`);
+    for (const c of w.concepts || []) if (!rlConcepts.has(c)) bad.push(`rl:${w.id} -> unknown concept ${c}`);
+    for (const d of Object.keys(w.align || {})) if (!rlDims.has(d)) bad.push(`rl:${w.id} -> unknown dimension ${d}`);
+    for (const k of ["id", "title", "url", "summary", "mechanism"]) {
+      assert.ok(k in w, `rl work ${w.id} is missing key "${k}"`);
+    }
+  }
+  for (const t of col.trails || []) {
+    for (const ref of t.works || []) {
+      if (ref.startsWith("rl:")) { if (!rlIds.has(ref.slice(3))) bad.push(`trail ${t.id} -> unknown ${ref}`); }
+      else if (ref.startsWith("sl:")) { if (!slIds.has(ref.slice(3))) bad.push(`trail ${t.id} -> unknown ${ref}`); }
+      else bad.push(`trail ${t.id} has unprefixed ref ${ref}`);
+    }
+  }
+  assert.deepEqual(bad, [], `dangling research references:\n  ${bad.join("\n  ")}`);
+});
+
+test("research graphs share concepts and link both ways", () => {
+  const rl = JSON.parse(readFileSync(join(ROOT, "data", "rl_landscape.json"), "utf8"));
+  const sl = JSON.parse(readFileSync(join(ROOT, "data", "sl_landscape.json"), "utf8"));
+  const slConcepts = new Set(sl.concepts.map((c) => c.id));
+  const shared = rl.concepts.map((c) => c.id).filter((id) => slConcepts.has(id));
+  assert.ok(shared.length >= 5, `expected at least 5 shared concepts, got ${shared.length}`);
+  const withSl = rl.works.filter((w) => (w.sl_links || []).length).length;
+  assert.ok(withSl >= 5, `expected at least 5 RL works with sl_links, got ${withSl}`);
+});
+
+test("sl snapshot carries provenance (vendored, not hand-edited)", () => {
+  const sl = JSON.parse(readFileSync(join(ROOT, "data", "sl_landscape.json"), "utf8"));
+  assert.ok(sl.version, "sl_landscape.json must carry a version");
+  assert.ok(Array.isArray(sl.works) && sl.works.length > 0, "sl_landscape.json must carry works");
+  assert.ok(Array.isArray(sl.dimensions) && sl.dimensions.length > 0, "sl_landscape.json must carry dimensions");
+});

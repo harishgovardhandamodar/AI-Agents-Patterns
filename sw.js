@@ -14,7 +14,7 @@
  * Bump VERSION whenever the shell changes; activate() drops older caches.
  * The precache list is kept in sync by test/data.test.mjs.
  */
-const VERSION = "aap-v10";
+const VERSION = "aap-v14";
 
 const PRECACHE = [
   "index.html",
@@ -48,6 +48,7 @@ const PRECACHE = [
   "js/benchui.js",
   "js/rogue.js",
   "js/selflearn.js",
+  "js/research.js",
   "js/books.js",
   "js/bootcheck.js",
   "js/vendor/mermaid.min.js",
@@ -56,6 +57,9 @@ const PRECACHE = [
   "data/traces.json",
   "data/cascades.json",
   "data/coverage.json",
+  "data/sl_landscape.json",
+  "data/rl_landscape.json",
+  "data/research_collectors.json",
   "design/01-system-context.md",
   "design/02-uml.md",
   "design/03-control-flow.md",
@@ -67,6 +71,7 @@ const PRECACHE = [
   "design/09-battle-bench.md",
   "design/10-rogue-agents.md",
   "design/11-self-learning-addon.md",
+  "design/12-research-graphs.md",
 ];
 
 /* Cache the *decoded* body: fetch() hands back a decompressed stream while

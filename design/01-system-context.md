@@ -54,7 +54,7 @@ flowchart TB
 
 ```mermaid
 flowchart LR
-  subgraph BROWSER["Browser (single page, 15 tabs)"]
+  subgraph BROWSER["Browser (single page, 16 tabs)"]
     TABS["Tab strip<br/>Overview · Fox-Architect · Patterns<br/>Scenarios · Cascades · Coverage · Deploy<br/>Blueprints · Live View · Design<br/>Guardrail Lab · Discovery Lab · Battle Bench<br/>Rogue Agents · Self-Learning"]
     ENG1["Pattern catalog engine"]
     ENG2["Scenario catalog engine"]

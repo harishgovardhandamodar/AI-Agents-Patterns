@@ -2017,6 +2017,28 @@ html[data-uxdensity="compact"] .notif-log-body { max-height: min(300px, 44vh); }
    configurations fail on these nine scenarios" is a result. */
 #benchPane .ov-wrap { overflow: auto; max-width: 1500px; }
 #roguePane .ov-wrap { overflow: auto; max-width: 1500px; }
+/* Self-Learning and Research Graphs render straight into .ov-wrap (no inner
+   split/main scroller), so the wrap itself must scroll — same as bench/rogue.
+   Without this the pane clips at viewport height with no scrollbar. */
+#selflearnPane .ov-wrap { overflow: auto; max-width: 1500px; }
+#researchPane .ov-wrap { overflow: auto; max-width: 1500px; }
+/* Research knowledge-graph view: SVG canvas + theme-aware nodes/edges */
+.rs-g-wrap { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; background: var(--bg2); }
+#rsG { display: block; width: 100%; height: 560px; touch-action: none; cursor: grab; }
+#rsG:active { cursor: grabbing; }
+.rsg-node { cursor: pointer; outline: none; }
+.rsg-node:focus circle, .rsg-node:focus rect { stroke: var(--accent); stroke-width: 2.5; }
+.rsg-k-paper { fill: var(--accent); }
+.rsg-k-benchmark { fill: var(--green); }
+.rsg-k-framework { fill: var(--purple); }
+.rsg-k-product { fill: var(--orange); }
+.rsg-k-writeup, .rsg-k-blog { fill: var(--pink); }
+.rsg-hub { fill: transparent; stroke: var(--purple); stroke-width: 1.6; stroke-dasharray: 3 2; }
+.rsg-sel { stroke: var(--red); stroke-width: 2.5; }
+.rsg-lab { fill: var(--text2); font-size: 10.5px; paint-order: stroke; stroke: var(--bg2); stroke-width: 3px; }
+.rsg-e-int { stroke: var(--text3); stroke-width: 1.1; }
+.rsg-e-cross { stroke: var(--accent); stroke-width: 1.2; stroke-dasharray: 6 4; }
+.rsg-e-hub { stroke: var(--purple); stroke-width: 1; stroke-dasharray: 2 3; opacity: 0.65; }
 .bt-head { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
 .bt-head > * { min-width: 0; }
 .bt-head h2 { margin: 0 0 3px; font-size: 17px; }

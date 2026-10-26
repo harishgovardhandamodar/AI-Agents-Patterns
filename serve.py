@@ -326,7 +326,7 @@ def _landscape_collect():
     """Snapshot of every landscape the books build from: the catalog (main,
     rogue) and the sibling lab's reference data (self). Read-only; the build
     scripts themselves re-validate everything they consume."""
-    out = {"catalog": None, "self": None, "sl_present": os.path.isdir(SL_DIR)}
+    out = {"catalog": None, "self": None, "research": None, "sl_present": os.path.isdir(SL_DIR)}
     try:
         pats = json.load(open(os.path.join(ROOT, "data/patterns.json")))
         scen = json.load(open(os.path.join(ROOT, "data/scenarios.json")))
@@ -350,6 +350,17 @@ def _landscape_collect():
             }
         except Exception as e:
             out["self"] = {"error": type(e).__name__}
+    try:
+        rl = json.load(open(os.path.join(ROOT, "data/rl_landscape.json")))
+        tr = json.load(open(os.path.join(ROOT, "data/research_collectors.json")))
+        out["research"] = {
+            "works": len(rl.get("works", [])),
+            "concepts": len(rl.get("concepts", [])),
+            "dimensions": len(rl.get("dimensions", [])),
+            "trails": len(tr.get("trails", [])),
+        }
+    except Exception as e:
+        out["research"] = {"error": type(e).__name__}
     return out
 
 

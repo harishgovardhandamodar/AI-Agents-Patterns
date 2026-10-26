@@ -84,18 +84,18 @@ A server is needed because the Design tab fetches `design/*.md` (`file://` would
 
 ---
 
-## Six sections, fifteen tabs
+## Six sections, sixteen tabs
 
 The top strip holds six sections; the strip beneath holds the active
 section's tabs (each section remembers its last tab). Panes, hashes and deep
-links still use the fifteen tab ids, so every saved link keeps working:
+links still use the sixteen tab ids, so every saved link keeps working:
 
 | Section | Tabs |
 |---|---|
 | 📊 Overview | Overview |
 | ◆ Catalog | Patterns · Scenarios · Cascades · Coverage & Gaps · Live View |
 | 🧭 Design | Deployment Plan · Blueprints |
-| 🧪 Labs | Guardrail Lab · Discovery Lab · Battle Bench |
+| 🧪 Labs | Guardrail Lab · Discovery Lab · Battle Bench · Research Graphs |
 | 🛡 Agents | Rogue Agents · Self-Learning |
 | 🤖 Architect | Fox-Architect · Design & Architecture |
 
@@ -110,12 +110,13 @@ links still use the fifteen tab ids, so every saved link keeps working:
 | **Deployment Plan** | Four-step intake → readiness scorecard across weighted dimensions → recommended stack + guardrail config → autonomy/rollout dial → residual-risk register → ADR generator (citations validated against the catalog). |
 | **Blueprints** | Reference-architecture builder: compose patterns from templates or the palette into a pipeline + control overlay, with Mermaid export, deterministic warnings, a cost/latency/risk estimator, a per-blueprint **threat model** (exposure index vs. the catalog ceiling, matched scenarios/cascades/failure modes, one-click add of missing defenses) and **baseline compare** (template/library diff with metric deltas, undoable restore). The palette multi-selects, with a live preview of what the addition will close. |
 | **Live View** | An exhaustive, filterable library of **55 mock execution traces**, linked from the scenarios that have replays. The control-flow diagram highlights the active node while the step tracker, budget/cost/token gauges, guardrail counters, and event log advance in sync. Play / step / back / reset with adjustable speed; filter by domain, severity, verdict or free text. |
-| **Design & Architecture** | UML & architecture documents with live Mermaid — **eleven docs**: system context, component/class UML, control flow & runtime, financial guardrail architecture, data model (ER), threat model, the architect value map, runtime/offline/delivery, the Battle Bench architecture, the Rogue Agents architecture, and the self-learning add-on bridge. Rail + scroll-spy outline + source toggle + zoom viewer (wheel zoom, drag pan, ←/→ step). Loaded lazily on first visit. |
+| **Design & Architecture** | UML & architecture documents with live Mermaid — **twelve docs**: system context, component/class UML, control flow & runtime, financial guardrail architecture, data model (ER), threat model, the architect value map, runtime/offline/delivery, the Battle Bench architecture, the Rogue Agents architecture, the self-learning add-on bridge, and the research-graphs architecture. Rail + scroll-spy outline + source toggle + zoom viewer (wheel zoom, drag pan, ←/→ step). Loaded lazily on first visit. |
 | **Guardrail Lab** | Type any agent idea and it is analyzed into a full design (see below). Every analysis is saved to a collection in `localStorage` and exportable as JSON. The analysis is not a dead end: its controls map to catalog patterns that land on your blueprint, and its mock run can be promoted into the Live View trace library. |
 | **Discovery Lab** | Deterministic, grounded *ideation* of novel scenarios (after "Scaling Discovery Requires Forgetting"): each round generates parallel candidates, keeps only the winners and forgets the rest, reseeding the next round from the winners alone — with a compare mode that runs the same budget with forgetting off to show the plateau on this catalog. Winners are drafts only (never auto-added): **promote** one into a catalog-shaped scenario you can review, ask Fox-Architect about, or export as JSON. |
 | **Battle Bench** | The catalog **testing itself**: every one of the 54 failure scenarios becomes a test case against a *configuration* (a set of controls an agent would deploy), run through interchangeable adapters — deterministic guardrail simulation, golden trace replay (all 55 traces), or the live local model with the backend pinned per run — and graded by an oracle that derives its assertions from each scenario's own protections. Full coverage by construction (cases = corpus × configs); configs are checked against the Deployment Plan's option tables so the bench cannot drift from the app. Includes an **adversary** (ranked exposure, a mutation sweep that finds the load-bearing control, a live red-team loop), **model comparison** (diff verdicts across two models, regressions flagged), a run store for cross-time comparison, and Markdown/JSON report export. See `BATTLE-ANALYSIS.md` for the analysis and findings. |
 | **Rogue Agents** | One compromised agent in a 300-agent swarm: injects six rogue archetypes (goal hijack, exfiltration, capability abuse, collusion, slow drift, sybil spawn) into a deterministic simulation, scores three detectors (behavioural deviation, goal misalignment, collusion) with median + MAD baselines, runs the automated isolation workflow against remediation SLAs, and keeps what works as runtime guardrails. Four staged views (setup → results → quarantine board → guardrails) with per-rogue inspection, a live wall-clock SLA board with owners and a fleet kill switch, and leave-one-out + solo counterfactuals proving which controls carry the result. Seven domain themes (fintech, trading, medical advice, research landscape, vulnerability detection, drug discovery, plus the general swarm) reskin roles and tool vocabulary on the same engine; **live fire** hands each rogue's campaign to the model via fox-services (capped swarm/horizon, fallbacks flagged) while detection and quarantine stay engine-side. See the tab's honest caveat: a passing run proves the controls are wired, not that any agent is safe. |
 | **Self-Learning** | Add-on bridge to the Self-Learning Agent Lab (sibling checkout, FastAPI on :8220): live reachability status, deep links and run instructions, plus a concept bridge mapping each lab mechanism (task-scoped learning, workflow conditioning, evolvers, streams, continual-learning metrics) to the catalog patterns and scenarios that already cover it. Companion book via `npm run book:self`. |
+| **Research Graphs** | Self-learning agents and reinforcement learning as **interlinked knowledge graphs**: the vendored self-learning snapshot (51 works) plus the curated RL graph (35 works, Bellman → RLVR), joined by five shared concepts, cross-graph links and seven reading trails — explorable as filterable lists or as a pannable/zoomable **graph view** (builds-on, cross-graph and concept-hub edges, click any node for its record) — with three human-gated **collectors** (snapshot sync, arXiv watch, integrity gate via `python3 tools/collect_research.py`). |
 
 **Global**: `Ctrl/⌘ K` (or `/`) opens a command palette over everything — patterns,
 scenarios, cascades, tabs, templates, saved blueprints, **projects, research sets
@@ -215,6 +216,7 @@ js/adversary.js            bench adversary: exposure probe, mutation sweep, live
 js/benchui.js              Battle Bench tab: matrix, config editor, adversary panel, model compare, report
 js/rogue.js                Rogue Agents tab: swarm simulator, detectors, quarantine board, guardrail counterfactuals
 js/selflearn.js            Self-Learning tab: add-on bridge (lab status, deep links, catalog concept map)
+js/research.js             Research Graphs tab: self-learning × RL knowledge graphs, trails & collectors
 js/books.js                Bookshelf panel (Overview): landscape inventory + rebuild all books via /api/books/*
 js/dashboard.js            architect dashboard projection on Overview
 js/palette.js              Ctrl/⌘K command palette (catalog, projects, research sets, workflow commands)
@@ -226,9 +228,13 @@ data/scenarios.json        54 scenarios (attack chains, protections, detection, 
 data/cascades.json         191 composition cascades (four classes)
 data/traces.json           55 mock execution traces (every scenario links a replay; 16 generated by tools/gen_traces.py)
 data/coverage.json         control-family coverage index (26 domains)
+data/sl_landscape.json       vendored self-learning landscape snapshot (51 works; sync via tools/collect_research.py sync-sl)
+data/rl_landscape.json       curated RL knowledge graph (35 works, Bellman -> RLVR, links into sl_landscape)
+data/research_collectors.json   reading trails + collector definitions (validated by npm test)
 tools/gen_cascades.py      cascade dataset generator
 tools/gen_coverage.py      coverage-index generator (byte-identical on unchanged data)
 tools/gen_traces.py        deterministic trace generator: scenario record -> replayable trace (the 16 that had none)
+tools/collect_research.py    research collectors: validate / sync-sl / fetch-arxiv / report (stdlib only)
 tools/build_book.py        book generator: catalog JSON -> book Markdown + print HTML (stdlib only)
 tools/build_rogue_book.py  supplement generator: catalog + js/rogue.js + design/10 -> Rogue Agents Markdown + print HTML (stdlib only + node)
 tools/build_sl_book.py     supplement generator: sibling lab + catalog -> Self-Learning Agents Markdown + print HTML (stdlib only; needs ../self-learning-agents checkout via SL_DIR)
@@ -252,7 +258,7 @@ tailscale/serve.json       Tailscale Serve config for the sidecar deployment
 package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / book / book:rogue / check / check:all
 eslint.config.mjs          flat ESLint config; no-undef over the app's shared global namespace
 test/data.test.mjs         catalog integrity, schema guard, coverage freshness, SW precache sync
-test/smoke.mjs             headless smoke (boots the server, walks all 15 tabs + the workflow journey, asserts 0 errors)
+test/smoke.mjs             headless smoke (boots the server, walks all 16 tabs + the workflow journey, asserts 0 errors)
 .github/workflows/ci.yml   CI: lint + data integrity, headless smoke (both blocking)
 ```
 
@@ -287,7 +293,7 @@ The reference book's chapter template was matched section-for-section; where it 
 - **First load is ~1.37 MB, not ~4.9 MB.** `serve.py` gzips compressible types and caches each compression on `(mtime, size)`, sends the vendored Mermaid with `immutable` caching, and revalidates everything else with `Last-Modified`/`If-Modified-Since` (cheap 304s). Repeat visits transfer ~0.02 MB.
 - **Offline shell.** `sw.js` precaches the whole app (html, css, the 27 scripts, the vendored Mermaid, all `data/*.json` and `design/*.md` — 44 entries) and serves same-origin GETs network-first with a cache fallback. It never touches `/api/*` (the LLM proxy and the diagnostics beacon). After one visit the app works with no network at all; the offline chip reads *Offline · cached*. Bump `VERSION` in `sw.js` to force every client to re-precache.
 - **Perf budget** is printed in the Display panel (⛭ display): requests this session, how many were answered locally, bytes actually pulled over the wire, and the size of the offline cache — so the wins above are visible, not claims.
-- **Tests & lint (no build step added):** `npm test` runs a dependency-free `node:test` suite over the catalog — id uniqueness, full referential integrity, a required/unexpected-key schema guard (it catches typos like the historical `proteations`), coverage.json freshness (recomputed from the catalogs), bench/planner dimension sync, and that `sw.js`'s precache list matches the files on disk. `npm run lint` runs ESLint with `no-undef` across every `js/*.js`, treating the app's own top-level declarations as shared globals so genuine typos fail and cross-file calls don't. `npm run test:e2e` boots the real server and walks all 15 tabs headlessly; it skips cleanly when no browser is present locally, but under `CI=1` a missing browser fails the run. `npm run check` runs lint + tests; `npm run check:all` adds the headless smoke. CI (`.github/workflows/ci.yml`) gates on lint + data integrity **and** the headless smoke.
+- **Tests & lint (no build step added):** `npm test` runs a dependency-free `node:test` suite over the catalog — id uniqueness, full referential integrity, a required/unexpected-key schema guard (it catches typos like the historical `proteations`), coverage.json freshness (recomputed from the catalogs), bench/planner dimension sync, and that `sw.js`'s precache list matches the files on disk. `npm run lint` runs ESLint with `no-undef` across every `js/*.js`, treating the app's own top-level declarations as shared globals so genuine typos fail and cross-file calls don't. `npm run test:e2e` boots the real server and walks all 16 tabs headlessly; it skips cleanly when no browser is present locally, but under `CI=1` a missing browser fails the run. `npm run check` runs lint + tests; `npm run check:all` adds the headless smoke. CI (`.github/workflows/ci.yml`) gates on lint + data integrity **and** the headless smoke.
 
 ## Extending it
 
@@ -306,6 +312,6 @@ All datasets are plain JSON, versioned, and diffable. There are no hidden defaul
 
 ## Scope
 
-107 design patterns · 207 documented failure modes · 54 failure scenarios (18 critical / 27 high / 9 medium) · 191 composition cascades · 26 scenario domains · 55 replayable mock traces · 11 architecture documents · 60 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox-Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · battle-test bench (54 scenarios × configurations, three adapters, oracle, adversary, model comparison) · command palette (commands, recents, projects, research sets, workflow commands) and keyboard shortcuts · full report export covering all eight work products · bookshelf panel (landscape collect + one-click rebuild of all three books) · project workspaces that carry the whole job · saved research sets · offline service worker + perf budget · linted, tested, CI-gated (no build step).
+107 design patterns · 207 documented failure modes · 54 failure scenarios (18 critical / 27 high / 9 medium) · 191 composition cascades · 26 scenario domains · 55 replayable mock traces · 12 architecture documents · 63 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox-Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · battle-test bench (54 scenarios × configurations, three adapters, oracle, adversary, model comparison) · command palette (commands, recents, projects, research sets, workflow commands) and keyboard shortcuts · full report export covering all eight work products · bookshelf panel (landscape collect + one-click rebuild of all three books) · project workspaces that carry the whole job · saved research sets · offline service worker + perf budget · linted, tested, CI-gated (no build step).
 
 **Caveats, honestly:** the exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like blueprints. Fox-Architect's grounding is deterministic retrieval, not RAG fine-tuning; when both LLM backends are down it degrades to a deterministic catalog answer rather than failing. Cost/latency figures are estimates from stated assumptions, not benchmarks. A project lives in this browser's `localStorage` — back it up (⛭ display → Back up all) before clearing site data. Promoted discovery drafts are *your* drafts, not catalog entries: the shipped `data/*.json` is read-only.
