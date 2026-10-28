@@ -44,9 +44,13 @@ def md_to_pdf(src, dst):
     with sync_playwright() as p:
         b = p.chromium.launch()
         pg = b.new_page()
-        pg.goto("file://" + os.path.abspath(tmp))
+        # Huge pages (5MB+ HTML, hundreds of diagrams) never reach full
+        # "load" in 30s; domcontentloaded suffices since our own
+        # __renderState flag gates printing on MathJax+mermaid completion.
+        pg.goto("file://" + os.path.abspath(tmp),
+                wait_until="domcontentloaded", timeout=180000)
         try:
-            pg.wait_for_function("window.__renderState==='done'", timeout=60000)
+            pg.wait_for_function("window.__renderState==='done'", timeout=600000)
         except Exception as e:
             print(f"  render wait timed out ({e}), printing anyway", flush=True)
         pg.wait_for_timeout(3000)
