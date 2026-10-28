@@ -81,36 +81,15 @@ book ran solo (~70s/chunk). 8 of 268 big-book chunks needed one retry nudge;
   needing cleanup vs frontier ≈ 0 marginal machine energy for a
   review-ready book.
 
-### Power chart (combined board watts, ~4 min/column)
+### Power chart (combined board watts + per-GPU)
 
 Steady ~390–431 W through the whole logged generation window, then a cliff
-to idle (~35 W) within minutes of the last chunk at 21:58. The draw is flat
-enough to extrapolate: no ramp, no throttle sag, no mid-run regime change.
+to idle (~35 W) within minutes of the last chunk at 21:58. The sharp
+downward spikes (both GPUs together, every 1–3 min) are inter-chunk gaps —
+Ollama finishing a chunk while the driver validates, checkpoints, and sends
+the next prompt. The window mean already includes them.
 
-```text
-| = generating                      . = after gen end (21:58)
-| 20:39   424W ######################################
-| 20:43   431W ########################################
-| 20:47   423W ######################################
-| 20:51   408W #################################
-| 20:55   396W #############################
-| 21:00   389W ###########################
-| 21:04   391W ############################
-| 21:08   398W ##############################
-| 21:12   407W #################################
-| 21:16   389W ###########################
-| 21:21   404W ################################
-| 21:25   407W #################################
-| 21:29   425W ######################################
-| 21:33   387W ###########################
-| 21:38   408W #################################
-| 21:42   402W ###############################
-| 21:46   401W ###############################
-| 21:50   387W ###########################
-. 21:54   351W ###############          (cooldown begins)
-. 21:59    88W #
-. 22:03    35W #                       (idle floor)
-```
+![Axiom dual-GPU board power during qwen3.8 big-book generation](Books/Humanized/.axiom/power_chart.png)
 
 ### Estimating the unlogged 4 h (trend-based)
 
