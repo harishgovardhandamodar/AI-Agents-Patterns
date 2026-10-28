@@ -1,0 +1,15 @@
+{
+  "edition": "Books/Humanized/SELF-LEARNING-AGENTS.md",
+  "source": "book/SELF-LEARNING-AGENTS.md",
+  "source_sha256": "07aeb4abfe4a104d4a02e0406bd350aa7683eb54dfcc42965ca10194a087a08f",
+  "generator": "tools/expand_humanized.py (section-by-section model expansion)",
+  "model": "qwen3.8:latest via Ollama on axiom (100.101.3.115:11434)",
+  "temperature": 0.7,
+  "seed": null,
+  "prompt_version": "unversioned SYSTEM prompt as committed in tools/expand_humanized.py",
+  "method": "model expansion with automated gate",
+  "sections": "unreviewed",
+  "reviewers": [],
+  "generated_at": "2026-10-28",
+  "note": "38/38 chunks accepted by length+marker gate; no independent human review of output. No independent review has been recorded."
+}

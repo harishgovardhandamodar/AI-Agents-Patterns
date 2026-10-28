@@ -1,0 +1,15 @@
+{
+  "edition": "Books/Humanized/OPENSHELL-REFERENCE-ARCHITECTURE.md",
+  "source": "book/OPENSHELL-REFERENCE-ARCHITECTURE.md",
+  "source_sha256": "eddfe415004ab044c47dc654f293c4f755df580e464a66f08962e49dd54ea362",
+  "generator": "hand-authored (Muse Spark 1.3 Contributor)",
+  "model": null,
+  "temperature": null,
+  "seed": null,
+  "prompt_version": null,
+  "method": "hand-authored",
+  "sections": "unreviewed",
+  "reviewers": [],
+  "generated_at": "2026-10-28",
+  "note": "Hand-authored chapter files in Books/Humanized/.parts/openshell/. No independent review has been recorded."
+}

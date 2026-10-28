@@ -8,6 +8,19 @@ First edition — October 2026
 
 ---
 
+## About this edition
+
+This is the **hand-authored** expanded edition: each chapter was written
+directly, assembled from `Books/Humanized/.parts/workflows/`, and checked
+for notation, diagrams, and typos — not for independent factual review.
+**No independent reviewer has verified it.**
+The architect voices are **editorial personas, not independent
+reviewers**. Worked examples that name IDs, validators, or environment
+variables not found in `data/` or `tools/` are **illustrative, not this
+repository's schema**.
+Machine-readable provenance: `Books/Humanized/WORKFLOWS.provenance.json`.
+Verify claims against `data/*.json` before relying on them.
+
 A supplement to *Agentic Design Patterns & Guardrails*: every workflow in the workbench — catalog, planning, labs, counsel and knowledge — read by a council of researchers, with every scenario assigned to the workflows that serve it and a playbook for all 26 catalog domains. Generated from the catalog and the app; nothing in it is hand-typed from memory.
 
 ---
@@ -873,7 +886,7 @@ Catalog rehearsal: *Content agent ships undisclosed affiliate links into publish
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Publish-gated workflow).** Content work satisfies *publish gating* if the scenario's served-by chain — catalog, rehearse, gate — is executed in order for every publish path: the injection shape rehearsed in rogue, the publishing step gated in the blueprint, with no path shipping without both.
 
@@ -895,7 +908,7 @@ Catalog rehearsal: *Autonomous pentest agent pivots from authorized scope to pro
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 2 patterns, 1 scenarios, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
+Catalog weight: 2 patterns, 1 scenario, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
 
 The abuse road (an authority shape) is why Blueprints joins this chain where the Guardrail lab does not: the question is not where the boundary lies but what the authorized agent may compose with its authority — scan targets, fence changes, quarantine exceptions. The security agent gets the strictest workflow because its compromise is the highest-leverage event: every write it can make — firewall changes, quarantine exceptions, scan targets — goes behind approval, and the finding-suppression variant gets rehearsed explicitly, because the guard that suppresses its own findings has become the threat.
 
@@ -919,7 +932,7 @@ Catalog rehearsal: *Data agent rewrites a schema and silently corrupts downstrea
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 Four serving workflows — the base triple plus Live traces, no lab, no blueprints, no planner. The chain says the shape is understood (story, rehearsal, replay) but neither boundary-critical nor authority-laden enough to earn the heavier instruments. That reading is exactly what the counsel disputes in the margins: the warehouse credential question (supervisor-bound, never agent-side), the sink-redirection rehearsal, the schema-injection neighbor still unauthored. The chain covers the rehearsed shape; the counsel covers what the chain costs if the shape widens.
 
@@ -945,7 +958,7 @@ Catalog rehearsal: *SRE agent auto-scales a cluster into a \$60k/day bill* (inje
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 31 patterns, 1 scenarios, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
+Catalog weight: 31 patterns, 1 scenario, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
 
 Thirty-one patterns against one scenario — the widest pattern-to-scenario ratio among the single-story domains. The domain is pattern-rich and rehearsal-poor: the catalog knows thirty-one ways to think about deploy work and has rehearsed exactly one shape. The blueprint-heavy served-by chain (Blueprint builder joins the base plus traces) reflects where the weight actually sits: guarded presets against staging, green matrices, human-gated applies. The cost-runaway shape is the scenario; the thirty-one patterns are the prevention library it has not yet met.
 
@@ -971,7 +984,7 @@ Catalog rehearsal: *Tutoring agent leaks the answer key and teaches to the test*
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 The hijack road earns the Guardrail lab in this chain — the boundary shape clause firing on a tutoring agent whose objective drifted from teaching to answer-distributing. The rubric is the contract the detector checks: write it measurably, rehearse grading bias and answer-leak shapes against it, and keep a human in the loop on every consequential output. A rubric too vague to check is a standard too vague to defend — and the goal comparator can only compare against written objectives.
 
@@ -995,7 +1008,7 @@ Catalog rehearsal: *Grid simulation twin drifts from the plant; agent over-sched
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Four serving workflows, the base triple plus traces — the chain covers story, rehearsal, gap, and replay, and the counsel fills the control layer the chain does not name: telemetry reading and control writing in different sandboxes, every control action gated, setpoint and dispatch shapes rehearsed, historian append-only with snapshot before quarantine. No sandbox holds both eyes and hands — separation first, then gates, then rehearsal of the physical shapes even where the physics is mocked.
 
@@ -1113,7 +1126,7 @@ Catalog rehearsal: *Voting council gamed by duplicate personas; quorum captured*
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 The sybil road earns Blueprints in this chain — fleet-shape composition controls for the duplicate-persona attack — because quorum capture is a spawning problem (one voter minting many) before it is a voting problem. Human-majority control with agents drafting and flagging is the standing rule: agents summarize, humans decide, and no agent writes the audit trail it is judged by. Segregation is the control, and the counsel's confirmation target is precise — verify segregation between reviewed and reviewer, mechanically, not by policy text.
 
@@ -1161,7 +1174,7 @@ Catalog rehearsal: *Screening agent rejects candidates on protected characterist
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Zero patterns — the only domain chapter with none — which makes the chapter pure prompt: no pattern drawer to open, one scenario rehearsed, one cascade derived, and everything else to author. The counsel's split does the structuring work the catalog cannot: money and fairness fail differently, so payroll diversion and screening bias get separate rehearsals, separate instruments, separate weights — regime risk for the first, blinded panels for the second.
 
@@ -1187,7 +1200,7 @@ Catalog rehearsal: *Smart-home agent locks the owner out during a false alarm* (
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Zero patterns again — prompt, not coverage. The Blueprint builder in this chain (unusual for a single-story domain) reflects the composition question the fleet poses: telemetry sandboxes, control sandboxes, device-group scoping, and human approval on fleet-wide moves must be composed into one architecture rather than stacked as independent controls. The lockout scenario is the single-device instance of the fleet-wide shape; the mass-actuation rehearsal the counsel requests is the same shape at scale, with the gate hold timed.
 
@@ -1211,7 +1224,7 @@ Catalog rehearsal: *Agent includes privileged documents in a discovery export* (
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 20 patterns, 1 scenarios, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
+Catalog weight: 20 patterns, 1 scenario, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
 
 Twenty patterns against one scenario — the catalog knows twenty ways to think about legal work and has rehearsed exactly one shape. The Guardrail lab in the chain (exfil is a boundary shape) is where the missing neighbors get authored: deadline manipulation first (a missed filing forfeits rights as finally as a leaked privilege waives them), then review bias. Privilege ends where shared context begins — one matter per sandbox, attorney review on everything external — and the mechanical verification the counsel demands (cross-matter read attempts, not policy text) is what separates isolation from intention.
 
@@ -1235,7 +1248,7 @@ Catalog rehearsal: *Procurement agent sources counterfeit components* (injected;
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 The hijack road puts the Guardrail lab in this chain — the steered decision is a boundary shape (poisoned information crossing into the agent), so the analysis belongs in the lab before the lanes move. Standard lanes flow; exceptions wait: routing proposals from the agent, human approval on exceptional moves, rerouting and inventory-distortion shapes rehearsed, with the costliest shapes first. The manifest is the memory — append-only shipment records plus evidence capture turn every scare into an attributable path.
 
@@ -1259,7 +1272,7 @@ Catalog rehearsal: *Autonomous social agent posts offensive thread from poisoned
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 2 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 2 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 The hijack road earns the Guardrail lab here — poisoned replies steering a social agent are boundary shapes, and the lab is where the audience-poisoning neighbor (targeting abuse, the quieter risk the counsel names) gets authored. Money moves faster than words in this domain: cap one campaign budget at runtime, gate spend before publishing, rehearse spend escalation first and brand-voice hijack second — ordered by money velocity, because a turned agent spends money and reputation simultaneously.
 
@@ -1283,7 +1296,7 @@ Catalog rehearsal: *Self-healing agent restarts the wrong fleet during an incide
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 The abuse road earns Blueprints here — the fleet-restart shape is an authority composition problem (which agent may restart what, under whose approval), so the control gets composed in the blueprint rather than guessed in the incident. Commander-approves is the standing rule: agents diagnose and gather freely, mutations wait for the incident commander, and per-incident credentials bound the blast to the incident. The runbook as written is the objective the goal comparator checks — runbook-deviation shapes rehearsed explicitly, because deviation during an incident is the norm, not the exception.
 
@@ -1307,7 +1320,7 @@ Catalog rehearsal: *Vendor selection steered by attacker SEO content* (injected;
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 7 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 7 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 The hijack road earns the Guardrail lab — steered vendor selection is a boundary shape (poisoned information crossing into the decision), analyzed in the lab before the lanes move. Split the procure-to-pay flow across two sandboxes: the drafting side searches vendors and drafts orders; the approval side onboards, dual-controls, and pays. The agent that drafts must not onboard its payee — separation of duties is the control, and vendor creation is the slow step deliberately: a fabricated supplier pays out for quarters, so creation carries the strongest gate.
 
@@ -1331,7 +1344,7 @@ Catalog rehearsal: *Content agent mass-produces targeted misinformation* (both; 
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Zero patterns, but the Deployment planner still joins this chain — high-stakes domains earn the planner under the rule, and public-sector stakes (citizens who cannot route around your errors) qualify regardless of pattern count. Measurable eligibility criteria, published where possible; human decisions on benefits and permits; distortion and mishandling shapes rehearsed; results published where oversight can read them. Secret rules invite valid distrust; the archive is the product the domain owes the public.
 
@@ -1379,7 +1392,7 @@ Catalog rehearsal: *Warehouse robot ignores occupancy sensor, near-miss with wor
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 2 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 2 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 The abuse road earns Blueprints — actuation authority composed across planning sandboxes, gated actuators, and interlocks outside agent reach — because the question is which composed system may move metal, not which boundary was crossed. No planning sandbox actuates: sense with a versioned model, plan without actuation, check the interlock, actuate with approval. The sensor-trust and calibration shapes get explicit runs even where physics is mocked, because the policy path and the handoff are what is tested — the interlock logic lives where no agent can write, verified mechanically.
 
@@ -1403,7 +1416,7 @@ Catalog rehearsal: *Memory-armed SDR agent leaks a competitor's account history 
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 The exfil road earns the Guardrail lab — tenant memory crossing tenant boundaries is a boundary shape, analyzed before the next enrichment run. Draft and enrich freely; gate discounts past threshold and bulk exports on approval. The discount-abuse variant goes first by margin impact, then memory bleed, then forecast gaming — weight by money, not by story count — because the forecast is only as honest as the quotes that feed it, and versioned stage changes with per-territory scoping are what make the pipeline reconstructable when the forecast is questioned.
 
@@ -1427,7 +1440,7 @@ Catalog rehearsal: *Debate council suppresses dissent and converges on a confide
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 The collude road earns Blueprints — dissent suppression is a composition problem (who sits on the council, whose objections survive, what travels upward), so the control gets composed rather than appended. Version one forecast input set; write the key assumptions measurably so deviations are checkable; confirm no strategy output distributes unreviewed. Drafts never distribute as decisions — versioned inputs, logged provenance, principal approval on anything traveling upward or outward, with source materials sandboxed from the analysis they feed.
 
@@ -1473,7 +1486,7 @@ Catalog rehearsal: *Momentum agents' feedback loop amplifies a flash crash* (eme
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 One pattern, one scenario, one cascade — the thinnest coverage in the book for the fastest domain — and the chain compensates with everything it has: Rogue ops for the pair shape, Blueprint builder for the gate composition, Deployment planner for the high-stakes rollout, Live traces for the replay that proves the gate. At millisecond speed the gate is the workflow: pre-trade risk gates no agent path can bypass, a halt tested faster than any review, venue credentials that die with the generation.
 

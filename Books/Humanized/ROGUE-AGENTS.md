@@ -8,6 +8,17 @@ First edition — October 2026
 
 ---
 
+## About this edition
+
+This is the **hand-authored** expanded edition: each chapter was written
+directly, assembled from `Books/Humanized/.parts/rogue/`, and checked for
+notation, diagrams, and typos — not for independent factual review.
+**No independent reviewer has verified it.**
+The "safety researcher / memory-systems researcher" voices are
+**editorial personas, not independent reviewers**.
+Machine-readable provenance: `Books/Humanized/ROGUE-AGENTS.provenance.json`.
+Verify claims against `data/*.json` before relying on them.
+
 A supplement to *Agentic Design Patterns & Guardrails*: what a rogue agent is, how to detect one, and how to operate swarms safely — with a rogue reading of all 54 catalogued failure scenarios and a worked case study per theme. Generated from the catalog, the tab, and the design figures; nothing in it is hand-typed from memory.
 
 ---
@@ -808,7 +819,7 @@ Rogue reading: The goal-misalignment detector's contract and the quarantine work
 
 *Proof.* The playbook's automated steps (isolate, revoke, snapshot, scrub) run identically for novel and known shapes — machinery needs no scenario match. Quarterly tabletops with agent-specific scenarios keep the machinery tested against current threats. What remains genuinely novel is the diagnosis and remediation tail, which the playbook frames (owners, deadlines, evidence) without scripting. Improv during active harm is therefore confined to judgment calls inside a working machine, not invention of the machine mid-incident. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 13: Consensus / Voting Protocols (`consensus-voting`)
 
@@ -828,7 +839,7 @@ Rogue reading: The collusion detector's contract: the pair is the anomaly, and a
 
 *Proof.* Spawned agents share the attacker's identity or context by construction (they are copies, not citizens). Distinct-identity binding counts the identity once; distinct-context binding rejects the copies' shared context. The adversarially-prompted checker in the quorum is explicitly tasked to spot coordinated voting, and the logged human veto stands behind it. Majority by multiplication is structurally impossible; only genuinely distinct compromised identities threaten the quorum — the single-compromise boundary, defended elsewhere. Shared context anchoring all voters (vote buying via context) is defeated the same way: distinct contexts are a binding requirement, not a recommendation. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 14: Sandboxed Execution (`sandbox-execution`)
 
@@ -848,7 +859,7 @@ Rogue reading: Damage without a grant is impossible inside a sealed sandbox; the
 
 *Proof.* Each escape path in the where-it-breaks list is closed by a sealing clause: wildcard allowlists by explicit per-task hostnames (no wildcards), cross-task leakage by fresh-per-task (no reuse, no shared state), kernel escape by MicroVM plus seccomp (narrowed syscall surface below container grade). With all three closed, the agent's action set is confined to its grants; misbehavior selects among permitted actions only. The ablation confirms the bound empirically: sandboxing alone prevents the full 679 units of bare harm. A rogue in a sealed sandbox is a tantrum in an empty room. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 ## Chapter 15: Network Egress Control (`egress-control`)
 
 Agent runtimes can only talk to explicitly allowlisted endpoints; DNS and IP ranges controlled.
@@ -866,7 +877,7 @@ Rogue reading: Exfiltration is a policy decision at the proxy, not a side effect
 
 *Proof.* Direct connections require allowlist membership (exact hostnames; wildcards banned, so allowlist creep is a reviewable explicit entry, not silent expansion). DNS exfiltration requires the filtered resolver, which logs queries and blocks DoH bypass — tunneling over DNS is visible in the log it cannot avoid. IP-range controls close the literal-address path. The three paths (hostname, DNS, raw IP) are each denied by default and opened only by explicit entry; an unlisted destination fails all three. Alone, this control prevents 172 units of bare harm — the exfiltration class, stopped single-handedly. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 16: Least Privilege Scoping (`least-privilege`)
 
@@ -886,7 +897,7 @@ Rogue reading: The grant is the unit of revocation: one immediate, auditable act
 
 *Proof.* The compromised agent holds only its current tokens (nothing ambient, nothing standing). Each token authorizes one tool at named endpoints (audience binding defeats relay to untrusted tools — the token is invalid elsewhere). TTL bounds the window in minutes; revocation (one act, audited) ends it instantly. Scope creep is reversed by quarterly diff review plus automatic revocation of the unused. One injected prompt therefore buys the task's capabilities for minutes — never admin keys, never standing authority, never the whole grant graph. Alone, this control prevents 202 units of bare harm. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 17: Fan-Out & Concurrency Caps (`fan-out-caps`)
 
@@ -905,7 +916,7 @@ Rogue reading: A sybil cannot multiply past the cap, so a takeover stays a takeo
 
 *Proof.* Laundering works only if the cap counts direct children: delegate to a child, let the child spawn freely. Tree enforcement counts all descendants against the root's cap, so the child's forks consume the same budget — laundering moves the counter, never resets it. The orchestrator refuses the fork past the cap mechanically, and the audit-trail delegation graph makes the attempt visible. Spawn pressure (the seventh feature) watches the count the cap enforces; the kill switch bounds what the cap misses. A takeover stays a takeover of one agent, and the bill compounds only to the cap. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 18: Approval Gates for Irreversible Actions (`approval-gates`)
 
@@ -925,7 +936,7 @@ Rogue reading: The delay queue that buys detection time: irreversible actions wa
 
 *Proof.* Tool-keyed gates fail the abstraction attack by construction (new tool, no gate). Effect-keyed gates evaluate the outcome: any path producing the gated effect traverses the gate, because the gate sits at the effect layer (processor, deploy system) that all paths must cross to realize the effect. Evidence-pack manipulation is countered by provenance plus highlighted untrusted content — the injected benign-looking request arrives with its injections marked. Approval fatigue is countered by sampling audits and auto-tuned thresholds: the click-through pattern is itself measured and corrected. Alone, this control prevents 183 units of bare harm — and buys the 19 minutes the goal detector needs for hijack. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 ## Chapter 19: Supervisor (Master–Worker) (`supervisor-workers`)
 
 One supervisor agent owns the goal, delegates to specialist workers, and gates their outputs.
@@ -944,7 +955,7 @@ Rogue reading: Peer attestation turns a silent compromise into a report — and 
 
 *Proof.* Checklist gates produce per-output verification artifacts; a rubber stamp produces approvals without them. The missing record is observable — attestation (workers attesting to each other's task frames) provides the independent channel that reports the mismatch the supervisor waved through. Scope bleed is bounded the same way: strict per-worker data scopes plus no cross-tool invocation means Worker A's task cannot reach Worker B's data except through the supervisor, where the checklist waits. Collusion between supervisor and worker (rubber-stamping the compromised) surfaces as attestation mismatch from the remaining workers. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 20: Circuit Breaker & Kill Switch (`circuit-breaker`)
 
@@ -964,7 +975,7 @@ Rogue reading: The fleet-wide halt that bounds the blast radius when the first s
 
 *Proof.* The loop stops at trip by construction (halt is automatic, and agent-owned reset is impossible since state lives runtime-side). Side effects already in flight are the residual: trip-triggered containment cancels in-flight calls and revokes tokens, bounding the residual to what completes within cancellation latency. Without containment-on-trip (the documented failure), the loop stops but its launched effects land — bounded blast becomes unbounded aftermath. Tune on shadow data so the trip threshold separates anomaly from workload before production depends on it; review the false-trip rate so operators trust the breaker enough to keep it armed. Test it rather than merely installing it. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 21: Forgetting / Memory Decay & TTL (`forgetting-decay`)
 
@@ -983,7 +994,7 @@ Rogue reading: The memory scrub's contract: quarantine the context, scratchpad a
 
 *Proof.* TTL expiry deletes the entry regardless of content (legal hold excepted, and holds are explicit, auditable overrides). Quarantine release restores from a clean image, discarding all accumulated context including undetected poison. The dry-run report makes enforcement reviewable before it bites, and over-forgetting (the documented low-severity cost) is the bounded price: some long-tail knowledge is lost, but no poison persists past its TTL. The relapse edge (Chapter 2) is this theorem's contrapositive: skip the scrub and persistence becomes unbounded — contained rogues return. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 ## Chapter 22: Immutable Audit Trail (`audit-trail`)
 
@@ -1003,7 +1014,7 @@ Rogue reading: The evidence step's precondition: without an append-only log ther
 
 *Proof.* The snapshot reads the stored sequence; append-only plus tamper-evidence guarantees the sequence is what happened (no silent edits, no gaps where sub-agents acted unlogged). Redaction at write time keeps the store safe to keep (no PII/keys at rest) without breaking completeness (hashes and pointers preserve verifiability). Untrusted-data viewers close the log-as-injection-surface hole: the viewer never executes what it displays. Without the trail, the snapshot step is not late but impossible — and the ablation prices it exactly: audit off, SLA compliance falls to 72%. Mandatory-in-runtime beats opt-in-per-agent because the agent that needs watching most is the one that would opt out. ∎
 
-Limits: a pattern is a specification, not a deployment. The tab's ablation shows what the limit costs in practice — the audit trail off, the snapshot step becomes impossible; attestation off, a false positive appears; the scrub off, contained rogues relapse. Read the pattern for the mechanism, the ablation for the price of skipping it.
+*Limits: as stated above — a pattern is a specification, not a deployment; see that chapter's ablation table for the price of skipping it.*
 
 **Council deliberation.**
 
@@ -1618,7 +1629,7 @@ The table above is the reproducibility contract in miniature: every number the b
 
 This supplement is generated by `tools/build_rogue_book.py` from the catalog (`data/*.json`), the tab (`js/rogue.js`, executed in node at build time for definitions and for the reference campaign), and the figures (`design/10-rogue-agents.md`, the same sources the Design tab renders). The build fails if any scenario lacks a rogue reading, any referenced pattern id leaves the catalog, or any placed figure goes missing — so the next edition cannot silently disagree with the tab it describes.
 
-It carries 54 scenario readings across 26 domains, 6 rogue archetypes, 3 detectors, 10 controls, 14 figures rendered by the same vendored Mermaid as the app, and a measured reference campaign in Part II and Part III.
+It carries readings for all 54 scenarios across 26 domains, 6 rogue archetypes, 3 detectors, 10 controls, 14 figures rendered by the same vendored Mermaid as the app, and a measured reference campaign in Part II and Part III.
 
 # Conclusion
 

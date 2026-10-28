@@ -782,7 +782,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -809,7 +809,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 2 patterns, 1 scenarios, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 2 patterns, 1 scenario, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -836,7 +836,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -863,7 +863,7 @@ network_policies:
     methods: ["GET", "POST"]
 ```
 
-Catalog weight behind this chapter: 31 patterns, 1 scenarios, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 31 patterns, 1 scenario, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -890,7 +890,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -917,7 +917,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1049,7 +1049,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1103,7 +1103,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1130,7 +1130,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1154,7 +1154,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 20 patterns, 1 scenarios, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 20 patterns, 1 scenario, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1181,7 +1181,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1208,7 +1208,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 2 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 2 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1235,7 +1235,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1262,7 +1262,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 7 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 7 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1289,7 +1289,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1340,7 +1340,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 2 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 2 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1367,7 +1367,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1391,7 +1391,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 
@@ -1445,7 +1445,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Council deliberation.**
 

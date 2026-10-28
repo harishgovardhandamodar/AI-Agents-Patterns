@@ -76,6 +76,11 @@ COMPACT_FIGS = {
 }
 
 
+def _np(n, word):
+    """'3 patterns' / '1 scenario' — number-noun agreement for catalog weights."""
+    return f"{n} {word}" if n == 1 else f"{n} {word}s"
+
+
 def deliberate(body, key):
     """Counsel verification: verdict, suggestions, and improvements."""
     items = FIELD_VERIFY.get(key)
@@ -306,8 +311,8 @@ def main():
         counts = cov[dom]
         body.p(
             f"Workbench path: " + ", ".join(WORKFLOWS[w]["label"] for w in wfs) + ". "
-            f"Catalog weight: {len(counts['patterns'])} patterns, {len(sids)} scenarios, "
-            f"{len(counts['cascades_all'])} cascades."
+            f"Catalog weight: {_np(len(counts['patterns']), 'pattern')}, {_np(len(sids), 'scenario')}, "
+            f"{_np(len(counts['cascades_all']), 'cascade')}."
         )
         archs = sorted({SCEN_ROAD[s][1] for s in sids})
         body.p(

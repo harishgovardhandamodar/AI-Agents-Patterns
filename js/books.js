@@ -56,6 +56,8 @@ function booksJobHtml() {
   const log = (j.log || []).slice(-14).map(escHtml).join("\n");
   return '<div class="panel" style="margin-top:10px"><h3>Build job <span class="muted small mono">' +
     escHtml(j.id) + "</span> " + chip + "</h3>" +
+    (busy ? '<div style="margin:6px 0"><button class="btn sm" data-act="booksCancel" data-args="' +
+      dataArgs(j.id) + '">■ Cancel job</button></div>' : "") +
     (steps ? '<ul class="muted small">' + steps + "</ul>" : "") +
     (log ? '<pre class="mono small" style="max-height:220px;overflow:auto;white-space:pre-wrap">' + log + "</pre>" : "") +
     "</div>";
@@ -152,6 +154,17 @@ function booksLaunch(targets) {
 
 function booksBuildAll() { booksLaunch(["main", "rogue", "self", "openshell", "workflows", "field"]); }
 function booksBuildOne(tid) { booksLaunch([tid]); }
+function booksCancel(jid) {
+  if (!jid) return;
+  fetch("/api/books/cancel", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ job: jid })
+  }).then(function (res) { return res.json(); }).then(function (data) {
+    showNotif(data && data.state ? ("Cancel: " + data.state) : ("Cancel failed: " + ((data && data.error) || "unknown")));
+    booksPoll();
+  }).catch(function () { showNotif("Cancel endpoint unreachable"); });
+}
 
 function booksRefresh() {
   fetch("/api/books/status").then(function (res) {

@@ -1,0 +1,15 @@
+{
+  "edition": "Books/Humanized/AGENTIC-PATTERNS-AND-GUARDRAILS.md",
+  "source": "book/AGENTIC-PATTERNS-AND-GUARDRAILS.md",
+  "source_sha256": "fe10c12fe625f1810b5e80ae1cd7dcdc4217845c43ffdad068194c3a6ca66f27",
+  "generator": "hand-authored (Muse Spark 1.3 Contributor)",
+  "model": null,
+  "temperature": null,
+  "seed": null,
+  "prompt_version": null,
+  "method": "hand-authored",
+  "sections": "unreviewed",
+  "reviewers": [],
+  "generated_at": "2026-10-28",
+  "note": "Hand-authored chapter files in Books/Humanized/.parts/agentic/, assembled in numeric order. No independent review has been recorded."
+}

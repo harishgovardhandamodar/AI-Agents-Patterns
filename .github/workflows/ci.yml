@@ -23,6 +23,21 @@ jobs:
         run: npm run lint
       - name: Data integrity + schema guard
         run: npm run test
+      - name: Catalog stats freshness
+        run: python3 tools/gen_stats.py --check
+
+  qa:
+    name: book QA gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+      - name: Install Python deps
+        run: python3 -m pip install -r requirements.txt
+      - name: Book QA (IDs, counts, chapters, dupes, math, provenance)
+        run: python3 tools/qa_books.py
 
   e2e:
     name: headless smoke

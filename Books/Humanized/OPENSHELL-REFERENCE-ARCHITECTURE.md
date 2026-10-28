@@ -8,6 +8,19 @@ First edition — October 2026
 
 ---
 
+## About this edition
+
+This is the **hand-authored** expanded edition: each chapter was written
+directly, assembled from `Books/Humanized/.parts/openshell/`, and checked
+for notation, diagrams, and typos — not for independent factual review.
+**No independent reviewer has verified it.**
+The "counsel" voices are **editorial personas, not independent
+reviewers**. Worked examples that name files, IDs, or build behavior not
+found in `data/` or `tools/` are **illustrative, not this repository's
+schema** — check the path before trusting the example.
+Machine-readable provenance: `Books/Humanized/OPENSHELL-REFERENCE-ARCHITECTURE.provenance.json`.
+Verify claims against `data/*.json` before relying on them.
+
 A supplement to *Agentic Design Patterns & Guardrails*: NVIDIA's OpenShell Reference Architecture as the containment layer for rogue agents and the operating ground for agent swarms — with a domain playbook for all 26 catalog domains and a council deliberation in every chapter. Generated from the catalog; nothing in it is hand-typed from memory.
 
 ---
@@ -890,7 +903,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Split publishing scope).** Content sandboxes satisfy *split scope* if drafts and embargoes are readable in one scope while publishing rights live in another — the agent that reads the archive cannot write the public record, and recommender weights are sandboxed separately from both.
 
@@ -922,7 +935,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 2 patterns, 1 scenarios, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 2 patterns, 1 scenario, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Gated-guard posture).** The security agent satisfies the *gated-guard posture* if (i) every firewall change, quarantine exception, and scan-target expansion waits on human approval, (ii) scan targets are named narrowly per engagement with expiry, and (iii) intel feed provenance is verified (logged, not assumed) with snapshots before quarantine.
 
@@ -954,7 +967,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Named-sink pipelines).** A pipeline satisfies *named sinks* if (i) sources mount read-only, (ii) every write names an approved sink, (iii) warehouse credentials are provider-bound and supervisor-resolved (never agent-side), and (iv) PII paths are Landlocked with flows traced and minimized.
 
@@ -986,7 +999,7 @@ network_policies:
     methods: ["GET", "POST"]
 ```
 
-Catalog weight behind this chapter: 31 patterns, 1 scenarios, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 31 patterns, 1 scenario, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Gated deploy path).** The deploy path is *gated* iff (i) no apply, push-to-prod, or infra change executes without a human, (ii) every apply is prover-checked behind the human (policy change verified before the pipeline runs it), (iii) runners are generation-rotated with a maximum age in code, and (iv) gate latency is measured and kept boring.
 
@@ -1018,7 +1031,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Read-only rubric).** Grading satisfies the *read-only rubric* property if (i) rubrics and submissions are readable but never writable by the grading agent, (ii) grades leave only through the grades-out path, (iii) no student-facing output bypasses a named educator, and (iv) every read of student records is logged against a named path.
 
@@ -1050,7 +1063,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Valve-separated sandboxes).** The deployment satisfies *valve separation* iff (i) no sandbox holds both telemetry read and control write, (ii) every control action requires human approval, (iii) historian appends are write-once with snapshot before quarantine, and (iv) gate holds on control actions are timed against process time constants.
 
@@ -1207,7 +1220,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Reviewer-noninterference).** Governance satisfies *reviewer noninterference* iff (i) review sandboxes mount policies and trails read-only (write: [] — nothing to edit, even legitimately), (ii) no network egress exists for the reviewer (network_policies: [] — findings cannot leak or self-publish), (iii) grants reviewed by the agent are never grantable by it, and (iv) human-majority decides every grant with agents drafting and flagging only.
 
@@ -1271,7 +1284,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Draft-only HR agents).** HR satisfies *draft-only agency* iff (i) all HR stores mount read-only to agents, (ii) every hire, fire, pay, and review action requires a named human's recorded approval, (iii) per-sandbox HR credentials scope each agent to its case, and (iv) all reads are logged against named paths with retention for compliance horizons.
 
@@ -1303,7 +1316,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Eyes-hands separation at fleet scale).** The fleet satisfies *eyes-hands separation* iff (i) telemetry sandboxes hold reads only, (ii) firmware and actuation sandboxes hold gated writes only, (iii) no credential spans both sides, (iv) device-group scoping bounds every credential, and (v) fleet-wide moves require human approval with the hold timed.
 
@@ -1332,7 +1345,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 20 patterns, 1 scenarios, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 20 patterns, 1 scenario, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Matter-disjoint practice).** The legal deployment satisfies *matter-disjointness* iff (i) each matter lives in its own sandbox with no shared context, (ii) writes are confined to that matter's drafts, (iii) no network egress exists (network_policies: [] — research happens through governed channels or not at all), and (iv) every external communication leaves only after licensed-human review.
 
@@ -1364,7 +1377,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Proposal-only routing).** Routing satisfies *proposal-only agency* iff (i) agents write only to proposals (never to committed routes, manifests, or customs documents), (ii) every route-plan commit waits at the human gate, (iii) carrier credentials stop at their lanes, and (iv) manifests are append-only with evidence capture.
 
@@ -1396,7 +1409,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 2 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 2 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Drafts-only voice).** Marketing satisfies *drafts-only voice* iff (i) agents write only to campaign drafts, (ii) every budget change and every public post requires approval, (iii) channel credentials are per-campaign and die with the campaign generation, and (iv) analytics reads are logged per agent with inputs snapshotted before quarantine.
 
@@ -1428,7 +1441,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Commander-gated mutation).** Operations satisfies *commander gating* iff (i) agents run read-only diagnostics freely (runbooks read, incidents read, notes write-only), (ii) every mutation — fleet restart, status change, production action — waits for the incident commander's explicit approval, (iii) credentials are per-incident and expire with it, and (iv) timelines are append-only with automatic evidence capture.
 
@@ -1460,7 +1473,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 7 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 7 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Sandbox-split procurement).** Procurement satisfies the *sandbox split* iff (i) drafting (vendor search, order drafts) and approval (onboarding, dual control, payment) live in different sandboxes with different credentials, (ii) vendor records are read-only to the drafting side with versioning and cooling-off, (iii) vendor creation is the hardest-gated action in the flow, and (iv) one vendor file is audited end to end per quarter.
 
@@ -1492,7 +1505,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Reconstructible public decisions).** Public-sector work satisfies *reconstructibility* iff (i) case records mount read-only with versioned inputs, (ii) every benefit, permit, and enforcement output carries a named official's recorded decision, (iii) decisions and trails are append-only with snapshot-capable audit, and (iv) rehearsal covers eligibility distortion and records mishandling as distinct shapes with results published where oversight reads them.
 
@@ -1553,7 +1566,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 2 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 2 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Plan-act split with interlocks).** Robotics satisfies the *plan-act split* iff (i) planning sandboxes read versioned world models and write plans only (no actuation grants), (ii) actuation requires a separate sandbox plus human approval, (iii) safety interlocks live where no agent can write, and (iv) no network egress exists for either side (network_policies: [] — the loop is closed).
 
@@ -1585,7 +1598,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Draft-free, discount-gated sales).** Sales satisfies *bounded empowerment* iff (i) drafting and enrichment are free within per-territory scopes, (ii) discounts past threshold and bulk exports wait for humans, (iii) CRM writes land only in drafts (never direct record mutation), and (iv) per-territory credentials expire with the case.
 
@@ -1614,7 +1627,7 @@ process: {user: "agent", capabilities: []}
 network_policies: []
 ```
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Versioned-assumption strategy).** Strategy work satisfies *assumption versioning* iff (i) forecast inputs are versioned and pinned (inputs-v2, never latest), (ii) agents write drafts only, (iii) no strategy output distributes without principal review, and (iv) evidence packs link every claim to logged inputs.
 
@@ -1678,7 +1691,7 @@ network_policies:
     methods: ["GET"]
 ```
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Definition 1 (Millisecond gate).** Trading satisfies the *millisecond gate* iff (i) every order passes a pre-trade risk check no agent path bypasses, (ii) venue credentials die with the generation, (iii) risk limits live outside agent reach, and (iv) the kill switch is tested on schedule and works faster than any review.
 

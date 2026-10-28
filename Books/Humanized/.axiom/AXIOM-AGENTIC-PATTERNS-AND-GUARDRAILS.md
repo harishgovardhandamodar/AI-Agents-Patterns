@@ -10,6 +10,24 @@ First edition — October 2026
 
 ---
 
+## About this edition (read this first)
+
+This is a **machine-expanded draft, not a reviewed book**. It was produced
+section-by-section by `qwen3.8:latest` (tools/expand_measured.py) with temperature 0.7 and no seed.
+The acceptance gate checked only length plus Definition/Theorem/Proof
+markers — **not truth, not schema validity, not duplication**. Sections
+that failed all retries were published best-effort. **No independent human
+has reviewed this output.**
+
+The counsel/researcher voices are **editorial personas from the source
+material, not independent reviewers of this expansion**. Any worked
+example naming IDs, validators, or environment variables that do not
+resolve in `data/` or `tools/` is **illustrative fiction, not this
+repository's schema** (see `tools/qa_books.py` for the checks this edition
+does not pass).
+
+Machine-readable provenance: `Books/Humanized/.axiom/AXIOM-AGENTIC-PATTERNS-AND-GUARDRAILS.provenance.json`.
+
 You are holding a working manual, not a survey. Every page exists so that when an agent in your stack starts doing something it was never supposed to do—hallucinating a tool call, looping on a retry, exfiltrating a session token—you can open to a named pattern, read the failure mode it guards against, and apply the protection without Googling at 2 a.m.
 
 That is the whole promise. 107 design patterns. 191 composition cascades. 54 failure scenarios. Not a taxonomy for a conference talk. A catalog you can page through, annotate, and wire into your runbooks.

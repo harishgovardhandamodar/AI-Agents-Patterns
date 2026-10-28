@@ -38,6 +38,11 @@ EDITION = "First edition — October 2026"
 SEED_NOTE = "Catalog edition: counts below are read from data/*.json at build time; no figure is hand-typed."
 
 
+def _np(n, word):
+    """'3 patterns' / '1 scenario' — number-noun agreement for catalog weights."""
+    return f"{n} {word}" if n == 1 else f"{n} {word}s"
+
+
 def deliberate(body, key):
     """Council deliberation: researchers debate before the verdict."""
     items = OPENSHELL_DELIB.get(key)
@@ -546,8 +551,8 @@ def main():
         codeblock(body, "yaml", pb["yaml"],
                   caption=f"Illustrative {dom} sandbox policy sketch — adapt before use.")
         body.p(
-            f"Catalog weight behind this chapter: {len(counts['patterns'])} patterns, "
-            f"{len(sids)} scenarios, {len(counts['cascades_all'])} cascades "
+            f"Catalog weight behind this chapter: {_np(len(counts['patterns']), 'pattern')}, "
+            f"{_np(len(sids), 'scenario')}, {_np(len(counts['cascades_all']), 'cascade')} "
             f"(inherent {len(counts['cascades_inherent'])}, emergent {len(counts['cascades_emergent'])}, "
             f"derived {len(counts['cascades_derived'])}, cascading {len(counts['cascades_cascading'])})."
         )

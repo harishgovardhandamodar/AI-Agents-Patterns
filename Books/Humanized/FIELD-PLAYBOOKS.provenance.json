@@ -1,0 +1,15 @@
+{
+  "edition": "Books/Humanized/FIELD-PLAYBOOKS.md",
+  "source": "book/FIELD-PLAYBOOKS.md",
+  "source_sha256": "cd4d217dd82bec136437feba5c8da8e43515da1b7d1d2f160ae9e4100a142ee2",
+  "generator": "hand-authored (Muse Spark 1.3 Contributor)",
+  "model": null,
+  "temperature": null,
+  "seed": null,
+  "prompt_version": null,
+  "method": "hand-authored",
+  "sections": "unreviewed",
+  "reviewers": [],
+  "generated_at": "2026-10-28",
+  "note": "Hand-authored chapter files in Books/Humanized/.parts/field/. No independent review has been recorded."
+}

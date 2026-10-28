@@ -14,7 +14,7 @@
  * Bump VERSION whenever the shell changes; activate() drops older caches.
  * The precache list is kept in sync by test/data.test.mjs.
  */
-const VERSION = "aap-v15";
+const VERSION = "aap-v16";
 
 const PRECACHE = [
   "index.html",
@@ -61,6 +61,7 @@ const PRECACHE = [
   "data/sl_landscape.json",
   "data/rl_landscape.json",
   "data/research_collectors.json",
+  "data/stats.json",
   "design/01-system-context.md",
   "design/02-uml.md",
   "design/03-control-flow.md",

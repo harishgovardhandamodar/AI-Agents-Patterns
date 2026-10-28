@@ -30,3 +30,12 @@ book/Self-Learning-Agents.pdf.outline-spec.json
 
 # local social/draft copy — personal, not part of the project.
 LINKEDIN-POST.md
+
+# humanized renderer scratch files (P0-6/P1-8 hygiene)
+Books/Humanized/*.tmp.html
+Books/Humanized/*.norazor.pdf
+Books/Humanized/.axiom/*.tmp.html
+# live hardware telemetry appended by poll_hw during generation runs
+# (ephemeral; analyzed numbers live in COMPARISON-REPORT.md)
+Books/Humanized/.axiom/checkpoints/*.hw.jsonl
+*.hw.jsonl

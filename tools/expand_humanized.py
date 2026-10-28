@@ -2,7 +2,7 @@
 """Expand one book section-by-section with qwen3.6:27b. Resumable via checkpoint.
 Usage: expand_book.py <SRC.md> <DST.md> <CKPT.json>
 Chunking identical to pilot split; packs only when >100 atomic sections."""
-import json, os, re, sys, time, urllib.request
+import hashlib, json, os, re, sys, time, urllib.request
 
 MODEL = os.environ.get("EXPAND_MODEL", "qwen3.6:27b")
 URL = os.environ.get("EXPAND_URL", "http://127.0.0.1:11434/api/generate")
@@ -17,6 +17,15 @@ Formatting rules (must follow exactly):
 - Mark blocks as **Definition n.**, **Theorem n.**, *Proof.* in markdown. End proofs with ∎.
 - Keep markdown structure and heading levels. Keep all mermaid diagrams exactly. Keep counsel-verification bullets and their verdicts.
 - Preserve every fact, number, unit, date, name and quotation from the original. Never invent empirical data, benchmarks, or citations. Output the section only, starting with its heading.
+EVIDENCE RULES (non-negotiable):
+- Annotate before you formalize. Every new claim must trace to the input
+  section or be explicitly labelled illustrative ("for example", "say,",
+  "illustrative"). Never present an invented ID, number, or schema field
+  as if it came from the repository.
+- Formalize only where a real invariant exists (a bound, a rule with a
+  checkable condition, a defined protocol). If no theorem exists, write an
+  *Argument.* or *Sketch.* block instead of a *Proof.* — a forced proof of
+  nothing is worse than an honest argument.
 MANDATORY OUTPUT REQUIREMENTS (non-negotiable):
 - Your output MUST be LONGER than the input section (expand, do not summarize or merely paraphrase).
 - Your output MUST contain at least one **Definition**, one **Theorem**, and one *Proof.* block with real $...$/$$...$$ mathematics.
@@ -41,12 +50,17 @@ def chunks(text):
         out.append("\n\n".join(buf))
     return out
 
+PROMPT_VERSION = "2026-10-28.2-annotate-first"
+
+
 def _passes_checks(sec, out):
     if len(out) < max(800, int(len(sec) * 1.2)):
         return False, "too short"
-    for marker in ("**Definition", "**Theorem", "*Proof"):
+    for marker in ("**Definition", "**Theorem"):
         if marker not in out:
             return False, "missing " + marker.strip("*")
+    if "*Proof" not in out and "*Argument" not in out and "*Sketch" not in out:
+        return False, "missing reasoning block (*Proof*/*Argument*/*Sketch*)"
     return True, "ok"
 
 
@@ -84,7 +98,16 @@ def call(sec, retries=4):
 def main(src, dst, ckpt):
     secs = chunks(open(src, encoding="utf-8").read())
     print(f"{src}: {len(secs)} chunks", flush=True)
+    raw = open(src, encoding="utf-8").read()
+    sha = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     done = json.load(open(ckpt, encoding="utf-8")) if os.path.exists(ckpt) else {}
+    meta = done.get("_meta")
+    if meta and (meta.get("source_sha256") != sha or meta.get("model") != MODEL):
+        print(f"REFUSING resume: checkpoint is for a different source or model "
+              f"({meta.get('source_sha256', '?')[:12]} / {meta.get('model', '?')})", flush=True)
+        sys.exit("re-run with a fresh checkpoint path")
+    done["_meta"] = {"source_sha256": sha, "model": MODEL,
+                      "prompt_version": PROMPT_VERSION}
     print(f"resuming: {len(done)} cached", flush=True)
     for i, s in enumerate(secs):
         if str(i) in done:

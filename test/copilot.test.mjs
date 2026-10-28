@@ -54,3 +54,29 @@ test("no unescaped markup leaks through links", () => {
   const out = md(ctx, '[x](https://e.com/"onmouseover="alert(1))');
   assert.doesNotMatch(out, /onmouseover="alert/);
 });
+
+const verify = (ctx, content, context) =>
+  Array.from(vm.runInContext(
+    "cpVerifyCites(" + JSON.stringify(content) + ", " + JSON.stringify(context) + ")",
+    ctx
+  ));
+
+test("cited IDs present in context verify clean", () => {
+  const ctx = loadCopilot();
+  const context = "Dual control gates irreversible actions. See least-privilege scoping.";
+  assert.deepEqual(verify(ctx, "Use dual-control and least-privilege here.", context), []);
+});
+
+test("IDs missing from context are reported unverified", () => {
+  const ctx = loadCopilot();
+  const context = "Dual control gates irreversible actions.";
+  assert.deepEqual(
+    verify(ctx, "Use dual-control and S-007 here.", context),
+    ["S-007"]
+  );
+});
+
+test("code spans are not treated as claims", () => {
+  const ctx = loadCopilot();
+  assert.deepEqual(verify(ctx, "Run `dual-control --dry-run` first.", "unrelated text"), []);
+});

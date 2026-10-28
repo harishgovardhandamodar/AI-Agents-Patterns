@@ -8,6 +8,20 @@ First edition — October 2026
 
 ---
 
+## About this edition
+
+This is the **hand-authored** expanded edition: each chapter was written
+directly (not by section-by-section model expansion), assembled from
+`Books/Humanized/.parts/agentic/`, and checked for math notation
+(`$`/`$$` only), diagram preservation, and typos — not for independent
+factual review. **No independent reviewer has verified it.**
+The "council deliberation" voices (safety researcher, evaluation
+methodologist, memory-systems researcher, continual-learning researcher)
+are **editorial personas — a literary device, not independent reviewers**,
+and they cast no votes and sign nothing.
+Machine-readable provenance: `Books/Humanized/AGENTIC-PATTERNS-AND-GUARDRAILS.provenance.json`.
+Verify claims against `data/*.json` before relying on them.
+
 *Agentic Design Patterns & Guardrails* — 107 design patterns, 191 composition cascades and 54 failure scenarios, generated from the *AI Agent Patterns & Guardrails* catalog.
 
 Pattern text, failure modes, protections, scenarios and cascades are the catalog's own records; the surrounding prose frames them. Diagrams are the catalog's Mermaid sources, rendered at build time.
@@ -450,7 +464,7 @@ Majority vote over reasoning paths converts one model's uncertainty into a measu
 
 **Definition 1 (Agreement-gated answer).** Let $a_1, \dots, a_N$ be $N$ sampled answers and $m$ the majority. The pattern emits $(m, c)$ where confidence $c = (\text{votes for } m)/N$; if $c < \tau$ (agreement threshold), emit escalate/abstain instead of $m$.
 
-**Theorem 1 (Consensus bounds variance, not bias).** Majority vote over $N$ samples reduces variance as $1/\sqrt{N}$ for independent errors — but leaves shared bias untouched: if all samples share the base model's blind spot, the majority is confidently wrong.
+**Theorem 1 (Consensus bounds variance, not bias).** Majority vote over $N$ samples drives the error probability down exponentially in $N$ for independent errors (the vote share concentrates with standard error $1/\sqrt{N}$) — but leaves shared bias untouched: if all samples share the base model's blind spot, the majority is confidently wrong.
 
 *Proof.* For independent per-sample error probability $p < 1/2$, the majority error falls exponentially in $N$ (Condorcet). But base-model bias correlates the errors: all $N$ samples drawn from the same biased model share its blind spot, so the "independent" premise fails and the majority inherits the bias with high agreement — shared-blind-spot consensus, measured at medium severity. Diversity (mixed temperatures, mixed models) is the only correction: it decorrelates the errors the vote is supposed to average out. Treat consensus as confidence (the vote measured its own stability), never as truth (stability is not correctness) — and still apply deterministic checks for actions, because no vote authorizes a side effect. Cap $N$ and total spend per query: loops of this pattern burn budget fast, and cost multiplication is the failure that needs no adversary. ∎
 
@@ -569,7 +583,7 @@ Explore multiple candidate reasoning branches with self-evaluation and backtrack
 
 Where CoT walks one path and self-consistency votes among independent walks, ToT searches: generate $b$ candidate next steps, score each with a value function, keep the top-$k$, expand, backtrack on dead ends (BFS or DFS under a search controller). The power is exploration with memory — dead ends teach the search where not to go. The price is combinatorial: branching multiplies tokens, and unbounded depth is budget runaway wearing a lab coat.
 
-**Definition 1 (Bounded thought search).** A ToT search with branching factor $b$, depth limit $d$, beam width $k$, and token budget $B$ explores at most $\min(b^d, k \cdot d \cdot L)$ node-expansions (for mean node cost $L$ tokens) and halts with failure (not runaway) when $B$ is exhausted.
+**Definition 1 (Bounded thought search).** A ToT search with branching factor $b$, depth limit $d$, beam width $k$, and token budget $B$ explores at most $\min(b^d, B/L)$ node-expansions (for mean node cost $L$ tokens and token budget $B$) and halts with failure (not runaway) when $B$ is exhausted.
 
 **Theorem 1 (Caps convert runaway to bounded failure).** Under hard caps on depth $\times$ width $\times$ tokens shared with the outer agent loop's budget guardrail, the worst case of ToT is a bounded-cost incomplete search — never an unbounded spend.
 
@@ -2424,7 +2438,7 @@ Policy decides which actions need approval; the agent pauses with a full context
 
 **Theorem 1 (Three links, all load-bearing).** Approval fatigue, context starvation, and escalation bypass each independently nullify the human gate — and the three protections map one-to-one: batching plus rubber-stamp alerts, full evidence packages, tool-layer enforcement.
 
-*Proof.* Fatigue: volume without triage trains reviewers to approve everything (approval fatigue turns HITL into a click-through, high severity) — batching plus prioritization bounds the load, and the rubber-stamp-rate alert detects the failure mode itself (approvals approaching 100% means the human became a script). Starvation: a one-line summary hides the poison pill — the diff plus full provenance plus guardrail rationale gives the reviewer what the decision actually needs. Bypass: an agent finding another tool-route to the same action (critical) makes policy-level approval decorative — enforcement at the tool layer means every path to the effect passes the gate, because the gate sits on the effect, not the request. Six scenarios and 18 cascades mark this as the most attacked control surface in the loop: batch and prioritize, show everything, enforce everywhere — and verify tool-layer enforcement, since a gate any path can skip is a suggestion. ∎
+*Proof.* Fatigue: volume without triage trains reviewers to approve everything (approval fatigue turns HITL into a click-through, high severity) — batching plus prioritization bounds the load, and the rubber-stamp-rate alert detects the failure mode itself (approvals approaching 100% means the human became a script). Starvation: a one-line summary hides the poison pill — the diff plus full provenance plus guardrail rationale gives the reviewer what the decision actually needs. Bypass: an agent finding another tool-route to the same action (critical) makes policy-level approval decorative — enforcement at the tool layer means every path to the effect passes the gate, because the gate sits on the effect, not the request. Six scenarios and its 18 linked cascades mark this as the most attacked control surface in the loop: batch and prioritize, show everything, enforce everywhere — and verify tool-layer enforcement, since a gate any path can skip is a suggestion. ∎
 
 ## Practical Applications & Use Cases
 

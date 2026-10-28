@@ -47,6 +47,8 @@ function expandJobHtml() {
   const log = (j.log || []).slice(-14).map(escHtml).join("\n");
   return '<div class="panel" style="margin-top:10px"><h3>Expansion job <span class="muted small mono">' +
     escHtml(j.id) + "</span> " + chip + "</h3>" + bar +
+    (busy ? '<div style="margin:6px 0"><button class="btn sm" data-act="expandCancel" data-args="' +
+      dataArgs(j.id) + '">■ Cancel job</button></div>' : "") +
     (steps ? '<ul class="muted small">' + steps + "</ul>" : "") +
     (log ? '<pre class="mono small" style="max-height:220px;overflow:auto;white-space:pre-wrap">' + log + "</pre>" : "") +
     "</div>";
@@ -200,8 +202,19 @@ function expandLaunch() {
   });
 }
 
-function expandRefresh() {
-  fetch("/api/expand/status").then(function (res) {
+function expandCancel(jid) {
+  if (!jid) return;
+  fetch("/api/expand/cancel", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ job: jid })
+  }).then(function (res) { return res.json(); }).then(function (data) {
+    showNotif(data && data.state ? ("Cancel: " + data.state) : ("Cancel failed: " + ((data && data.error) || "unknown")));
+    expandPoll();
+  }).catch(function () { showNotif("Cancel endpoint unreachable"); });
+}
+
+function expandRefresh() {  fetch("/api/expand/status").then(function (res) {
     if (!res.ok) throw new Error("HTTP " + res.status);
     return res.json();
   }).then(function (data) {

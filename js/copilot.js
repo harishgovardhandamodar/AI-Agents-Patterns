@@ -171,6 +171,13 @@ function cpMsgEl(m, stream, i, isLast) {
     (m.content ? cpMd(m.content) : '<div class="cp-thinking"><span class="spinner"></span> thinking…</div>');
   wrap.appendChild(bubble);
   if (m.cites && m.cites.length) wrap.appendChild(cpCiteEl(m.cites));
+  if (m.unverified && m.unverified.length) {
+    const w = document.createElement("div");
+    w.className = "cp-unverified";
+    w.textContent = "\u26a0 unverified in retrieved context: " + m.unverified.join(", ");
+    w.title = "These look like catalog IDs but do not occur in the text the model was given. Treat the claim as ungrounded until checked.";
+    wrap.appendChild(w);
+  }
   wrap.insertAdjacentHTML("beforeend", cpActionsHtml(m, i, isLast));
   if (isLast && m.content && !stream) wrap.insertAdjacentHTML("beforeend", cpFollowHtml(m));
   return wrap;
@@ -204,6 +211,32 @@ function cpCiteEl(cites) {
 }
 
 /* Which tab holds a kind of citation. */
+/* Claim-level citation check (P1-6). Attached citations say which catalog
+   records were retrieved; this checks what the prose actually claims.
+   Every slug-like token (`dual-control`) and S-###/P-###-style token in
+   the answer must occur in the retrieved context text, or it is reported
+   as unverified. Code spans are ignored. Returns at most 8 tokens. */
+function cpVerifyCites(content, ctxText) {
+  const ctx = String(ctxText || "").toLowerCase();
+  let text = String(content || "");
+  text = text.replace(/`[^`\n]+`/g, " ");
+  const seen = Object.create(null);
+  const out = [];
+  function consider(tok) {
+    const t = tok.toLowerCase();
+    if (!t || seen[t] || t.length > 60) return;
+    seen[t] = 1;
+    const spaced = t.split("-").join(" ");
+    if (ctx.indexOf(t) < 0 && ctx.indexOf(spaced) < 0 && out.length < 8) out.push(tok);
+  }
+  let m;
+  const slugRe = /[a-z0-9]+(?:-[a-z0-9]+){1,4}/g;
+  while ((m = slugRe.exec(text)) !== null) consider(m[0]);
+  const idRe = /\b[SP]-\d{1,4}\b/g;
+  while ((m = idRe.exec(text)) !== null) consider(m[0]);
+  return out;
+}
+
 function cpCiteTab(kind) {
   if (kind === "pattern") return "patterns";
   if (kind === "scenario") return "scenarios";
@@ -537,6 +570,8 @@ async function cpRunAssistant(q) {
         : "Model unreachable — answered from the local catalog");
     }
   } finally {
+    try { assistant.unverified = cpVerifyCites(assistant.content, assistant._ctxText || ""); }
+    catch (e) { assistant.unverified = []; }
     cpBusy = false;
     cpAbort = null;
     cpSetBusyUI(false);

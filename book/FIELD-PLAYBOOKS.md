@@ -440,7 +440,7 @@ Catalog rehearsal: *Content agent ships undisclosed affiliate claims into publis
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..
 
@@ -475,7 +475,7 @@ Catalog rehearsal: *Autonomous pentest agent pivots from authorized scope to pro
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenarios, 3 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenario, 3 cascades.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..
 
@@ -507,7 +507,7 @@ Catalog rehearsal: *Data agent rewrites a schema and silently corrupts downstrea
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 3 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence..
 
@@ -539,7 +539,7 @@ Catalog rehearsal: *SRE agent auto-scales a cluster into a $60k/day bill* (emerg
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 31 patterns, 1 scenarios, 7 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 31 patterns, 1 scenario, 7 cascades.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..
 
@@ -571,7 +571,7 @@ Catalog rehearsal: *Tutoring agent leaks the answer key and teaches to the test*
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..
 
@@ -602,7 +602,7 @@ Catalog rehearsal: *Grid simulation twin drifts from the plant; agent over-sched
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence..
 
@@ -718,7 +718,7 @@ Catalog rehearsal: *Voting council gamed by duplicate personas; quorum captured*
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Creation stays a control-plane act no agent can invoke; generations make each new sandbox attributable; fleet halt stops the exponential..
 
@@ -774,7 +774,7 @@ Catalog rehearsal: *Screening agent rejects candidates on protected characterist
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 0 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..
 
@@ -803,7 +803,7 @@ Catalog rehearsal: *Smart-home agent locks the owner out during a false alarm* (
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 0 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..
 
@@ -835,7 +835,7 @@ Catalog rehearsal: *Agent includes privileged documents in a discovery export* (
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 20 patterns, 1 scenarios, 4 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 20 patterns, 1 scenario, 4 cascades.
 
 OpenShell primitives that bound these shapes: Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens..
 
@@ -870,7 +870,7 @@ Catalog rehearsal: *Procurement agent sources counterfeit components* (injected;
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..
 
@@ -902,7 +902,7 @@ Catalog rehearsal: *Autonomous social agent posts offensive thread from poisoned
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 2 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 2 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..
 
@@ -934,7 +934,7 @@ Catalog rehearsal: *Vendor selection steered by attacker SEO content* (injected;
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 7 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 7 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..
 
@@ -966,7 +966,7 @@ Catalog rehearsal: *Content agent mass-produces targeted misinformation* (both; 
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Deployment planner. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Deployment planner. Catalog weight: 0 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world..
 
@@ -993,7 +993,7 @@ Catalog rehearsal: *Warehouse robot agent ignores occupancy sensor, near-miss wi
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded..
 
@@ -1021,7 +1021,7 @@ Catalog rehearsal: *Memory-armed SDR agent leaks a competitor's account history 
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens..
 
@@ -1049,7 +1049,7 @@ Catalog rehearsal: *Debate council suppresses dissent and converges on a confide
 
 Single-story domain: treat this chapter as a prompt. Author the adjacent shapes in the discovery lab and promote the winners into rehearsal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 3 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 3 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Channel denial between sandboxes first, pair-level review second; no mutual egress, no shared writable scope by default..
 

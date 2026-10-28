@@ -10,6 +10,7 @@ so token ingress/egress is attributable per chapter and summable per book.
 Usage: expand_measured.py <SRC.md> <DST.md> <CKPT.json> <METRICS.jsonl>
 Env: EXPAND_MODEL, EXPAND_URL (same as expand_humanized.py).
 """
+import hashlib
 import json
 import os
 import re
@@ -31,6 +32,15 @@ Formatting rules (must follow exactly):
 - Mark blocks as **Definition n.**, **Theorem n.**, *Proof.* in markdown. End proofs with ∎.
 - Keep markdown structure and heading levels. Keep all mermaid diagrams exactly. Keep counsel-verification bullets and their verdicts.
 - Preserve every fact, number, unit, date, name and quotation from the original. Never invent empirical data, benchmarks, or citations. Output the section only, starting with its heading.
+EVIDENCE RULES (non-negotiable):
+- Annotate before you formalize. Every new claim must trace to the input
+  section or be explicitly labelled illustrative ("for example", "say,",
+  "illustrative"). Never present an invented ID, number, or schema field
+  as if it came from the repository.
+- Formalize only where a real invariant exists (a bound, a rule with a
+  checkable condition, a defined protocol). If no theorem exists, write an
+  *Argument.* or *Sketch.* block instead of a *Proof.* — a forced proof of
+  nothing is worse than an honest argument.
 MANDATORY OUTPUT REQUIREMENTS (non-negotiable):
 - Your output MUST be LONGER than the input section (expand, do not summarize or merely paraphrase).
 - Your output MUST contain at least one **Definition**, one **Theorem**, and one *Proof.* block with real $...$/$$...$$ mathematics.
@@ -60,12 +70,17 @@ def chunks(text):
     return out
 
 
+PROMPT_VERSION = "2026-10-28.2-annotate-first"
+
+
 def _passes_checks(sec, out):
     if len(out) < max(800, int(len(sec) * 1.2)):
         return False, "too short"
-    for marker in ("**Definition", "**Theorem", "*Proof"):
+    for marker in ("**Definition", "**Theorem"):
         if marker not in out:
             return False, "missing " + marker.strip("*")
+    if "*Proof" not in out and "*Argument" not in out and "*Sketch" not in out:
+        return False, "missing reasoning block (*Proof*/*Argument*/*Sketch*)"
     return True, "ok"
 
 
@@ -138,7 +153,16 @@ def main(src, dst, ckpt, metrics):
     global METRICS_FP
     secs = chunks(open(src, encoding="utf-8").read())
     print(f"{src}: {len(secs)} chunks", flush=True)
+    raw = open(src, encoding="utf-8").read()
+    sha = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     done = json.load(open(ckpt, encoding="utf-8")) if os.path.exists(ckpt) else {}
+    meta = done.get("_meta")
+    if meta and (meta.get("source_sha256") != sha or meta.get("model") != MODEL):
+        print(f"REFUSING resume: checkpoint is for a different source or model "
+              f"({meta.get('source_sha256', '?')[:12]} / {meta.get('model', '?')})", flush=True)
+        sys.exit("re-run with a fresh checkpoint path")
+    done["_meta"] = {"source_sha256": sha, "model": MODEL,
+                      "prompt_version": PROMPT_VERSION}
     print(f"resuming: {len(done)} cached", flush=True)
     METRICS_FP = open(metrics, "a", encoding="utf-8")
     t_all = time.time()

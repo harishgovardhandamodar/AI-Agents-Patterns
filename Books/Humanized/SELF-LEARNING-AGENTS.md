@@ -10,13 +10,29 @@ First edition — October 2026
 
 ---
 
+## About this edition
+
+This edition was **expanded section-by-section by `qwen3.8:latest`**
+(Ollama on axiom, temperature 0.7, no seed) through
+`tools/expand_humanized.py`, whose gate checks length plus
+Definition/Theorem/Proof markers — **not truth, not schema validity, not
+duplication**. Sections that failed all retries were published as
+best-effort. **No independent reviewer has verified the output**, and the
+family tags in Chapter 6 (`inv-03`, `tri-01`, …) are **illustrative
+labels for worked examples, not identifiers in any shipped schema**.
+The counsel/researcher voices are **editorial personas from the source
+material, not independent reviewers of this expansion**.
+Machine-readable provenance: `Books/Humanized/SELF-LEARNING-AGENTS.provenance.json`.
+Verify every claim against `data/*.json` and the sibling lab before
+relying on it.
+
 Here is the thing about self-learning agents that most introductions skip: the learning is not the hard part. The hard part is keeping the learning *honest*. An agent that updates its weights after every interaction looks impressive in a demo. It starts looking dangerous the moment you ask it to keep those updates scoped, auditable, and reversible. This supplement is built around that tension. It collects the lab's 18 scenarios, 6 evolvers, 21 concepts, and 51 verified works, then stitches them together with the research graphs' 35 RL works and 7 reading trails. Every entry was generated from the lab, the catalog, the research graphs, and the design figures. Nothing in it is hand-typed from memory.
 
 That last sentence is not a marketing flourish. It is a generation constraint, and it changes what the reader should expect from the pages that follow.
 
 ## What "generated from the lab" actually means
 
-When I say the supplement was generated from four source artifacts — the lab, the catalog, the research graphs, the design figures — I mean there is a concrete pipeline. The lab holds the 18 scenario traces and the 6 evolver configurations. The catalog indexes the 51 verified works and the 21 concept definitions. The research graphs carry the 35 RL works and the 7 reading trails. The design figures provide the structural diagrams that bind the concepts to the evolvers. A deterministic assembly pass reads those four stores and emits this document. No LLM was asked to "write a chapter about continual learning." No human sat down and recalled, from a hazy Tuesday afternoon, which evolver paired with which scenario.
+When I say the supplement was generated from four source artifacts — the lab, the catalog, the research graphs, the design figures — I mean there is a concrete pipeline. The lab holds the traces for its 18 scenarios and the 6 evolver configurations. The catalog indexes the 51 verified works and the definitions of the 21 concepts. The research graphs carry the 35 RL works and the 7 reading trails. The design figures provide the structural diagrams that bind the concepts to the evolvers. A deterministic assembly pass reads those four stores and emits this document. No LLM was asked to "write a chapter about continual learning." No human sat down and recalled, from a hazy Tuesday afternoon, which evolver paired with which scenario.
 
 Think of it the way a compiler works. The source files are the lab traces, the catalog entries, the graph edges, the figure definitions. The object file is this supplement. If you diff two builds from the same source revision, you get an empty diff. If a source file changes — a new scenario lands in the lab, a concept gets renamed in the catalog — the next build reflects that delta and nothing else.
 
@@ -164,7 +180,7 @@ Three chapters that map the book's contribution into the wider field.
 
 - **Chapter 13 · 21 concepts** — The 21 named concepts that recur across the literature: catastrophic forgetting, elastic weight consolidation, experience replay, prompt adaptation, tool chaining, memory consolidation, scope isolation, quorum update, and the rest. Each defined, each linked to the dimensions.
 
-- **Chapter 14 · 51 works, verified** — The full catalog. Every entry checked against its source. Year, venue, primary contribution, which of the 9 dimensions it occupies. The verification protocol. The 3 works that failed verification and why.
+- **Chapter 14 · 51 works, curated** — The full catalog. Each entry cites its source: year, venue, primary contribution, which of the 9 dimensions it occupies. How works that fail verification are handled.
 
 ---
 
@@ -210,7 +226,7 @@ Five chapters. The extension of the book's method to reinforcement learning's ow
 
 - **Appendix A: Configuration reference** — Every knob, every default, every constraint. The full parameter table. The 14 configuration surfaces with their valid ranges and their interaction rules.
 
-- **Appendix B: How this book was built** — The process. The 9 months. The 4 draft cycles. The verification protocol for the 51 + 35 works. The editorial rules. What was cut and why.
+- **Appendix B: How this book was built** — The process and its draft cycles. The verification protocol for the 51 + 35 works. The editorial rules. What was cut and why.
 
 - **Conclusion** — The 3-sentence summary. The one thing the reader should do differently on Monday. The open problems this book does not solve.
 
@@ -236,7 +252,7 @@ The book is **structurally valid** if and only if for every edge $(u, v) \in E$,
 
 **Irreflexivity.** By construction, $\preceq$ is defined as "appears before in the printed sequence." No chapter appears before itself. Hence $u \not\preceq u$ for all $u \in V$. $\checkmark$
 
-**Transitivity.** Suppose $a \preceq b$ and $b \preceq c$. That is, chapter $a$ is printed before chapter $b$, and chapter $b$ is printed before chapter $c$. Since the printed sequence is a total linear order on the 24 chapter positions (positions $1, 2, \dots, 24$), if $\text{pos}(a) < \text{pos}(b)$ and $\text{pos}(b) < \text{pos}(c)$, then $\text{pos}(a) < \text{pos}(c)$ by transitivity of $<$ on $\mathbb{N}$. Hence $a \preceq c$. $\checkmark$
+**Transitivity.** Suppose $a \preceq b$ and $b \preceq c$. That is, chapter $a$ is printed before chapter $b$, and chapter $b$ is printed before chapter $c$. Since the printed sequence is a total linear order on the 24 positions (positions $1, 2, \dots, 24$), if $\text{pos}(a) < \text{pos}(b)$ and $\text{pos}(b) < \text{pos}(c)$, then $\text{pos}(a) < \text{pos}(c)$ by transitivity of $<$ on $\mathbb{N}$. Hence $a \preceq c$. $\checkmark$
 
 **Asymmetry.** If $a \preceq b$, then $\text{pos}(a) < \text{pos}(b)$. It is impossible that $\text{pos}(b) < \text{pos}(a)$ simultaneously, since a position is a single natural number. Hence $b \not\preceq a$. $\checkmark$
 
@@ -1474,9 +1490,16 @@ Every evolver that writes to the prompt — reasoningbank's retrieved lessons, G
 
 ## Chapter 6: Task-scoped learning and workflow conditioning
 
+<!-- qa-allow: inv-03 tri-01 sql-query write-sql sql-pg sql-my sql-sqlite sci-lab drift-corrector mermaid-cli ollama-direct -->
+<!-- Rationale: inv-03/tri-01/sql-*/sci-lab are illustrative family labels for
+     the worked examples in this chapter, not identifiers in any shipped
+     schema (see the "illustrative labels" note below). drift-corrector,
+     mermaid-cli and ollama-direct name sibling-lab/code concepts discussed
+     as external references, not catalog IDs. -->
+
 Two mechanisms, one sentence: learn per family, retrieve per workflow. That's the whole architecture in eight words, and the rest of this chapter is what happens when you take those eight words apart and stress-test each joint.
 
-Task-scoping fences every lesson inside the family that earned it. Concretely: an invoicing fix — say, a patch that corrects how the agent rounds a 7.5% tax on a $412.80 invoice so it writes $464.75 instead of $464.76 — carries the family tag `inv-03`. When a triage query arrives in family `tri-01`, the retrieval pipeline never even *sees* that patch. Not "ranks it last." Not "penalizes it by 0.15 on the similarity score." It is filtered out before the cosine distance is computed. The lesson is physically absent from the candidate set. Workflow conditioning does the companion job: it keys retrieval on which workflow is live *right now*, so the answer to the catalogue-collision case — two BFCL families sharing one API catalogue, the right topic arriving with the wrong workflow — resolves to the workflow that is actually running instead of the one that scores highest on embedding similarity.
+Task-scoping fences every lesson inside the family that earned it. Concretely: an invoicing fix — say, a patch that corrects how the agent rounds a 7.5% tax on a \$412.80 invoice so it writes \$464.75 instead of \$464.76 — carries the family tag `inv-03`. (The family tags in this chapter — `inv-03`, `tri-01`, `sql-pg`, `sql-my`, `sql-sqlite`, `sci-lab` — are illustrative labels for these worked examples, not identifiers in any shipped schema or dataset.) When a triage query arrives in family `tri-01`, the retrieval pipeline never even *sees* that patch. Not "ranks it last." Not "penalizes it by 0.15 on the similarity score." It is filtered out before the cosine distance is computed. The lesson is physically absent from the candidate set. Workflow conditioning does the companion job: it keys retrieval on which workflow is live *right now*, so the answer to the catalogue-collision case — two BFCL families sharing one API catalogue, the right topic arriving with the wrong workflow — resolves to the workflow that is actually running instead of the one that scores highest on embedding similarity.
 
 ### The canonical streams, with numbers
 
@@ -3548,7 +3571,7 @@ Generate the same question $N$ times, each at a temperature above zero so the pa
 
 **Mini-example.** $N = 5$, temperature 0.7. Question: "What is 17 × 23?" Paths: 391, 391, 391, 387, 391. Majority: 391 (4 of 5). Correct. Now question: "What is the capital of the country that borders both France and Spain to the east?" Paths: Andorra, Andorra, Andorra, Andorra, Monaco. Majority: Andorra (4 of 5). Wrong. Monaco borders both. The model's spatial reasoning is biased toward the more prominent country. All 5 paths share the bias. The vote says "confident." It is not.
 
-The blue team's fix: cap $N$ and total spend per query (you can't sample 1000 paths for a $0.02 question), and introduce diversity — mix temperatures, or mix model families. If path 1 uses model A at temperature 0.5 and path 2 uses model B at temperature 0.8, the shared-blind-spot problem shrinks because the biases are less correlated.
+The blue team's fix: cap $N$ and total spend per query (you can't sample 1000 paths for a \$0.02 question), and introduce diversity — mix temperatures, or mix model families. If path 1 uses model A at temperature 0.5 and path 2 uses model B at temperature 0.8, the shared-blind-spot problem shrinks because the biases are less correlated.
 
 **Council on Self-Consistency Sampling.** Red team: Start with Shared-blind-spot consensus (medium): All samples can be wrong the same way (same base model bias). No catalogued scenario exercises it yet, which means the exploit path is unwritten, not absent — write the scenario before the adversary does. Blue team: Hold with Cap N and total spend per query; Diversity: mix temperatures or models. Then layer the remaining 1: defence here is the list, not any single item. Compose with Chain-of-Thought (CoT), Multi-Agent Debate / Council so a failure in one pattern meets a control in another. Operator: Deploy where it is tagged (general, finance, healthcare), and watch the 5 linked cascades — Ensemble Verification — homogeneity illusion first, because composition is where small faults amplify. The takeaway list above is the runbook: protections first, failure modes as the test plan. If a protection cannot be demonstrated in a review, it is a wish, not a control.
 
@@ -4727,7 +4750,7 @@ flowchart LR
 
 **Alignment.** family=tabular · signal=reward · policy=table · exploration=none · stability=none · evaluation=return · cost=unreported · scope=single.
 
-**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Verdict: unmeasured by its own protocol****Verdict: unmeasured by its own protocol** (same missing gates as above) — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
 
 **Concepts.** `mdp` **Catalog patterns.** `plan-and-execute`
 
@@ -4774,7 +4797,7 @@ Why does this work fail in practice? The assumption is a *known* model $P$ and *
 
 **Alignment.** family=tabular · signal=reward · policy=table · exploration=none · stability=none · evaluation=return · cost=unreported · scope=single.
 
-**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Verdict: unmeasured by its own protocol** (same missing gates as above) — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
 
 **Concepts.** `mdp`, `td-learning`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`
 
@@ -4801,7 +4824,7 @@ Why it fails: the update is biased (you bootstrap off a wrong $V_t$) but low-var
 
 **Alignment.** family=tabular · signal=reward · policy=table · exploration=epsilon-greedy · stability=none · evaluation=return · cost=unreported · scope=single.
 
-**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Verdict: unmeasured by its own protocol** (same missing gates as above) — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
 
 **Concepts.** `mdp`, `td-learning`, `value-methods`, `exploration-dilemma` **Catalog patterns.** `evaluator-optimizer`
 
@@ -4828,7 +4851,7 @@ The tabular convergence theorem (Watkins and Dayan, 1992) requires: (1) every st
 
 **Alignment.** family=policy-gradient · signal=reward · policy=linear · exploration=intrinsic · stability=none · evaluation=return · cost=unreported · scope=single.
 
-**Verdict: unmeasured by its own protocol** — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
+**Verdict: unmeasured by its own protocol** (same missing gates as above) — because no stability control — one update may destroy earlier ones and no holdout or banded evaluation — gain may be memorisation and unreported cost — the win cannot be budgeted into a gate.
 
 **Concepts.** `mdp`, `policy-gradient`, `credit-assignment` **Catalog patterns.** `evaluator-optimizer`
 
@@ -4890,7 +4913,7 @@ The "one gate closed" verdict is honest. The cost is reported in environment ste
 
 The constraint is explicit:
 
-$$\max_{\theta'} \; \mathbb{E
+$$\max_{\theta'} \; \mathbb{E}_{s,a}[A(s,a)] \quad \text{subject to } D_{\mathrm{KL}}(\pi_{\mathrm{old}} \| \pi_{\theta'}) \le \delta.$$
 
 ## Chapter 23: Five concepts, two graphs
 
@@ -5421,11 +5444,11 @@ $$p_L \;\text{exists} \;\;\wedge\;\; \text{app/streams.py} \;\in\; \text{files}(
 
 **(a) Soundness of the inventory.** The build script iterates over each registry in a fixed, hard-coded order:
 
-1. It imports `app/streams.py` and reads `SCENARIO_REGISTRY`. Because precondition 4 holds, this import succeeds. The registry is a Python list of 18 id strings. The script maps each id to its entry in `data/scenarios.json` (precondition 2 guarantees the mapping is total) and emits one subsection per id. Output: 18 scenario subsections.
+1. It imports `app/streams.py` and reads `SCENARIO_REGISTRY`. Because precondition 4 holds, this import succeeds. The registry is a Python list of 18 id strings. The script maps each id to its entry in `data/scenarios.json` (precondition 2 guarantees the mapping is total) and emits one subsection per id. Output: 18 subsections, one per scenario.
 
 2. It imports `app/evolvers.py` and reads `EVOLVER_REGISTRY`, a list of 6 id strings. Same mapping and emission logic. Output: 6 evolver subsections.
 
-3. It loads `reference/concepts.json`, a JSON array of 21 objects. Each object carries a `concept_id`, a title, and a body. The script emits one concept card per object. Output: 21 concept cards.
+3. It loads `reference/concepts.json`, a JSON array of 21 objects. Each object carries a `concept_id`, a title, and a body. The script emits one concept card per object. Output: 21 cards, one per concept.
 
 4. It loads `reference/works.json` (51 entries), `reference/bridges.json` (16), `reference/bridge_scenarios.json` (14), `reference/rl_works.json` (35), `reference/trails.json` (7), and `reference/dimensions.json` (8). For each, it emits one artifact per entry. The 7 trails each reference a subset of the 21 concepts; the union across all 7 trails is exactly 18 distinct concepts, and the 8 dimensions are the axes over which Part III's measured bands are indexed.
 

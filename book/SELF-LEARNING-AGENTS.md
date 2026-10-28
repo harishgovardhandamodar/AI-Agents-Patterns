@@ -555,9 +555,9 @@ The suite ships 18 scenarios across four shapes plus adversarial orderings — t
 
 *domain* — 9 scenarios (domain, healthcare, healthcare-drift, science, science-drift, sql, toolcall, trading, trading-drift). The deployment shape: nine domains plus their drifting variants test whether learning survives contact with a new environment.
 
-*topic* — 1 scenarios (topic). The catalogue core: workflow and topic shapes test whether scoping and conditioning hold when the task stays put and the world moves.
+*topic* — 1 scenario (topic). The catalogue core: workflow and topic shapes test whether scoping and conditioning hold when the task stays put and the world moves.
 
-*workflow* — 1 scenarios (workflow). The catalogue core: workflow and topic shapes test whether scoping and conditioning hold when the task stays put and the world moves.
+*workflow* — 1 scenario (workflow). The catalogue core: workflow and topic shapes test whether scoping and conditioning hold when the task stays put and the world moves.
 
 ```mermaid
 flowchart LR

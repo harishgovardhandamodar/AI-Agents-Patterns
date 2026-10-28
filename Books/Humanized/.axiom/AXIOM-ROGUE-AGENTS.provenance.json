@@ -1,0 +1,15 @@
+{
+  "edition": "Books/Humanized/.axiom/AXIOM-ROGUE-AGENTS.md",
+  "source": "book/ROGUE-AGENTS.md",
+  "source_sha256": "7212670d92ad0e301cc630de856c0acb503cb6b5bb7fbb0ba18daed5324c249e",
+  "generator": "tools/expand_humanized.py",
+  "model": "qwen3.8:latest via Ollama on axiom (100.101.3.115:11434), temp 0.7, no seed",
+  "temperature": 0.7,
+  "seed": null,
+  "prompt_version": "unversioned SYSTEM prompt as committed in tools/expand_humanized.py",
+  "method": "model expansion with length+marker gate",
+  "sections": "unreviewed",
+  "reviewers": [],
+  "generated_at": "2026-10-28",
+  "note": "Machine-expanded draft. Known defect classes (see findings-improvents.md): fabricated IDs/examples, forced formalization, repetition, zero bookmarks in prior PDFs. No independent review has been recorded."
+}

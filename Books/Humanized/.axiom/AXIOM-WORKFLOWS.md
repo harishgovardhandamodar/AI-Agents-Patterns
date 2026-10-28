@@ -10,6 +10,24 @@ First edition — October 2026
 
 ---
 
+## About this edition (read this first)
+
+This is a **machine-expanded draft, not a reviewed book**. It was produced
+section-by-section by `qwen3.8:latest` (tools/expand_humanized.py) with temperature 0.7 and no seed.
+The acceptance gate checked only length plus Definition/Theorem/Proof
+markers — **not truth, not schema validity, not duplication**. Sections
+that failed all retries were published best-effort. **No independent human
+has reviewed this output.**
+
+The counsel/researcher voices are **editorial personas from the source
+material, not independent reviewers of this expansion**. Any worked
+example naming IDs, validators, or environment variables that do not
+resolve in `data/` or `tools/` is **illustrative fiction, not this
+repository's schema** (see `tools/qa_books.py` for the checks this edition
+does not pass).
+
+Machine-readable provenance: `Books/Humanized/.axiom/AXIOM-WORKFLOWS.provenance.json`.
+
 ## What This Supplement Is, and Why It Exists
 
 You hold a second book. Not a sequel, not an appendix stapled to the back of *Agentic Design Patterns & Guardrails*, but a working companion that does one specific job: it takes every workflow the workbench actually runs — catalog, planning, labs, counsel, and knowledge — and reads each one aloud in plain language, the way a council of senior architects would read a design document over coffee. No marketing gloss. No "leverage" or "synergy." Just: here is the job, here is who does it, here is what can go wrong, and here is the guardrail that catches it.
@@ -4282,7 +4300,7 @@ The instruction is deliberate: author the adjacent shapes in the discovery lab. 
 
 ### Catalog weight
 
-The numbers: 1 patterns, 1 scenarios, 1 cascades. Inherent 0, emergent 0, derived 1, cascading 0.
+The numbers: 1 pattern, 1 scenario, 1 cascade. Inherent 0, emergent 0, derived 1, cascading 0.
 
 Read that carefully. Zero inherent failures means no failure is baked into the agent's architecture by default. Zero emergent means (in this thin catalog) no failure has been observed to arise purely from interaction dynamics. The single derived cascade is the answer-leak shape: it is *derived* from the interaction between the student's pressure and the agent's compliance bias. Zero cascading means the leak does not, in this model, trigger a second-order failure in another system.
 
@@ -4367,7 +4385,7 @@ The catalog rehearsal that anchors this chapter reads: *Grid simulation twin dri
 
 That rehearsal is served by four catalog entries: **Failure scenarios**, **Rogue operations**, **Coverage and gaps**, and **Live traces**. Each one catches a different slice of the drift. Failure scenarios ask "what if the twin is 5 percent off?" Rogue operations ask "what if the agent schedules the same 12 MW step twice because it lost track of its own prior action?" Coverage and gaps ask "which sensor channels does the twin not model at all?" Live traces close the loop by recording the actual dispatch order, the actual frequency response, and the delta between the two.
 
-This chapter is deliberately a **single-story domain**. One pattern, one scenario, one cascade. The catalog weight is **1 patterns, 1 scenarios, 1 cascades**, broken down as inherent 0, emergent 0, derived 1, cascading 0. The single cascade is the derived one: twin drift feeding an over-schedule. Nothing here is a textbook failure mode pulled from a reliability report. It is a shape that *emerges* from the interaction between a stale model and an agent that trusts it.
+This chapter is deliberately a **single-story domain**. One pattern, one scenario, one cascade. The catalog weight is **1 pattern, 1 scenario, 1 cascade**, broken down as inherent 0, emergent 0, derived 1, cascading 0. The single cascade is the derived one: twin drift feeding an over-schedule. Nothing here is a textbook failure mode pulled from a reliability report. It is a shape that *emerges* from the interaction between a stale model and an agent that trusts it.
 
 The prompt for you, the reader, is this: author the adjacent shapes in the discovery lab. What happens when the historian is partitioned across two sites and the agent reads from the stale replica? What happens when the setpoint write succeeds but the acknowledgment is lost, and the agent retries? What happens when two agents in different sandboxes both think they own the dispatch queue? Promote those into rehearsals. The catalog will grow. The single-story chapter is a seed, not a ceiling.
 
@@ -5314,7 +5332,7 @@ Concretely, the rehearsal goes like this. A motion sensor in the hallway trips a
 
 This is a single-story domain. The chapter you are reading is a prompt, not a finished pattern. Author the adjacent shapes in the discovery lab — the firmware-rollback cascade, the multi-vendor telemetry schema drift, the actuator dead-band oscillation — and promote them into rehearsals once they survive a dry run. Do not let "IoT" become a catch-all shelf. Each physical topology (home, factory, vehicle, medical) carries its own failure grammar.
 
-Catalog weight: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Read that tuple carefully. Zero patterns means no reusable, pre-baked design shape has been validated for this domain yet. One scenario means the false-alarm lockout above is the only rehearsed failure you have on record. One cascade, and it is *derived* — it was not observed in production, it was constructed by chaining the lockout scenario into the firmware-debounce behavior. Inherent and emergent are both zero; nobody has yet watched a fleet do something nobody asked it to do, and nobody has yet seen a cascade that was not derived from a known scenario. That is a thin safety net. The derived cascade is doing load-bearing work in a domain where the load is measured in newtons.
 
@@ -6617,7 +6635,7 @@ Author those variants in the discovery lab. Promote the ones that survive two fu
 
 ### Catalog weight
 
-The weight for this chapter: **1 patterns, 1 scenarios, 1 cascades** (inherent 0, emergent 0, derived 1, cascading 0).
+The weight for this chapter: **1 pattern, 1 scenario, 1 cascade** (inherent 0, emergent 0, derived 1, cascading 0).
 
 Let me read that line back to you. One pattern: the bounded-empowerment discount gate. One scenario: the cross-tenant exfil rehearsal above. One cascade, and it is *derived*, not inherent. "Derived" means the cascade does not come from the pattern's own logic; it comes from the pattern interacting with the surrounding system. Specifically: the discount gate, working correctly, reduces the number of quotes an agent can issue unilaterally. But it also means that the human-approval queue grows. If the queue grows past the approver's attention span, approvals become rubber-stamps, and the gate's protection degrades to near-zero. That is the derived cascade. It is not in the pattern's specification. It emerges from the pattern's effect on the human's workload.
 
@@ -6765,7 +6783,7 @@ Author the adjacent shapes in the discovery lab and promote them into rehearsals
 
 ### Catalog weight
 
-3 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+3 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Three patterns: the drafting pattern (agent generates the forecast or plan), the provenance pattern (every number links to a logged input), and the gate pattern (principal approval before distribution). One scenario: the debate-council collusion above. One cascade: derived, not inherent. That distinction matters. The cascade is *derived* because it doesn't emerge from the domain's physics; it emerges from the topology you choose. If you wire three agents in a debate loop without a dissent node, the cascade fires. If you wire one agent with a review gate, it doesn't. The domain doesn't force the failure; the architecture does.
 
@@ -7001,7 +7019,7 @@ $$\Delta p_{t+1} = (1 + n\alpha)\,\Delta p_t = (1 + 3 \times 0.15)\,\Delta p_t =
 
 One tick of $2$ bps becomes $2.9$ bps, then $4.2$, then $6.1$. In five steps the "small" initial wobble is a $73$-bps move. No agent intended a flash crash. No agent's prompt said "crash." The loop did. This is why the rehearsal is tagged *emergent* and *collude*: the failure mode lives in the interaction, not in any single prompt.
 
-The catalog weight reads: **1 patterns, 1 scenarios, 1 cascades** (inherent 0, emergent 0, derived 1, cascading 0). The "derived 1" is the momentum-loop cascade. Inherent zero means no single agent's design contains the crash; emergent zero means it is not a two-agent race condition either. It is derived from the composition of $n$ individually-benign agents. That distinction matters for where you put your defenses. You cannot fix it by auditing one prompt. You fix it by controlling the loop gain, capping the number of concurrent agents on a symbol, and inserting a gate that sees the aggregate, not the individual.
+The catalog weight reads: **1 pattern, 1 scenario, 1 cascade** (inherent 0, emergent 0, derived 1, cascading 0). The "derived 1" is the momentum-loop cascade. Inherent zero means no single agent's design contains the crash; emergent zero means it is not a two-agent race condition either. It is derived from the composition of $n$ individually-benign agents. That distinction matters for where you put your defenses. You cannot fix it by auditing one prompt. You fix it by controlling the loop gain, capping the number of concurrent agents on a symbol, and inserting a gate that sees the aggregate, not the individual.
 
 ### The single-story caveat
 
@@ -7251,7 +7269,7 @@ The whole pipeline is deterministic. Same catalog, same prose module, same inven
 
 Splitting prose from data from layout is a deliberate separation. The council prose in `workflows_book_prose.py` can be rewritten for tone without touching a single number. The data in the catalog can be corrected without rewording a sentence. The renderer can swap from PDF to HTML without either of them changing. Each layer has exactly one job, and the validation step sits at the seam between data and prose, catching the class of error that is most expensive to find after publication: a reference that used to resolve and stopped resolving after a catalog edit.
 
-Consider a concrete failure the validator prevents. Suppose an author adds a new entry to `data/patterns.json` with ID `"circuit-breaker-v2"` and writes prose referencing it. The build script resolves the ID against `data/scenarios.json`. If no scenario assigns `"circuit-breaker-v2"` to a workflow, the build fails with a named error: *"Workflow reference 'circuit-breaker-v2' in chapter 7, paragraph 12 has no scenario assignment."* The author fixes the catalog, not the prose. The prose was correct; the data was incomplete.
+Consider a concrete failure the validator prevents. Suppose an edit to the assignment rule in `tools/build_workflows_book.py` (function `scen_workflows`) emits a workflow id that is not a key of `WORKFLOWS` in `tools/workflows_book_data.py` — say a typo like `"scnearios"`. The build halts with a named error naming the scenario and the unknown workflow (`tools/build_workflows_book.py:174-176`). The author fixes the rule, not the prose. (Note: `"circuit-breaker-v2"` is not a catalog ID and Scenario 19 is `procurement-seo-injection`, which assigns no such workflow — the earlier draft of this example used invented IDs. Real IDs are slugs; see `data/patterns.json`.)
 
 ## Formalizing the provenance invariant
 
@@ -7301,21 +7319,13 @@ This holds in practice because:
 - The catalog files are read in a fixed key order (JSON object key insertion order, which Python's `json` module preserves).
 - `workflows_book_prose.py` is a pure function of its inputs; it contains no `datetime.now()` calls, no random seeds, no environment-variable lookups that vary between runs.
 - `render_pdf.mjs` invokes the vendored Mermaid engine with a fixed layout seed. The engine ships in the repository; there is no CDN fetch, no version drift.
-- The PDF metadata block (creation date, producer string) is written with a fixed epoch timestamp when the `REPRODUCIBLE=1` environment variable is set, which the CI pipeline always sets.
+- The PDF metadata block carries real creation timestamps — there is no fixed epoch, no `REPRODUCIBLE` variable anywhere in the repo or CI, and re-running the build produces different bytes. Reproducibility here means same *content* from same sources, not byte-identical artifacts.
 
 If any of these invariants breaks — say, someone adds a `Date.now()` to the prose module — idempotency is lost, and the two-run diff becomes meaningless. The build script can be extended to detect this: run $\mathcal{B}$ twice in a sandbox, compare hashes, and fail CI on mismatch. That is a 20-line addition to `tools/build_workflows_book.py` that turns a silent regression into a loud one.
 
 ## The validation step in concrete terms
 
-To make the gate less abstract, here is exactly what happens when the build encounters the reference "circuit-breaker-v2" in a prose paragraph:
-
-1. The prose extractor in `workflows_book_data.py` collects the string `"circuit-breaker-v2"` into $\mathcal{R}$.
-2. The build script loads `data/patterns.json` and builds the set $\mathrm{dom}(\rho) = \{\texttt{"retry-backoff"}, \texttt{"circuit-breaker"}, \texttt{"circuit-breaker-v2"}, \ldots\}$.
-3. The check `"circuit-breaker-v2" \in \mathrm{dom}(\rho)` passes.
-4. The script then looks in `data/scenarios.json` for a scenario $s$ with `"circuit-breaker-v2" \in \mathcal{A}(s)`. It finds Scenario 19, which assigns `["circuit-breaker-v2", "graceful-degradation"]`.
-5. The reference resolves. The build continues.
-
-If step 4 finds no such scenario, the build halts. The error message names the file, the paragraph index, and the missing assignment. The author's next action is to add the scenario record, not to delete the prose. The data is the thing that must change; the prose is the thing that is allowed to be stable.
+To make the gate less abstract, here is what the implemented check actually does. `scen_workflows` (`tools/build_workflows_book.py:118-130`) assigns every scenario to workflows by rule — Scenarios always, Rogue ops and Coverage by archetype, Live when the scenario has a `traceId`, Guardrail lab for hijack/exfil archetypes. The build then verifies each assigned id is a key of `WORKFLOWS`; a typo in the rule halts the build naming the scenario and the unknown workflow. Note the limit, stated honestly: there is no prose extractor. Nothing in the build reads workflow references out of English paragraphs and resolves them against the catalog; the Definition/Theorem formalism above specifies that stronger gate, it does not describe running code. The running checks are key-drift checks (deliberation keys, figure keys, domain-playbook keys, workflow keys, tab targets).
 
 ## What the provenance chain does not cover
 

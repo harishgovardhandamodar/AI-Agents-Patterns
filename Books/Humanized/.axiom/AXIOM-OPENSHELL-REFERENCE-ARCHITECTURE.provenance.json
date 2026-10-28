@@ -1,0 +1,15 @@
+{
+  "edition": "Books/Humanized/.axiom/AXIOM-OPENSHELL-REFERENCE-ARCHITECTURE.md",
+  "source": "book/OPENSHELL-REFERENCE-ARCHITECTURE.md",
+  "source_sha256": "eddfe415004ab044c47dc654f293c4f755df580e464a66f08962e49dd54ea362",
+  "generator": "tools/expand_humanized.py",
+  "model": "qwen3.8:latest via Ollama on axiom (100.101.3.115:11434), temp 0.7, no seed",
+  "temperature": 0.7,
+  "seed": null,
+  "prompt_version": "unversioned SYSTEM prompt as committed in tools/expand_humanized.py",
+  "method": "model expansion with length+marker gate",
+  "sections": "unreviewed",
+  "reviewers": [],
+  "generated_at": "2026-10-28",
+  "note": "Machine-expanded draft. Known defect classes (see findings-improvents.md): fabricated IDs/examples, forced formalization, repetition, zero bookmarks in prior PDFs. No independent review has been recorded."
+}

@@ -63,11 +63,23 @@ import time
 import urllib.parse
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 5175
-# Bind host. The default ("", all interfaces) keeps the documented LAN /
-# Tailscale use working — any client on the network gets the app — but it
-# also exposes the /api/llm/* model relay to those clients, so a startup
-# warning says so. Set HOST=127.0.0.1 for a loopback-only single-user setup.
-HOST = os.environ.get("HOST", "")
+# Bind host. Default is loopback-only: the book/expand endpoints launch
+# multi-hour GPU jobs and overwrite files, so they must not be reachable
+# from the network by default. Pass --lan (or HOST=0.0.0.0) to opt into
+# LAN/Tailscale serving, preferably together with OPERATOR_TOKEN.
+_LAN = "--lan" in sys.argv[1:]
+HOST = os.environ.get("HOST", "0.0.0.0" if _LAN else "127.0.0.1")
+
+# Operator token for mutating endpoints. Same-origin browser traffic
+# (Sec-Fetch-Site: same-origin or a matching Origin header) is exempt;
+# everything else — curl, scripts, cross-site pages — must present it.
+# Generated per boot unless OPERATOR_TOKEN is set; printed at startup.
+OPERATOR_TOKEN = os.environ.get("OPERATOR_TOKEN", "")
+if not OPERATOR_TOKEN:
+    import secrets as _secrets
+    OPERATOR_TOKEN = _secrets.token_hex(16)
+
+MAX_JSON_BODY = 65536  # 64 KB cap on API POST bodies (_read_body)
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
 # ---------------------------------------------------------- static delivery
@@ -450,6 +462,10 @@ def _run_book_job(job):
         if job["params"].get("pdf") and not chrome:
             say("note: no Chrome found — PDF steps will fail, MD/HTML still build")
         for tid in job["params"]["targets"]:
+            if job.get("cancel"):
+                job["state"] = "cancelled"
+                say("cancelled by operator")
+                return
             t = BOOK_TARGETS[tid]
             env = dict(os.environ)
             env["SL_DIR"] = SL_DIR
@@ -459,43 +475,67 @@ def _run_book_job(job):
             t0 = time.time()
             say("$ %s" % " ".join(t["build"]))
             try:
-                r = subprocess.run(t["build"], cwd=ROOT, env=env,
-                                   capture_output=True, text=True, timeout=1500)
-                say((r.stdout or "").strip().splitlines()[-3:] and
-                    "\n".join((r.stdout or "").strip().splitlines()[-3:]) or "(no output)")
-                if r.returncode != 0:
-                    say("STDERR: " + (r.stderr or "")[-1500:])
+                proc = subprocess.Popen(t["build"], cwd=ROOT, env=env,
+                                        stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                        text=True)
+                job["proc"] = proc
+                try:
+                    stdout, stderr = proc.communicate(timeout=1500)
+                finally:
+                    job["proc"] = None
+                say((stdout or "").strip().splitlines()[-3:] and
+                    "\n".join((stdout or "").strip().splitlines()[-3:]) or "(no output)")
+                if job.get("cancel") or proc.returncode != 0:
+                    if job.get("cancel"):
+                        say("cancelled by operator")
+                        job["state"] = "cancelled"
+                    else:
+                        say("STDERR: " + (stderr or "")[-1500:])
+                        job["state"] = "error"
                     steps.append({"target": tid, "step": "build", "ok": False,
                                   "secs": round(time.time() - t0, 1)})
-                    job["state"] = "error"
                     return
                 steps.append({"target": tid, "step": "build", "ok": True,
                               "secs": round(time.time() - t0, 1)})
             except Exception as e:
+                job["proc"] = None
                 say("build failed: %s" % type(e).__name__)
                 steps.append({"target": tid, "step": "build", "ok": False, "secs": 0})
-                job["state"] = "error"
+                job["state"] = "cancelled" if job.get("cancel") else "error"
                 return
             # -- PDF --
             if job["params"].get("pdf"):
                 t0 = time.time()
                 say("$ %s" % " ".join(t["pdf"]))
                 try:
-                    r = subprocess.run(t["pdf"], cwd=ROOT, env=env,
-                                       capture_output=True, text=True, timeout=2400)
-                    tail = (r.stdout or "").strip().splitlines()[-4:]
+                    proc = subprocess.Popen(t["pdf"], cwd=ROOT, env=env,
+                                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                                            text=True)
+                    job["proc"] = proc
+                    try:
+                        stdout, stderr = proc.communicate(timeout=2400)
+                    finally:
+                        job["proc"] = None
+                    tail = (stdout or "").strip().splitlines()[-4:]
                     say("\n".join(tail) or "(no output)")
-                    if r.returncode != 0:
-                        say("STDERR: " + (r.stderr or "")[-1500:])
+                    if job.get("cancel") or proc.returncode != 0:
+                        if job.get("cancel"):
+                            say("cancelled by operator")
+                        else:
+                            say("STDERR: " + (stderr or "")[-1500:])
                         steps.append({"target": tid, "step": "pdf", "ok": False,
                                       "secs": round(time.time() - t0, 1)})
                     else:
                         steps.append({"target": tid, "step": "pdf", "ok": True,
                                       "secs": round(time.time() - t0, 1)})
                 except Exception as e:
+                    job["proc"] = None
                     say("pdf failed: %s" % type(e).__name__)
                     steps.append({"target": tid, "step": "pdf", "ok": False, "secs": 0})
-        job["state"] = "done" if all(s["ok"] for s in steps if s["step"] != "collect") else "error"
+        if job.get("cancel"):
+            job["state"] = "cancelled"
+        else:
+            job["state"] = "done" if all(s["ok"] for s in steps if s["step"] != "collect") else "error"
     finally:
         job["finished_at"] = time.time()
         say("job %s (%s)" % (job["state"], job["id"]))
@@ -515,13 +555,30 @@ def books_launch(params):
         jid = "%d-%d" % (int(time.time()), _BOOK_JOB_SEQ[0])
         job = {"id": jid, "state": "queued", "steps": [], "log": [],
                "params": {"targets": targets, "pdf": bool(params.get("pdf", True))},
-               "started_at": 0, "finished_at": 0}
+               "started_at": 0, "finished_at": 0, "cancel": False, "proc": None}
         _BOOK_JOBS[jid] = job
         if len(_BOOK_JOBS) > 5:
             for old in sorted(_BOOK_JOBS)[:-5]:
                 del _BOOK_JOBS[old]
     threading.Thread(target=_run_book_job, args=(job,), daemon=True).start()
     return {"job": jid, "state": "queued", "params": job["params"]}
+
+
+def books_cancel(jid):
+    with _BOOK_LOCK:
+        job = _BOOK_JOBS.get((jid or "")[:64])
+        if job is None:
+            return {"error": "unknown job"}
+        if job["state"] not in ("queued", "running"):
+            return {"job": job["id"], "state": job["state"], "note": "not running"}
+        job["cancel"] = True
+        proc = job.get("proc")
+    if proc is not None:
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+    return {"job": job["id"], "state": "cancelling"}
 
 
 def books_job(jid):
@@ -692,6 +749,10 @@ def _run_expand_job(job):
                 say(line.rstrip())
             proc.wait(timeout=14400)
             rc = proc.returncode
+            if job.get("cancel"):
+                job["steps"].append({"step": "expand", "ok": False, "secs": 0})
+                job["state"] = "cancelled"
+                return
         except Exception as e:
             say("expansion failed: %s" % type(e).__name__)
             job["steps"].append({"step": "expand", "ok": False, "secs": round(time.time() - t0, 1)})
@@ -746,13 +807,30 @@ def expand_launch(params):
                "done": 0, "total": 0, "pid": 0,
                "params": {"source": source, "model": model, "backend": backend,
                           "pdf": bool(params.get("pdf", True))},
-               "started_at": 0, "finished_at": 0}
+               "started_at": 0, "finished_at": 0, "cancel": False, "proc": None}
         _EXPAND_JOBS[jid] = job
         if len(_EXPAND_JOBS) > 5:
             for old in sorted(_EXPAND_JOBS)[:-5]:
                 del _EXPAND_JOBS[old]
     threading.Thread(target=_run_expand_job, args=(job,), daemon=True).start()
     return {"job": jid, "state": "queued", "params": job["params"]}
+
+
+def expand_cancel(jid):
+    with _EXPAND_LOCK:
+        job = _EXPAND_JOBS.get((jid or "")[:64])
+        if job is None:
+            return {"error": "unknown job"}
+        if job["state"] not in ("queued", "running"):
+            return {"job": job["id"], "state": job["state"], "note": "not running"}
+        job["cancel"] = True
+        pid = job.get("pid") or 0
+    if pid:
+        try:
+            os.kill(pid, 15)
+        except Exception:
+            pass
+    return {"job": job["id"], "state": "cancelling"}
 
 
 def expand_job(jid):
@@ -825,8 +903,67 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def _read_body(self):
-        n = int(self.headers.get("Content-Length") or 0)
+        try:
+            n = int(self.headers.get("Content-Length") or 0)
+        except (TypeError, ValueError):
+            n = 0
+        if n > MAX_JSON_BODY:
+            raise ValueError("body too large")
         return self.rfile.read(n) if n else b""
+
+    def _same_origin(self):
+        """True for browser traffic that provably comes from our own pages.
+
+        An attacker page on another origin cannot forge Sec-Fetch-Site
+        (browsers set it) and cannot make our Origin match without controlling
+        our host. Non-browser clients (curl) carry neither header and must
+        present the operator token instead."""
+        sfs = (self.headers.get("Sec-Fetch-Site") or "").strip().lower()
+        if sfs == "same-origin":
+            return True
+        origin = (self.headers.get("Origin") or "").strip()
+        if not origin:
+            return False
+        try:
+            o = urllib.parse.urlparse(origin)
+            host = (self.headers.get("Host") or "").split(":")[0].lower()
+            return (o.hostname or "").lower() in (host, "localhost", "127.0.0.1", "::1") \
+                and o.scheme in ("http", "https")
+        except Exception:
+            return False
+
+    def _require_operator(self):
+        """Gate for mutating endpoints. Returns an error dict or None."""
+        if self._same_origin():
+            return None
+        auth = (self.headers.get("Authorization") or "").strip()
+        token = ""
+        if auth.lower().startswith("bearer "):
+            token = auth[7:].strip()
+        else:
+            token = (self.headers.get("X-Operator-Token") or "").strip()
+        if token and token == OPERATOR_TOKEN:
+            return None
+        return {"error": "operator approval required",
+                "hint": "same-origin browser traffic is exempt; other clients "
+                        "must send Authorization: Bearer $OPERATOR_TOKEN "
+                        "(printed at server startup)"}
+
+    def _read_json(self, cap=True):
+        try:
+            raw = self._read_body()
+        except ValueError:
+            return None, {"error": "body exceeds %d bytes" % MAX_JSON_BODY}
+        ctype = (self.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        if ctype and ctype != "application/json":
+            return None, {"error": "Content-Type must be application/json"}
+        try:
+            params = json.loads(raw.decode("utf-8") or "{}")
+            if not isinstance(params, dict):
+                params = {}
+        except Exception:
+            return None, {"error": "body must be JSON"}
+        return params, None
 
     def end_headers(self):
         # Security headers on every response (cheap XSS backstop for the app's
@@ -922,10 +1059,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     # -- routing -----------------------------------------------------------
     def do_OPTIONS(self):
+        # No wildcard ACAO: only answer preflights from our own origin.
+        # Cross-site pages get no CORS grant, so their reads fail closed;
+        # writes are additionally gated by _require_operator.
+        origin = (self.headers.get("Origin") or "").strip()
         self.send_response(204)
-        self.send_header("Access-Control-Allow-Origin", "*")
+        if origin:
+            try:
+                o = urllib.parse.urlparse(origin)
+                host = (self.headers.get("Host") or "").split(":")[0].lower()
+                if (o.hostname or "").lower() in (host, "localhost", "127.0.0.1", "::1"):
+                    self.send_header("Access-Control-Allow-Origin", origin)
+                    self.send_header("Vary", "Origin")
+            except Exception:
+                pass
         self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "content-type")
+        self.send_header("Access-Control-Allow-Headers", "content-type, authorization, x-operator-token")
         self.send_header("Content-Length", "0")
         self.end_headers()
 
@@ -999,25 +1148,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         path = urllib.parse.urlparse(self.path).path
         if path == "/api/llm/chat":
             return self._chat()
-        if path == "/api/books/build":
-            try:
-                params = json.loads(self._read_body().decode("utf-8") or "{}")
-                if not isinstance(params, dict):
-                    params = {}
-            except Exception:
-                params = {}
-            out = books_launch(params)
-            if "error" in out:
-                return self._json(out, 400)
-            return self._json(out)
-        if path == "/api/expand/launch":
-            try:
-                params = json.loads(self._read_body().decode("utf-8") or "{}")
-                if not isinstance(params, dict):
-                    params = {}
-            except Exception:
-                params = {}
-            out = expand_launch(params)
+        if path in ("/api/books/build", "/api/expand/launch",
+                    "/api/books/cancel", "/api/expand/cancel"):
+            err = self._require_operator()
+            if err:
+                return self._json(err, 401 if "required" in err.get("error", "") else 403)
+            params, perr = self._read_json()
+            if perr:
+                status = 413 if "exceeds" in perr.get("error", "") else 400
+                return self._json(perr, status)
+            if path == "/api/books/build":
+                out = books_launch(params)
+            elif path == "/api/expand/launch":
+                out = expand_launch(params)
+            elif path == "/api/books/cancel":
+                out = books_cancel(params.get("job", ""))
+            else:
+                out = expand_cancel(params.get("job", ""))
             if "error" in out:
                 return self._json(out, 400)
             return self._json(out)

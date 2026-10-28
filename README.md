@@ -32,7 +32,7 @@ about — to name the single most useful next action.
 |---|---|
 | Planner → Blueprint | "Materialise as blueprint" turns the recommended stack's 13 catalog patterns into a canvas. |
 | Guardrail Lab → Blueprint | The analysis's 9 reference controls are mapped to the catalog patterns that implement them and land on the canvas. |
-| Guardrail Lab → Live View | The mock run is already a replayable trace — promote it into the trace library and play it beside the 39 catalog traces. |
+| Guardrail Lab → Live View | The mock run is already a replayable trace — promote it into the trace library and play it beside the 55 catalog traces. |
 | Mitigation backlog → Blueprint | "Seed blueprint from top 10" pushes the highest-leverage un-owned controls onto the canvas. |
 | Anything → Fox-Architect | "Ask" sends the *artefact* (the pattern's failure modes, the scenario's attack chain, the cascade's propagation path), not its title. |
 
@@ -249,13 +249,13 @@ book/Self-Learning-Agents.pdf   rendered supplement (119 pp, 21 diagrams, 36 lin
 design/*.md                10 UML/architecture docs (56 Mermaid diagrams total)
 BATTLE-ANALYSIS.md         battle-test bench: analysis, 20-iteration plan, first-campaign findings
 sw.js                      service worker: precaches the whole shell for offline / air-gapped use
-serve.py                   thin static server + /api/llm/* proxy (axiom-first failover, watchdog, LLM_PRIMARY, X-Fox-Backend pinning) + /api/selflearn/health + /api/books/* (landscape collect + rebuild jobs for all three books)
+serve.py                   thin static server + /api/llm/* proxy (axiom-first failover, watchdog, LLM_PRIMARY, X-Fox-Backend pinning) + /api/selflearn/health + /api/books/* (landscape collect + rebuild jobs for all six books) + /api/expand/* (model expansion jobs for the humanized editions)
 Dockerfile                 image: python:3.12-slim, non-root, read-only, healthcheck
 docker-compose.yml         default deployment (LAN + host Tailscale)
 docker-compose.tailscale.yml   dedicated Tailscale node (+ HTTPS URL)
 tailscale/serve.json       Tailscale Serve config for the sidecar deployment
 .env.example               APP_PORT, TS_AUTHKEY, TS_HOSTNAME
-package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / book / book:rogue / check / check:all
+package.json               dev scripts: npm run serve / test / test:e2e / lint / gen / book / book:rogue / book:self / book:field / book:openshell / book:workflows / book:qa / check / check:all
 eslint.config.mjs          flat ESLint config; no-undef over the app's shared global namespace
 test/data.test.mjs         catalog integrity, schema guard, coverage freshness, SW precache sync
 test/smoke.mjs             headless smoke (boots the server, walks all 16 tabs + the workflow journey, asserts 0 errors)
@@ -312,6 +312,6 @@ All datasets are plain JSON, versioned, and diffable. There are no hidden defaul
 
 ## Scope
 
-107 design patterns · 207 documented failure modes · 54 failure scenarios (18 critical / 27 high / 9 medium) · 191 composition cascades · 26 scenario domains · 55 replayable mock traces · 12 architecture documents · 68 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox-Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · battle-test bench (54 scenarios × configurations, three adapters, oracle, adversary, model comparison) · command palette (commands, recents, projects, research sets, workflow commands) and keyboard shortcuts · full report export covering all eight work products · bookshelf panel (landscape collect + one-click rebuild of all three books) · project workspaces that carry the whole job · saved research sets · offline service worker + perf budget · linted, tested, CI-gated (no build step).
+107 design patterns · 207 documented failure modes · 54 failure scenarios (18 critical / 27 high / 9 medium) · 191 composition cascades · 26 scenario domains · 55 replayable mock traces · 12 architecture documents · 68 Mermaid diagrams in the design docs (+32 pattern control-flow diagrams) · Fox-Architect on Qwen 3.8-27B (axiom primary, Fox-Services fallback, deterministic offline fallback) · deployment planner with ADR export · blueprint builder with threat-model exposure index and baseline compare · battle-test bench (54 scenarios × configurations, three adapters, oracle, adversary, model comparison) · command palette (commands, recents, projects, research sets, workflow commands) and keyboard shortcuts · full report export covering all eight work products · bookshelf panel (landscape collect + one-click rebuild of all six books) · project workspaces that carry the whole job · saved research sets · offline service worker + perf budget · linted, tested, CI-gated (no build step).
 
 **Caveats, honestly:** the exposure index measures matched threat *surface* from the catalog, not measured risk — compare like-for-like blueprints. Fox-Architect's grounding is deterministic retrieval, not RAG fine-tuning; when both LLM backends are down it degrades to a deterministic catalog answer rather than failing. Cost/latency figures are estimates from stated assumptions, not benchmarks. A project lives in this browser's `localStorage` — back it up (⛭ display → Back up all) before clearing site data. Promoted discovery drafts are *your* drafts, not catalog entries: the shipped `data/*.json` is read-only.

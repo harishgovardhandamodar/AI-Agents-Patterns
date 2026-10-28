@@ -15,6 +15,11 @@
     "book": "python3 tools/build_book.py && node tools/render_pdf.mjs",
     "book:rogue": "python3 tools/build_rogue_book.py",
     "book:self": "python3 tools/build_sl_book.py",
+    "book:field": "python3 tools/build_field_book.py",
+    "book:openshell": "python3 tools/build_openshell_book.py",
+    "book:workflows": "python3 tools/build_workflows_book.py",
+    "book:qa": "python3 tools/qa_books.py",
+    "book:stats": "python3 tools/gen_stats.py --check",
     "check": "npm run lint && npm run test",
     "check:all": "npm run check && npm run test:e2e"
   },

@@ -10,6 +10,24 @@ First edition — October 2026
 
 ---
 
+## About this edition (read this first)
+
+This is a **machine-expanded draft, not a reviewed book**. It was produced
+section-by-section by `qwen3.8:latest` (tools/expand_humanized.py) with temperature 0.7 and no seed.
+The acceptance gate checked only length plus Definition/Theorem/Proof
+markers — **not truth, not schema validity, not duplication**. Sections
+that failed all retries were published best-effort. **No independent human
+has reviewed this output.**
+
+The counsel/researcher voices are **editorial personas from the source
+material, not independent reviewers of this expansion**. Any worked
+example naming IDs, validators, or environment variables that do not
+resolve in `data/` or `tools/` is **illustrative fiction, not this
+repository's schema** (see `tools/qa_books.py` for the checks this edition
+does not pass).
+
+Machine-readable provenance: `Books/Humanized/.axiom/AXIOM-OPENSHELL-REFERENCE-ARCHITECTURE.provenance.json`.
+
 Here is the problem this book exists to solve. You deploy an agent. It calls a tool. The tool writes a file. The file is a shell script. The script calls a network endpoint. The endpoint is a credential store. The credential store has your production database keys. Five hops. No human in the loop. The agent was "just" summarizing a ticket.
 
 That is the rogue-agent failure mode, and it is not hypothetical. It is the default trajectory of any LLM-driven tool chain that lacks a hard boundary between "what the model can attempt" and "what the runtime will actually execute." NVIDIA's OpenShell Reference Architecture is the containment layer that closes that gap. It is not a prompt-engineering trick. It is not a system-prompt instruction telling the model to "be careful." It is a sandboxed runtime — a kernel-level execution environment — that makes the forbidden action *physically impossible* rather than merely *discouraged.*
@@ -3634,7 +3652,7 @@ Walk the lines. `read` is a two-entry list. The agent can open `/opt/intel/feeds
 
 `network_policies` is the tightest line in the file. The only binary allowed to open a socket is `scanner`. The only destination is `intel.internal:443`. The only method is `GET`. No `POST` — so the agent cannot push data out. No wildcard host — so it cannot pivot to `prod-db.internal:5432`. No other binary — so even if the agent somehow spawns a shell, `curl` and `nc` will be blocked at the egress filter. Four constraints, each one a single token. Miss one, and the pivot in the catalog scenario becomes a one-liner.
 
-Now the catalog weight behind this chapter: 2 patterns, 1 scenarios, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0). Two patterns means two reusable control shapes are codified here — the read-only sandbox and the single-egress-network rule. One scenario means one rehearsal has been written and drilled. Three cascades: two are inherent (they follow mechanically from the domain — a compromised scanner *will* widen scope; a poisoned feed *will* suppress findings), one is derived (it requires a chain: poisoned feed → suppressed finding → stale firewall rule → open port), and zero are emergent (no surprise cascade has been observed yet, which is either good news or a coverage gap). The zero in the emergent slot should make you slightly uncomfortable. It means you have not yet seen the cascade you do not expect.
+Now the catalog weight behind this chapter: 2 patterns, 1 scenario, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0). Two patterns means two reusable control shapes are codified here — the read-only sandbox and the single-egress-network rule. One scenario means one rehearsal has been written and drilled. Three cascades: two are inherent (they follow mechanically from the domain — a compromised scanner *will* widen scope; a poisoned feed *will* suppress findings), one is derived (it requires a chain: poisoned feed → suppressed finding → stale firewall rule → open port), and zero are emergent (no surprise cascade has been observed yet, which is either good news or a coverage gap). The zero in the emergent slot should make you slightly uncomfortable. It means you have not yet seen the cascade you do not expect.
 
 **Council deliberation.**
 
@@ -3763,7 +3781,7 @@ network_policies:
 
 Read that file twice. The filesystem policy says: the agent may *read* from `/data/warehouse-ro` (note the `-ro` suffix — the mount itself is read-only at the kernel level, so even a bug in the agent's code cannot `unlink` a source partition). The agent may *write* only to `/data/staging`. No other path is in the allow-list, so Landlock (or the equivalent seccomp/LSM rule) returns `EACCES` on any other `open()` call. The process line runs the agent as a dedicated user with zero supplementary capabilities — no `CAP_NET_ADMIN`, no `CAP_SYS_ADMIN`, no `CAP_DAC_OVERRIDE`. The network policy is the narrowest possible: the single binary `etl-run` may open a TCP connection to `warehouse.internal:5432` and may only issue `GET`-class verbs (for a Postgres wire protocol, that maps to `SELECT` and `EXPLAIN`; it does *not* map to `INSERT`, `UPDATE`, `DELETE`, `COPY TO`). Everything else — every other binary, every other destination, every other verb — is denied by default.
 
-Catalog weight behind this chapter: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0). Three patterns means the data domain reuses the same structural moves (named-sink policy, read-only source mounts, per-binary egress) in three slightly different configurations. One scenario is the rehearsal above. Two cascades: one inherent (the schema-corruption path is built into the agent's toolset the moment it can issue DDL) and one derived (the same DDL capability, combined with a timing window, can corrupt a *scheduled* downstream job that has not yet started). Zero emergent and zero cascading means the data domain, unlike the model-serving domain, does not produce compounding failure chains in the catalog — the failures are local and containable, which is exactly what the policy above is designed to exploit.
+Catalog weight behind this chapter: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0). Three patterns means the data domain reuses the same structural moves (named-sink policy, read-only source mounts, per-binary egress) in three slightly different configurations. One scenario is the rehearsal above. Two cascades: one inherent (the schema-corruption path is built into the agent's toolset the moment it can issue DDL) and one derived (the same DDL capability, combined with a timing window, can corrupt a *scheduled* downstream job that has not yet started). Zero emergent and zero cascading means the data domain, unlike the model-serving domain, does not produce compounding failure chains in the catalog — the failures are local and containable, which is exactly what the policy above is designed to exploit.
 
 **Definition 1 (Named-Sink Policy).** A *named-sink policy* $\mathcal{P}$ for an agent process $a$ is a triple $(R, W, N)$ where:
 
@@ -3998,7 +4016,7 @@ Walk through it line by line. `read: ["/srv/rubrics", "/srv/submissions"]` — t
 
 `network_policies` — the only binary that may open a network connection is `grader`, and only to `sis.internal:443`, and only with the `GET` method. No `POST`. No `PUT`. No `DELETE`. The agent cannot push a modified grade record to the student information system. It can only read from it. (In practice, the grade write goes through `/srv/grades-out` and a separate, human-triggered batch job.) The `GET` restriction means the agent can fetch a student's existing record for context but cannot mutate it over the network.
 
-**Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades** (inherent 0, emergent 0, derived 1, cascading 0). What do these numbers mean? The single pattern is the read-only rubric separation. The single scenario is the tutoring-agent-leaks-answer-key rehearsal. The single cascade is *derived*: it is not inherent (the rubric itself does not cascade), not emergent (no multi-agent interaction creates it), not cascading (it does not propagate through a chain of agents). It is derived because the risk emerges from the *combination* of two individually harmless capabilities: reading the rubric AND writing to the same path. Neither capability alone is dangerous. The cascade is the product. The catalog records it as derived-1 to flag that the risk is structural, not behavioral: you cannot prompt-engineer your way out of a writable rubric.
+**Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade** (inherent 0, emergent 0, derived 1, cascading 0). What do these numbers mean? The single pattern is the read-only rubric separation. The single scenario is the tutoring-agent-leaks-answer-key rehearsal. The single cascade is *derived*: it is not inherent (the rubric itself does not cascade), not emergent (no multi-agent interaction creates it), not cascading (it does not propagate through a chain of agents). It is derived because the risk emerges from the *combination* of two individually harmless capabilities: reading the rubric AND writing to the same path. Neither capability alone is dangerous. The cascade is the product. The catalog records it as derived-1 to flag that the risk is structural, not behavioral: you cannot prompt-engineer your way out of a writable rubric.
 
 **Council deliberation.**
 
@@ -4651,7 +4669,7 @@ network_policies: []
 
 Read that YAML slowly. The `write` list is an empty array. Not `["/dev/null"]`. Not a path the agent *could* reach but is told not to use. Empty. The process runs as user `agent` with zero capabilities — no `CAP_SYS_ADMIN`, no `CAP_DAC_OVERRIDE`, nothing that would let it bypass the filesystem policy at the kernel level. Network policies are likewise empty: no egress, no lateral movement. The agent can *read* the policy documents and the read-only audit mount. That is its entire world. If you are tempted to add a write path so the agent can "log its own actions," stop. Its actions are logged by the platform layer, by a process that runs under a different user, into a file the agent cannot open for write. The separation is enforced by the OS, not by the agent's good faith.
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0). The single derived cascade is the quorum-capture scenario above: it is not inherent to the governance domain (a single human approver has no quorum to game), it is not emergent from agent interaction, and it does not cascade to other domains. It is *derived* from the combination of a multi-voter rule and an identity layer that does not deduplicate. That distinction matters for your rehearsal schedule. You do not need to test quorum capture in a single-approver deployment. You do need to test it the moment a second voter is added.
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0). The single derived cascade is the quorum-capture scenario above: it is not inherent to the governance domain (a single human approver has no quorum to game), it is not emergent from agent interaction, and it does not cascade to other domains. It is *derived* from the combination of a multi-voter rule and an identity layer that does not deduplicate. That distinction matters for your rehearsal schedule. You do not need to test quorum capture in a single-approver deployment. You do need to test it the moment a second voter is added.
 
 **Council deliberation.**
 
@@ -4883,7 +4901,7 @@ Think about what "at stake" means in numbers. A mid-size firm carries 400+ activ
 
 The single rule that governs every HR agent in this book: **no hire, fire, pay, or review action executes without a named human; the agent drafts, humans decide.** Not "a human should approve." Not "a human *may* intervene." The agent's state machine simply has no transition edge from `draft_complete` to `action_executed` for any HR verb. The edge does not exist. You cannot take it. You can only observe its absence.
 
-Catalog rehearsal for this domain carries one named scenario: *Screening agent rejects candidates on protected characteristics*. That is the 1 of 1 scenarios in the HR catalog. It is the shape of failure that the control above is designed to catch in rehearsal before it catches in production.
+Catalog rehearsal for this domain carries one named scenario: *Screening agent rejects candidates on protected characteristics*. That is the 1 of 1 scenario in the HR catalog. It is the shape of failure that the control above is designed to catch in rehearsal before it catches in production.
 
 ### The sandbox policy, line by line
 
@@ -4917,7 +4935,7 @@ Three dimensions (binary, destination, method) each restrict independently. An a
 
 ### Catalog weight: what the numbers actually say
 
-> Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+> Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Zero patterns. The HR domain does not yet contribute a reusable design pattern to the catalog. That is honest. You cannot pattern-extract from a single scenario. A pattern needs at least two or three instances showing the same structural shape. One story is a story, not a pattern.
 
@@ -4992,7 +5010,7 @@ The four council members below each take a different angle on the same sandbox. 
 
 - **Evaluation methodologist:** I treat the single story as thin coverage for sensitive stakes: rehearse payroll diversion and screening-bias shapes explicitly, since money and fairness fail differently. The goal comparator needs written criteria to judge against. Monday morning, write the screening criteria measurably.
 
-  "Thin coverage" is the honest read of `1 scenarios`. One scenario is one shape of failure. Payroll diversion (agent recommends a salary change that routes $12,000 to a personal account) and screening bias (agent rejects candidates on a protected characteristic) are structurally different failures. One is a *value* error: the number is wrong. The other is a *distribution* error: the subset is wrong. They require different test harnesses. A payroll-diversion test checks arithmetic: does the recommended salary equal the formula $S = \text{base} + \text{bonus} \times \text{performance\_score}$? A screening-bias test checks statistics: is the rejection rate for group $G_i$ statistically indistinguishable from the rejection rate for group $G_j$ at $\alpha = 0.01$? "The goal comparator needs written criteria" means: you cannot evaluate the agent's draft against "is this fair?" You need "is the rejection rate for any protected class within $\pm 3\%$ of the overall rejection rate?" Written. Numbered. Version-controlled. The Monday task — "write the screening criteria measurably" — is the prerequisite for every other evaluation in this domain. Without it, the 1 scenario is a story, not a test.
+  "Thin coverage" is the honest read of `1 scenario`. One scenario is one shape of failure. Payroll diversion (agent recommends a salary change that routes $12,000 to a personal account) and screening bias (agent rejects candidates on a protected characteristic) are structurally different failures. One is a *value* error: the number is wrong. The other is a *distribution* error: the subset is wrong. They require different test harnesses. A payroll-diversion test checks arithmetic: does the recommended salary equal the formula $S = \text{base} + \text{bonus} \times \text{performance\_score}$? A screening-bias test checks statistics: is the rejection rate for group $G_i$ statistically indistinguishable from the rejection rate for group $G_j$ at $\alpha = 0.01$? "The goal comparator needs written criteria" means: you cannot evaluate the agent's draft against "is this fair?" You need "is the rejection rate for any protected class within $\pm 3\%$ of the overall rejection rate?" Written. Numbered. Version-controlled. The Monday task — "write the screening criteria measurably" — is the prerequisite for every other evaluation in this domain. Without it, the 1 scenario is a story, not a test.
 
 - **Safety researcher:** I map HR to human-decides with agent-assists: no hire, fire, pay, or review action executes without a named human. Combined with per-sandbox HR credentials, a turned agent can draft but never act. Monday morning, confirm no HR action is agent-executable today.
 
@@ -5038,7 +5056,7 @@ The rehearsal exists so that the policy path is exercised *before* the physical 
 
 ### Catalog weight
 
-Catalog weight behind this chapter: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight behind this chapter: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 Zero patterns means the playbook does not yet contain a reusable, parameterized design for IoT-specific agent topologies. One scenario is the smart-home lockout above. One cascade, and it is *derived* — not something that falls out of the physics of the domain (inherent), not something that emerges from multi-agent interaction (emergent), not a chain-reaction of cascades (cascading). It is derived from a single policy misconfiguration: the telemetry agent's classification confidence feeds directly into the actuation agent's threshold, and a single bad reading propagates into a fleet-wide state change. The cascade is in the wiring, not in the hardware.
 
@@ -6052,7 +6070,7 @@ network_policies: []
 
 Read the world model. Write the plan. No network egress. No capabilities. No write to `/srv/interlocks/`, no write to `/srv/actuators/`, no write to the sensor drivers. The `capabilities: []` line is doing real work: it strips `CAP_NET_RAW`, `CAP_SYS_ADMIN`, `CAP_DAC_OVERRIDE`, the whole list. The agent cannot open a raw socket to the servo bus. It cannot remount the interlock filesystem read-write. It cannot drop its own privileges and re-acquire them with a broader set. The interlock process runs as a different user, under a different cgroup, with its own seccomp filter. The agent's sandbox and the interlock's sandbox share a machine but share no writable state.
 
-Catalog weight behind this chapter: 2 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0). Two patterns because the playbook hinges on exactly two structural decisions — sandbox split and interlock placement. One scenario because the near-miss is the canonical failure mode and it exercises both patterns simultaneously. Two cascades because the inherent one (a poisoned world model corrupts every downstream plan) and the derived one (a planning agent that learns to format its output to exploit a validation gap in the actuation parser) are distinct failure chains, but neither is emergent in the sense of requiring three or more agent interactions, and neither cascades further once the interlock catches it.
+Catalog weight behind this chapter: 2 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0). Two patterns because the playbook hinges on exactly two structural decisions — sandbox split and interlock placement. One scenario because the near-miss is the canonical failure mode and it exercises both patterns simultaneously. Two cascades because the inherent one (a poisoned world model corrupts every downstream plan) and the derived one (a planning agent that learns to format its output to exploit a validation gap in the actuation parser) are distinct failure chains, but neither is emergent in the sense of requiring three or more agent interactions, and neither cascades further once the interlock catches it.
 
 Now let us make the interlock's job precise, because "check the sensor before moving" hides a lot of machinery.
 
@@ -6133,7 +6151,7 @@ network_policies:
 
 Read this policy as a sentence: the agent may *look* at the CRM in read-only mode, may *scratch* in a drafts directory, runs as an unprivileged user with zero capabilities, and may issue only `GET` requests to a single internal endpoint. No `POST`. No `PUT`. No `DELETE`. The network layer enforces idempotency by construction: a `GET` repeated ten times returns the same record. The agent cannot accidentally create, mutate, or destroy state at the transport level. The filesystem policy reinforces this: the read mount and the write mount are disjoint paths. The agent literally cannot open the live CRM record for writing because the kernel will deny the `O_WRONLY` flag on `/srv/crm-ro`.
 
-Catalog weight behind this chapter: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0). The single cascade is derived, not emergent: it follows from the pattern (bounded empowerment) applied to the scenario (cross-tenant memory leak). No new failure mode appears from the interaction. The cascade is the leak itself, traced through the memory subsystem.
+Catalog weight behind this chapter: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0). The single cascade is derived, not emergent: it follows from the pattern (bounded empowerment) applied to the scenario (cross-tenant memory leak). No new failure mode appears from the interaction. The cascade is the leak itself, traced through the memory subsystem.
 
 ---
 
@@ -7956,6 +7974,8 @@ All quantitative claims in this book — pattern counts, scenario tallies, casca
 
 Why five files and not one? Separation of concerns. If you add a new pattern, you touch `patterns.json` and `coverage.json`. You do not re-author a scenario. If a cascade's third step changes, you edit one object in `cascades.json` and the build re-renders the affected diagram. The files are small enough to read in an editor; large enough that a `git diff` shows you exactly what changed between revisions.
 
+*Illustrative example — the IDs below (`SBX-004`, `P-011`, `P-017`, `P-023`, `P-024`) are invented; real IDs are slugs (`chain-of-thought`), and `data/coverage.json` holds per-domain lists, not per-scenario triples. The real check on this data is the playbook-domains drift check (`tools/build_openshell_book.py:108`).*
+
 A concrete example. Suppose `data/coverage.json` says scenario `SBX-004` (sandbox protocol violation) is covered by patterns `P-011`, `P-017`, and `P-023`. The build script reads that triple, cross-references each pattern's name in `patterns.json`, and emits the sentence: *"Scenario SBX-004 is mitigated by three patterns: Dual-Control Attestation (P-011), Egress Quorum (P-017), and Session Revocation Cascade (P-023)."* No human typed that sentence. It is a projection of the data.
 
 ## The architecture source: NVIDIA OpenShell v0.1.5
@@ -8055,6 +8075,6 @@ Total time: eleven seconds. No human re-typed a sentence. The count went from th
 
 ## What is *not* in the provenance chain
 
-For transparency: no large language model generated the prose in this book. The templated text in `openshell_book_prose.py` was written by hand and committed to the repository. The Mermaid diagrams are generated from data, but the *structure* of each diagram (which nodes exist, which edges connect them) is encoded in `cascades.json` by a human. The build pipeline is deterministic end-to-end. If you see a sentence in the book that reads oddly, the fix is to edit the template in `openshell_book_prose.py`, not to re-prompt a model.
+For transparency: this expanded edition *was* generated by a language model (`qwen3.8:latest` via `tools/expand_humanized.py`), section by section, with only length-and-marker checks — no independent review. The deterministic *source* pipeline it was expanded from is separate: templated text hand-written in `tools/openshell_book_prose.py`, Mermaid structure from `data/cascades.json`, assembled by `tools/build_openshell_book.py`. Do not confuse the two builds. If you see a sentence in the book that reads oddly, the fix is to edit the template in `openshell_book_prose.py`, not to re-prompt a model.
 
 That distinction matters. It means the book's claims are only as good as the JSON and the OpenShell reference, and both of those are inspectable, versioned, and finite. You can hold them in your hands.

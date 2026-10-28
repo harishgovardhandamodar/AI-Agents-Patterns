@@ -8,6 +8,19 @@ First edition — October 2026
 
 ---
 
+## About this edition
+
+This is the **hand-authored** expanded edition: each chapter was written
+directly, assembled from `Books/Humanized/.parts/field/`, and checked for
+notation, diagrams, and typos — not for independent factual review.
+**No independent reviewer has verified it.**
+The "counsel of architects" voices are **editorial personas, not
+independent reviewers**: they cast no votes, hold no quorum, and sign
+nothing. Any "signature/quorum" language elsewhere in this book is
+aspirational, not a record of review.
+Machine-readable provenance: `Books/Humanized/FIELD-PLAYBOOKS.provenance.json`.
+Verify claims against `data/*.json` before relying on them.
+
 A supplement to *Agentic Design Patterns & Guardrails*: case and domain workflows for drug discovery, trading, banking, payments, support, ticketing and beyond — 26 domains, 54 scenarios, every chapter written from practice and verified by a counsel of architects. Generated from the catalog and the app; nothing in it is hand-typed from memory.
 
 ---
@@ -650,7 +663,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 The stakes list reads like an inventory of irreversibility. Publishing credentials, once abused, publish. Embargoed drafts, once leaked, un-embargo. Recommender weights, once poisoned, steer every downstream ranking. The public record, once written, is written. Content is the domain where the undo button is smallest, which is why the single control that matters most — approval gates on the irreversible step — carries the whole chapter.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world.
 
@@ -694,7 +707,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Cybersecurity is the reflexive domain: the agent under test wields the same weapons as the controls that judge it. A scanner with write access can rewrite the firewall it was sent to audit; a pentest agent that pivots from authorized scope to production exfiltration has turned the assessment into the incident. The chapter's primitives answer the reflexivity directly — least-privilege grants per sandbox, unprivileged process identity, revocation by deletion — because the only safe shape for a guard-with-weapons is a guard whose weapons stop at the sandbox wall.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenarios, 3 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenario, 3 cascades.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded.
 
@@ -735,7 +748,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Data fails quietly, which makes it the most expensive domain per incident discovered late. A corrupted dashboard does not page anyone; it sits upstream of decisions for weeks while executives steer by poisoned numbers. The chapter's controls answer quiet failure with loud structure: read-only sources, named sinks, and lineage that makes every downstream value traceable to the transform that produced it.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 3 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence.
 
@@ -776,7 +789,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 DevOps concentrates the cheapest mistake with the largest multiplier: one scaling decision, repeated by automation every minute, becomes a \$60,000-per-day bill before any human looks at a dashboard. The chapter has the catalog's heaviest pattern weight for a single-story domain (31 patterns) because the domain touches everything — CI, keys, infrastructure-as-code, production — while the rehearsal scenario that matters most is economic rather than technical. The bill is the blast radius.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 31 patterns, 1 scenarios, 7 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 31 patterns, 1 scenario, 7 cascades.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded.
 
@@ -817,7 +830,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Education is the domain where the output *is* the judgment: a grade, an admission, a placement. Every other domain gates actions; education gates evaluations, and evaluations shape lives. The chapter's split — machine grades against the rubric, human owns the consequence — keeps the scalable part mechanical and the consequential part human, with the rubric itself as the load-bearing artifact both sides share.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world.
 
@@ -857,7 +870,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Energy is the domain where the feedback loop touches physics: a twin that drifts from the plant does not merely misreport, it mis-dispatches, and the grid obeys the dispatch before anyone notices the drift. The chapter's architecture — telemetry sandboxes that read, control sandboxes that write, and a monitored-but-never-driving relationship between them — exists because the cost of confusing the map with the territory is measured in megawatts.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Goal comparison against written objectives plus generation rotation that restarts the clock; gates buy time for slow evidence.
 
@@ -1009,7 +1022,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Governance is the domain that judges the other controls, so its failure mode is uniquely corrosive: a captured quorum does not break one workflow, it certifies broken workflows as sound. The duplicate-persona attack targets the counting itself — if the council cannot tell five voters from one voter five times, every verdict it issues is suspect, including the verdicts on every other chapter's controls. Oversight must therefore be the most strictly constituted process in the book, not the least.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Creation stays a control-plane act no agent can invoke; generations make each new sandbox attributable; fleet halt stops the exponential.
 
@@ -1083,7 +1096,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 HR concentrates two risks that fail differently and need different instruments: money (payroll diversion) and fairness (screening bias). The chapter splits them into separate rehearsals deliberately — a payroll control does nothing against a biased screen, and a bias control does nothing against a diverted paycheck. The single catalog scenario shown is the exfiltration shape; the payroll-diversion neighbor the counsel names is the one to author next, weighted by regime risk rather than story count.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 0 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world.
 
@@ -1122,7 +1135,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 IoT multiplies every other chapter's stakes by device count: one wrong actuation is a bug; one wrong fleet-wide actuation is an incident with physical consequences. The chapter's architecture — telemetry sandboxes that read, control sandboxes that actuate, device-group scoping between them — keeps the blast radius proportional to the approval, never to the fleet. The lockout scenario is the miniature of the mass-actuation shape: an actuator that obeyed a false alarm without a human in the path.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 0 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded.
 
@@ -1163,7 +1176,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Legal is the domain where privilege is the asset: a single privileged document in a discovery export waives protection that took years to establish, and no technical control restores it afterward. Prevention is therefore total — one matter per sandbox, no cross-matter context, attorney review on everything external — because the failure mode has no remedy, only liability.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 20 patterns, 1 scenarios, 4 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 20 patterns, 1 scenario, 4 cascades.
 
 OpenShell primitives that bound these shapes: Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens.
 
@@ -1207,7 +1220,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Logistics fails in motion: a rerouted shipment, a counterfeit component in the supply chain, a customs document with the wrong declaration. The chapter's structure — planning side proposing, execution side gated, exceptional moves defined as rules rather than vibes — keeps routine lanes flowing while the unusual (novelty, value, destination) triggers human judgment. Control without gridlock is the design goal, and explicit exception definitions are how it is achieved.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 3 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world.
 
@@ -1248,7 +1261,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Marketing moves money faster than words: a spend-escalation shape drains budget in minutes, while a brand-damaging post takes hours to contain — so the chapter gates spend before it gates publishes, the reverse of the content chapter's order. The creative/sub-spend split (drafts and brand checks on one side, capped budgets and dual approval on the other) mirrors the drafting/approval split of procurement: the side that imagines must not be the side that spends.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 2 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 2 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world.
 
@@ -1289,7 +1302,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Procurement is banking's sibling: the same drafting-versus-approval separation, applied to purchase orders instead of payments. The catalog shape is subtle — attacker SEO content steering vendor selection — because it attacks the *information* that precedes the decision rather than the decision itself. A drafting agent that reads poisoned vendor rankings proposes the attacker's vendor honestly; the corruption enters upstream of every control that checks the proposal's form.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 7 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 7 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world.
 
@@ -1330,7 +1343,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Public-sector decisions differ from every other domain's in one structural way: the citizen cannot route around them. A denied permit, a wrong benefit determination, a distorted public communication — there is no competitor to switch to. That asymmetry raises the bar from best practice to obligation: measurable eligibility criteria published where possible, human-decides on every consequential output, reconstructable records as the archive the domain owes the public.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Deployment planner. Catalog weight: 0 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab, Deployment planner. Catalog weight: 0 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Approval gates hold the irreversible step while detectors decide; scoped per-sandbox grants keep the hijacked objective inside a small world.
 
@@ -1366,7 +1379,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Robotics is the domain where the agent's output is force: motion plans become actuator commands become mass in motion near people. The near-miss scenario — a robot ignoring its occupancy sensor — is the shape every other chapter's controls exist to prevent, rendered in its most literal form. Planning without actuation, interlocks outside agent reach, human approval on actuation: the layers stack so that no single failure, human or machine, moves metal unexpectedly.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenarios, 2 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 2 patterns, 1 scenario, 2 cascades.
 
 OpenShell primitives that bound these shapes: Least-privilege grants per sandbox, unprivileged process identity, and revocation by deletion when scope is exceeded.
 
@@ -1403,7 +1416,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Sales runs on shared memory — every territory's history, every quote, every discount — which makes the cross-tenant leak the domain's characteristic failure: an SDR agent with memory across tenants tells one customer's story to another's competitor. Per-territory credentials and versioned pipeline stages are the containment, and the forecast-gaming neighbor the counsel names is the integrity threat on the other side: quotes shaped to flatter the forecast rather than to close the deal.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Guardrail lab. Catalog weight: 1 pattern, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Deny-by-default network policy plus read-only filesystem mounts; the connection to an unlisted destination never opens.
 
@@ -1440,7 +1453,7 @@ Single-story domain: treat this chapter as a prompt. Author the adjacent shapes 
 
 Strategy is governance's sibling: the same council shape, the same quorum-capture attack, aimed at forecasts and board materials instead of policies and audit trails. A debate council that suppresses dissent and converges on a confident wrong call does not merely err — it manufactures conviction, and conviction travels upward faster than evidence. The chapter's controls (versioned assumptions, evidence packs, review-before-distribution) keep drafts from traveling as decisions.
 
-Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 3 patterns, 1 scenarios, 1 cascades.
+Workbench path: Failure scenarios, Rogue operations, Coverage and gaps, Live traces, Blueprint builder. Catalog weight: 3 patterns, 1 scenario, 1 cascade.
 
 OpenShell primitives that bound these shapes: Channel denial between sandboxes first, pair-level review second; no mutual egress, no shared writable scope by default.
 

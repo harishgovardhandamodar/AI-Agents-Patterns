@@ -1,0 +1,45 @@
+{
+  "cascades": 191,
+  "concepts": {
+    "rl": 18,
+    "sl": 21
+  },
+  "dimensions": 8,
+  "domain_scenario_counts": {
+    "content": 1,
+    "cybersecurity": 1,
+    "data": 1,
+    "devops": 1,
+    "education": 1,
+    "energy": 1,
+    "engineering": 6,
+    "enterprise": 8,
+    "finance": 6,
+    "general": 9,
+    "governance": 1,
+    "healthcare": 2,
+    "hr": 1,
+    "iot": 1,
+    "legal": 1,
+    "logistics": 1,
+    "marketing": 1,
+    "operations": 1,
+    "procurement": 1,
+    "public-sector": 1,
+    "research": 2,
+    "robotics": 1,
+    "sales": 1,
+    "strategy": 1,
+    "support": 2,
+    "trading": 1
+  },
+  "domains": 26,
+  "patterns": 107,
+  "scenarios": 54,
+  "traces": 55,
+  "trails": 7,
+  "works": {
+    "rl": 35,
+    "sl": 51
+  }
+}

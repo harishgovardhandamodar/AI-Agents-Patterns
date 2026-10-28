@@ -42,6 +42,11 @@ EDITION = "First edition — October 2026"
 SEED_NOTE = "Catalog edition: counts below are read from data/*.json at build time."
 
 
+def _np(n, word):
+    """'3 patterns' / '1 scenario' — number-noun agreement for catalog weights."""
+    return f"{n} {word}" if n == 1 else f"{n} {word}s"
+
+
 def deliberate(body, key):
     """Counsel of architects: architects debate before the operator acts."""
     items = WORKFLOWS_DELIB.get(key)
@@ -563,10 +568,10 @@ def main():
                 "Single-story domain: this chapter is a prompt. Author the adjacent shapes "
                 "in the discovery lab and promote them into rehearsals.")
         body.p(
-            f"Catalog weight: {len(counts['patterns'])} patterns, {len(sids)} scenarios, "
-            f"{len(counts['cascades_all'])} cascades (inherent {len(counts['cascades_inherent'])}, "
-            f"emergent {len(counts['cascades_emergent'])}, derived {len(counts['cascades_derived'])}, "
-            f"cascading {len(counts['cascades_cascading'])})."
+            f"Catalog weight: {_np(len(counts['patterns']), 'pattern')}, {_np(len(sids), 'scenario')}, "
+            f"{_np(len(counts['cascades_all']), 'cascade')} (inherent {_np(len(counts['cascades_inherent']), 'cascade')}, "
+            f"emergent {_np(len(counts['cascades_emergent']), 'cascade')}, derived {_np(len(counts['cascades_derived']), 'cascade')}, "
+            f"cascading {_np(len(counts['cascades_cascading']), 'cascade')})."
         )
         deliberate(body, f"domain-{dom}")
 

@@ -701,7 +701,7 @@ Catalog rehearsal: *Content agent ships undisclosed affiliate claims into publis
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -718,7 +718,7 @@ Catalog rehearsal: *Autonomous pentest agent pivots from authorized scope to pro
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 2 patterns, 1 scenarios, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
+Catalog weight: 2 patterns, 1 scenario, 3 cascades (inherent 2, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -735,7 +735,7 @@ Catalog rehearsal: *Data agent rewrites a schema and silently corrupts downstrea
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -752,7 +752,7 @@ Catalog rehearsal: *SRE agent auto-scales a cluster into a $60k/day bill* (emerg
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 31 patterns, 1 scenarios, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
+Catalog weight: 31 patterns, 1 scenario, 7 cascades (inherent 6, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -769,7 +769,7 @@ Catalog rehearsal: *Tutoring agent leaks the answer key and teaches to the test*
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -786,7 +786,7 @@ Catalog rehearsal: *Grid simulation twin drifts from the plant; agent over-sched
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -863,7 +863,7 @@ Catalog rehearsal: *Voting council gamed by duplicate personas; quorum captured*
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -895,7 +895,7 @@ Catalog rehearsal: *Screening agent rejects candidates on protected characterist
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -912,7 +912,7 @@ Catalog rehearsal: *Smart-home agent locks the owner out during a false alarm* (
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -929,7 +929,7 @@ Catalog rehearsal: *Agent includes privileged documents in a discovery export* (
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 20 patterns, 1 scenarios, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
+Catalog weight: 20 patterns, 1 scenario, 4 cascades (inherent 3, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -946,7 +946,7 @@ Catalog rehearsal: *Procurement agent sources counterfeit components* (injected;
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -963,7 +963,7 @@ Catalog rehearsal: *Autonomous social agent posts offensive thread from poisoned
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 2 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 2 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -980,7 +980,7 @@ Catalog rehearsal: *Self-healing agent restarts the wrong fleet during an incide
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -997,7 +997,7 @@ Catalog rehearsal: *Vendor selection steered by attacker SEO content* (injected;
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 7 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 7 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -1014,7 +1014,7 @@ Catalog rehearsal: *Content agent mass-produces targeted misinformation* (both; 
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 0 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 0 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -1046,7 +1046,7 @@ Catalog rehearsal: *Warehouse robot agent ignores occupancy sensor, near-miss wi
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 2 patterns, 1 scenarios, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
+Catalog weight: 2 patterns, 1 scenario, 2 cascades (inherent 1, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -1063,7 +1063,7 @@ Catalog rehearsal: *Memory-armed SDR agent leaks a competitor's account history 
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -1080,7 +1080,7 @@ Catalog rehearsal: *Debate council suppresses dissent and converges on a confide
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 3 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 3 patterns, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 
@@ -1112,7 +1112,7 @@ Catalog rehearsal: *Momentum agents' feedback loop amplifies a flash crash* (eme
 
 Single-story domain: this chapter is a prompt. Author the adjacent shapes in the discovery lab and promote them into rehearsals.
 
-Catalog weight: 1 patterns, 1 scenarios, 1 cascades (inherent 0, emergent 0, derived 1, cascading 0).
+Catalog weight: 1 pattern, 1 scenario, 1 cascade (inherent 0, emergent 0, derived 1, cascading 0).
 
 **Counsel of architects.**
 

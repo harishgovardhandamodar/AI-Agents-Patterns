@@ -1,0 +1,15 @@
+{
+  "edition": "Books/Humanized/ROGUE-AGENTS.md",
+  "source": "book/ROGUE-AGENTS.md",
+  "source_sha256": "7212670d92ad0e301cc630de856c0acb503cb6b5bb7fbb0ba18daed5324c249e",
+  "generator": "hand-authored (Muse Spark 1.3 Contributor)",
+  "model": null,
+  "temperature": null,
+  "seed": null,
+  "prompt_version": null,
+  "method": "hand-authored",
+  "sections": "unreviewed",
+  "reviewers": [],
+  "generated_at": "2026-10-28",
+  "note": "Hand-authored chapter files in Books/Humanized/.parts/rogue/. No independent review has been recorded."
+}
