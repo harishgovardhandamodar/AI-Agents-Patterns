@@ -25,6 +25,10 @@ Endpoints (all read-only proxies, no secrets, no auth):
     GET  /api/books/status -> per-book landscape inventory + output freshness
     POST /api/books/build  -> launch a background rebuild ({targets, pdf})
     GET  /api/books/job?id= -> build job state, steps and log tail
+    GET  /api/expand/status -> per-source expansion inventory + output freshness
+    GET  /api/expand/models?backend= -> Ollama model list on axiom/local
+    POST /api/expand/launch -> launch a background expansion ({source, model, backend, pdf})
+    GET  /api/expand/job?id= -> expansion job state, progress and log tail
 
 Backends are tried in order (axiom first, then Fox-Services — see LLM_PRIMARY).
 If none are reachable the proxy returns 503 and the UI falls back to a
@@ -49,6 +53,7 @@ import http.client
 import http.server
 import json
 import os
+import re
 import shutil
 import socketserver
 import subprocess
@@ -531,6 +536,237 @@ def books_job(jid):
     return latest
 
 
+# ------------------------------------------------- humanizer (expand)
+# The Books/Humanized/*.md expansions are model-generated artifacts:
+# tools/expand_humanized.py rewrites each book/*.md section-by-section
+# through a local Ollama model (single-GPU box or the axiom node over
+# Tailscale), resumable via Books/Humanized/.checkpoints/*.expand.json;
+# tools/render_humanized_pdf.py then typesets the PDF. The Expander panel
+# on the Overview tab drives this pipeline: pick a source book, a backend
+# and a model, launch, and follow progress. Same-origin only, like the
+# /api/books/* rebuild endpoints — a local operator tool.
+EXPAND_SOURCES = {
+    "field": {"label": "Field Playbooks", "src": "book/FIELD-PLAYBOOKS.md",
+              "dst": "Books/Humanized/FIELD-PLAYBOOKS.md",
+              "pdf": "Books/Humanized/FIELD-PLAYBOOKS.pdf"},
+    "workflows": {"label": "Workflows", "src": "book/WORKFLOWS.md",
+                  "dst": "Books/Humanized/WORKFLOWS.md",
+                  "pdf": "Books/Humanized/WORKFLOWS.pdf"},
+    "rogue": {"label": "Rogue Agents", "src": "book/ROGUE-AGENTS.md",
+              "dst": "Books/Humanized/ROGUE-AGENTS.md",
+              "pdf": "Books/Humanized/ROGUE-AGENTS.pdf"},
+    "openshell": {"label": "OpenShell Reference Architecture",
+                  "src": "book/OPENSHELL-REFERENCE-ARCHITECTURE.md",
+                  "dst": "Books/Humanized/OPENSHELL-REFERENCE-ARCHITECTURE.md",
+                  "pdf": "Books/Humanized/OPENSHELL-REFERENCE-ARCHITECTURE.pdf"},
+    "self": {"label": "Self-Learning Agents", "src": "book/SELF-LEARNING-AGENTS.md",
+             "dst": "Books/Humanized/SELF-LEARNING-AGENTS.md",
+             "pdf": "Books/Humanized/SELF-LEARNING-AGENTS.pdf"},
+    "agentic": {"label": "Agentic Patterns & Guardrails",
+                "src": "book/AGENTIC-PATTERNS-AND-GUARDRAILS.md",
+                "dst": "Books/Humanized/AGENTIC-PATTERNS-AND-GUARDRAILS.md",
+                "pdf": "Books/Humanized/AGENTIC-PATTERNS-AND-GUARDRAILS.pdf"},
+}
+
+_EXPAND_JOBS = {}
+_EXPAND_JOB_SEQ = [0]
+_EXPAND_LOCK = threading.Lock()
+
+EXPAND_DEFAULT_MODEL = os.environ.get("EXPAND_MODEL", "qwen3.8:latest")
+
+
+def _ollama_base(backend):
+    """Native Ollama URL for an expansion backend. The :8210 LLM entries
+    are chat proxies; expansion talks to Ollama's /api/* directly."""
+    backend = (backend or "").strip().lower()
+    if backend in ("axiom", "ax"):
+        return os.environ.get("AXIOM_OLLAMA_URL", "http://100.101.3.115:11434").rstrip("/")
+    return os.environ.get("LOCAL_OLLAMA_URL", "http://127.0.0.1:11434").rstrip("/")
+
+
+def _ckpt_info(src):
+    """Progress of a source's expansion checkpoint: cached chunks of total."""
+    stem = os.path.splitext(os.path.basename(src))[0]
+    ckpt = os.path.join(ROOT, "Books/Humanized/.checkpoints", stem + ".expand.json")
+    if not os.path.exists(ckpt):
+        # legacy/alternate checkpoint names (e.g. WORKFLOWS.md.ckpt.json)
+        d = os.path.join(ROOT, "Books/Humanized/.checkpoints")
+        try:
+            cands = [f for f in os.listdir(d) if f.startswith(stem)]
+        except OSError:
+            cands = []
+        if not cands:
+            return {"exists": False, "cached": 0, "path": os.path.relpath(ckpt, ROOT)}
+        ckpt = os.path.join(d, sorted(cands)[0])
+    try:
+        data = json.load(open(ckpt, encoding="utf-8"))
+        cached = len(data) if isinstance(data, dict) else 0
+    except Exception:
+        return {"exists": True, "cached": 0, "path": os.path.relpath(ckpt, ROOT)}
+    return {"exists": True, "cached": cached, "path": os.path.relpath(ckpt, ROOT)}
+
+
+def expand_status():
+    books = {}
+    for sid, s in EXPAND_SOURCES.items():
+        src_full = os.path.join(ROOT, s["src"])
+        try:
+            size = os.stat(src_full).st_size
+            mtime = os.stat(src_full).st_mtime
+            exists = True
+        except OSError:
+            size, mtime, exists = 0, 0, False
+        ckpt = _ckpt_info(s["src"])
+        dst = _finfo(s["dst"])
+        pdf = _finfo(s["pdf"])
+        stale = (not dst["exists"]) or (exists and mtime > dst["mtime"])
+        books[sid] = {
+            "label": s["label"], "src": s["src"], "dst": s["dst"], "pdf": s["pdf"],
+            "src_exists": exists, "src_size": size,
+            "ckpt": ckpt, "output": dst, "pdf_out": pdf, "stale": stale,
+        }
+    return {"books": books,
+            "default_model": EXPAND_DEFAULT_MODEL,
+            "ollama": {"axiom": _ollama_base("axiom"), "local": _ollama_base("local")},
+            "time": time.time()}
+
+
+def expand_models(backend):
+    """Model dropdown source: Ollama /api/tags on the chosen backend."""
+    base = _ollama_base(backend)
+    out = {"backend": (backend or "local").strip().lower() or "local",
+           "url": base, "online": False, "models": []}
+    try:
+        scheme, host, port, _ = _split(base)
+        cls = http.client.HTTPSConnection if scheme == "https" else http.client.HTTPConnection
+        conn = cls(host, port, timeout=8.0)
+        conn.request("GET", "/api/tags", headers={"Accept": "application/json"})
+        resp = conn.getresponse()
+        raw = resp.read()
+        conn.close()
+        if resp.status == 200:
+            data = json.loads(raw.decode("utf-8", "replace"))
+            out["models"] = sorted(
+                m.get("name") for m in data.get("models", [])
+                if isinstance(m, dict) and m.get("name"))
+            out["online"] = True
+        else:
+            out["error"] = "HTTP %s" % resp.status
+    except Exception as e:
+        out["error"] = type(e).__name__
+    return out
+
+
+def _run_expand_job(job):
+    started = time.time()
+    job["state"] = "running"
+    job["started_at"] = started
+    log = job["log"]
+    p = job["params"]
+    src = EXPAND_SOURCES[p["source"]]
+
+    def say(line):
+        log.append(line)
+        del log[:-80]
+        m = re.search(r"\[(\d+)/(\d+)\]", line)
+        if m:
+            job["done"] = int(m.group(1))
+            job["total"] = int(m.group(2))
+
+    try:
+        env = dict(os.environ)
+        env["EXPAND_MODEL"] = p["model"]
+        env["EXPAND_URL"] = _ollama_base(p["backend"]) + "/api/generate"
+        cmd = ["python3", "tools/expand_humanized.py",
+               src["src"], src["dst"],
+               os.path.join("Books/Humanized/.checkpoints",
+                            os.path.splitext(os.path.basename(src["src"]))[0] + ".expand.json")]
+        say("$ EXPAND_MODEL=%s EXPAND_URL=%s %s" % (p["model"], env["EXPAND_URL"], " ".join(cmd)))
+        t0 = time.time()
+        try:
+            proc = subprocess.Popen(cmd, cwd=ROOT, env=env,
+                                    stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                    text=True, bufsize=1)
+            job["pid"] = proc.pid
+            for line in proc.stdout:
+                say(line.rstrip())
+            proc.wait(timeout=14400)
+            rc = proc.returncode
+        except Exception as e:
+            say("expansion failed: %s" % type(e).__name__)
+            job["steps"].append({"step": "expand", "ok": False, "secs": round(time.time() - t0, 1)})
+            job["state"] = "error"
+            return
+        job["steps"].append({"step": "expand", "ok": rc == 0, "secs": round(time.time() - t0, 1)})
+        if rc != 0:
+            job["state"] = "error"
+            return
+        if p.get("pdf"):
+            t0 = time.time()
+            say("$ python3 tools/render_humanized_pdf.py %s" % src["dst"])
+            try:
+                r = subprocess.run(["python3", "tools/render_humanized_pdf.py", src["dst"]],
+                                   cwd=ROOT, env=env, capture_output=True,
+                                   text=True, timeout=2400)
+                tail = (r.stdout or "").strip().splitlines()[-4:]
+                say("\n".join(tail) or "(no output)")
+                if r.returncode != 0:
+                    say("STDERR: " + (r.stderr or "")[-1500:])
+                job["steps"].append({"step": "pdf", "ok": r.returncode == 0,
+                                     "secs": round(time.time() - t0, 1)})
+            except Exception as e:
+                say("pdf failed: %s" % type(e).__name__)
+                job["steps"].append({"step": "pdf", "ok": False, "secs": 0})
+        job["state"] = "done" if all(s["ok"] for s in job["steps"]) else "error"
+    finally:
+        job["finished_at"] = time.time()
+        job["pid"] = 0
+        say("job %s (%s)" % (job["state"], job["id"]))
+
+
+def expand_launch(params):
+    source = (params.get("source") or "").strip()
+    model = (params.get("model") or EXPAND_DEFAULT_MODEL).strip()
+    backend = ((params.get("backend") or "axiom").strip().lower() or "axiom")
+    if source not in EXPAND_SOURCES:
+        return {"error": "unknown source: %s" % source}
+    if not model:
+        return {"error": "model required"}
+    if backend not in ("axiom", "local", "ax"):
+        return {"error": "unknown backend: %s" % backend}
+    backend = "axiom" if backend == "ax" else backend
+    with _EXPAND_LOCK:
+        for j in _EXPAND_JOBS.values():
+            if j["state"] in ("queued", "running"):
+                return {"job": j["id"], "busy": True,
+                        "note": "an expansion is already running; refusing to stack another"}
+        _EXPAND_JOB_SEQ[0] += 1
+        jid = "%d-%d" % (int(time.time()), _EXPAND_JOB_SEQ[0])
+        job = {"id": jid, "state": "queued", "steps": [], "log": [],
+               "done": 0, "total": 0, "pid": 0,
+               "params": {"source": source, "model": model, "backend": backend,
+                          "pdf": bool(params.get("pdf", True))},
+               "started_at": 0, "finished_at": 0}
+        _EXPAND_JOBS[jid] = job
+        if len(_EXPAND_JOBS) > 5:
+            for old in sorted(_EXPAND_JOBS)[:-5]:
+                del _EXPAND_JOBS[old]
+    threading.Thread(target=_run_expand_job, args=(job,), daemon=True).start()
+    return {"job": jid, "state": "queued", "params": job["params"]}
+
+
+def expand_job(jid):
+    if jid:
+        job = _EXPAND_JOBS.get(jid)
+        if job is None:
+            return {"error": "unknown job"}
+        return job
+    if not _EXPAND_JOBS:
+        return {"job": None}
+    latest = _EXPAND_JOBS[sorted(_EXPAND_JOBS)[-1]]
+    return latest
+
+
 def selflearn_health(port, timeout=2.0):
     out = {"ok": False, "port": port, "checked_at": time.time()}
     if not isinstance(port, int) or port < 1 or port > 65535:
@@ -744,6 +980,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             if "error" in job:
                 return self._json(job, 404)
             return self._json(job)
+        if path == "/api/expand/status":
+            return self._json(expand_status())
+        if path == "/api/expand/models":
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            backend = (q.get("backend") or ["axiom"])[0][:16]
+            return self._json(expand_models(backend))
+        if path == "/api/expand/job":
+            q = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            jid = (q.get("id") or [""])[0][:64]
+            job = expand_job(jid)
+            if "error" in job:
+                return self._json(job, 404)
+            return self._json(job)
         return super().do_GET()
 
     def do_POST(self):
@@ -758,6 +1007,17 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             except Exception:
                 params = {}
             out = books_launch(params)
+            if "error" in out:
+                return self._json(out, 400)
+            return self._json(out)
+        if path == "/api/expand/launch":
+            try:
+                params = json.loads(self._read_body().decode("utf-8") or "{}")
+                if not isinstance(params, dict):
+                    params = {}
+            except Exception:
+                params = {}
+            out = expand_launch(params)
             if "error" in out:
                 return self._json(out, 400)
             return self._json(out)
