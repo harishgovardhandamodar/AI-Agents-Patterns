@@ -29,6 +29,8 @@ Endpoints (all read-only proxies, no secrets, no auth):
     GET  /api/expand/models?backend= -> Ollama model list on axiom/local
     POST /api/expand/launch -> launch a background expansion ({source, model, backend, pdf})
     GET  /api/expand/job?id= -> expansion job state, progress and log tail
+    GET  /api/power?... -> relay to the axiom power observer (GPU+CPU watts,
+                         energy + raw samples; ok:false when unreachable)
 
 Backends are tried in order (axiom first, then Fox-Services — see LLM_PRIMARY).
 If none are reachable the proxy returns 503 and the UI falls back to a
@@ -845,6 +847,39 @@ def expand_job(jid):
     return latest
 
 
+def _power_backend():
+    """The axiom gateway serves /api/power (continuous GPU+CPU observer)."""
+    backends = [b for b in _backend_list() if b.get("url")]
+    for b in backends:
+        if (b.get("name") or "").lower() == "axiom":
+            return b
+    return backends[0] if backends else None
+
+
+def power_proxy(query):
+    """Same-origin relay for the axiom power observer. The browser never
+    talks to the tailnet directly; unreachable backend -> ok:false, never
+    a console error."""
+    b = _power_backend()
+    if b is None:
+        return {"ok": False, "error": "no power backend configured"}
+    try:
+        scheme, host, port, base = _split(b["url"])
+        cls = (http.client.HTTPSConnection if scheme == "https"
+               else http.client.HTTPConnection)
+        conn = cls(host, port, timeout=15.0)
+        conn.request("GET", "/api/power" + ("?" + query if query else ""),
+                     headers={"Accept": "application/json"})
+        resp = conn.getresponse()
+        raw = resp.read()
+        conn.close()
+        if resp.status != 200:
+            return {"ok": False, "error": "power backend HTTP %s" % resp.status}
+        return json.loads(raw.decode("utf-8", "replace"))
+    except Exception as e:
+        return {"ok": False, "error": "%s unreachable: %s" % (b.get("name"), type(e).__name__)}
+
+
 def selflearn_health(port, timeout=2.0):
     out = {"ok": False, "port": port, "checked_at": time.time()}
     if not isinstance(port, int) or port < 1 or port > 65535:
@@ -1142,6 +1177,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             if "error" in job:
                 return self._json(job, 404)
             return self._json(job)
+        if path in ("/api/power", "/api/power/stats"):
+            return self._power()
         return super().do_GET()
 
     def do_POST(self):
@@ -1186,6 +1223,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self._json({"error": "not found"}, 404)
 
     # -- llm handlers ------------------------------------------------------
+    def _power(self):
+        query = urllib.parse.urlparse(self.path).query or ""
+        # length-cap the forwarded query; the observer validates the rest
+        if len(query) > 1024:
+            return self._json({"ok": False, "error": "query too long"}, 400)
+        return self._json(power_proxy(query))
+
     def _models(self):
         # Always 200 so an offline backend never shows as a console error in the
         # browser; callers inspect `online`.

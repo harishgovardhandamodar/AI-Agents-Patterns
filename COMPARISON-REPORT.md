@@ -107,6 +107,21 @@ generation steady state:
   unlogged hours ran 5% hotter/colder, the total moves ±0.1 kWh. The chart
   above is the evidence for flatness — no hidden regime to miss.
 
+## Power addendum (2026-10-29): continuous observer
+
+Axiom now runs a continuous power observer (`/api/power` on fox-services,
+probed from this repo as same-origin `/api/power`). One `nvidia-smi dmon`
+process per gateway + Linux RAPL CPU packages → SQLite (90-day retention),
+summaries (min/max/avg/latest Wh) + raw samples. Verified live: 2× RTX 5080
++ `cpu:package:0`.
+
+Its database starts **2026-10-29 ~10:25 UTC — after the big-book run**
+(Oct 28 16:47–21:58 UTC), so it cannot backfill generation-window watts.
+The `Books/Humanized/agentic_power.log` dmon slice (84 min, dual-GPU
+~155 W + ~229 W avg) remains the only measured generation-window record;
+the ±0.1 kWh extrapolation above stands. All future generation runs can
+(and should) pull their window from `/api/power` instead of a manual dmon.
+
 ## Verdict
 
 qwen3.8 is a volume engine: 4–5x the prose, 3–10x the formal blocks, ~93

@@ -574,6 +574,7 @@ const TAB_GROUPS = [
   { id: "design", label: "🧭 Design", tabs: ["deploy", "blueprint"] },
   { id: "labs", label: "🧪 Labs", tabs: ["guard", "discovery", "bench", "research"] },
   { id: "agents", label: "🛡 Agents", tabs: ["rogue", "selflearn"] },
+  { id: "books", label: "📚 Books", tabs: ["books"] },
   { id: "architect", label: "🤖 Architect", tabs: ["copilot", "design"] },
 ];
 const SUBTAB_LABELS = {
@@ -592,6 +593,7 @@ const SUBTAB_LABELS = {
   bench: "⚔ Battle Bench",
   rogue: "🛑 Rogue Agents",
   selflearn: "🧬 Self-Learning",
+  books: "📚 Books",
   research: "📚 Research Graphs"
 };
 let currentGroup = "";
@@ -2154,7 +2156,8 @@ async function loadAll() {
       has("initBench") && ["bench", "Battle Bench", () => initBench()],
       has("initRogue") && ["rogue", "Rogue Agents", () => initRogue()],
       has("initSelflearn") && ["selflearn", "Self-Learning", () => initSelflearn()],
-      has("initResearch") && ["research", "Research Graphs", () => initResearch()]
+      has("initResearch") && ["research", "Research Graphs", () => initResearch()],
+      has("initBooksTab") && ["books", "Books", () => initBooksTab()]
     ].filter(Boolean);
     PANES.forEach(p => { PANE_INIT[p[0]] = p[2]; });
     const paneRun = async p => {

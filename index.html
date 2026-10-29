@@ -41,6 +41,7 @@
   <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="design" data-act="switchGroup" data-args="[&quot;design&quot;]">🧭 Design</div>
   <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="labs" data-act="switchGroup" data-args="[&quot;labs&quot;]">🧪 Labs</div>
   <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="agents" data-act="switchGroup" data-args="[&quot;agents&quot;]">🛡 Agents</div>
+  <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="books" data-act="switchGroup" data-args="[&quot;books&quot;]">📚 Books</div>
   <div class="app-tab grp" role="tab" aria-selected="false" tabindex="-1" data-group="architect" data-act="switchGroup" data-args="[&quot;architect&quot;]">🤖 Architect</div>
 </div>
 <div class="app-tabs subtabs" id="subTabs" role="tablist" aria-label="Tabs in this section"></div>
@@ -72,12 +73,10 @@
       </div>
     </div>
     <div class="panel" style="margin-top:12px">
-      <h3>Bookshelf <span class="muted small">collect the landscape &amp; rebuild the books</span></h3>
-      <div id="bookshelf"><p class="muted small">Loading bookshelf status…</p></div>
-    </div>
-    <div class="panel" style="margin-top:12px">
-      <h3>Expander <span class="muted small">humanize a source book with a local model</span></h3>
-      <div id="expander"><p class="muted small">Loading expander status…</p></div>
+      <h3>Books <span class="muted small">build, expand &amp; measure</span></h3>
+      <p class="muted small" style="margin:0">Book generation moved to its own tab:
+        <button class="btn sm" data-act="switchTab" data-args="[&quot;books&quot;]">Open 📚 Books</button>
+        — deterministic rebuilds, model expansions, and GPU/CPU power.</p>
     </div>
   </div>
 </section>
@@ -334,6 +333,23 @@
     <div id="benchMain"></div>
   </div>
 </section>
+<!-- ======================= BOOKS (generation) ======================= -->
+<section class="pane" id="booksPane" role="tabpanel" aria-label="books">
+  <div class="ov-wrap">
+    <div class="panel">
+      <h3>Bookshelf <span class="muted small">collect the landscape &amp; rebuild the books</span></h3>
+      <div id="bookshelf"><p class="muted small">Loading bookshelf status…</p></div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <h3>Expander <span class="muted small">humanize a source book with a local model</span></h3>
+      <div id="expander"><p class="muted small">Loading expander status…</p></div>
+    </div>
+    <div class="panel" style="margin-top:12px">
+      <h3>Power <span class="muted small">GPU + CPU watts and energy on axiom</span></h3>
+      <div id="power"><p class="muted small">Loading power telemetry…</p></div>
+    </div>
+  </div>
+</section>
 <!-- ======================= ROGUE AGENTS ======================= -->
 <section class="pane" id="roguePane" role="tabpanel" aria-label="rogue">
   <div class="ov-wrap">
@@ -418,6 +434,7 @@
 <script src="js/research.js"></script>
 <script src="js/books.js"></script>
 <script src="js/expand.js"></script>
+<script src="js/power.js"></script>
 <script src="js/bootcheck.js"></script>
 </body>
 </html>

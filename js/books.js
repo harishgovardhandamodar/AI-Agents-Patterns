@@ -188,6 +188,12 @@ function initBooks() {
   booksPollLatest();
 }
 
+function initBooksTab() {
+  if (typeof initBooks === "function") initBooks();
+  if (typeof initExpand === "function") initExpand();
+  if (typeof initPower === "function") initPower();
+}
+
 function booksPollLatest() {
   fetch("/api/books/job").then(function (res) {
     return res.json();
